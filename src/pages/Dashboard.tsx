@@ -183,9 +183,9 @@ export default function Dashboard() {
                   <Line
                     type="monotone"
                     dataKey="montant"
-                    stroke="hsl(174, 62%, 42%)"
+                    stroke="hsl(48, 92%, 55%)"
                     strokeWidth={2.5}
-                    dot={{ r: 4, fill: "hsl(174, 62%, 42%)" }}
+                    dot={{ r: 4, fill: "hsl(48, 92%, 55%)" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
