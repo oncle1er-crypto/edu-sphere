@@ -8,6 +8,8 @@ import Dashboard from "@/pages/Dashboard";
 import Eleves from "@/pages/Eleves";
 import Enseignants from "@/pages/Enseignants";
 import Classes from "@/pages/Classes";
+import Cantine from "@/pages/Cantine";
+import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +31,8 @@ const App = () => (
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
             <Route path="/examens" element={<Placeholder title="Examens & Notes" />} />
             <Route path="/finances" element={<Placeholder title="Finances" />} />
+            <Route path="/cantine" element={<Cantine />} />
+            <Route path="/transport" element={<Transport />} />
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
             <Route path="/communication" element={<Placeholder title="Communication" />} />
             <Route path="/statistiques" element={<Placeholder title="Statistiques" />} />

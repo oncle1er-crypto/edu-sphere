@@ -13,6 +13,8 @@ import {
   Settings,
   Shield,
   UserCog,
+  UtensilsCrossed,
+  Bus,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -48,6 +50,8 @@ const academicItems = [
 
 const otherItems = [
   { title: "Finances", url: "/finances", icon: DollarSign },
+  { title: "Cantine", url: "/cantine", icon: UtensilsCrossed },
+  { title: "Transport", url: "/transport", icon: Bus },
   { title: "Bibliothèque", url: "/bibliotheque", icon: Library },
   { title: "Communication", url: "/communication", icon: MessageSquare },
   { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
