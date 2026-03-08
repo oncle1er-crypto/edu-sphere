@@ -51,8 +51,8 @@ const recentStudents = [
 ];
 
 const COLORS = [
-  "hsl(174, 62%, 42%)",
-  "hsl(210, 20%, 90%)",
+  "hsl(348, 60%, 28%)",
+  "hsl(48, 92%, 55%)",
 ];
 
 export default function Dashboard() {
