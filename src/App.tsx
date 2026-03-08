@@ -8,6 +8,8 @@ import Dashboard from "@/pages/Dashboard";
 import Eleves from "@/pages/Eleves";
 import Enseignants from "@/pages/Enseignants";
 import Classes from "@/pages/Classes";
+import Cantine from "@/pages/Cantine";
+import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
 import NotFound from "./pages/NotFound";
 
