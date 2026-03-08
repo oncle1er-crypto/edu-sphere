@@ -121,7 +121,7 @@ export default function Dashboard() {
                       fontSize: "13px",
                     }}
                   />
-                  <Bar dataKey="eleves" fill="hsl(215, 70%, 28%)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="eleves" fill="hsl(348, 60%, 28%)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
