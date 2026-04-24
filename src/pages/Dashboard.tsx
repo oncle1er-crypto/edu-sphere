@@ -51,8 +51,8 @@ const recentStudents = [
 ];
 
 const COLORS = [
-  "hsl(348, 60%, 28%)",
-  "hsl(48, 92%, 55%)",
+  "hsl(211, 64%, 16%)",
+  "hsl(46, 65%, 52%)",
 ];
 
 export default function Dashboard() {
@@ -121,7 +121,7 @@ export default function Dashboard() {
                       fontSize: "13px",
                     }}
                   />
-                  <Bar dataKey="eleves" fill="hsl(348, 60%, 28%)" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="eleves" fill="hsl(211, 64%, 16%)" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -183,9 +183,9 @@ export default function Dashboard() {
                   <Line
                     type="monotone"
                     dataKey="montant"
-                    stroke="hsl(48, 92%, 55%)"
+                    stroke="hsl(46, 65%, 52%)"
                     strokeWidth={2.5}
-                    dot={{ r: 4, fill: "hsl(48, 92%, 55%)" }}
+                    dot={{ r: 4, fill: "hsl(46, 65%, 52%)" }}
                   />
                 </LineChart>
               </ResponsiveContainer>
