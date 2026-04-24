@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import Eleves from "@/pages/Eleves";
 import Enseignants from "@/pages/Enseignants";
@@ -23,7 +24,8 @@ const App = () => (
       <BrowserRouter>
         <AppLayout>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/statistiques" element={<Dashboard />} />
             <Route path="/eleves" element={<Eleves />} />
             <Route path="/enseignants" element={<Enseignants />} />
             <Route path="/classes" element={<Classes />} />
@@ -35,7 +37,7 @@ const App = () => (
             <Route path="/transport" element={<Transport />} />
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
             <Route path="/communication" element={<Placeholder title="Communication" />} />
-            <Route path="/statistiques" element={<Placeholder title="Statistiques" />} />
+            
             <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />
             <Route path="/parametres" element={<Placeholder title="Paramètres" />} />
             <Route path="*" element={<NotFound />} />
