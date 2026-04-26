@@ -12,6 +12,22 @@ import Classes from "@/pages/Classes";
 import Cantine from "@/pages/Cantine";
 import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
+import SettingsLayout from "@/pages/parametres/SettingsLayout";
+import SchoolProfile from "@/pages/parametres/sections/SchoolProfile";
+import AcademicSettings from "@/pages/parametres/sections/AcademicSettings";
+import UsersRoles from "@/pages/parametres/sections/UsersRoles";
+import FinanceSettings from "@/pages/parametres/sections/FinanceSettings";
+import DocumentTemplates from "@/pages/parametres/sections/DocumentTemplates";
+import NotificationSettings from "@/pages/parametres/sections/NotificationSettings";
+import AppearanceSettings from "@/pages/parametres/sections/AppearanceSettings";
+import LocalizationSettings from "@/pages/parametres/sections/LocalizationSettings";
+import BackupSettings from "@/pages/parametres/sections/BackupSettings";
+import UserProfile from "@/pages/parametres/sections/UserProfile";
+import SecuritySettings from "@/pages/parametres/sections/SecuritySettings";
+import IntegrationsSettings from "@/pages/parametres/sections/IntegrationsSettings";
+import ActivityLogs from "@/pages/parametres/sections/ActivityLogs";
+import SupportSettings from "@/pages/parametres/sections/SupportSettings";
+import AdvancedSettings from "@/pages/parametres/sections/AdvancedSettings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -39,7 +55,23 @@ const App = () => (
             <Route path="/communication" element={<Placeholder title="Communication" />} />
             
             <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />
-            <Route path="/parametres" element={<Placeholder title="Paramètres" />} />
+            <Route path="/parametres" element={<SettingsLayout />}>
+              <Route path="ecole" element={<SchoolProfile />} />
+              <Route path="academique" element={<AcademicSettings />} />
+              <Route path="utilisateurs" element={<UsersRoles />} />
+              <Route path="finances" element={<FinanceSettings />} />
+              <Route path="documents" element={<DocumentTemplates />} />
+              <Route path="notifications" element={<NotificationSettings />} />
+              <Route path="apparence" element={<AppearanceSettings />} />
+              <Route path="localisation" element={<LocalizationSettings />} />
+              <Route path="sauvegarde" element={<BackupSettings />} />
+              <Route path="profil" element={<UserProfile />} />
+              <Route path="securite" element={<SecuritySettings />} />
+              <Route path="integrations" element={<IntegrationsSettings />} />
+              <Route path="logs" element={<ActivityLogs />} />
+              <Route path="support" element={<SupportSettings />} />
+              <Route path="avance" element={<AdvancedSettings />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
