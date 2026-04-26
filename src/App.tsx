@@ -13,6 +13,21 @@ import Cantine from "@/pages/Cantine";
 import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
 import SettingsLayout from "@/pages/parametres/SettingsLayout";
+import FinanceLayout from "@/pages/finances/FinanceLayout";
+import FinanceDashboard from "@/pages/finances/sections/FinanceDashboard";
+import Invoices from "@/pages/finances/sections/Invoices";
+import Payments from "@/pages/finances/sections/Payments";
+import Receipts from "@/pages/finances/sections/Receipts";
+import Unpaid from "@/pages/finances/sections/Unpaid";
+import Expenses from "@/pages/finances/sections/Expenses";
+import Payroll from "@/pages/finances/sections/Payroll";
+import Suppliers from "@/pages/finances/sections/Suppliers";
+import Budget from "@/pages/finances/sections/Budget";
+import Treasury from "@/pages/finances/sections/Treasury";
+import Ledger from "@/pages/finances/sections/Ledger";
+import Reports from "@/pages/finances/sections/Reports";
+import Tax from "@/pages/finances/sections/Tax";
+import FinanceConfig from "@/pages/finances/sections/FinanceConfig";
 import SchoolProfile from "@/pages/parametres/sections/SchoolProfile";
 import AcademicSettings from "@/pages/parametres/sections/AcademicSettings";
 import UsersRoles from "@/pages/parametres/sections/UsersRoles";
@@ -48,7 +63,22 @@ const App = () => (
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
             <Route path="/examens" element={<Placeholder title="Examens & Notes" />} />
-            <Route path="/finances" element={<Placeholder title="Finances" />} />
+            <Route path="/finances" element={<FinanceLayout />}>
+              <Route path="tableau" element={<FinanceDashboard />} />
+              <Route path="factures" element={<Invoices />} />
+              <Route path="paiements" element={<Payments />} />
+              <Route path="recus" element={<Receipts />} />
+              <Route path="impayes" element={<Unpaid />} />
+              <Route path="depenses" element={<Expenses />} />
+              <Route path="salaires" element={<Payroll />} />
+              <Route path="fournisseurs" element={<Suppliers />} />
+              <Route path="budget" element={<Budget />} />
+              <Route path="tresorerie" element={<Treasury />} />
+              <Route path="grand-livre" element={<Ledger />} />
+              <Route path="rapports" element={<Reports />} />
+              <Route path="fiscalite" element={<Tax />} />
+              <Route path="configuration" element={<FinanceConfig />} />
+            </Route>
             <Route path="/cantine" element={<Cantine />} />
             <Route path="/transport" element={<Transport />} />
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />

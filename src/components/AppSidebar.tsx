@@ -49,7 +49,7 @@ const academicItems = [
 ];
 
 const otherItems = [
-  { title: "Finances", url: "/finances", icon: DollarSign },
+  { title: "Paiements & Compta", url: "/finances", icon: DollarSign },
   { title: "Cantine", url: "/cantine", icon: UtensilsCrossed },
   { title: "Transport", url: "/transport", icon: Bus },
   { title: "Bibliothèque", url: "/bibliotheque", icon: Library },
