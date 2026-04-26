@@ -73,7 +73,7 @@ export default function SettingsLayout() {
                       <span className="truncate">{s.label}</span>
                     </NavLink>
                   ))}
-              </div>
+              </nav>
             </div>
           ))}
         </aside>
