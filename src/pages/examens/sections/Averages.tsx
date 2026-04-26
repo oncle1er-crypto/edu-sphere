@@ -22,7 +22,7 @@ const matieres = [
 
 export default function Averages() {
   return (
-    <SettingsSection icon={Award} title="Moyennes & classements" description="Top des élèves et moyennes par matière.">
+    <SettingsSection icon={<Award className='h-5 w-5' />} title="Moyennes & classements" description="Top des élèves et moyennes par matière.">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border">
           <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg">

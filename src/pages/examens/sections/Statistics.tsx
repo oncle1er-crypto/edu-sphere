@@ -26,7 +26,7 @@ const tone: Record<string, string> = {
 
 export default function Statistics() {
   return (
-    <SettingsSection icon={BarChart3} title="Statistiques & analyses" description="Vue d'ensemble des performances du trimestre.">
+    <SettingsSection icon={<BarChart3 className='h-5 w-5' />} title="Statistiques & analyses" description="Vue d'ensemble des performances du trimestre.">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {stats.map((s) => (
           <Card key={s.label} className="border">

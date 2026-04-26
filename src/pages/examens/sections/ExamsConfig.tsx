@@ -7,7 +7,7 @@ import { Settings2 } from "lucide-react";
 
 export default function ExamsConfig() {
   return (
-    <SettingsSection icon={Settings2} title="Configuration" description="Paramètres généraux du module évaluations.">
+    <SettingsSection icon={<Settings2 className='h-5 w-5' />} title="Configuration" description="Paramètres généraux du module évaluations.">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <Label>Système de notation</Label>

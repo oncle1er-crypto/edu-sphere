@@ -14,7 +14,7 @@ const reports = [
 
 export default function Reports() {
   return (
-    <SettingsSection icon={FileSpreadsheet} title="Rapports pédagogiques" description="Documents officiels prêts à imprimer ou exporter.">
+    <SettingsSection icon={<FileSpreadsheet className='h-5 w-5' />} title="Rapports pédagogiques" description="Documents officiels prêts à imprimer ou exporter.">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {reports.map((r, i) => (
           <Card key={i} className="border">

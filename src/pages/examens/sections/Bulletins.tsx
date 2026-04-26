@@ -20,11 +20,10 @@ const tone: Record<string, string> = {
 export default function Bulletins() {
   return (
     <SettingsSection
-      icon={GraduationCap}
+      icon={<GraduationCap className='h-5 w-5' />}
       title="Bulletins scolaires"
       description="Génération PDF des bulletins trimestriels et annuels."
-      action={<Button size="sm" variant="outline" className="gap-2"><Download className="h-4 w-4" /> Exporter tout</Button>}
-    >
+      >
       <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>

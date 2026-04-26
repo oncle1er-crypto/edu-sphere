@@ -19,11 +19,10 @@ const tone: Record<string, string> = {
 export default function Compositions() {
   return (
     <SettingsSection
-      icon={FileBarChart}
+      icon={<FileBarChart className='h-5 w-5' />}
       title="Compositions & examens"
       description="Sessions de compositions trimestrielles et examens blancs."
-      action={<Button size="sm" className="gap-2"><Plus className="h-4 w-4" /> Nouvelle session</Button>}
-    >
+      >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {sessions.map((s, i) => (
           <Card key={i} className="border">

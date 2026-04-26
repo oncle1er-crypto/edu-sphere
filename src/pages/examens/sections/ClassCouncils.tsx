@@ -19,11 +19,10 @@ const tone: Record<string, string> = {
 export default function ClassCouncils() {
   return (
     <SettingsSection
-      icon={Users}
+      icon={<Users className='h-5 w-5' />}
       title="Conseils de classe"
       description="Organisation des conseils trimestriels et décisions du jury."
-      action={<Button size="sm" className="gap-2"><Plus className="h-4 w-4" /> Planifier</Button>}
-    >
+      >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {councils.map((c, i) => (
           <Card key={i} className="border">

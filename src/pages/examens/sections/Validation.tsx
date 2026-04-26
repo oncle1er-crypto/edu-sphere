@@ -14,7 +14,7 @@ const periods = [
 export default function Validation() {
   return (
     <SettingsSection
-      icon={ShieldCheck}
+      icon={<ShieldCheck className='h-5 w-5' />}
       title="Validation & verrouillage"
       description="Verrouillez les périodes de saisie pour empêcher toute modification."
     >

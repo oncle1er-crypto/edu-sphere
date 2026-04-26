@@ -21,11 +21,10 @@ const tone: Record<string, string> = {
 export default function Evaluations() {
   return (
     <SettingsSection
-      icon={ClipboardList}
+      icon={<ClipboardList className='h-5 w-5' />}
       title="Évaluations & devoirs"
       description="Gérez tous les devoirs surveillés, interrogations et travaux pratiques."
-      action={<Button size="sm" className="gap-2"><Plus className="h-4 w-4" /> Nouvelle évaluation</Button>}
-    >
+      >
       <div className="rounded-lg border overflow-hidden">
         <Table>
           <TableHeader>

@@ -14,7 +14,7 @@ const events = [
 
 export default function ExamsCalendar() {
   return (
-    <SettingsSection icon={CalendarRange} title="Calendrier des évaluations" description="Planning des compositions, devoirs et examens du trimestre.">
+    <SettingsSection icon={<CalendarRange className='h-5 w-5' />} title="Calendrier des évaluations" description="Planning des compositions, devoirs et examens du trimestre.">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
         {events.map((e, i) => (
           <Card key={i} className="border">

@@ -19,11 +19,10 @@ const students = [
 export default function GradeEntry() {
   return (
     <SettingsSection
-      icon={PenSquare}
+      icon={<PenSquare className='h-5 w-5' />}
       title="Saisie des notes"
       description="Saisissez les notes par classe, matière et évaluation. Auto-sauvegarde activée."
-      action={<Button size="sm" className="gap-2"><Save className="h-4 w-4" /> Enregistrer</Button>}
-    >
+      >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div>
           <Label className="text-xs">Classe</Label>
