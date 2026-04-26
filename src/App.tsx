@@ -43,6 +43,19 @@ import IntegrationsSettings from "@/pages/parametres/sections/IntegrationsSettin
 import ActivityLogs from "@/pages/parametres/sections/ActivityLogs";
 import SupportSettings from "@/pages/parametres/sections/SupportSettings";
 import AdvancedSettings from "@/pages/parametres/sections/AdvancedSettings";
+import ExamsLayout from "@/pages/examens/ExamsLayout";
+import ExamsDashboard from "@/pages/examens/sections/ExamsDashboard";
+import ExamsCalendar from "@/pages/examens/sections/ExamsCalendar";
+import Evaluations from "@/pages/examens/sections/Evaluations";
+import Compositions from "@/pages/examens/sections/Compositions";
+import GradeEntry from "@/pages/examens/sections/GradeEntry";
+import Bulletins from "@/pages/examens/sections/Bulletins";
+import Averages from "@/pages/examens/sections/Averages";
+import ClassCouncils from "@/pages/examens/sections/ClassCouncils";
+import ExamsStatistics from "@/pages/examens/sections/Statistics";
+import ExamsReports from "@/pages/examens/sections/Reports";
+import Validation from "@/pages/examens/sections/Validation";
+import ExamsConfig from "@/pages/examens/sections/ExamsConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,7 +75,20 @@ const App = () => (
             <Route path="/classes" element={<Classes />} />
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
-            <Route path="/examens" element={<Placeholder title="Examens & Notes" />} />
+            <Route path="/examens" element={<ExamsLayout />}>
+              <Route path="tableau" element={<ExamsDashboard />} />
+              <Route path="calendrier" element={<ExamsCalendar />} />
+              <Route path="evaluations" element={<Evaluations />} />
+              <Route path="compositions" element={<Compositions />} />
+              <Route path="saisie-notes" element={<GradeEntry />} />
+              <Route path="bulletins" element={<Bulletins />} />
+              <Route path="moyennes" element={<Averages />} />
+              <Route path="conseils" element={<ClassCouncils />} />
+              <Route path="statistiques" element={<ExamsStatistics />} />
+              <Route path="rapports" element={<ExamsReports />} />
+              <Route path="validation" element={<Validation />} />
+              <Route path="configuration" element={<ExamsConfig />} />
+            </Route>
             <Route path="/finances" element={<FinanceLayout />}>
               <Route path="tableau" element={<FinanceDashboard />} />
               <Route path="factures" element={<Invoices />} />
