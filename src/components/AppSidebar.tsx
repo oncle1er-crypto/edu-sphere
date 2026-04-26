@@ -45,7 +45,7 @@ const managementItems = [
 
 const academicItems = [
   { title: "Emploi du temps", url: "/emploi-du-temps", icon: Calendar },
-  { title: "Examens & Notes", url: "/examens", icon: ClipboardList, matchPrefix: true },
+  { title: "Examens & Notes", url: "/examens", icon: ClipboardList },
 ];
 
 const otherItems = [
