@@ -171,6 +171,19 @@ import SchoolsCreate from "@/pages/ecoles/sections/SchoolsCreate";
 import SchoolsStats from "@/pages/ecoles/sections/SchoolsStats";
 import SchoolsConfig from "@/pages/ecoles/sections/SchoolsConfig";
 import { EcoleProvider } from "@/context/EcoleContext";
+import StatsLayout from "@/pages/statistiques/StatsLayout";
+import GlobalDashboard from "@/pages/statistiques/sections/GlobalDashboard";
+import SchoolsCompare from "@/pages/statistiques/sections/SchoolsCompare";
+import StudentsStatsG from "@/pages/statistiques/sections/StudentsStats";
+import TeachersStatsG from "@/pages/statistiques/sections/TeachersStats";
+import AttendanceStatsG from "@/pages/statistiques/sections/AttendanceStats";
+import ExamsStatsG from "@/pages/statistiques/sections/ExamsStats";
+import FinanceStatsG from "@/pages/statistiques/sections/FinanceStats";
+import CanteenStatsG from "@/pages/statistiques/sections/CanteenStatsGlobal";
+import TransportStatsG from "@/pages/statistiques/sections/TransportStatsGlobal";
+import LibraryStatsG from "@/pages/statistiques/sections/LibraryStatsGlobal";
+import GlobalReports from "@/pages/statistiques/sections/GlobalReports";
+import StatsConfig from "@/pages/statistiques/sections/StatsConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -185,7 +198,20 @@ const App = () => (
         <AppLayout>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/statistiques" element={<Dashboard />} />
+            <Route path="/statistiques" element={<StatsLayout />}>
+              <Route path="tableau" element={<GlobalDashboard />} />
+              <Route path="ecoles" element={<SchoolsCompare />} />
+              <Route path="eleves" element={<StudentsStatsG />} />
+              <Route path="enseignants" element={<TeachersStatsG />} />
+              <Route path="presences" element={<AttendanceStatsG />} />
+              <Route path="examens" element={<ExamsStatsG />} />
+              <Route path="finances" element={<FinanceStatsG />} />
+              <Route path="cantine" element={<CanteenStatsG />} />
+              <Route path="transport" element={<TransportStatsG />} />
+              <Route path="bibliotheque" element={<LibraryStatsG />} />
+              <Route path="rapports" element={<GlobalReports />} />
+              <Route path="configuration" element={<StatsConfig />} />
+            </Route>
             <Route path="/eleves" element={<StudentsLayout />}>
               <Route path="tableau" element={<StudentsDashboard />} />
               <Route path="liste" element={<StudentsList />} />
