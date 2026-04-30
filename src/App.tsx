@@ -56,6 +56,7 @@ import ExamsStatistics from "@/pages/examens/sections/Statistics";
 import ExamsReports from "@/pages/examens/sections/Reports";
 import Validation from "@/pages/examens/sections/Validation";
 import ExamsConfig from "@/pages/examens/sections/ExamsConfig";
+import GradingScales from "@/pages/examens/sections/GradingScales";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -86,6 +87,7 @@ const App = () => (
               <Route path="conseils" element={<ClassCouncils />} />
               <Route path="statistiques" element={<ExamsStatistics />} />
               <Route path="rapports" element={<ExamsReports />} />
+              <Route path="baremes" element={<GradingScales />} />
               <Route path="validation" element={<Validation />} />
               <Route path="configuration" element={<ExamsConfig />} />
             </Route>
