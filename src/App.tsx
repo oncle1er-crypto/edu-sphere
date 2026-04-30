@@ -106,7 +106,19 @@ const App = () => (
               <Route path="anciens" element={<StudentsAlumni />} />
               <Route path="configuration" element={<StudentsConfig />} />
             </Route>
-            <Route path="/enseignants" element={<Enseignants />} />
+            <Route path="/enseignants" element={<StaffLayout />}>
+              <Route path="tableau" element={<StaffDashboard />} />
+              <Route path="liste" element={<StaffList />} />
+              <Route path="recrutement" element={<StaffRecruitment />} />
+              <Route path="contrats" element={<StaffContracts />} />
+              <Route path="paie" element={<StaffPayroll />} />
+              <Route path="matieres" element={<StaffSubjects />} />
+              <Route path="emploi" element={<StaffSchedule />} />
+              <Route path="formations" element={<StaffTraining />} />
+              <Route path="evaluations" element={<StaffEvaluations />} />
+              <Route path="personnel" element={<StaffAdmin />} />
+              <Route path="configuration" element={<StaffConfig />} />
+            </Route>
             <Route path="/classes" element={<Classes />} />
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
