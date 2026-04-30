@@ -54,7 +54,20 @@ import CanteenIncidents from "@/pages/cantine/sections/CanteenIncidents";
 import CanteenStats from "@/pages/cantine/sections/CanteenStats";
 import CanteenReports from "@/pages/cantine/sections/CanteenReports";
 import CanteenConfig from "@/pages/cantine/sections/CanteenConfig";
-import Transport from "@/pages/Transport";
+import TransportLayout from "@/pages/transport/TransportLayout";
+import TransportDashboard from "@/pages/transport/sections/TransportDashboard";
+import TransportLines from "@/pages/transport/sections/TransportLines";
+import TransportVehicles from "@/pages/transport/sections/TransportVehicles";
+import TransportDrivers from "@/pages/transport/sections/TransportDrivers";
+import TransportMaintenance from "@/pages/transport/sections/TransportMaintenance";
+import TransportFuel from "@/pages/transport/sections/TransportFuel";
+import TransportSubscribers from "@/pages/transport/sections/TransportSubscribers";
+import TransportBilling from "@/pages/transport/sections/TransportBilling";
+import TransportIncidents from "@/pages/transport/sections/TransportIncidents";
+import TransportAlerts from "@/pages/transport/sections/TransportAlerts";
+import TransportStats from "@/pages/transport/sections/TransportStats";
+import TransportReports from "@/pages/transport/sections/TransportReports";
+import TransportConfig from "@/pages/transport/sections/TransportConfig";
 import Placeholder from "@/pages/Placeholder";
 import SettingsLayout from "@/pages/parametres/SettingsLayout";
 import FinanceLayout from "@/pages/finances/FinanceLayout";
@@ -251,7 +264,21 @@ const App = () => (
               <Route path="rapports" element={<CanteenReports />} />
               <Route path="configuration" element={<CanteenConfig />} />
             </Route>
-            <Route path="/transport" element={<Transport />} />
+            <Route path="/transport" element={<TransportLayout />}>
+              <Route path="tableau" element={<TransportDashboard />} />
+              <Route path="lignes" element={<TransportLines />} />
+              <Route path="vehicules" element={<TransportVehicles />} />
+              <Route path="chauffeurs" element={<TransportDrivers />} />
+              <Route path="maintenance" element={<TransportMaintenance />} />
+              <Route path="carburant" element={<TransportFuel />} />
+              <Route path="abonnes" element={<TransportSubscribers />} />
+              <Route path="facturation" element={<TransportBilling />} />
+              <Route path="incidents" element={<TransportIncidents />} />
+              <Route path="alertes" element={<TransportAlerts />} />
+              <Route path="statistiques" element={<TransportStats />} />
+              <Route path="rapports" element={<TransportReports />} />
+              <Route path="configuration" element={<TransportConfig />} />
+            </Route>
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
             <Route path="/communication" element={<Placeholder title="Communication" />} />
             
