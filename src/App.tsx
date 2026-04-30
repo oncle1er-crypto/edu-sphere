@@ -114,6 +114,31 @@ import ExamsReports from "@/pages/examens/sections/Reports";
 import Validation from "@/pages/examens/sections/Validation";
 import ExamsConfig from "@/pages/examens/sections/ExamsConfig";
 import GradingScales from "@/pages/examens/sections/GradingScales";
+import LibraryLayout from "@/pages/bibliotheque/LibraryLayout";
+import LibraryDashboard from "@/pages/bibliotheque/sections/LibraryDashboard";
+import LibraryCatalog from "@/pages/bibliotheque/sections/LibraryCatalog";
+import LibrarySearch from "@/pages/bibliotheque/sections/LibrarySearch";
+import LibraryCategories from "@/pages/bibliotheque/sections/LibraryCategories";
+import LibraryAcquisitions from "@/pages/bibliotheque/sections/LibraryAcquisitions";
+import LibraryLoans from "@/pages/bibliotheque/sections/LibraryLoans";
+import LibraryOverdue from "@/pages/bibliotheque/sections/LibraryOverdue";
+import LibraryReaders from "@/pages/bibliotheque/sections/LibraryReaders";
+import LibraryStats from "@/pages/bibliotheque/sections/LibraryStats";
+import LibraryReports from "@/pages/bibliotheque/sections/LibraryReports";
+import LibraryConfig from "@/pages/bibliotheque/sections/LibraryConfig";
+import CommunicationLayout from "@/pages/communication/CommunicationLayout";
+import CommunicationDashboard from "@/pages/communication/sections/CommunicationDashboard";
+import InboxSection from "@/pages/communication/sections/Inbox";
+import DirectMessages from "@/pages/communication/sections/DirectMessages";
+import EmailCampaigns from "@/pages/communication/sections/EmailCampaigns";
+import SmsCampaigns from "@/pages/communication/sections/SmsCampaigns";
+import PushNotifications from "@/pages/communication/sections/PushNotifications";
+import Announcements from "@/pages/communication/sections/Announcements";
+import MessageTemplates from "@/pages/communication/sections/MessageTemplates";
+import MailingLists from "@/pages/communication/sections/MailingLists";
+import MediaLibrary from "@/pages/communication/sections/MediaLibrary";
+import SendHistory from "@/pages/communication/sections/SendHistory";
+import CommunicationConfig from "@/pages/communication/sections/CommunicationConfig";
 import AttendanceLayout from "@/pages/presences/AttendanceLayout";
 import AttendanceDashboard from "@/pages/presences/sections/AttendanceDashboard";
 import DailyCall from "@/pages/presences/sections/DailyCall";
@@ -279,8 +304,33 @@ const App = () => (
               <Route path="rapports" element={<TransportReports />} />
               <Route path="configuration" element={<TransportConfig />} />
             </Route>
-            <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
-            <Route path="/communication" element={<Placeholder title="Communication" />} />
+            <Route path="/bibliotheque" element={<LibraryLayout />}>
+              <Route path="tableau" element={<LibraryDashboard />} />
+              <Route path="catalogue" element={<LibraryCatalog />} />
+              <Route path="recherche" element={<LibrarySearch />} />
+              <Route path="categories" element={<LibraryCategories />} />
+              <Route path="acquisitions" element={<LibraryAcquisitions />} />
+              <Route path="emprunts" element={<LibraryLoans />} />
+              <Route path="retards" element={<LibraryOverdue />} />
+              <Route path="lecteurs" element={<LibraryReaders />} />
+              <Route path="statistiques" element={<LibraryStats />} />
+              <Route path="rapports" element={<LibraryReports />} />
+              <Route path="configuration" element={<LibraryConfig />} />
+            </Route>
+            <Route path="/communication" element={<CommunicationLayout />}>
+              <Route path="tableau" element={<CommunicationDashboard />} />
+              <Route path="boite" element={<InboxSection />} />
+              <Route path="messages" element={<DirectMessages />} />
+              <Route path="emails" element={<EmailCampaigns />} />
+              <Route path="sms" element={<SmsCampaigns />} />
+              <Route path="push" element={<PushNotifications />} />
+              <Route path="annonces" element={<Announcements />} />
+              <Route path="modeles" element={<MessageTemplates />} />
+              <Route path="groupes" element={<MailingLists />} />
+              <Route path="medias" element={<MediaLibrary />} />
+              <Route path="envois" element={<SendHistory />} />
+              <Route path="configuration" element={<CommunicationConfig />} />
+            </Route>
             
             <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />
             <Route path="/parametres" element={<SettingsLayout />}>
