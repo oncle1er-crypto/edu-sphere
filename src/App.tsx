@@ -41,7 +41,19 @@ import ClassesSchedule from "@/pages/classes/sections/ClassesSchedule";
 import ClassesTransfers from "@/pages/classes/sections/ClassesTransfers";
 import ClassesReports from "@/pages/classes/sections/ClassesReports";
 import ClassesConfig from "@/pages/classes/sections/ClassesConfig";
-import Cantine from "@/pages/Cantine";
+import CanteenLayout from "@/pages/cantine/CanteenLayout";
+import CanteenDashboard from "@/pages/cantine/sections/CanteenDashboard";
+import CanteenMenus from "@/pages/cantine/sections/CanteenMenus";
+import CanteenPlanning from "@/pages/cantine/sections/CanteenPlanning";
+import CanteenDiets from "@/pages/cantine/sections/CanteenDiets";
+import CanteenTeam from "@/pages/cantine/sections/CanteenTeam";
+import CanteenSubscribers from "@/pages/cantine/sections/CanteenSubscribers";
+import CanteenBilling from "@/pages/cantine/sections/CanteenBilling";
+import CanteenStock from "@/pages/cantine/sections/CanteenStock";
+import CanteenIncidents from "@/pages/cantine/sections/CanteenIncidents";
+import CanteenStats from "@/pages/cantine/sections/CanteenStats";
+import CanteenReports from "@/pages/cantine/sections/CanteenReports";
+import CanteenConfig from "@/pages/cantine/sections/CanteenConfig";
 import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
 import SettingsLayout from "@/pages/parametres/SettingsLayout";
@@ -225,7 +237,20 @@ const App = () => (
               <Route path="rapports" element={<AttendanceReports />} />
               <Route path="configuration" element={<AttendanceConfig />} />
             </Route>
-            <Route path="/cantine" element={<Cantine />} />
+            <Route path="/cantine" element={<CanteenLayout />}>
+              <Route path="tableau" element={<CanteenDashboard />} />
+              <Route path="menus" element={<CanteenMenus />} />
+              <Route path="planning" element={<CanteenPlanning />} />
+              <Route path="regimes" element={<CanteenDiets />} />
+              <Route path="cuisine" element={<CanteenTeam />} />
+              <Route path="abonnes" element={<CanteenSubscribers />} />
+              <Route path="facturation" element={<CanteenBilling />} />
+              <Route path="stock" element={<CanteenStock />} />
+              <Route path="incidents" element={<CanteenIncidents />} />
+              <Route path="statistiques" element={<CanteenStats />} />
+              <Route path="rapports" element={<CanteenReports />} />
+              <Route path="configuration" element={<CanteenConfig />} />
+            </Route>
             <Route path="/transport" element={<Transport />} />
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
             <Route path="/communication" element={<Placeholder title="Communication" />} />
