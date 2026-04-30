@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, ClipboardList, CalendarRange, PenSquare, FileBarChart,
-  Award, GraduationCap, Users, BarChart3, FileSpreadsheet, Settings2, ShieldCheck,
+  Award, GraduationCap, Users, BarChart3, FileSpreadsheet, Settings2, ShieldCheck, Scale,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -21,6 +21,7 @@ const sections = [
   { to: "statistiques", label: "Statistiques & analyses", icon: BarChart3, group: "Analyses" },
   { to: "rapports", label: "Rapports pédagogiques", icon: FileSpreadsheet, group: "Analyses" },
 
+  { to: "baremes", label: "Grilles & coefficients", icon: Scale, group: "Système" },
   { to: "validation", label: "Validation & verrouillage", icon: ShieldCheck, group: "Système" },
   { to: "configuration", label: "Configuration", icon: Settings2, group: "Système" },
 ];
