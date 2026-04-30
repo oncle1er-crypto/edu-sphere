@@ -30,7 +30,17 @@ import StaffTraining from "@/pages/enseignants/sections/StaffTraining";
 import StaffEvaluations from "@/pages/enseignants/sections/StaffEvaluations";
 import StaffAdmin from "@/pages/enseignants/sections/StaffAdmin";
 import StaffConfig from "@/pages/enseignants/sections/StaffConfig";
-import Classes from "@/pages/Classes";
+import ClassesLayout from "@/pages/classes/ClassesLayout";
+import ClassesDashboard from "@/pages/classes/sections/ClassesDashboard";
+import ClassesList from "@/pages/classes/sections/ClassesList";
+import ClassesCycles from "@/pages/classes/sections/ClassesCycles";
+import ClassesRooms from "@/pages/classes/sections/ClassesRooms";
+import ClassesGroups from "@/pages/classes/sections/ClassesGroups";
+import ClassesEffectifs from "@/pages/classes/sections/ClassesEffectifs";
+import ClassesSchedule from "@/pages/classes/sections/ClassesSchedule";
+import ClassesTransfers from "@/pages/classes/sections/ClassesTransfers";
+import ClassesReports from "@/pages/classes/sections/ClassesReports";
+import ClassesConfig from "@/pages/classes/sections/ClassesConfig";
 import Cantine from "@/pages/Cantine";
 import Transport from "@/pages/Transport";
 import Placeholder from "@/pages/Placeholder";
@@ -119,7 +129,18 @@ const App = () => (
               <Route path="personnel" element={<StaffAdmin />} />
               <Route path="configuration" element={<StaffConfig />} />
             </Route>
-            <Route path="/classes" element={<Classes />} />
+            <Route path="/classes" element={<ClassesLayout />}>
+              <Route path="tableau" element={<ClassesDashboard />} />
+              <Route path="liste" element={<ClassesList />} />
+              <Route path="cycles" element={<ClassesCycles />} />
+              <Route path="salles" element={<ClassesRooms />} />
+              <Route path="groupes" element={<ClassesGroups />} />
+              <Route path="effectifs" element={<ClassesEffectifs />} />
+              <Route path="emploi" element={<ClassesSchedule />} />
+              <Route path="transferts" element={<ClassesTransfers />} />
+              <Route path="rapports" element={<ClassesReports />} />
+              <Route path="configuration" element={<ClassesConfig />} />
+            </Route>
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
             <Route path="/examens" element={<ExamsLayout />}>
