@@ -129,7 +129,18 @@ const App = () => (
               <Route path="personnel" element={<StaffAdmin />} />
               <Route path="configuration" element={<StaffConfig />} />
             </Route>
-            <Route path="/classes" element={<Classes />} />
+            <Route path="/classes" element={<ClassesLayout />}>
+              <Route path="tableau" element={<ClassesDashboard />} />
+              <Route path="liste" element={<ClassesList />} />
+              <Route path="cycles" element={<ClassesCycles />} />
+              <Route path="salles" element={<ClassesRooms />} />
+              <Route path="groupes" element={<ClassesGroups />} />
+              <Route path="effectifs" element={<ClassesEffectifs />} />
+              <Route path="emploi" element={<ClassesSchedule />} />
+              <Route path="transferts" element={<ClassesTransfers />} />
+              <Route path="rapports" element={<ClassesReports />} />
+              <Route path="configuration" element={<ClassesConfig />} />
+            </Route>
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
             <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
             <Route path="/examens" element={<ExamsLayout />}>
