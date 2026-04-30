@@ -6,7 +6,18 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
-import Eleves from "@/pages/Eleves";
+import StudentsLayout from "@/pages/eleves/StudentsLayout";
+import StudentsDashboard from "@/pages/eleves/sections/StudentsDashboard";
+import StudentsList from "@/pages/eleves/sections/StudentsList";
+import StudentsRegistration from "@/pages/eleves/sections/StudentsRegistration";
+import StudentsReregistration from "@/pages/eleves/sections/StudentsReregistration";
+import StudentsAssignment from "@/pages/eleves/sections/StudentsAssignment";
+import StudentsAttendance from "@/pages/eleves/sections/StudentsAttendance";
+import StudentsHealth from "@/pages/eleves/sections/StudentsHealth";
+import StudentsDiscipline from "@/pages/eleves/sections/StudentsDiscipline";
+import StudentsDocuments from "@/pages/eleves/sections/StudentsDocuments";
+import StudentsAlumni from "@/pages/eleves/sections/StudentsAlumni";
+import StudentsConfig from "@/pages/eleves/sections/StudentsConfig";
 import Enseignants from "@/pages/Enseignants";
 import Classes from "@/pages/Classes";
 import Cantine from "@/pages/Cantine";
@@ -71,7 +82,19 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/statistiques" element={<Dashboard />} />
-            <Route path="/eleves" element={<Eleves />} />
+            <Route path="/eleves" element={<StudentsLayout />}>
+              <Route path="tableau" element={<StudentsDashboard />} />
+              <Route path="liste" element={<StudentsList />} />
+              <Route path="inscription" element={<StudentsRegistration />} />
+              <Route path="reinscription" element={<StudentsReregistration />} />
+              <Route path="affectation" element={<StudentsAssignment />} />
+              <Route path="presences" element={<StudentsAttendance />} />
+              <Route path="sante" element={<StudentsHealth />} />
+              <Route path="discipline" element={<StudentsDiscipline />} />
+              <Route path="documents" element={<StudentsDocuments />} />
+              <Route path="anciens" element={<StudentsAlumni />} />
+              <Route path="configuration" element={<StudentsConfig />} />
+            </Route>
             <Route path="/enseignants" element={<Enseignants />} />
             <Route path="/classes" element={<Classes />} />
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
