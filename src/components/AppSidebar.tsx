@@ -15,6 +15,7 @@ import {
   UserCog,
   UtensilsCrossed,
   Bus,
+  ClipboardCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -45,6 +46,7 @@ const managementItems = [
 
 const academicItems = [
   { title: "Emploi du temps", url: "/emploi-du-temps", icon: Calendar },
+  { title: "Présences & Absences", url: "/presences", icon: ClipboardCheck },
   { title: "Examens & Notes", url: "/examens", icon: ClipboardList },
 ];
 

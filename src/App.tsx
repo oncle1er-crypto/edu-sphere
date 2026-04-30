@@ -89,6 +89,19 @@ import ExamsReports from "@/pages/examens/sections/Reports";
 import Validation from "@/pages/examens/sections/Validation";
 import ExamsConfig from "@/pages/examens/sections/ExamsConfig";
 import GradingScales from "@/pages/examens/sections/GradingScales";
+import AttendanceLayout from "@/pages/presences/AttendanceLayout";
+import AttendanceDashboard from "@/pages/presences/sections/AttendanceDashboard";
+import DailyCall from "@/pages/presences/sections/DailyCall";
+import StudentAbsences from "@/pages/presences/sections/StudentAbsences";
+import Tardiness from "@/pages/presences/sections/Tardiness";
+import Justifications from "@/pages/presences/sections/Justifications";
+import AttendanceSanctions from "@/pages/presences/sections/Sanctions";
+import StaffAttendance from "@/pages/presences/sections/StaffAttendance";
+import QrCheckIn from "@/pages/presences/sections/QrCheckIn";
+import ParentNotifications from "@/pages/presences/sections/ParentNotifications";
+import AttendanceStats from "@/pages/presences/sections/AttendanceStats";
+import AttendanceReports from "@/pages/presences/sections/AttendanceReports";
+import AttendanceConfig from "@/pages/presences/sections/AttendanceConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -173,6 +186,20 @@ const App = () => (
               <Route path="rapports" element={<Reports />} />
               <Route path="fiscalite" element={<Tax />} />
               <Route path="configuration" element={<FinanceConfig />} />
+            </Route>
+            <Route path="/presences" element={<AttendanceLayout />}>
+              <Route path="tableau" element={<AttendanceDashboard />} />
+              <Route path="appel" element={<DailyCall />} />
+              <Route path="absences" element={<StudentAbsences />} />
+              <Route path="retards" element={<Tardiness />} />
+              <Route path="justificatifs" element={<Justifications />} />
+              <Route path="sanctions" element={<AttendanceSanctions />} />
+              <Route path="personnel" element={<StaffAttendance />} />
+              <Route path="pointage" element={<QrCheckIn />} />
+              <Route path="notifications" element={<ParentNotifications />} />
+              <Route path="statistiques" element={<AttendanceStats />} />
+              <Route path="rapports" element={<AttendanceReports />} />
+              <Route path="configuration" element={<AttendanceConfig />} />
             </Route>
             <Route path="/cantine" element={<Cantine />} />
             <Route path="/transport" element={<Transport />} />
