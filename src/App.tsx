@@ -164,6 +164,13 @@ import Conflicts from "@/pages/emploi/sections/Conflicts";
 import TimetableNotifications from "@/pages/emploi/sections/Notifications";
 import Printing from "@/pages/emploi/sections/Printing";
 import TimetableConfig from "@/pages/emploi/sections/TimetableConfig";
+import SchoolsLayout from "@/pages/ecoles/SchoolsLayout";
+import SchoolsDashboard from "@/pages/ecoles/sections/SchoolsDashboard";
+import SchoolsList from "@/pages/ecoles/sections/SchoolsList";
+import SchoolsCreate from "@/pages/ecoles/sections/SchoolsCreate";
+import SchoolsStats from "@/pages/ecoles/sections/SchoolsStats";
+import SchoolsConfig from "@/pages/ecoles/sections/SchoolsConfig";
+import { EcoleProvider } from "@/context/EcoleContext";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -174,6 +181,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <EcoleProvider>
         <AppLayout>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -216,7 +224,13 @@ const App = () => (
               <Route path="rapports" element={<ClassesReports />} />
               <Route path="configuration" element={<ClassesConfig />} />
             </Route>
-            <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
+            <Route path="/ecoles" element={<SchoolsLayout />}>
+              <Route path="tableau" element={<SchoolsDashboard />} />
+              <Route path="liste" element={<SchoolsList />} />
+              <Route path="nouvelle" element={<SchoolsCreate />} />
+              <Route path="statistiques" element={<SchoolsStats />} />
+              <Route path="configuration" element={<SchoolsConfig />} />
+            </Route>
             <Route path="/emploi-du-temps" element={<TimetableLayout />}>
               <Route path="tableau" element={<TimetableDashboard />} />
               <Route path="hebdomadaire" element={<WeeklyView />} />
@@ -353,6 +367,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
+        </EcoleProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
