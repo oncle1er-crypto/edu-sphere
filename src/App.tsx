@@ -102,6 +102,18 @@ import ParentNotifications from "@/pages/presences/sections/ParentNotifications"
 import AttendanceStats from "@/pages/presences/sections/AttendanceStats";
 import AttendanceReports from "@/pages/presences/sections/AttendanceReports";
 import AttendanceConfig from "@/pages/presences/sections/AttendanceConfig";
+import TimetableLayout from "@/pages/emploi/TimetableLayout";
+import TimetableDashboard from "@/pages/emploi/sections/TimetableDashboard";
+import WeeklyView from "@/pages/emploi/sections/WeeklyView";
+import AutoGenerate from "@/pages/emploi/sections/AutoGenerate";
+import SubjectsVolumes from "@/pages/emploi/sections/SubjectsVolumes";
+import TeacherAvailability from "@/pages/emploi/sections/TeacherAvailability";
+import RoomAssignment from "@/pages/emploi/sections/RoomAssignment";
+import Substitutions from "@/pages/emploi/sections/Substitutions";
+import Conflicts from "@/pages/emploi/sections/Conflicts";
+import TimetableNotifications from "@/pages/emploi/sections/Notifications";
+import Printing from "@/pages/emploi/sections/Printing";
+import TimetableConfig from "@/pages/emploi/sections/TimetableConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -155,7 +167,19 @@ const App = () => (
               <Route path="configuration" element={<ClassesConfig />} />
             </Route>
             <Route path="/ecoles" element={<Placeholder title="Gestion des Écoles" />} />
-            <Route path="/emploi-du-temps" element={<Placeholder title="Emploi du Temps" />} />
+            <Route path="/emploi-du-temps" element={<TimetableLayout />}>
+              <Route path="tableau" element={<TimetableDashboard />} />
+              <Route path="hebdomadaire" element={<WeeklyView />} />
+              <Route path="generation" element={<AutoGenerate />} />
+              <Route path="matieres" element={<SubjectsVolumes />} />
+              <Route path="enseignants" element={<TeacherAvailability />} />
+              <Route path="salles" element={<RoomAssignment />} />
+              <Route path="remplacements" element={<Substitutions />} />
+              <Route path="conflits" element={<Conflicts />} />
+              <Route path="notifications" element={<TimetableNotifications />} />
+              <Route path="impression" element={<Printing />} />
+              <Route path="configuration" element={<TimetableConfig />} />
+            </Route>
             <Route path="/examens" element={<ExamsLayout />}>
               <Route path="tableau" element={<ExamsDashboard />} />
               <Route path="calendrier" element={<ExamsCalendar />} />
