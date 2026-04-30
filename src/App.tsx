@@ -264,7 +264,21 @@ const App = () => (
               <Route path="rapports" element={<CanteenReports />} />
               <Route path="configuration" element={<CanteenConfig />} />
             </Route>
-            <Route path="/transport" element={<Transport />} />
+            <Route path="/transport" element={<TransportLayout />}>
+              <Route path="tableau" element={<TransportDashboard />} />
+              <Route path="lignes" element={<TransportLines />} />
+              <Route path="vehicules" element={<TransportVehicles />} />
+              <Route path="chauffeurs" element={<TransportDrivers />} />
+              <Route path="maintenance" element={<TransportMaintenance />} />
+              <Route path="carburant" element={<TransportFuel />} />
+              <Route path="abonnes" element={<TransportSubscribers />} />
+              <Route path="facturation" element={<TransportBilling />} />
+              <Route path="incidents" element={<TransportIncidents />} />
+              <Route path="alertes" element={<TransportAlerts />} />
+              <Route path="statistiques" element={<TransportStats />} />
+              <Route path="rapports" element={<TransportReports />} />
+              <Route path="configuration" element={<TransportConfig />} />
+            </Route>
             <Route path="/bibliotheque" element={<Placeholder title="Bibliothèque" />} />
             <Route path="/communication" element={<Placeholder title="Communication" />} />
             
