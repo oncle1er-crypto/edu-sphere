@@ -43,7 +43,7 @@ export default function Payments() {
 
   const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
 
-  const classesDispo = useMemo(() => {
+  const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
   }, [cycle, ELEVES_SCOLARITE]);
