@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
-import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, Phone, Mail, MessageSquare } from "lucide-react";
+import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LockBanner } from "@/components/LockGuard";
 import { useLock } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
@@ -17,34 +18,55 @@ import {
   ELEVES_SCOLARITE, statutEleve, STATUT_LABEL, STATUT_CLASS, fcfa,
   type EleveScolarite, type Cycle,
 } from "../scolarite-data";
+import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
-const STATUTS: ("all" | "ajour" | "partiel" | "retard")[] = ["all", "ajour", "partiel", "retard"];
+
+interface AdvSearch {
+  nom: string;
+  prenom: string;
+  classe: string;
+  telephone: string;
+}
+
+const EMPTY_ADV: AdvSearch = { nom: "", prenom: "", classe: "", telephone: "" };
 
 export default function Payments() {
   const lock = useLock("paiements");
   const [search, setSearch] = useState("");
+  const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
+  const [advOpen, setAdvOpen] = useState(false);
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [classe, setClasse] = useState<string>("all");
   const [statut, setStatut] = useState<"all" | "ajour" | "partiel" | "retard">("all");
   const [selected, setSelected] = useState<EleveScolarite | null>(null);
+  const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
 
-  // Liste des classes disponibles (filtrée par cycle si sélectionné)
+  const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
+
   const classesDispo = useMemo(() => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
   }, [cycle]);
 
   const filtered = useMemo(() => {
+    const norm = (s: string) => s.toLowerCase().trim();
     return ELEVES_SCOLARITE.filter((e) => {
-      const s = search.toLowerCase().trim();
-      const matchSearch = !s || `${e.prenom} ${e.nom} ${e.matricule} ${e.classe} ${e.parent}`.toLowerCase().includes(s);
+      // recherche globale
+      const s = norm(search);
+      const matchSearch = !s || `${e.prenom} ${e.nom} ${e.matricule} ${e.classe} ${e.parent} ${e.telephone}`.toLowerCase().includes(s);
+      // recherche avancée par champ
+      const matchNom = !adv.nom || norm(e.nom).includes(norm(adv.nom));
+      const matchPrenom = !adv.prenom || norm(e.prenom).includes(norm(adv.prenom));
+      const matchClasseAdv = !adv.classe || norm(e.classe).includes(norm(adv.classe));
+      const matchTel = !adv.telephone || e.telephone.replace(/\s/g, "").includes(adv.telephone.replace(/\s/g, ""));
+      // filtres
       const matchCycle = cycle === "all" || e.cycle === cycle;
       const matchClasse = classe === "all" || e.classe === classe;
       const matchStatut = statut === "all" || statutEleve(e) === statut;
-      return matchSearch && matchCycle && matchClasse && matchStatut;
+      return matchSearch && matchNom && matchPrenom && matchClasseAdv && matchTel && matchCycle && matchClasse && matchStatut;
     });
-  }, [search, cycle, classe, statut]);
+  }, [search, adv, cycle, classe, statut]);
 
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
@@ -52,11 +74,15 @@ export default function Payments() {
     return { att, pay, du: att - pay, count: filtered.length };
   }, [filtered]);
 
+  const openFiche = (e: EleveScolarite, trancheNum?: number) => {
+    setSelected(e);
+    setOpenTrancheNum(trancheNum);
+  };
+
   return (
     <div className="space-y-6">
       <LockBanner module="paiements" />
 
-      {/* KPIs filtrés */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Élèves filtrés</p><p className="text-xl font-bold font-display text-primary mt-1">{stats.count}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Attendu</p><p className="text-xl font-bold font-display text-primary mt-1">{fcfa(stats.att)}</p></CardContent></Card>
@@ -66,21 +92,62 @@ export default function Payments() {
 
       <SettingsSection
         title="Registre des familles — Scolarité"
-        description="Suivi élève par élève : tranches, paiements, échéances et relances."
+        description="Suivi élève par élève. Cliquez sur un badge T1/T2/T3 pour voir le détail de la tranche."
         icon={<CreditCard className="h-5 w-5" />}
         hideSave
       >
-        {/* Barre filtres */}
         <div className="flex flex-wrap gap-2">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Rechercher (nom, matricule, classe, parent…)"
+              placeholder="Rechercher (nom, matricule, classe, parent, téléphone…)"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>
+
+          <Popover open={advOpen} onOpenChange={setAdvOpen}>
+            <PopoverTrigger asChild>
+              <Button variant={advActive ? "default" : "outline"} size="sm">
+                <Search className="h-4 w-4" />
+                Recherche avancée
+                {advActive && <Badge variant="secondary" className="ml-1 h-5 px-1.5">●</Badge>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 bg-popover" align="end">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-sm">Recherche avancée</h4>
+                  {advActive && (
+                    <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => setAdv(EMPTY_ADV)}>
+                      <X className="h-3 w-3" />Effacer
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <div>
+                    <Label className="text-xs">Nom</Label>
+                    <Input value={adv.nom} onChange={(e) => setAdv({ ...adv, nom: e.target.value })} placeholder="MBALLA" className="h-8" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Prénom</Label>
+                    <Input value={adv.prenom} onChange={(e) => setAdv({ ...adv, prenom: e.target.value })} placeholder="Junior" className="h-8" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Classe</Label>
+                    <Input value={adv.classe} onChange={(e) => setAdv({ ...adv, classe: e.target.value })} placeholder="6e B, CM1, Tle C…" className="h-8" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Téléphone parent</Label>
+                    <Input value={adv.telephone} onChange={(e) => setAdv({ ...adv, telephone: e.target.value })} placeholder="+225 07…" className="h-8" />
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">Les champs se combinent (ET logique).</p>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Select value={cycle} onValueChange={(v) => { setCycle(v as Cycle | "all"); setClasse("all"); }}>
             <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -95,7 +162,7 @@ export default function Payments() {
             </SelectContent>
           </Select>
           <Select value={statut} onValueChange={(v) => setStatut(v as typeof statut)}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous statuts</SelectItem>
               <SelectItem value="ajour">À jour</SelectItem>
@@ -117,7 +184,17 @@ export default function Payments() {
           </ConfirmButton>
         </div>
 
-        {/* Tableau registre */}
+        {/* Récap critères avancés actifs */}
+        {advActive && (
+          <div className="flex flex-wrap gap-2 items-center text-xs">
+            <span className="text-muted-foreground">Critères avancés :</span>
+            {adv.nom && <Badge variant="outline">Nom: {adv.nom}</Badge>}
+            {adv.prenom && <Badge variant="outline">Prénom: {adv.prenom}</Badge>}
+            {adv.classe && <Badge variant="outline">Classe: {adv.classe}</Badge>}
+            {adv.telephone && <Badge variant="outline">Tél: {adv.telephone}</Badge>}
+          </div>
+        )}
+
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
@@ -136,14 +213,14 @@ export default function Payments() {
                 const st = statutEleve(e);
                 const pct = Math.round((e.totalPaye / e.fraisAnnuel) * 100);
                 return (
-                  <TableRow key={e.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => setSelected(e)}>
-                    <TableCell>
+                  <TableRow key={e.id} className="hover:bg-muted/30">
+                    <TableCell className="cursor-pointer" onClick={() => openFiche(e)}>
                       <div>
                         <p className="font-semibold">{e.prenom} {e.nom}</p>
                         <p className="text-[11px] text-muted-foreground font-mono">{e.matricule}</p>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="cursor-pointer" onClick={() => openFiche(e)}>
                       <div>
                         <p className="text-sm font-medium">{e.classe}</p>
                         <p className="text-[11px] text-muted-foreground">{e.cycle}</p>
@@ -152,29 +229,30 @@ export default function Payments() {
                     <TableCell>
                       <div className="flex gap-1">
                         {e.tranches.map((t) => (
-                          <div
+                          <button
                             key={t.num}
-                            title={`${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)}`}
+                            onClick={(ev) => { ev.stopPropagation(); openFiche(e, t.num); }}
+                            title={`${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance} · cliquer pour voir le détail`}
                             className={
-                              "h-6 w-6 rounded flex items-center justify-center text-[10px] font-bold border " +
-                              (t.statut === "payee" ? "bg-accent/20 text-accent border-accent/40" :
-                               t.statut === "partielle" ? "bg-orange-500/20 text-orange-600 border-orange-500/40" :
-                               t.statut === "retard" ? "bg-destructive/20 text-destructive border-destructive/40" :
-                               "bg-muted text-muted-foreground border-border")
+                              "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition hover:scale-110 hover:shadow cursor-pointer " +
+                              (t.statut === "payee" ? "bg-accent/20 text-accent border-accent/40 hover:bg-accent/30" :
+                               t.statut === "partielle" ? "bg-orange-500/20 text-orange-600 border-orange-500/40 hover:bg-orange-500/30" :
+                               t.statut === "retard" ? "bg-destructive/20 text-destructive border-destructive/40 hover:bg-destructive/30" :
+                               "bg-muted text-muted-foreground border-border hover:bg-muted/80")
                             }
-                          >T{t.num}</div>
+                          >T{t.num}</button>
                         ))}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right cursor-pointer" onClick={() => openFiche(e)}>
                       <p className="text-sm font-semibold">{fcfa(e.totalPaye)}</p>
                       <p className="text-[11px] text-muted-foreground">/ {fcfa(e.fraisAnnuel)}</p>
                     </TableCell>
-                    <TableCell className="min-w-[120px]">
+                    <TableCell className="min-w-[120px] cursor-pointer" onClick={() => openFiche(e)}>
                       <Progress value={pct} className="h-2" />
                       <p className="text-[11px] text-muted-foreground mt-1">{pct}%</p>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="cursor-pointer" onClick={() => openFiche(e)}>
                       <Badge variant="outline" className={STATUT_CLASS[st]}>
                         {st === "ajour" && <CheckCircle2 className="h-3 w-3" />}
                         {st === "partiel" && <Clock className="h-3 w-3" />}
@@ -184,7 +262,7 @@ export default function Payments() {
                       {e.joursRetard > 0 && <p className="text-[10px] text-destructive mt-1">{e.joursRetard}j retard</p>}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="sm" variant="ghost" onClick={(ev) => { ev.stopPropagation(); setSelected(e); }}>
+                      <Button size="sm" variant="ghost" onClick={() => openFiche(e)}>
                         <Eye className="h-4 w-4" />
                       </Button>
                     </TableCell>
@@ -199,81 +277,11 @@ export default function Payments() {
         </div>
       </SettingsSection>
 
-      {/* Drawer détail élève */}
-      <Sheet open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
-          {selected && (
-            <>
-              <SheetHeader>
-                <SheetTitle className="text-primary">{selected.prenom} {selected.nom}</SheetTitle>
-                <SheetDescription>
-                  {selected.classe} · {selected.cycle} · <span className="font-mono">{selected.matricule}</span>
-                </SheetDescription>
-              </SheetHeader>
-
-              <div className="mt-6 space-y-5">
-                {/* Contact parent */}
-                <Card className="border">
-                  <CardContent className="p-4">
-                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Parent / Tuteur</p>
-                    <p className="font-semibold">{selected.parent}</p>
-                    <p className="text-sm text-muted-foreground">{selected.telephone}</p>
-                    <div className="flex gap-2 mt-3">
-                      <Button size="sm" variant="outline"><Phone className="h-4 w-4" />Appeler</Button>
-                      <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" />SMS</Button>
-                      <Button size="sm" variant="outline"><Mail className="h-4 w-4" />Email</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Synthèse financière */}
-                <div className="grid grid-cols-3 gap-2">
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-sm font-bold text-primary">{fcfa(selected.fraisAnnuel)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Payé</p><p className="text-sm font-bold text-accent">{fcfa(selected.totalPaye)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(selected.resteDu)}</p></CardContent></Card>
-                </div>
-
-                {/* Détail tranches */}
-                <div>
-                  <h4 className="text-sm font-bold mb-3">Détail des tranches</h4>
-                  <div className="space-y-3">
-                    {selected.tranches.map((t) => (
-                      <Card key={t.num} className="border">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-semibold text-sm">{t.label}</p>
-                              <p className="text-[11px] text-muted-foreground">Échéance : {t.echeance}</p>
-                            </div>
-                            <Badge variant="outline" className={
-                              t.statut === "payee" ? "bg-accent/15 text-accent border-accent/30" :
-                              t.statut === "partielle" ? "bg-orange-500/15 text-orange-600 border-orange-500/30" :
-                              t.statut === "retard" ? "bg-destructive/15 text-destructive border-destructive/30" :
-                              "bg-muted text-muted-foreground"
-                            }>
-                              {t.statut === "payee" ? "Payée" : t.statut === "partielle" ? "Partielle" : t.statut === "retard" ? "En retard" : "À échoir"}
-                            </Badge>
-                          </div>
-                          <div className="mt-3">
-                            <div className="flex justify-between text-xs mb-1">
-                              <span className="text-muted-foreground">Versé</span>
-                              <span className="font-semibold">{fcfa(t.paye)} / {fcfa(t.montant)} FCFA</span>
-                            </div>
-                            <Progress value={(t.paye / t.montant) * 100} className="h-2" />
-                          </div>
-                          {t.statut !== "payee" && (
-                            <Button size="sm" className="mt-3 w-full"><Plus className="h-4 w-4" />Encaisser cette tranche</Button>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </SheetContent>
-      </Sheet>
+      <StudentDetailDrawer
+        eleve={selected}
+        openTrancheNum={openTrancheNum}
+        onOpenChange={(o) => { if (!o) { setSelected(null); setOpenTrancheNum(undefined); } }}
+      />
     </div>
   );
 }
