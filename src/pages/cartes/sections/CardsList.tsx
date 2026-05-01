@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Eye, Search, Printer, Plus, Layers, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SchoolCard } from "@/pages/cartes/components/SchoolCard";
@@ -34,6 +38,7 @@ export default function CardsList() {
   const [type, setType] = useState<CardType | "all">("all");
   const [statut, setStatut] = useState<CardStatut | "all">("all");
   const [preview, setPreview] = useState<typeof cards[number] | null>(null);
+  const [toReissue, setToReissue] = useState<typeof cards[number] | null>(null);
 
   const reissue = (c: typeof cards[number]) => {
     const today = new Date().toISOString().slice(0, 10);
@@ -141,7 +146,7 @@ export default function CardsList() {
                   <Button size="sm" variant="ghost" onClick={() => setPreview(c)} title="Aperçu">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => reissue(c)} title="Réémettre">
+                  <Button size="sm" variant="ghost" onClick={() => setToReissue(c)} title="Réémettre">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => window.print()} title="Imprimer">
@@ -173,6 +178,34 @@ export default function CardsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toReissue} onOpenChange={(o) => !o && setToReissue(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la réémission ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toReissue && (
+                <>
+                  Une nouvelle carte sera générée pour <strong>{toReissue.prenom} {toReissue.nom}</strong>{" "}
+                  (matricule <span className="font-mono">{toReissue.matricule}</span>).
+                  L'ancienne carte reste dans l'historique. Cette action est définitive.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toReissue) reissue(toReissue);
+                setToReissue(null);
+              }}
+            >
+              Réémettre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
