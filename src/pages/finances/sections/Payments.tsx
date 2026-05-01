@@ -1,11 +1,13 @@
 import { CreditCard, Plus, Smartphone, Banknote, Building2, CreditCard as CardIcon } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockBanner } from "@/components/LockGuard";
 import { useLock } from "@/context/AcademicPeriodContext";
+import { toast } from "sonner";
 
 const methodStats = [
   { name: "MTN Mobile Money", count: 142, amount: "5 320 000", icon: Smartphone, color: "text-yellow-600 bg-yellow-500/15" },
