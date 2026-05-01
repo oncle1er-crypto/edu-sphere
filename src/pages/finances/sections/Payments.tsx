@@ -23,8 +23,11 @@ const payments = [
 ];
 
 export default function Payments() {
+  const lock = useLock("paiements");
   return (
     <div className="space-y-6">
+      <LockBanner module="paiements" />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {methodStats.map((m) => (
           <Card key={m.name} className="border shadow-[var(--shadow-card)]">
@@ -47,7 +50,7 @@ export default function Payments() {
         hideSave
       >
         <div className="flex justify-end">
-          <Button size="sm">
+          <Button size="sm" disabled={lock.locked} title={lock.locked ? lock.reason : undefined}>
             <Plus className="h-4 w-4" />
             Saisir un paiement
           </Button>
