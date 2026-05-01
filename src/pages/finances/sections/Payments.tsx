@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X } from "lucide-react";
+import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ConfirmButton";
@@ -14,10 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { LockBanner } from "@/components/LockGuard";
 import { useLock } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
-import {
-  ELEVES_SCOLARITE, statutEleve, STATUT_LABEL, STATUT_CLASS, fcfa,
-  type EleveScolarite, type Cycle,
-} from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, STATUT_LABEL, STATUT_CLASS, type EleveScolarite, type Cycle } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
