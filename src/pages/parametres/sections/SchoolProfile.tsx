@@ -32,25 +32,30 @@ export default function SchoolProfile() {
       </FieldRow>
 
       <FieldRow label="Devise / slogan">
-        <Input defaultValue="La Providence guide nos pas vers l'excellence" />
+        <Input defaultValue="Foi, Savoir, Excellence" />
       </FieldRow>
 
       <FieldRow label="Type d'établissement">
-        <Select defaultValue="mixte">
+        <Select defaultValue="catholique">
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="maternelle">Maternelle</SelectItem>
-            <SelectItem value="primaire">Primaire</SelectItem>
-            <SelectItem value="college">Collège</SelectItem>
-            <SelectItem value="lycee">Lycée</SelectItem>
-            <SelectItem value="universite">Université</SelectItem>
-            <SelectItem value="mixte">Mixte (Maternelle → Lycée)</SelectItem>
+            <SelectItem value="catholique">Privé confessionnel catholique</SelectItem>
+            <SelectItem value="prive">Privé laïc</SelectItem>
+            <SelectItem value="public">Public</SelectItem>
           </SelectContent>
         </Select>
       </FieldRow>
 
-      <FieldRow label="N° d'agrément">
-        <Input defaultValue="MEN/2018/00457" />
+      <FieldRow label="Cycles">
+        <Input defaultValue="Maternelle • Primaire • Collège • Lycée" />
+      </FieldRow>
+
+      <FieldRow label="Diocèse de rattachement">
+        <Input defaultValue="Archidiocèse d'Abidjan" />
+      </FieldRow>
+
+      <FieldRow label="N° d'agrément (MENA)">
+        <Input defaultValue="MENA/DESPRIV/2018/00457" />
       </FieldRow>
 
       <FieldRow label="Année de création">
