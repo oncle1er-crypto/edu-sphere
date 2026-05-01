@@ -360,7 +360,7 @@ export default function Unpaid() {
               <SelectItem value="nom:desc">Nom (Z → A)</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><Mail className="h-4 w-4" />Email groupé</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><MessageSquare className="h-4 w-4" />Email groupé</Button>
           <Button size="sm" onClick={() => {
             enRetard.forEach((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone }));
             toast.success(`${enRetard.length} SMS de relance envoyés`);
