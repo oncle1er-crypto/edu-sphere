@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, Mail, MessageSquare, Printer, Plus, FileText } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,10 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  ELEVES_SCOLARITE, statutEleve, STATUT_LABEL, STATUT_CLASS, fcfa,
-  type Cycle,
-} from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
