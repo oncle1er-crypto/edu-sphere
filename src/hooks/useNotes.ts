@@ -52,7 +52,8 @@ export function useNotes() {
   ) => {
     if (!ecoleId) return false;
 
-    // Upsert: delete existing then insert
+    // Use upsert approach: delete all existing then re-insert
+    // This is safer than individual upserts for bulk grade entry
     const { error: delError } = await supabase
       .from("notes")
       .delete()
@@ -61,22 +62,69 @@ export function useNotes() {
 
     if (delError) { toast.error(delError.message); return false; }
 
-    const rows = notesData.map((n) => ({
-      evaluation_id: evaluationId,
-      ecole_id: ecoleId,
-      eleve_id: n.eleve_id,
-      note: n.note,
-      absent: n.absent,
-      commentaire: n.commentaire || null,
-    }));
+    // Only insert rows that have either a note or are marked absent
+    const rows = notesData
+      .filter(n => n.note !== null || n.absent)
+      .map((n) => ({
+        evaluation_id: evaluationId,
+        ecole_id: ecoleId,
+        eleve_id: n.eleve_id,
+        note: n.absent ? null : n.note,
+        absent: n.absent,
+        commentaire: n.commentaire?.trim() || null,
+      }));
 
-    if (rows.length === 0) { toast.success("Notes enregistrées"); return true; }
+    if (rows.length === 0) {
+      toast.success("Notes enregistrées (aucune saisie)");
+      return true;
+    }
 
     const { error } = await supabase.from("notes").insert(rows);
     if (error) { toast.error(error.message); return false; }
-    toast.success("Notes enregistrées avec succès");
+    toast.success(`${rows.length} note(s) enregistrée(s) avec succès`);
     return true;
   };
 
-  return { notes, loading, fetchNotesByEvaluation, saveNotes, ecoleId };
+  const saveSingleNote = async (
+    evaluationId: string,
+    eleveId: string,
+    data: { note: number | null; absent: boolean; commentaire?: string }
+  ) => {
+    if (!ecoleId) return false;
+
+    // Check if note exists
+    const { data: existing } = await supabase
+      .from("notes")
+      .select("id")
+      .eq("evaluation_id", evaluationId)
+      .eq("eleve_id", eleveId)
+      .eq("ecole_id", ecoleId)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("notes")
+        .update({
+          note: data.absent ? null : data.note,
+          absent: data.absent,
+          commentaire: data.commentaire?.trim() || null,
+        })
+        .eq("id", existing.id);
+      if (error) { toast.error(error.message); return false; }
+    } else {
+      if (data.note === null && !data.absent) return true; // nothing to save
+      const { error } = await supabase.from("notes").insert({
+        evaluation_id: evaluationId,
+        ecole_id: ecoleId,
+        eleve_id: eleveId,
+        note: data.absent ? null : data.note,
+        absent: data.absent,
+        commentaire: data.commentaire?.trim() || null,
+      });
+      if (error) { toast.error(error.message); return false; }
+    }
+    return true;
+  };
+
+  return { notes, loading, fetchNotesByEvaluation, saveNotes, saveSingleNote, ecoleId };
 }
