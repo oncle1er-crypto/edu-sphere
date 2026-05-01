@@ -113,7 +113,7 @@ export default function LoginPage() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="directeur@gsp.ci"
+                  placeholder="admin@gsp.ci"
                   className="pl-10"
                   required
                 />
