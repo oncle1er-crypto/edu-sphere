@@ -17,14 +17,21 @@ const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", 
 export default function Unpaid() {
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
+  const [classe, setClasse] = useState<string>("all");
+
+  const classesDispo = useMemo(() => {
+    const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
+    return Array.from(new Set(src.map((e) => e.classe))).sort();
+  }, [cycle]);
 
   const enRetard = useMemo(() =>
     ELEVES_SCOLARITE
       .filter((e) => statutEleve(e) !== "ajour")
       .filter((e) => cycle === "all" || e.cycle === cycle)
+      .filter((e) => classe === "all" || e.classe === classe)
       .filter((e) => !search || `${e.prenom} ${e.nom} ${e.classe}`.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => b.joursRetard - a.joursRetard),
-    [search, cycle]
+    [search, cycle, classe]
   );
 
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
