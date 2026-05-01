@@ -453,10 +453,14 @@ const App = () => (
               <Route path="avance" element={<AdvancedSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AppLayout>
+              </RequireAuth>
+            } />
           </Routes>
-        </AppLayout>
         </AcademicPeriodProvider>
         </EcoleProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
