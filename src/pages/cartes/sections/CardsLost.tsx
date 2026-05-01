@@ -1,5 +1,6 @@
 import { useCards, type CardStatut } from "@/pages/cartes/context/CardsContext";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ShieldAlert, Ban, RotateCcw } from "lucide-react";
