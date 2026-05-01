@@ -4,6 +4,30 @@ import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
 
+async function checkOverlap(
+  ecoleId: string,
+  anneeId: string,
+  classeId: string,
+  enseignantId: string | null,
+  jour: number,
+  heureDebut: string,
+  heureFin: string,
+  excludeId?: string
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc("check_creneau_overlap" as any, {
+    _ecole_id: ecoleId,
+    _annee_id: anneeId,
+    _classe_id: classeId,
+    _enseignant_id: enseignantId,
+    _jour: jour,
+    _heure_debut: heureDebut,
+    _heure_fin: heureFin,
+    _exclude_id: excludeId ?? null,
+  });
+  if (error) { console.error(error); return null; }
+  return (data as string) ?? null;
+}
+
 export interface Creneau {
   id: string;
   ecole_id: string;
