@@ -360,6 +360,13 @@ export type Database = {
             referencedRelation: "ecoles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "classes_prof_principal_id_fkey"
+            columns: ["professeur_principal_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cycles: {

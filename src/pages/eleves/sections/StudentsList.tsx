@@ -7,36 +7,42 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, Search, Plus, Download, MoreHorizontal, Filter } from "lucide-react";
+import { Users, Search, Plus, Download, MoreHorizontal, Filter, Loader2 } from "lucide-react";
+import { useEleves } from "@/hooks/useEleves";
+import { useCycles } from "@/hooks/useCycles";
 
-const STUDENTS = [
-  { id: "ELV-001", nom: "Diallo", prenom: "Aminata", sexe: "F", classe: "3ème A", cycle: "Collège", dateNaissance: "12/05/2011", parent: "Mamadou Diallo", contact: "+223 76 12 34 56", statut: "Actif" },
-  { id: "ELV-002", nom: "Traoré", prenom: "Moussa", sexe: "M", classe: "6ème B", cycle: "Collège", dateNaissance: "03/09/2014", parent: "Awa Traoré", contact: "+223 66 78 90 12", statut: "Actif" },
-  { id: "ELV-003", nom: "Koné", prenom: "Fatou", sexe: "F", classe: "Tle S1", cycle: "Lycée", dateNaissance: "22/01/2008", parent: "Ibrahim Koné", contact: "+223 70 45 67 89", statut: "Actif" },
-  { id: "ELV-004", nom: "Camara", prenom: "Ibrahim", sexe: "M", classe: "2nde C", cycle: "Lycée", dateNaissance: "15/07/2009", parent: "Salif Camara", contact: "+223 65 23 45 67", statut: "Suspendu" },
-  { id: "ELV-005", nom: "Bamba", prenom: "Aïcha", sexe: "F", classe: "CM2", cycle: "Primaire", dateNaissance: "28/11/2013", parent: "Ousmane Bamba", contact: "+223 78 56 78 90", statut: "Actif" },
-  { id: "ELV-006", nom: "Coulibaly", prenom: "Seydou", sexe: "M", classe: "CE1", cycle: "Primaire", dateNaissance: "07/03/2016", parent: "Kadiatou Coulibaly", contact: "+223 69 12 34 56", statut: "Actif" },
-  { id: "ELV-007", nom: "Sangaré", prenom: "Mariam", sexe: "F", classe: "1ère L", cycle: "Lycée", dateNaissance: "19/08/2009", parent: "Adama Sangaré", contact: "+223 74 90 12 34", statut: "Actif" },
-  { id: "ELV-008", nom: "Keita", prenom: "Oumar", sexe: "M", classe: "GS", cycle: "Maternelle", dateNaissance: "30/04/2019", parent: "Fanta Keita", contact: "+223 67 34 56 78", statut: "Actif" },
-];
+const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
-const initials = (n: string, p: string) => `${p[0] ?? ""}${n[0] ?? ""}`.toUpperCase();
+const formatDate = (d: string | null) => {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("fr-FR");
+};
 
 export default function StudentsList() {
+  const { eleves, loading } = useEleves();
+  const { cycles } = useCycles();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
 
-  const filtered = STUDENTS.filter((s) => {
+  const filtered = eleves.filter((s) => {
     const matchSearch =
       s.nom.toLowerCase().includes(search.toLowerCase()) ||
       s.prenom.toLowerCase().includes(search.toLowerCase()) ||
-      s.id.toLowerCase().includes(search.toLowerCase()) ||
-      s.classe.toLowerCase().includes(search.toLowerCase());
-    const matchCycle = cycle === "all" || s.cycle === cycle;
+      s.matricule.toLowerCase().includes(search.toLowerCase()) ||
+      (s.classe_nom ?? "").toLowerCase().includes(search.toLowerCase());
+    const matchCycle = cycle === "all" || s.cycle_nom === cycle;
     const matchStatut = statut === "all" || s.statut === statut;
     return matchSearch && matchCycle && matchStatut;
   });
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <SettingsSection
@@ -60,19 +66,19 @@ export default function StudentsList() {
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les cycles</SelectItem>
-              <SelectItem value="Maternelle">Maternelle</SelectItem>
-              <SelectItem value="Primaire">Primaire</SelectItem>
-              <SelectItem value="Collège">Collège</SelectItem>
-              <SelectItem value="Lycée">Lycée</SelectItem>
+              {cycles.map((c) => (
+                <SelectItem key={c.id} value={c.nom}>{c.nom}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Select value={statut} onValueChange={setStatut}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous statuts</SelectItem>
-              <SelectItem value="Actif">Actif</SelectItem>
-              <SelectItem value="Suspendu">Suspendu</SelectItem>
-              <SelectItem value="Sorti">Sorti</SelectItem>
+              <SelectItem value="inscrit">Inscrit</SelectItem>
+              <SelectItem value="actif">Actif</SelectItem>
+              <SelectItem value="suspendu">Suspendu</SelectItem>
+              <SelectItem value="sorti">Sorti</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Filter className="h-4 w-4" />Plus</Button>
@@ -89,7 +95,6 @@ export default function StudentsList() {
               <TableHead>Élève</TableHead>
               <TableHead>Classe</TableHead>
               <TableHead className="hidden md:table-cell">Né(e) le</TableHead>
-              <TableHead className="hidden lg:table-cell">Parent / Tuteur</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="w-10" />
             </TableRow>
@@ -97,7 +102,7 @@ export default function StudentsList() {
           <TableBody>
             {filtered.map((s) => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
@@ -107,20 +112,16 @@ export default function StudentsList() {
                     </Avatar>
                     <div>
                       <p className="font-medium leading-tight">{s.prenom} {s.nom}</p>
-                      <p className="text-[11px] text-muted-foreground">{s.sexe === "F" ? "Fille" : "Garçon"} • {s.cycle}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"} • {s.cycle_nom ?? "—"}
+                      </p>
                     </div>
                   </div>
                 </TableCell>
-                <TableCell><Badge variant="secondary">{s.classe}</Badge></TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{s.dateNaissance}</TableCell>
-                <TableCell className="hidden lg:table-cell text-sm">
-                  <div className="leading-tight">
-                    <p>{s.parent}</p>
-                    <p className="text-[11px] text-muted-foreground">{s.contact}</p>
-                  </div>
-                </TableCell>
+                <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
                 <TableCell>
-                  <Badge variant={s.statut === "Actif" ? "default" : "destructive"} className="text-[10px]">
+                  <Badge variant={s.statut === "inscrit" || s.statut === "actif" ? "default" : "destructive"} className="text-[10px]">
                     {s.statut}
                   </Badge>
                 </TableCell>
@@ -144,7 +145,7 @@ export default function StudentsList() {
             ))}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
                   Aucun élève trouvé.
                 </TableCell>
               </TableRow>

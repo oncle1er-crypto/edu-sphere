@@ -16,9 +16,6 @@ interface Props {
 export function SettingsSection({ title, description, icon, children, onSave, hideSave }: Props) {
   const handleSave = () => {
     onSave?.();
-    toast.success("Modifications enregistrées", {
-      description: `${title} mis à jour avec succès.`,
-    });
   };
 
   return (
