@@ -75,6 +75,7 @@ import FinanceDashboard from "@/pages/finances/sections/FinanceDashboard";
 import Invoices from "@/pages/finances/sections/Invoices";
 import Payments from "@/pages/finances/sections/Payments";
 import StudentSummary from "@/pages/finances/sections/StudentSummary";
+import ClassSummary from "@/pages/finances/sections/ClassSummary";
 import Receipts from "@/pages/finances/sections/Receipts";
 import Unpaid from "@/pages/finances/sections/Unpaid";
 import Expenses from "@/pages/finances/sections/Expenses";
@@ -313,6 +314,7 @@ const App = () => (
               <Route path="factures" element={<Invoices />} />
               <Route path="paiements" element={<Payments />} />
               <Route path="synthese-eleve" element={<StudentSummary />} />
+              <Route path="synthese-classe" element={<ClassSummary />} />
               <Route path="recus" element={<Receipts />} />
               <Route path="impayes" element={<Unpaid />} />
               <Route path="depenses" element={<Expenses />} />

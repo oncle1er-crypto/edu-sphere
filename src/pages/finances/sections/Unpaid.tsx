@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, Mail, MessageSquare, Phone, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye } from "lucide-react";
+import { AlertTriangle, Bell, Mail, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ELEVES_SCOLARITE, getEcheancier, statutEleve, fcfa, type Cycle, type EleveScolarite } from "../scolarite-data";
 import { addRelance, getRelancesCount, getDerniereRelance, formatRelanceDate } from "../relances-store";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { PaymentDialog } from "../components/PaymentDialog";
+import { SmsPreviewDialog } from "../components/SmsPreviewDialog";
+import { StatusDialog } from "../components/StatusDialog";
+import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
@@ -25,11 +29,10 @@ function derniereTranchePayee(e: EleveScolarite): number {
   return payees.length ? Math.max(...payees) : 0;
 }
 
-// SMS automatique
+// SMS automatique basé sur les modèles personnalisables
 function buildSmsRelance(e: EleveScolarite): string {
-  const trancheRetard = e.tranches.find((t) => t.statut === "retard");
-  const lib = trancheRetard ? `${trancheRetard.label} (échue le ${trancheRetard.echeance})` : "scolarité";
-  return `GSP - Bonjour ${e.parent}, rappel : ${fcfa(e.resteDu)} FCFA dus pour ${e.prenom} ${e.nom} (${e.classe}) au titre de ${lib}. Merci de régulariser. Foi, Savoir, Excellence.`;
+  const { key, tranche } = pickTrancheCible(e);
+  return renderTemplate(getTemplate(key).message, e, tranche);
 }
 
 export default function Unpaid() {
@@ -40,6 +43,10 @@ export default function Unpaid() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedEleve, setSelectedEleve] = useState<EleveScolarite | null>(null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
+  const [paymentEleve, setPaymentEleve] = useState<EleveScolarite | null>(null);
+  const [paymentTranche, setPaymentTranche] = useState<number | undefined>(undefined);
+  const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
+  const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
 
   const classesDispo = useMemo(() => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
@@ -188,9 +195,30 @@ export default function Unpaid() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche" onClick={() => openFiche(e)}>
+                  <div className="flex justify-end gap-1 flex-wrap">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche complète" onClick={() => openFiche(e)}>
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="Enregistrer un encaissement"
+                      onClick={() => { setPaymentEleve(e); setPaymentTranche(undefined); }}
+                    >
+                      <Wallet className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="Mettre à jour le statut"
+                      onClick={() => setStatusEleve(e)}
+                    >
+                      <Tag className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="SMS avec aperçu (modèle T1/T2/T3)"
+                      onClick={() => setSmsEleve(e)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -198,7 +226,7 @@ export default function Unpaid() {
                       onClick={() => handleSendSms(e)}
                       title="Envoyer SMS de relance en 1 clic"
                     >
-                      <MessageSquare className="h-4 w-4" />Relancer
+                      Relancer
                     </Button>
                   </div>
                 </TableCell>
@@ -347,6 +375,25 @@ export default function Unpaid() {
         eleve={selectedEleve}
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelectedEleve(null); setOpenTrancheNum(undefined); } }}
+      />
+
+      <PaymentDialog
+        eleve={paymentEleve}
+        defaultTrancheNum={paymentTranche}
+        open={!!paymentEleve}
+        onOpenChange={(o) => { if (!o) { setPaymentEleve(null); setPaymentTranche(undefined); } }}
+      />
+
+      <SmsPreviewDialog
+        eleve={smsEleve}
+        open={!!smsEleve}
+        onOpenChange={(o) => { if (!o) setSmsEleve(null); }}
+      />
+
+      <StatusDialog
+        eleve={statusEleve}
+        open={!!statusEleve}
+        onOpenChange={(o) => { if (!o) setStatusEleve(null); }}
       />
     </div>
   );
