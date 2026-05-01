@@ -125,7 +125,7 @@ export default function StudentSummary() {
                   <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="outline"><Phone className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><Mail className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
                   </div>
                 </div>
