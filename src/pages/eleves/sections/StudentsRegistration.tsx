@@ -74,7 +74,6 @@ export default function StudentsRegistration() {
       title="Nouvelle inscription"
       description="Enregistrez un nouvel élève avec ses informations personnelles et scolaires."
       onSave={handleSubmit}
-      saveLabel={saving ? "Enregistrement..." : "Inscrire l'élève"}
     >
       <Tabs defaultValue="identite" className="w-full">
         <TabsList className="flex-wrap h-auto">
