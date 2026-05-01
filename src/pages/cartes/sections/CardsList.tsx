@@ -146,7 +146,7 @@ export default function CardsList() {
                   <Button size="sm" variant="ghost" onClick={() => setPreview(c)} title="Aperçu">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => reissue(c)} title="Réémettre">
+                  <Button size="sm" variant="ghost" onClick={() => setToReissue(c)} title="Réémettre">
                     <RefreshCw className="h-4 w-4" />
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => window.print()} title="Imprimer">
