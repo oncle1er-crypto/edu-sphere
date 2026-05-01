@@ -22,6 +22,8 @@ const sections = [
   { to: "statistiques", label: "Statistiques & analyses", icon: BarChart3, group: "Analyses" },
   { to: "rapports", label: "Rapports pédagogiques", icon: FileSpreadsheet, group: "Analyses" },
 
+  { to: "fin-annee", label: "Fin d'année", icon: ArrowUpRight, group: "Résultats" },
+
   { to: "baremes", label: "Grilles & coefficients", icon: Scale, group: "Système" },
   { to: "validation", label: "Validation & verrouillage", icon: ShieldCheck, group: "Système" },
   { to: "configuration", label: "Configuration", icon: Settings2, group: "Système" },
