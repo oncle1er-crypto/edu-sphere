@@ -1,5 +1,6 @@
-import { GraduationCap, ChevronDown, User, LogOut, Settings, Menu } from "lucide-react";
+import { GraduationCap, ChevronDown, User, LogOut, Settings, Menu, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +16,10 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: AppHeaderProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const canGoBack = location.pathname !== "/" && location.pathname !== "/index";
+
   return (
     <header className="sticky top-0 z-40 bg-card border-b shadow-[var(--shadow-soft)]">
       <div className="flex items-center justify-between px-4 md:px-6 h-16 md:h-20">
@@ -28,6 +33,17 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
           >
             <Menu className="h-5 w-5" />
           </Button>
+          {canGoBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
+              aria-label="Retour"
+              className="rounded-full hover:bg-muted"
+            >
+              <ArrowLeft className="h-5 w-5 text-primary" />
+            </Button>
+          )}
           <div className="flex h-11 w-11 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-card)]">
             <GraduationCap className="h-6 w-6 md:h-8 md:w-8 text-accent" />
           </div>
