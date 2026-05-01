@@ -5,6 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { PenSquare, Save } from "lucide-react";
+import { LockGuard, LockBanner } from "@/components/LockGuard";
+import { useState } from "react";
 
 const students = [
   { matricule: "EL-2451", nom: "Mballa Junior", note: "15" },
@@ -17,13 +19,22 @@ const students = [
 ];
 
 export default function GradeEntry() {
+  // Date à laquelle on saisit l'évaluation (détermine la période)
+  const [evalDate, setEvalDate] = useState<string>(new Date().toISOString().slice(0, 10));
+
   return (
     <SettingsSection
       icon={<PenSquare className='h-5 w-5' />}
       title="Saisie des notes"
       description="Saisissez les notes par classe, matière et évaluation. Auto-sauvegarde activée."
-      >
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+    >
+      <LockBanner module="notes" date={evalDate} />
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+        <div>
+          <Label className="text-xs">Date d'évaluation</Label>
+          <Input type="date" value={evalDate} onChange={(e) => setEvalDate(e.target.value)} />
+        </div>
         <div>
           <Label className="text-xs">Classe</Label>
           <Select defaultValue="3a">
@@ -58,28 +69,33 @@ export default function GradeEntry() {
         </div>
       </div>
 
-      <div className="rounded-lg border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Matricule</TableHead>
-              <TableHead>Nom de l'élève</TableHead>
-              <TableHead className="w-32">Note / 20</TableHead>
-              <TableHead className="w-48">Appréciation</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {students.map((s) => (
-              <TableRow key={s.matricule}>
-                <TableCell className="font-mono text-xs">{s.matricule}</TableCell>
-                <TableCell className="font-medium">{s.nom}</TableCell>
-                <TableCell><Input defaultValue={s.note} className="h-8 w-20" /></TableCell>
-                <TableCell><Input placeholder="Optionnel..." className="h-8" /></TableCell>
+      <LockGuard module="notes" date={evalDate}>
+        <div className="rounded-lg border overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Matricule</TableHead>
+                <TableHead>Nom de l'élève</TableHead>
+                <TableHead className="w-32">Note / 20</TableHead>
+                <TableHead className="w-48">Appréciation</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {students.map((s) => (
+                <TableRow key={s.matricule}>
+                  <TableCell className="font-mono text-xs">{s.matricule}</TableCell>
+                  <TableCell className="font-medium">{s.nom}</TableCell>
+                  <TableCell><Input defaultValue={s.note} className="h-8 w-20" /></TableCell>
+                  <TableCell><Input placeholder="Optionnel..." className="h-8" /></TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+        <div className="flex justify-end mt-4">
+          <Button size="sm"><Save className="h-4 w-4" />Enregistrer les notes</Button>
+        </div>
+      </LockGuard>
     </SettingsSection>
   );
 }
