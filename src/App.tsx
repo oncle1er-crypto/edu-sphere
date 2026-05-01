@@ -110,6 +110,7 @@ import ExamsCalendar from "@/pages/examens/sections/ExamsCalendar";
 import Evaluations from "@/pages/examens/sections/Evaluations";
 import Compositions from "@/pages/examens/sections/Compositions";
 import GradeEntry from "@/pages/examens/sections/GradeEntry";
+import QuickGradeEntry from "@/pages/examens/sections/QuickGradeEntry";
 import Bulletins from "@/pages/examens/sections/Bulletins";
 import Averages from "@/pages/examens/sections/Averages";
 import ClassCouncils from "@/pages/examens/sections/ClassCouncils";
@@ -314,6 +315,7 @@ const App = () => (
               <Route path="evaluations" element={<Evaluations />} />
               <Route path="compositions" element={<Compositions />} />
               <Route path="saisie-notes" element={<GradeEntry />} />
+              <Route path="saisie-rapide" element={<QuickGradeEntry />} />
               <Route path="bulletins" element={<Bulletins />} />
               <Route path="moyennes" element={<Averages />} />
               <Route path="conseils" element={<ClassCouncils />} />
