@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Eye, Search, Printer } from "lucide-react";
+import { Eye, Search, Printer, Plus, Layers, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SchoolCard } from "@/pages/cartes/components/SchoolCard";
 import type { CardType } from "@/pages/cartes/components/SchoolCard";
+import { toast } from "sonner";
 
 const TYPE_LABELS: Record<CardType, string> = {
   eleve: "Élève", personnel: "Personnel", cantine: "Cantine",
@@ -27,11 +29,25 @@ function statusBadge(s: CardStatut) {
 }
 
 export default function CardsList() {
-  const { cards } = useCards();
+  const { cards, addCards } = useCards();
   const [q, setQ] = useState("");
   const [type, setType] = useState<CardType | "all">("all");
   const [statut, setStatut] = useState<CardStatut | "all">("all");
   const [preview, setPreview] = useState<typeof cards[number] | null>(null);
+
+  const reissue = (c: typeof cards[number]) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const annee = c.anneeScolaire;
+    const valid = `${annee.split("-")[1]}-07-31`;
+    addCards([{
+      ...c,
+      id: `${c.matricule}-${Date.now()}`,
+      statut: "active",
+      emiseLe: today,
+      validJusqu: valid,
+    }]);
+    toast.success(`Carte réémise pour ${c.prenom} ${c.nom}`);
+  };
 
   const filtered = cards.filter((c) => {
     if (type !== "all" && c.type !== type) return false;
@@ -45,6 +61,29 @@ export default function CardsList() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Cartes émises</h2>
+          <p className="text-sm text-muted-foreground">
+            Gérez les cartes existantes ou émettez-en de nouvelles à partir des élèves et du personnel.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/cartes/emission?mode=batch">
+              <Layers className="h-4 w-4 mr-2" />
+              Émission par lot
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/cartes/emission">
+              <Plus className="h-4 w-4 mr-2" />
+              Émettre une carte
+            </Link>
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -99,10 +138,13 @@ export default function CardsList() {
                 <TableCell className="text-xs">{c.anneeScolaire}</TableCell>
                 <TableCell>{statusBadge(c.statut)}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setPreview(c)}>
+                  <Button size="sm" variant="ghost" onClick={() => setPreview(c)} title="Aperçu">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => window.print()}>
+                  <Button size="sm" variant="ghost" onClick={() => reissue(c)} title="Réémettre">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => window.print()} title="Imprimer">
                     <Printer className="h-4 w-4" />
                   </Button>
                 </TableCell>
