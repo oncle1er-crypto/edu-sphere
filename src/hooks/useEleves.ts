@@ -59,7 +59,7 @@ export function useEleves() {
     return data;
   };
 
-  const updateEleve = async (id: string, updates: Partial<Eleve>) => {
+  const updateEleve = async (id: string, updates: Database["public"]["Tables"]["eleves"]["Update"]) => {
     const { error } = await supabase.from("eleves").update(updates).eq("id", id);
     if (error) { toast.error(error.message); return false; }
     toast.success("Élève mis à jour");
