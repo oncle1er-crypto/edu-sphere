@@ -186,9 +186,15 @@ export default function AcademicSettings() {
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       {a.statut !== "active" && a.statut !== "archivee" && (
-                        <Button size="sm" variant="outline" onClick={() => { setAnneeStatut(a.id, "active"); toast.success("Année activée"); }}>
+                        <ConfirmButton
+                          size="sm" variant="outline"
+                          confirmTitle={`Activer ${a.libelle} ?`}
+                          confirmDescription="Cette année deviendra l'année de référence pour les saisies (notes, absences, paiements). L'année active actuelle sera désactivée."
+                          confirmLabel="Activer"
+                          onConfirm={() => { setAnneeStatut(a.id, "active"); toast.success("Année activée"); }}
+                        >
                           <Power className="h-3.5 w-3.5" />Activer
-                        </Button>
+                        </ConfirmButton>
                       )}
                       {a.statut === "active" && (
                         <AlertDialog>
