@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, FileText, CreditCard, Receipt, Wallet, Landmark,
-  Users, PiggyBank, BarChart3, FileSpreadsheet, Settings2, AlertTriangle, UserSearch,
+  Users, PiggyBank, BarChart3, FileSpreadsheet, Settings2, AlertTriangle, UserSearch, Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -12,6 +12,7 @@ const sections = [
 
   { to: "paiements", label: "Encaissements", icon: CreditCard, group: "Encaissements" },
   { to: "synthese-eleve", label: "Synthèse par élève", icon: UserSearch, group: "Encaissements" },
+  { to: "synthese-classe", label: "Synthèse par classe", icon: Building2, group: "Encaissements" },
   { to: "recus", label: "Reçus & quittances", icon: Receipt, group: "Encaissements" },
   { to: "impayes", label: "Impayés & relances", icon: AlertTriangle, group: "Encaissements" },
 
