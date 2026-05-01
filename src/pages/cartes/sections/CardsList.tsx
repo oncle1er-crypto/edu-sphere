@@ -138,10 +138,13 @@ export default function CardsList() {
                 <TableCell className="text-xs">{c.anneeScolaire}</TableCell>
                 <TableCell>{statusBadge(c.statut)}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => setPreview(c)}>
+                  <Button size="sm" variant="ghost" onClick={() => setPreview(c)} title="Aperçu">
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="ghost" onClick={() => window.print()}>
+                  <Button size="sm" variant="ghost" onClick={() => reissue(c)} title="Réémettre">
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => window.print()} title="Imprimer">
                     <Printer className="h-4 w-4" />
                   </Button>
                 </TableCell>
