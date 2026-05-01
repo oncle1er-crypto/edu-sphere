@@ -25,18 +25,26 @@ export default function Payments() {
   const lock = useLock("paiements");
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
+  const [classe, setClasse] = useState<string>("all");
   const [statut, setStatut] = useState<"all" | "ajour" | "partiel" | "retard">("all");
   const [selected, setSelected] = useState<EleveScolarite | null>(null);
+
+  // Liste des classes disponibles (filtrée par cycle si sélectionné)
+  const classesDispo = useMemo(() => {
+    const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
+    return Array.from(new Set(src.map((e) => e.classe))).sort();
+  }, [cycle]);
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
       const s = search.toLowerCase().trim();
       const matchSearch = !s || `${e.prenom} ${e.nom} ${e.matricule} ${e.classe} ${e.parent}`.toLowerCase().includes(s);
       const matchCycle = cycle === "all" || e.cycle === cycle;
+      const matchClasse = classe === "all" || e.classe === classe;
       const matchStatut = statut === "all" || statutEleve(e) === statut;
-      return matchSearch && matchCycle && matchStatut;
+      return matchSearch && matchCycle && matchClasse && matchStatut;
     });
-  }, [search, cycle, statut]);
+  }, [search, cycle, classe, statut]);
 
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
@@ -73,10 +81,17 @@ export default function Payments() {
               className="pl-9"
             />
           </div>
-          <Select value={cycle} onValueChange={(v) => setCycle(v as Cycle | "all")}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <Select value={cycle} onValueChange={(v) => { setCycle(v as Cycle | "all"); setClasse("all"); }}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {CYCLES.map((c) => <SelectItem key={c} value={c}>{c === "all" ? "Tous cycles" : c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={classe} onValueChange={setClasse}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes classes</SelectItem>
+              {classesDispo.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={statut} onValueChange={(v) => setStatut(v as typeof statut)}>

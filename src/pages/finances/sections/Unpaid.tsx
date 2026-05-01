@@ -17,14 +17,21 @@ const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", 
 export default function Unpaid() {
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
+  const [classe, setClasse] = useState<string>("all");
+
+  const classesDispo = useMemo(() => {
+    const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
+    return Array.from(new Set(src.map((e) => e.classe))).sort();
+  }, [cycle]);
 
   const enRetard = useMemo(() =>
     ELEVES_SCOLARITE
       .filter((e) => statutEleve(e) !== "ajour")
       .filter((e) => cycle === "all" || e.cycle === cycle)
+      .filter((e) => classe === "all" || e.classe === classe)
       .filter((e) => !search || `${e.prenom} ${e.nom} ${e.classe}`.toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => b.joursRetard - a.joursRetard),
-    [search, cycle]
+    [search, cycle, classe]
   );
 
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
@@ -190,10 +197,17 @@ export default function Unpaid() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher une famille…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <Select value={cycle} onValueChange={(v) => setCycle(v as Cycle | "all")}>
-            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+          <Select value={cycle} onValueChange={(v) => { setCycle(v as Cycle | "all"); setClasse("all"); }}>
+            <SelectTrigger className="w-[150px]"><SelectValue /></SelectTrigger>
             <SelectContent>
               {CYCLES.map((c) => <SelectItem key={c} value={c}>{c === "all" ? "Tous cycles" : c}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={classe} onValueChange={setClasse}>
+            <SelectTrigger className="w-[150px]"><SelectValue placeholder="Classe" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Toutes classes</SelectItem>
+              {classesDispo.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><Mail className="h-4 w-4" />Email groupé</Button>
