@@ -32,25 +32,30 @@ export default function SchoolProfile() {
       </FieldRow>
 
       <FieldRow label="Devise / slogan">
-        <Input defaultValue="La Providence guide nos pas vers l'excellence" />
+        <Input defaultValue="Foi, Savoir, Excellence" />
       </FieldRow>
 
       <FieldRow label="Type d'établissement">
-        <Select defaultValue="mixte">
+        <Select defaultValue="catholique">
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="maternelle">Maternelle</SelectItem>
-            <SelectItem value="primaire">Primaire</SelectItem>
-            <SelectItem value="college">Collège</SelectItem>
-            <SelectItem value="lycee">Lycée</SelectItem>
-            <SelectItem value="universite">Université</SelectItem>
-            <SelectItem value="mixte">Mixte (Maternelle → Lycée)</SelectItem>
+            <SelectItem value="catholique">Privé confessionnel catholique</SelectItem>
+            <SelectItem value="prive">Privé laïc</SelectItem>
+            <SelectItem value="public">Public</SelectItem>
           </SelectContent>
         </Select>
       </FieldRow>
 
-      <FieldRow label="N° d'agrément">
-        <Input defaultValue="MEN/2018/00457" />
+      <FieldRow label="Cycles">
+        <Input defaultValue="Maternelle • Primaire • Collège • Lycée" />
+      </FieldRow>
+
+      <FieldRow label="Diocèse de rattachement">
+        <Input defaultValue="Archidiocèse d'Abidjan" />
+      </FieldRow>
+
+      <FieldRow label="N° d'agrément (MENA)">
+        <Input defaultValue="MENA/DESPRIV/2018/00457" />
       </FieldRow>
 
       <FieldRow label="Année de création">
@@ -58,19 +63,19 @@ export default function SchoolProfile() {
       </FieldRow>
 
       <FieldRow label="Adresse complète">
-        <Textarea rows={3} defaultValue="123 Avenue de l'Éducation, BP 1234, Yaoundé, Cameroun" />
+        <Textarea rows={3} defaultValue="123 Avenue de l'Éducation, BP 1234, Abidjan, Côte d'Ivoire" />
       </FieldRow>
 
       <FieldRow label="Téléphone">
-        <Input defaultValue="+237 6 99 00 00 00" />
+        <Input defaultValue="+225 07 07 11 22 33" />
       </FieldRow>
 
       <FieldRow label="Email">
-        <Input type="email" defaultValue="contact@notre-avenir.cm" />
+        <Input type="email" defaultValue="contact@laprovidence.ci" />
       </FieldRow>
 
       <FieldRow label="Site web">
-        <Input type="url" defaultValue="https://notre-avenir.cm" />
+        <Input type="url" defaultValue="https://laprovidence.ci" />
       </FieldRow>
 
       <FieldRow label="Directeur / Proviseur">

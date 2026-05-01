@@ -10,11 +10,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const users = [
-  { name: "Ello Charles Frédéric", email: "charles@notre-avenir.cm", role: "Admin", status: "Actif", initials: "CE" },
-  { name: "Marie Ngono", email: "marie@notre-avenir.cm", role: "Enseignant", status: "Actif", initials: "MN" },
-  { name: "Jean Mballa", email: "jean@notre-avenir.cm", role: "Comptable", status: "Actif", initials: "JM" },
-  { name: "Aïcha Bello", email: "aicha@notre-avenir.cm", role: "Enseignant", status: "Invité", initials: "AB" },
-  { name: "Paul Tchamba", email: "paul@notre-avenir.cm", role: "Surveillant", status: "Suspendu", initials: "PT" },
+  { name: "Ello Charles Frédéric", email: "charles@laprovidence.ci", role: "Admin", status: "Actif", initials: "CE" },
+  { name: "Marie Ngono", email: "marie@laprovidence.ci", role: "Enseignant", status: "Actif", initials: "MN" },
+  { name: "Jean Mballa", email: "jean@laprovidence.ci", role: "Comptable", status: "Actif", initials: "JM" },
+  { name: "Aïcha Bello", email: "aicha@laprovidence.ci", role: "Enseignant", status: "Invité", initials: "AB" },
+  { name: "Paul Tchamba", email: "paul@laprovidence.ci", role: "Surveillant", status: "Suspendu", initials: "PT" },
 ];
 
 const roleColors: Record<string, string> = {

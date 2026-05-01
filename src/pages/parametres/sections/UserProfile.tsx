@@ -24,8 +24,8 @@ export default function UserProfile() {
       </FieldRow>
       <FieldRow label="Nom"><Input defaultValue="Ello" /></FieldRow>
       <FieldRow label="Prénom"><Input defaultValue="Charles Frédéric" /></FieldRow>
-      <FieldRow label="Email"><Input type="email" defaultValue="charles@notre-avenir.cm" /></FieldRow>
-      <FieldRow label="Téléphone"><Input defaultValue="+237 6 99 00 00 00" /></FieldRow>
+      <FieldRow label="Email"><Input type="email" defaultValue="charles@laprovidence.ci" /></FieldRow>
+      <FieldRow label="Téléphone"><Input defaultValue="+225 07 07 11 22 33" /></FieldRow>
       <FieldRow label="Fonction"><Input defaultValue="Directeur" /></FieldRow>
       <FieldRow label="Langue préférée">
         <Select defaultValue="fr">

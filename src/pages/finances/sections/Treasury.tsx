@@ -8,16 +8,16 @@ const accounts = [
   { name: "Compte principal — Afriland", number: "1000109876123456789012 23", balance: "8 450 000", type: "Banque" },
   { name: "Compte épargne — UBA", number: "2000201234567891234567 11", balance: "12 200 000", type: "Banque" },
   { name: "Caisse principale", number: "Espèces", balance: "385 000", type: "Caisse" },
-  { name: "MTN MoMo Pro", number: "+237 6 99 00 00 00", balance: "1 720 000", type: "Mobile" },
-  { name: "Orange Money Pro", number: "+237 6 95 00 00 00", balance: "980 000", type: "Mobile" },
+  { name: "Wave Business", number: "+225 07 07 11 22 33", balance: "1 720 000", type: "Mobile" },
+  { name: "Orange Money Pro", number: "+225 05 05 22 33 44", balance: "980 000", type: "Mobile" },
 ];
 
 const movements = [
   { date: "26/04/2026", label: "Encaissement frais scolarité", account: "Afriland", in: "1 250 000", out: "" },
-  { date: "26/04/2026", label: "Paiement ENEO", account: "Afriland", in: "", out: "187 500" },
+  { date: "26/04/2026", label: "Paiement CIE", account: "Afriland", in: "", out: "187 500" },
   { date: "25/04/2026", label: "Virement caisse → UBA", account: "UBA", in: "500 000", out: "" },
   { date: "25/04/2026", label: "Salaire Mme Fouda", account: "Afriland", in: "", out: "357 000" },
-  { date: "24/04/2026", label: "Encaissement MoMo (lot)", account: "MTN MoMo Pro", in: "820 000", out: "" },
+  { date: "24/04/2026", label: "Encaissement MoMo (lot)", account: "Wave Business", in: "820 000", out: "" },
 ];
 
 export default function Treasury() {
