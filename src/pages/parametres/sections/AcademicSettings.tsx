@@ -219,9 +219,15 @@ export default function AcademicSettings() {
                       )}
                       {a.statut === "verrouillee" && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => { setAnneeStatut(a.id, "active"); toast.success("Année déverrouillée"); }}>
+                          <ConfirmButton
+                            size="sm" variant="outline" tone="warning"
+                            confirmTitle={`Déverrouiller ${a.libelle} ?`}
+                            confirmDescription="Les saisies (notes, absences, paiements) redeviendront modifiables sur toute l'année. Cette opération est tracée."
+                            confirmLabel="Déverrouiller"
+                            onConfirm={() => { setAnneeStatut(a.id, "active"); toast.success("Année déverrouillée"); }}
+                          >
                             <Unlock className="h-3.5 w-3.5" />Déverrouiller
-                          </Button>
+                          </ConfirmButton>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button size="sm" variant="outline"><Archive className="h-3.5 w-3.5" />Archiver</Button>
