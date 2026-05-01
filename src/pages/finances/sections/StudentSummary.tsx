@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, Mail, MessageSquare, Printer, Plus, FileText } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,18 +7,17 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import {
-  ELEVES_SCOLARITE, statutEleve, STATUT_LABEL, STATUT_CLASS, fcfa,
-  type Cycle,
-} from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
 
 export default function StudentSummary() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
-  const [selectedId, setSelectedId] = useState<string>(ELEVES_SCOLARITE[0].id);
+  const [selectedId, setSelectedId] = useState<string>("");
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
@@ -27,11 +26,16 @@ export default function StudentSummary() {
       const matchCycle = cycle === "all" || e.cycle === cycle;
       return matchSearch && matchCycle;
     });
-  }, [search, cycle]);
+  }, [search, cycle, ELEVES_SCOLARITE]);
 
-  const eleve = ELEVES_SCOLARITE.find((e) => e.id === selectedId) ?? ELEVES_SCOLARITE[0];
+  const eleve = ELEVES_SCOLARITE.find((e) => e.id === (selectedId || ELEVES_SCOLARITE[0]?.id)) ?? ELEVES_SCOLARITE[0];
+
+  if (finLoading || !eleve) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
   const st = statutEleve(eleve);
-  const pct = Math.round((eleve.totalPaye / eleve.fraisAnnuel) * 100);
+  const pct = eleve.fraisAnnuel > 0 ? Math.round((eleve.totalPaye / eleve.fraisAnnuel) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -121,7 +125,7 @@ export default function StudentSummary() {
                   <div className="flex flex-wrap gap-1">
                     <Button size="sm" variant="outline"><Phone className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><Mail className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
                   </div>
                 </div>

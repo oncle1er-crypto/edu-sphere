@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2 } from "lucide-react";
+import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ELEVES_SCOLARITE, statutEleve, fcfa, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
@@ -29,9 +30,9 @@ interface ClasseSyntheseRow {
   eleves: EleveScolarite[];
 }
 
-function buildClassesSynthese(): ClasseSyntheseRow[] {
+function buildClassesSynthese(allEleves: EleveScolarite[]): ClasseSyntheseRow[] {
   const map = new Map<string, ClasseSyntheseRow>();
-  for (const e of ELEVES_SCOLARITE) {
+  for (const e of allEleves) {
     const key = `${e.cycle}::${e.classe}`;
     let row = map.get(key);
     if (!row) {
@@ -56,23 +57,24 @@ function buildClassesSynthese(): ClasseSyntheseRow[] {
     row.eleves.push(e);
   }
   for (const r of map.values()) {
-    r.tauxRetard = Math.round((r.enRetard / r.effectif) * 100);
-    r.tauxRecouvrement = Math.round((r.paye / r.totalDu) * 100);
+    r.tauxRetard = r.effectif > 0 ? Math.round((r.enRetard / r.effectif) * 100) : 0;
+    r.tauxRecouvrement = r.totalDu > 0 ? Math.round((r.paye / r.totalDu) * 100) : 0;
   }
   return Array.from(map.values()).sort((a, b) => b.tauxRetard - a.tauxRetard || a.classe.localeCompare(b.classe));
 }
 
 export default function ClassSummary() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedEleve, setSelectedEleve] = useState<EleveScolarite | null>(null);
 
   const rows = useMemo(() => {
-    return buildClassesSynthese()
+    return buildClassesSynthese(ELEVES_SCOLARITE)
       .filter((r) => cycle === "all" || r.cycle === cycle)
       .filter((r) => !search || `${r.classe} ${r.cycle}`.toLowerCase().includes(search.toLowerCase()));
-  }, [search, cycle]);
+  }, [search, cycle, ELEVES_SCOLARITE]);
 
   // KPIs globaux
   const kpis = useMemo(() => {
@@ -99,6 +101,10 @@ export default function ClassSummary() {
     : t <= 15 ? "bg-yellow-500/15 text-yellow-700 border-yellow-500/30"
     : t <= 30 ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
     : "bg-destructive/15 text-destructive border-destructive/30";
+
+  if (finLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6">

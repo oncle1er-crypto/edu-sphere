@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, Mail, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag } from "lucide-react";
+import { AlertTriangle, Bell, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,8 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ELEVES_SCOLARITE, getEcheancier, statutEleve, fcfa, type Cycle, type EleveScolarite } from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, type Cycle, type EleveScolarite } from "../scolarite-data";
 import { addRelance, getRelancesCount, getDerniereRelance, formatRelanceDate } from "../relances-store";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 import { PaymentDialog } from "../components/PaymentDialog";
@@ -36,6 +37,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 export default function Unpaid() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [classe, setClasse] = useState<string>("all");
@@ -48,10 +50,10 @@ export default function Unpaid() {
   const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
   const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
 
-  const classesDispo = useMemo(() => {
+  const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
-  }, [cycle]);
+  }, [cycle, ELEVES_SCOLARITE]);
 
   const enRetard = useMemo(() => {
     const list = ELEVES_SCOLARITE
@@ -70,12 +72,22 @@ export default function Unpaid() {
       }
     });
     return list;
-  }, [search, cycle, classe, sortKey, sortDir]);
+  }, [search, cycle, classe, sortKey, sortDir, ELEVES_SCOLARITE]);
 
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
   const retardMoyen = enRetard.length ? Math.round(enRetard.reduce((s, e) => s + e.joursRetard, 0) / enRetard.length) : 0;
   const critique = enRetard.filter((e) => e.joursRetard > 30).length;
-  const echeancier = getEcheancier();
+
+  // Build echeancier from data
+  const echeancier = [1, 2, 3].map((num) => {
+    const label = num === 1 ? "1ère tranche" : num === 2 ? "2ème tranche" : "3ème tranche";
+    const tranches = ELEVES_SCOLARITE.flatMap((el) => el.tranches.filter((t) => t.num === num));
+    const attendu = tranches.reduce((s, t) => s + t.montant, 0);
+    const paye = tranches.reduce((s, t) => s + t.paye, 0);
+    const enRetardCount = tranches.filter((t) => t.statut === "retard").length;
+    const partielle = tranches.filter((t) => t.statut === "partielle").length;
+    return { num, label, attendu, paye, reste: attendu - paye, enRetard: enRetardCount, partielle, taux: attendu > 0 ? Math.round((paye / attendu) * 100) : 0 };
+  });
 
   const buckets = {
     aVenir: enRetard.filter((e) => e.joursRetard === 0),
@@ -241,6 +253,10 @@ export default function Unpaid() {
     </div>
   );
 
+  if (finLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* KPIs */}
@@ -293,7 +309,7 @@ export default function Unpaid() {
                   </div>
                   <Badge variant="outline" className={e.taux >= 90 ? "bg-accent/15 text-accent border-accent/30" : e.taux >= 70 ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : "bg-destructive/15 text-destructive border-destructive/30"}>{e.taux}%</Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground mb-3">📅 Échéance : {e.date}</p>
+                <p className="text-[11px] text-muted-foreground mb-3">Tranche {e.num}</p>
                 <Progress value={e.taux} className="h-2" />
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <div><p className="text-[10px] text-muted-foreground uppercase">Encaissé</p><p className="text-sm font-bold text-accent">{fcfa(e.paye)}</p></div>
@@ -348,7 +364,7 @@ export default function Unpaid() {
               <SelectItem value="nom:desc">Nom (Z → A)</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><Mail className="h-4 w-4" />Email groupé</Button>
+          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><MessageSquare className="h-4 w-4" />Email groupé</Button>
           <Button size="sm" onClick={() => {
             enRetard.forEach((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone }));
             toast.success(`${enRetard.length} SMS de relance envoyés`);

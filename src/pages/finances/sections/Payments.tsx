@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X } from "lucide-react";
+import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ConfirmButton";
@@ -14,10 +14,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { LockBanner } from "@/components/LockGuard";
 import { useLock } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
-import {
-  ELEVES_SCOLARITE, statutEleve, STATUT_LABEL, STATUT_CLASS, fcfa,
-  type EleveScolarite, type Cycle,
-} from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, STATUT_LABEL, STATUT_CLASS, type EleveScolarite, type Cycle } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
@@ -33,6 +31,7 @@ const EMPTY_ADV: AdvSearch = { nom: "", prenom: "", classe: "", telephone: "" };
 
 export default function Payments() {
   const lock = useLock("paiements");
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
@@ -44,10 +43,10 @@ export default function Payments() {
 
   const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
 
-  const classesDispo = useMemo(() => {
+  const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
-  }, [cycle]);
+  }, [cycle, ELEVES_SCOLARITE]);
 
   const filtered = useMemo(() => {
     const norm = (s: string) => s.toLowerCase().trim();
@@ -66,7 +65,7 @@ export default function Payments() {
       const matchStatut = statut === "all" || statutEleve(e) === statut;
       return matchSearch && matchNom && matchPrenom && matchClasseAdv && matchTel && matchCycle && matchClasse && matchStatut;
     });
-  }, [search, adv, cycle, classe, statut]);
+  }, [search, adv, cycle, classe, statut, ELEVES_SCOLARITE]);
 
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
@@ -78,6 +77,10 @@ export default function Payments() {
     setSelected(e);
     setOpenTrancheNum(trancheNum);
   };
+
+  if (finLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <div className="space-y-6">
