@@ -31,6 +31,7 @@ const EMPTY_ADV: AdvSearch = { nom: "", prenom: "", classe: "", telephone: "" };
 
 export default function Payments() {
   const lock = useLock("paiements");
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
@@ -45,7 +46,7 @@ export default function Payments() {
   const classesDispo = useMemo(() => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
-  }, [cycle]);
+  }, [cycle, ELEVES_SCOLARITE]);
 
   const filtered = useMemo(() => {
     const norm = (s: string) => s.toLowerCase().trim();
