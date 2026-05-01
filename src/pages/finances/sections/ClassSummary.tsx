@@ -102,6 +102,10 @@ export default function ClassSummary() {
     : t <= 30 ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
     : "bg-destructive/15 text-destructive border-destructive/30";
 
+  if (finLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* KPIs globaux */}
