@@ -213,17 +213,29 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><span className="text-muted-foreground">Chargement…</span></div>;
+  if (!session) return <Navigate to="/connexion" replace />;
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <EcoleProvider>
         <AcademicPeriodProvider>
-        <AppLayout>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/*" element={
+              <RequireAuth>
+                <AppLayout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
             <Route path="/statistiques" element={<StatsLayout />}>
               <Route path="tableau" element={<GlobalDashboard />} />
               <Route path="ecoles" element={<SchoolsCompare />} />
