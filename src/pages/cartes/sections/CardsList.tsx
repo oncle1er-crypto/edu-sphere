@@ -38,6 +38,7 @@ export default function CardsList() {
   const [type, setType] = useState<CardType | "all">("all");
   const [statut, setStatut] = useState<CardStatut | "all">("all");
   const [preview, setPreview] = useState<typeof cards[number] | null>(null);
+  const [toReissue, setToReissue] = useState<typeof cards[number] | null>(null);
 
   const reissue = (c: typeof cards[number]) => {
     const today = new Date().toISOString().slice(0, 10);
