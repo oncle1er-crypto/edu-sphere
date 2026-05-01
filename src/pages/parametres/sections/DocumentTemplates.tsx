@@ -23,10 +23,10 @@ export default function DocumentTemplates() {
         icon={<FileSignature className="h-5 w-5" />}
       >
         <FieldRow label="Texte d'en-tête" hint="Affiché en haut de chaque document">
-          <Textarea rows={3} defaultValue="République du Cameroun&#10;Ministère de l'Éducation Nationale&#10;Groupe Scolaire La Providence — Yaoundé" />
+          <Textarea rows={3} defaultValue="République de Côte d'Ivoire&#10;Ministère de l'Éducation Nationale&#10;Groupe Scolaire La Providence — Abidjan" />
         </FieldRow>
         <FieldRow label="Pied de page">
-          <Textarea rows={2} defaultValue="Groupe Scolaire La Providence • BP 1234 Yaoundé • +237 6 99 00 00 00 • contact@laprovidence.cm" />
+          <Textarea rows={2} defaultValue="Groupe Scolaire La Providence • BP 1234 Abidjan • +225 07 07 11 22 33 • contact@laprovidence.cm" />
         </FieldRow>
         <FieldRow label="Afficher le logo">
           <Switch defaultChecked />

@@ -58,19 +58,19 @@ export default function SchoolProfile() {
       </FieldRow>
 
       <FieldRow label="Adresse complète">
-        <Textarea rows={3} defaultValue="123 Avenue de l'Éducation, BP 1234, Yaoundé, Cameroun" />
+        <Textarea rows={3} defaultValue="123 Avenue de l'Éducation, BP 1234, Abidjan, Côte d'Ivoire" />
       </FieldRow>
 
       <FieldRow label="Téléphone">
-        <Input defaultValue="+237 6 99 00 00 00" />
+        <Input defaultValue="+225 07 07 11 22 33" />
       </FieldRow>
 
       <FieldRow label="Email">
-        <Input type="email" defaultValue="contact@notre-avenir.cm" />
+        <Input type="email" defaultValue="contact@laprovidence.ci" />
       </FieldRow>
 
       <FieldRow label="Site web">
-        <Input type="url" defaultValue="https://notre-avenir.cm" />
+        <Input type="url" defaultValue="https://laprovidence.ci" />
       </FieldRow>
 
       <FieldRow label="Directeur / Proviseur">

@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const sessions = [
-  { device: "MacBook Pro — Safari", location: "Yaoundé, CM", date: "Aujourd'hui à 09:42", current: true },
-  { device: "iPhone 15 — App mobile", location: "Yaoundé, CM", date: "Hier à 18:15", current: false },
+  { device: "MacBook Pro — Safari", location: "Abidjan, CI", date: "Aujourd'hui à 09:42", current: true },
+  { device: "iPhone 15 — App mobile", location: "Abidjan, CI", date: "Hier à 18:15", current: false },
   { device: "Windows — Chrome", location: "Douala, CM", date: "Il y a 3 jours", current: false },
 ];
 

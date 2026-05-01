@@ -62,10 +62,10 @@ export default function FinanceSettings() {
           <Input defaultValue="10001 09876 12345678901 23" />
         </FieldRow>
         <FieldRow label="N° MTN Mobile Money">
-          <Input defaultValue="+237 6 99 00 00 00" />
+          <Input defaultValue="+225 07 07 11 22 33" />
         </FieldRow>
         <FieldRow label="N° Orange Money">
-          <Input defaultValue="+237 6 95 00 00 00" />
+          <Input defaultValue="+225 05 05 22 33 44" />
         </FieldRow>
       </SettingsSection>
 

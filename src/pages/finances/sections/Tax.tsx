@@ -35,12 +35,12 @@ export default function Tax() {
           <Input defaultValue="P057812345678X" className="w-56" />
         </FieldRow>
         <FieldRow label="Centre des impôts">
-          <Input defaultValue="CDI Yaoundé Centre" />
+          <Input defaultValue="CDI Abidjan Plateau" />
         </FieldRow>
         <FieldRow label="Taux TVA standard (%)">
           <Input type="number" defaultValue={19.25} className="w-32" />
         </FieldRow>
-        <FieldRow label="Activité exonérée de TVA" hint="Enseignement = exonéré au Cameroun">
+        <FieldRow label="Activité exonérée de TVA" hint="Enseignement = exonéré en Côte d'Ivoire">
           <Switch defaultChecked />
         </FieldRow>
         <FieldRow label="Rappel automatique des échéances">
