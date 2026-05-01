@@ -1689,6 +1689,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_creneau_overlap: {
+        Args: {
+          _annee_id: string
+          _classe_id: string
+          _ecole_id: string
+          _enseignant_id: string
+          _exclude_id?: string
+          _heure_debut: string
+          _heure_fin: string
+          _jour: number
+        }
+        Returns: string
+      }
       get_user_ecole_id: { Args: never; Returns: string }
       has_ecole_role: {
         Args: {
