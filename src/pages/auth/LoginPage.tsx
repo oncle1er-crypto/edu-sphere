@@ -146,6 +146,27 @@ export default function LoginPage() {
             </Button>
           </form>
 
+          {!isSignUp && (
+            <div className="rounded-lg border border-dashed border-primary/30 bg-primary/5 p-3 space-y-1.5">
+              <p className="text-xs font-semibold text-primary">Accès démo</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                <span className="font-medium">Email :</span>
+                <button
+                  type="button"
+                  className="text-left hover:text-primary transition-colors"
+                  onClick={() => { setEmail("admin@gsp.ci"); setPassword("admin123"); }}
+                >
+                  admin@gsp.ci
+                </button>
+                <span className="font-medium">Mot de passe :</span>
+                <span>admin123</span>
+              </div>
+              <p className="text-[10px] text-muted-foreground/70 italic">
+                Cliquez sur l'email pour pré-remplir les champs
+              </p>
+            </div>
+          )}
+
           <p className="text-center text-sm text-muted-foreground">
             {isSignUp ? "Déjà inscrit ?" : "Pas encore de compte ?"}{" "}
             <button
