@@ -323,6 +323,7 @@ const App = () => (
               <Route path="statistiques" element={<ExamsStatistics />} />
               <Route path="rapports" element={<ExamsReports />} />
               <Route path="baremes" element={<GradingScales />} />
+              <Route path="fin-annee" element={<FinAnnee />} />
               <Route path="validation" element={<Validation />} />
               <Route path="configuration" element={<ExamsConfig />} />
             </Route>
