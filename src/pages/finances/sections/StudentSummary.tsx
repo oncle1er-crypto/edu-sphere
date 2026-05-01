@@ -14,9 +14,10 @@ import { toast } from "sonner";
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
 
 export default function StudentSummary() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
-  const [selectedId, setSelectedId] = useState<string>(ELEVES_SCOLARITE[0].id);
+  const [selectedId, setSelectedId] = useState<string>("");
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
@@ -25,11 +26,16 @@ export default function StudentSummary() {
       const matchCycle = cycle === "all" || e.cycle === cycle;
       return matchSearch && matchCycle;
     });
-  }, [search, cycle]);
+  }, [search, cycle, ELEVES_SCOLARITE]);
 
-  const eleve = ELEVES_SCOLARITE.find((e) => e.id === selectedId) ?? ELEVES_SCOLARITE[0];
+  const eleve = ELEVES_SCOLARITE.find((e) => e.id === (selectedId || ELEVES_SCOLARITE[0]?.id)) ?? ELEVES_SCOLARITE[0];
+
+  if (finLoading || !eleve) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
   const st = statutEleve(eleve);
-  const pct = Math.round((eleve.totalPaye / eleve.fraisAnnuel) * 100);
+  const pct = eleve.fraisAnnuel > 0 ? Math.round((eleve.totalPaye / eleve.fraisAnnuel) * 100) : 0;
 
   return (
     <div className="space-y-6">
