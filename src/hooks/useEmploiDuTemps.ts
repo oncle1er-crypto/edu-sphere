@@ -97,6 +97,13 @@ export function useEmploiDuTemps() {
       salle?: string;
     }) => {
       if (!ecoleId || !anneeId) return null;
+      // Overlap check
+      const conflict = await checkOverlap(
+        ecoleId, anneeId, creneau.classe_id,
+        creneau.enseignant_id ?? null,
+        creneau.jour, creneau.heure_debut, creneau.heure_fin
+      );
+      if (conflict) { toast.error("Conflit : " + conflict); return null; }
       const { data, error } = await supabase
         .from("creneaux_emploi_temps" as any)
         .insert({
