@@ -3,24 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 
-export interface Eleve {
-  id: string;
-  matricule: string;
-  nom: string;
-  prenom: string;
-  sexe: string | null;
-  date_naissance: string | null;
-  lieu_naissance: string | null;
-  nationalite: string | null;
-  adresse: string | null;
-  photo_url: string | null;
-  statut: string;
-  classe_id: string | null;
-  annee_id: string | null;
-  ecole_id: string;
-  date_inscription: string | null;
-  classe_nom?: string;
-  cycle_nom?: string;
+import type { Database } from "@/integrations/supabase/types";
+
+type EleveRow = Database["public"]["Tables"]["eleves"]["Row"];
+
+export interface Eleve extends EleveRow {
+  classe_nom?: string | null;
+  cycle_nom?: string | null;
 }
 
 export function useEleves() {
