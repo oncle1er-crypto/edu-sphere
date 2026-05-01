@@ -178,6 +178,34 @@ export default function CardsList() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!toReissue} onOpenChange={(o) => !o && setToReissue(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la réémission ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {toReissue && (
+                <>
+                  Une nouvelle carte sera générée pour <strong>{toReissue.prenom} {toReissue.nom}</strong>{" "}
+                  (matricule <span className="font-mono">{toReissue.matricule}</span>).
+                  L'ancienne carte reste dans l'historique. Cette action est définitive.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toReissue) reissue(toReissue);
+                setToReissue(null);
+              }}
+            >
+              Réémettre
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
