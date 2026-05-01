@@ -291,11 +291,23 @@ export default function AcademicSettings() {
                   <TableCell>{fmt(p.fin)}</TableCell>
                   <TableCell>{periodeStatutBadge(p.statut)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" disabled={verrouAnnee} onClick={() => togglePeriode(p.id)}>
+                    <ConfirmButton
+                      size="sm" variant="outline"
+                      disabled={verrouAnnee}
+                      tone={p.statut === "verrouillee" ? "warning" : "danger"}
+                      confirmTitle={p.statut === "verrouillee" ? `Déverrouiller « ${p.nom} » ?` : `Verrouiller « ${p.nom} » ?`}
+                      confirmDescription={
+                        p.statut === "verrouillee"
+                          ? "Les modules concernés (notes, présences, paiements…) redeviendront modifiables pour les dates de cette période."
+                          : "Plus aucune modification ne sera possible sur les modules concernés (notes, présences, paiements…) pour les dates de cette période."
+                      }
+                      confirmLabel={p.statut === "verrouillee" ? "Déverrouiller" : "Verrouiller"}
+                      onConfirm={() => togglePeriode(p.id)}
+                    >
                       {p.statut === "verrouillee"
                         ? (<><Unlock className="h-3.5 w-3.5" />Déverrouiller</>)
                         : (<><Lock className="h-3.5 w-3.5" />Verrouiller</>)}
-                    </Button>
+                    </ConfirmButton>
                   </TableCell>
                 </TableRow>
               ))}
