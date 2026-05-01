@@ -4,6 +4,30 @@ import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
 
+async function checkOverlap(
+  ecoleId: string,
+  anneeId: string,
+  classeId: string,
+  enseignantId: string | null,
+  jour: number,
+  heureDebut: string,
+  heureFin: string,
+  excludeId?: string
+): Promise<string | null> {
+  const { data, error } = await supabase.rpc("check_creneau_overlap" as any, {
+    _ecole_id: ecoleId,
+    _annee_id: anneeId,
+    _classe_id: classeId,
+    _enseignant_id: enseignantId,
+    _jour: jour,
+    _heure_debut: heureDebut,
+    _heure_fin: heureFin,
+    _exclude_id: excludeId ?? null,
+  });
+  if (error) { console.error(error); return null; }
+  return (data as string) ?? null;
+}
+
 export interface Creneau {
   id: string;
   ecole_id: string;
@@ -73,6 +97,13 @@ export function useEmploiDuTemps() {
       salle?: string;
     }) => {
       if (!ecoleId || !anneeId) return null;
+      // Overlap check
+      const conflict = await checkOverlap(
+        ecoleId, anneeId, creneau.classe_id,
+        creneau.enseignant_id ?? null,
+        creneau.jour, creneau.heure_debut, creneau.heure_fin
+      );
+      if (conflict) { toast.error("Conflit : " + conflict); return null; }
       const { data, error } = await supabase
         .from("creneaux_emploi_temps" as any)
         .insert({
@@ -111,6 +142,7 @@ export function useEmploiDuTemps() {
   const updateCreneau = useCallback(
     async (
       id: string,
+      classeId: string,
       updates: Partial<{
         matiere_id: string;
         enseignant_id: string | null;
@@ -120,6 +152,21 @@ export function useEmploiDuTemps() {
         salle: string;
       }>
     ) => {
+      if (!ecoleId || !anneeId) return false;
+      // Find existing creneau to merge values for overlap check
+      const existing = creneaux.find((c) => c.id === id);
+      const jour = updates.jour ?? existing?.jour ?? 1;
+      const heure_debut = updates.heure_debut ?? existing?.heure_debut ?? "08:00";
+      const heure_fin = updates.heure_fin ?? existing?.heure_fin ?? "09:00";
+      const enseignant_id = updates.enseignant_id !== undefined
+        ? updates.enseignant_id
+        : existing?.enseignant_id ?? null;
+
+      const conflict = await checkOverlap(
+        ecoleId, anneeId, classeId, enseignant_id, jour, heure_debut, heure_fin, id
+      );
+      if (conflict) { toast.error("Conflit : " + conflict); return false; }
+
       const { error } = await supabase
         .from("creneaux_emploi_temps" as any)
         .update(updates as any)
@@ -132,7 +179,7 @@ export function useEmploiDuTemps() {
       toast.success("Créneau modifié");
       return true;
     },
-    []
+    [ecoleId, anneeId, creneaux]
   );
 
   return {
