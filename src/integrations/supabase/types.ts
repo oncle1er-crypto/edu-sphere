@@ -175,6 +175,42 @@ export type Database = {
           },
         ]
       }
+      audit_decisions_fin_annee: {
+        Row: {
+          action: string
+          ancien_statut: string | null
+          created_at: string
+          decision_id: string
+          details: Json | null
+          ecole_id: string
+          effectue_par: string
+          id: string
+          nouveau_statut: string | null
+        }
+        Insert: {
+          action: string
+          ancien_statut?: string | null
+          created_at?: string
+          decision_id: string
+          details?: Json | null
+          ecole_id: string
+          effectue_par: string
+          id?: string
+          nouveau_statut?: string | null
+        }
+        Update: {
+          action?: string
+          ancien_statut?: string | null
+          created_at?: string
+          decision_id?: string
+          details?: Json | null
+          ecole_id?: string
+          effectue_par?: string
+          id?: string
+          nouveau_statut?: string | null
+        }
+        Relationships: []
+      }
       cartes: {
         Row: {
           annee_id: string | null
@@ -458,7 +494,12 @@ export type Database = {
           eleve_id: string
           id: string
           motif: string | null
+          statut: string
           updated_at: string
+          valide_le: string | null
+          valide_par: string | null
+          verrouille_le: string | null
+          verrouille_par: string | null
         }
         Insert: {
           annee_id: string
@@ -471,7 +512,12 @@ export type Database = {
           eleve_id: string
           id?: string
           motif?: string | null
+          statut?: string
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
+          verrouille_le?: string | null
+          verrouille_par?: string | null
         }
         Update: {
           annee_id?: string
@@ -484,7 +530,12 @@ export type Database = {
           eleve_id?: string
           id?: string
           motif?: string | null
+          statut?: string
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
+          verrouille_le?: string | null
+          verrouille_par?: string | null
         }
         Relationships: []
       }
@@ -1274,6 +1325,48 @@ export type Database = {
           },
         ]
       }
+      parcours_scolaire: {
+        Row: {
+          annee_id: string
+          classe_destination_id: string | null
+          classe_id: string
+          created_at: string
+          decision: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          moyenne_generale: number | null
+          rang: number | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          classe_destination_id?: string | null
+          classe_id: string
+          created_at?: string
+          decision?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          moyenne_generale?: number | null
+          rang?: number | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          classe_destination_id?: string | null
+          classe_id?: string
+          created_at?: string
+          decision?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          moyenne_generale?: number | null
+          rang?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parents: {
         Row: {
           adresse: string | null
@@ -1689,6 +1782,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      appliquer_decisions_fin_annee: {
+        Args: { _annee_id: string; _ecole_id: string; _user_id: string }
+        Returns: Json
+      }
       check_creneau_overlap: {
         Args: {
           _annee_id: string
