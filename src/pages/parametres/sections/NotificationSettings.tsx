@@ -60,7 +60,7 @@ export default function NotificationSettings() {
         icon={<Mail className="h-5 w-5" />}
       >
         <FieldRow label="Adresse expéditeur"><Input defaultValue="no-reply@notre-avenir.cm" /></FieldRow>
-        <FieldRow label="Nom expéditeur"><Input defaultValue="École Notre Avenir" /></FieldRow>
+        <FieldRow label="Nom expéditeur"><Input defaultValue="Groupe Scolaire La Providence" /></FieldRow>
         <FieldRow label="Serveur SMTP"><Input defaultValue="smtp.gmail.com" /></FieldRow>
         <FieldRow label="Port"><Input type="number" defaultValue={587} className="w-32" /></FieldRow>
         <FieldRow label="Utilisateur SMTP"><Input defaultValue="contact@notre-avenir.cm" /></FieldRow>
