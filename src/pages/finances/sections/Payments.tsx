@@ -59,7 +59,7 @@ export default function Payments() {
             confirmTitle="Enregistrer ce paiement ?"
             confirmDescription="Le paiement sera ajouté à la caisse et un reçu sera émis. Cette opération est traçable et ne peut pas être supprimée — seule une annulation comptable sera possible."
             confirmLabel="Enregistrer"
-            onConfirm={() => toast.success("Paiement enregistré")}
+            onConfirm={() => { toast.success("Paiement enregistré"); }}
           >
             <Plus className="h-4 w-4" />
             Saisir un paiement
