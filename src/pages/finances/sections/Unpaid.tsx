@@ -195,9 +195,30 @@ export default function Unpaid() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche" onClick={() => openFiche(e)}>
+                  <div className="flex justify-end gap-1 flex-wrap">
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche complète" onClick={() => openFiche(e)}>
                       <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="Enregistrer un encaissement"
+                      onClick={() => { setPaymentEleve(e); setPaymentTranche(undefined); }}
+                    >
+                      <Wallet className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="Mettre à jour le statut"
+                      onClick={() => setStatusEleve(e)}
+                    >
+                      <Tag className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="icon" variant="outline" className="h-8 w-8"
+                      title="SMS avec aperçu (modèle T1/T2/T3)"
+                      onClick={() => setSmsEleve(e)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
                     </Button>
                     <Button
                       size="sm"
@@ -205,7 +226,7 @@ export default function Unpaid() {
                       onClick={() => handleSendSms(e)}
                       title="Envoyer SMS de relance en 1 clic"
                     >
-                      <MessageSquare className="h-4 w-4" />Relancer
+                      Relancer
                     </Button>
                   </div>
                 </TableCell>
