@@ -369,6 +369,51 @@ export type Database = {
           },
         ]
       }
+      creneaux_emploi_temps: {
+        Row: {
+          annee_id: string
+          classe_id: string
+          created_at: string
+          ecole_id: string
+          enseignant_id: string | null
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jour: number
+          matiere_id: string
+          salle: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          classe_id: string
+          created_at?: string
+          ecole_id: string
+          enseignant_id?: string | null
+          heure_debut: string
+          heure_fin: string
+          id?: string
+          jour: number
+          matiere_id: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          classe_id?: string
+          created_at?: string
+          ecole_id?: string
+          enseignant_id?: string | null
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jour?: number
+          matiere_id?: string
+          salle?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cycles: {
         Row: {
           created_at: string
