@@ -7,6 +7,7 @@ import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -185,9 +186,15 @@ export default function AcademicSettings() {
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">
                       {a.statut !== "active" && a.statut !== "archivee" && (
-                        <Button size="sm" variant="outline" onClick={() => { setAnneeStatut(a.id, "active"); toast.success("Année activée"); }}>
+                        <ConfirmButton
+                          size="sm" variant="outline"
+                          confirmTitle={`Activer ${a.libelle} ?`}
+                          confirmDescription="Cette année deviendra l'année de référence pour les saisies (notes, absences, paiements). L'année active actuelle sera désactivée."
+                          confirmLabel="Activer"
+                          onConfirm={() => { setAnneeStatut(a.id, "active"); toast.success("Année activée"); }}
+                        >
                           <Power className="h-3.5 w-3.5" />Activer
-                        </Button>
+                        </ConfirmButton>
                       )}
                       {a.statut === "active" && (
                         <AlertDialog>
@@ -212,9 +219,15 @@ export default function AcademicSettings() {
                       )}
                       {a.statut === "verrouillee" && (
                         <>
-                          <Button size="sm" variant="outline" onClick={() => { setAnneeStatut(a.id, "active"); toast.success("Année déverrouillée"); }}>
+                          <ConfirmButton
+                            size="sm" variant="outline" tone="warning"
+                            confirmTitle={`Déverrouiller ${a.libelle} ?`}
+                            confirmDescription="Les saisies (notes, absences, paiements) redeviendront modifiables sur toute l'année. Cette opération est tracée."
+                            confirmLabel="Déverrouiller"
+                            onConfirm={() => { setAnneeStatut(a.id, "active"); toast.success("Année déverrouillée"); }}
+                          >
                             <Unlock className="h-3.5 w-3.5" />Déverrouiller
-                          </Button>
+                          </ConfirmButton>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button size="sm" variant="outline"><Archive className="h-3.5 w-3.5" />Archiver</Button>
@@ -278,11 +291,23 @@ export default function AcademicSettings() {
                   <TableCell>{fmt(p.fin)}</TableCell>
                   <TableCell>{periodeStatutBadge(p.statut)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" variant="outline" disabled={verrouAnnee} onClick={() => togglePeriode(p.id)}>
+                    <ConfirmButton
+                      size="sm" variant="outline"
+                      disabled={verrouAnnee}
+                      tone={p.statut === "verrouillee" ? "warning" : "danger"}
+                      confirmTitle={p.statut === "verrouillee" ? `Déverrouiller « ${p.nom} » ?` : `Verrouiller « ${p.nom} » ?`}
+                      confirmDescription={
+                        p.statut === "verrouillee"
+                          ? "Les modules concernés (notes, présences, paiements…) redeviendront modifiables pour les dates de cette période."
+                          : "Plus aucune modification ne sera possible sur les modules concernés (notes, présences, paiements…) pour les dates de cette période."
+                      }
+                      confirmLabel={p.statut === "verrouillee" ? "Déverrouiller" : "Verrouiller"}
+                      onConfirm={() => togglePeriode(p.id)}
+                    >
                       {p.statut === "verrouillee"
                         ? (<><Unlock className="h-3.5 w-3.5" />Déverrouiller</>)
                         : (<><Lock className="h-3.5 w-3.5" />Verrouiller</>)}
-                    </Button>
+                    </ConfirmButton>
                   </TableCell>
                 </TableRow>
               ))}

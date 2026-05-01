@@ -1,11 +1,13 @@
 import { CreditCard, Plus, Smartphone, Banknote, Building2, CreditCard as CardIcon } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { LockBanner } from "@/components/LockGuard";
 import { useLock } from "@/context/AcademicPeriodContext";
+import { toast } from "sonner";
 
 const methodStats = [
   { name: "MTN Mobile Money", count: 142, amount: "5 320 000", icon: Smartphone, color: "text-yellow-600 bg-yellow-500/15" },
@@ -50,10 +52,18 @@ export default function Payments() {
         hideSave
       >
         <div className="flex justify-end">
-          <Button size="sm" disabled={lock.locked} title={lock.locked ? lock.reason : undefined}>
+          <ConfirmButton
+            size="sm"
+            disabled={lock.locked}
+            title={lock.locked ? lock.reason : undefined}
+            confirmTitle="Enregistrer ce paiement ?"
+            confirmDescription="Le paiement sera ajouté à la caisse et un reçu sera émis. Cette opération est traçable et ne peut pas être supprimée — seule une annulation comptable sera possible."
+            confirmLabel="Enregistrer"
+            onConfirm={() => { toast.success("Paiement enregistré"); }}
+          >
             <Plus className="h-4 w-4" />
             Saisir un paiement
-          </Button>
+          </ConfirmButton>
         </div>
         <div className="border rounded-lg overflow-hidden">
           <Table>
