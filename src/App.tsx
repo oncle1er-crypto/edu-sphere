@@ -196,6 +196,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <EcoleProvider>
+        <AcademicPeriodProvider>
         <AppLayout>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -394,6 +395,7 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
+        </AcademicPeriodProvider>
         </EcoleProvider>
       </BrowserRouter>
     </TooltipProvider>
