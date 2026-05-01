@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, ClipboardList, CalendarRange, PenSquare, FileBarChart,
-  Award, GraduationCap, Users, BarChart3, FileSpreadsheet, Settings2, ShieldCheck, Scale,
+  Award, GraduationCap, Users, BarChart3, FileSpreadsheet, Settings2, ShieldCheck, Scale, ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
