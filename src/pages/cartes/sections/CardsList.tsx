@@ -61,6 +61,29 @@ export default function CardsList() {
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Cartes émises</h2>
+          <p className="text-sm text-muted-foreground">
+            Gérez les cartes existantes ou émettez-en de nouvelles à partir des élèves et du personnel.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button asChild variant="outline">
+            <Link to="/cartes/emission?mode=batch">
+              <Layers className="h-4 w-4 mr-2" />
+              Émission par lot
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link to="/cartes/emission">
+              <Plus className="h-4 w-4 mr-2" />
+              Émettre une carte
+            </Link>
+          </Button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
