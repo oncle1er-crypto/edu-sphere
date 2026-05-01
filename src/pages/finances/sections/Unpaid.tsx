@@ -37,6 +37,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 export default function Unpaid() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [classe, setClasse] = useState<string>("all");
@@ -49,10 +50,10 @@ export default function Unpaid() {
   const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
   const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
 
-  const classesDispo = useMemo(() => {
+  const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
     return Array.from(new Set(src.map((e) => e.classe))).sort();
-  }, [cycle]);
+  }, [cycle, ELEVES_SCOLARITE]);
 
   const enRetard = useMemo(() => {
     const list = ELEVES_SCOLARITE
@@ -71,12 +72,22 @@ export default function Unpaid() {
       }
     });
     return list;
-  }, [search, cycle, classe, sortKey, sortDir]);
+  }, [search, cycle, classe, sortKey, sortDir, ELEVES_SCOLARITE]);
 
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
   const retardMoyen = enRetard.length ? Math.round(enRetard.reduce((s, e) => s + e.joursRetard, 0) / enRetard.length) : 0;
   const critique = enRetard.filter((e) => e.joursRetard > 30).length;
-  const echeancier = getEcheancier();
+
+  // Build echeancier from data
+  const echeancier = [1, 2, 3].map((num) => {
+    const label = num === 1 ? "1ère tranche" : num === 2 ? "2ème tranche" : "3ème tranche";
+    const tranches = ELEVES_SCOLARITE.flatMap((el) => el.tranches.filter((t) => t.num === num));
+    const attendu = tranches.reduce((s, t) => s + t.montant, 0);
+    const paye = tranches.reduce((s, t) => s + t.paye, 0);
+    const enRetardCount = tranches.filter((t) => t.statut === "retard").length;
+    const partielle = tranches.filter((t) => t.statut === "partielle").length;
+    return { num, label, attendu, paye, reste: attendu - paye, enRetard: enRetardCount, partielle, taux: attendu > 0 ? Math.round((paye / attendu) * 100) : 0 };
+  });
 
   const buckets = {
     aVenir: enRetard.filter((e) => e.joursRetard === 0),
