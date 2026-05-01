@@ -2,16 +2,11 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
 
-export interface Classe {
-  id: string;
-  nom: string;
-  cycle_id: string;
-  annee_id: string;
-  ecole_id: string;
-  capacite: number | null;
-  salle: string | null;
-  professeur_principal_id: string | null;
+type ClasseRow = Database["public"]["Tables"]["classes"]["Row"];
+
+export interface Classe extends ClasseRow {
   cycle_nom?: string;
   effectif?: number;
   prof_nom?: string;
@@ -26,10 +21,9 @@ export function useClasses() {
     if (!ecoleId) return;
     setLoading(true);
 
-    // Get classes with cycle name
-    const { data: classesData, error } = await supabase
+    const { data, error } = await supabase
       .from("classes")
-      .select("*, cycles(nom)")
+      .select("*, cycles(nom), enseignants(nom, prenom), eleves(count)")
       .eq("ecole_id", ecoleId)
       .order("nom");
 
@@ -40,40 +34,12 @@ export function useClasses() {
       return;
     }
 
-    // Count students per class
-    const { data: countData } = await supabase
-      .from("eleves")
-      .select("classe_id")
-      .eq("ecole_id", ecoleId)
-      .not("classe_id", "is", null);
-
-    const counts: Record<string, number> = {};
-    (countData ?? []).forEach((e: any) => {
-      counts[e.classe_id] = (counts[e.classe_id] || 0) + 1;
-    });
-
-    // Get teacher names for professeur_principal
-    const profIds = (classesData ?? [])
-      .map((c: any) => c.professeur_principal_id)
-      .filter(Boolean);
-
-    let profMap: Record<string, string> = {};
-    if (profIds.length > 0) {
-      const { data: profs } = await supabase
-        .from("enseignants")
-        .select("id, nom, prenom")
-        .in("id", profIds);
-      (profs ?? []).forEach((p: any) => {
-        profMap[p.id] = `${p.prenom} ${p.nom}`;
-      });
-    }
-
     setClasses(
-      (classesData ?? []).map((c: any) => ({
+      (data ?? []).map((c: any) => ({
         ...c,
         cycle_nom: c.cycles?.nom ?? "",
-        effectif: counts[c.id] || 0,
-        prof_nom: c.professeur_principal_id ? profMap[c.professeur_principal_id] ?? "" : "",
+        effectif: c.eleves?.[0]?.count ?? 0,
+        prof_nom: c.enseignants ? `${c.enseignants.prenom} ${c.enseignants.nom}` : "",
       }))
     );
     setLoading(false);
@@ -84,7 +50,7 @@ export function useClasses() {
     if (!ecoleLoading && !ecoleId) setLoading(false);
   }, [ecoleLoading, ecoleId, fetchClasses]);
 
-  const addClass = async (classe: { nom: string; cycle_id: string; annee_id: string; capacite?: number; salle?: string }) => {
+  const addClass = async (classe: Database["public"]["Tables"]["classes"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase
       .from("classes")
