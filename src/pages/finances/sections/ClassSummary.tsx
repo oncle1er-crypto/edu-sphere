@@ -30,9 +30,9 @@ interface ClasseSyntheseRow {
   eleves: EleveScolarite[];
 }
 
-function buildClassesSynthese(): ClasseSyntheseRow[] {
+function buildClassesSynthese(allEleves: EleveScolarite[]): ClasseSyntheseRow[] {
   const map = new Map<string, ClasseSyntheseRow>();
-  for (const e of ELEVES_SCOLARITE) {
+  for (const e of allEleves) {
     const key = `${e.cycle}::${e.classe}`;
     let row = map.get(key);
     if (!row) {
@@ -57,23 +57,24 @@ function buildClassesSynthese(): ClasseSyntheseRow[] {
     row.eleves.push(e);
   }
   for (const r of map.values()) {
-    r.tauxRetard = Math.round((r.enRetard / r.effectif) * 100);
-    r.tauxRecouvrement = Math.round((r.paye / r.totalDu) * 100);
+    r.tauxRetard = r.effectif > 0 ? Math.round((r.enRetard / r.effectif) * 100) : 0;
+    r.tauxRecouvrement = r.totalDu > 0 ? Math.round((r.paye / r.totalDu) * 100) : 0;
   }
   return Array.from(map.values()).sort((a, b) => b.tauxRetard - a.tauxRetard || a.classe.localeCompare(b.classe));
 }
 
 export default function ClassSummary() {
+  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedEleve, setSelectedEleve] = useState<EleveScolarite | null>(null);
 
   const rows = useMemo(() => {
-    return buildClassesSynthese()
+    return buildClassesSynthese(ELEVES_SCOLARITE)
       .filter((r) => cycle === "all" || r.cycle === cycle)
       .filter((r) => !search || `${r.classe} ${r.cycle}`.toLowerCase().includes(search.toLowerCase()));
-  }, [search, cycle]);
+  }, [search, cycle, ELEVES_SCOLARITE]);
 
   // KPIs globaux
   const kpis = useMemo(() => {
