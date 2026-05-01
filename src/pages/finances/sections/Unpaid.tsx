@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, Mail, MessageSquare, Phone, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye } from "lucide-react";
+import { AlertTriangle, Bell, Mail, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ELEVES_SCOLARITE, getEcheancier, statutEleve, fcfa, type Cycle, type EleveScolarite } from "../scolarite-data";
 import { addRelance, getRelancesCount, getDerniereRelance, formatRelanceDate } from "../relances-store";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { PaymentDialog } from "../components/PaymentDialog";
+import { SmsPreviewDialog } from "../components/SmsPreviewDialog";
+import { StatusDialog } from "../components/StatusDialog";
+import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
