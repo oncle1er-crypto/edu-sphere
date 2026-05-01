@@ -190,6 +190,12 @@ export default function Unpaid() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher une famille…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
+          <Select value={cycle} onValueChange={(v) => setCycle(v as Cycle | "all")}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CYCLES.map((c) => <SelectItem key={c} value={c}>{c === "all" ? "Tous cycles" : c}</SelectItem>)}
+            </SelectContent>
+          </Select>
           <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><Mail className="h-4 w-4" />Email groupé</Button>
           <Button variant="outline" size="sm" onClick={() => toast.success("SMS groupé envoyé")}><MessageSquare className="h-4 w-4" />SMS groupé</Button>
           <Button size="sm" onClick={() => toast.success("Campagne de relance lancée")}><Bell className="h-4 w-4" />Relance globale</Button>
