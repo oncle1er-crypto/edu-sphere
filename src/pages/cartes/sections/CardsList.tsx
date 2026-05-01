@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Eye, Search, Printer, Plus, Layers, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
 import { SchoolCard } from "@/pages/cartes/components/SchoolCard";
