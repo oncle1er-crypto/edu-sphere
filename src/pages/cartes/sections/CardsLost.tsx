@@ -56,12 +56,15 @@ export default function CardsLost() {
                   <TableCell><Badge variant="outline">{c.type}</Badge></TableCell>
                   <TableCell className="font-mono text-xs">{c.matricule}</TableCell>
                   <TableCell className="text-right">
-                    <Button
-                      size="sm" variant="outline"
-                      onClick={() => { setStatut(c.id, "perdue"); toast.success("Carte marquée perdue"); }}
+                    <ConfirmButton
+                      size="sm" variant="outline" tone="danger"
+                      confirmTitle={`Déclarer la carte de ${c.prenom} ${c.nom} perdue ?`}
+                      confirmDescription="Le QR code de cette carte sera invalidé immédiatement et les scans seront refusés. Une nouvelle carte devra être réémise pour le titulaire."
+                      confirmLabel="Déclarer perdue"
+                      onConfirm={() => { setStatut(c.id, "perdue"); toast.success("Carte marquée perdue"); }}
                     >
                       <Ban className="h-3.5 w-3.5" />Perdue
-                    </Button>
+                    </ConfirmButton>
                   </TableCell>
                 </TableRow>
               ))}
