@@ -8,7 +8,7 @@ const CYCLES: Array<"Maternelle" | "Primaire" | "Collège" | "Lycée"> = ["Mater
 
 const VOLUMES: Record<string, Record<string, number>> = {
   MATH: { Primaire: 5, Collège: 4, Lycée: 5 },
-  FR: { Primaire: 8, Collège: 5, Lycée: 4 },
+  FR: { Primaire: 6, Collège: 5, Lycée: 4 },
   ANG: { Primaire: 2, Collège: 4, Lycée: 3 },
   HG: { Collège: 3, Lycée: 4 },
   SVT: { Collège: 2, Lycée: 3 },
@@ -17,10 +17,18 @@ const VOLUMES: Record<string, Record<string, number>> = {
   EPS: { Primaire: 2, Collège: 2, Lycée: 2 },
   REL: { Maternelle: 1, Primaire: 1, Collège: 1, Lycée: 1 },
   ECM: { Primaire: 1, Collège: 1 },
-  ART: { Maternelle: 3, Primaire: 2, Collège: 1 },
+  ART: { Maternelle: 3, Primaire: 1, Collège: 1 },
   INFO: { Collège: 1, Lycée: 2 },
   ESP: { Collège: 2, Lycée: 3 },
   EVEIL: { Maternelle: 6 },
+  LECT: { Primaire: 5 },
+  ECRIT: { Primaire: 3 },
+  EXPO: { Primaire: 1 },
+  SCIOBS: { Primaire: 2 },
+  HGP: { Primaire: 2 },
+  DESS: { Maternelle: 2, Primaire: 1 },
+  CHANT: { Maternelle: 2, Primaire: 1 },
+  ACTPR: { Primaire: 1 },
 };
 
 export default function SubjectsVolumes() {
