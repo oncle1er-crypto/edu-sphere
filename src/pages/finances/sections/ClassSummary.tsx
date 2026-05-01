@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2 } from "lucide-react";
+import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,8 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ELEVES_SCOLARITE, statutEleve, fcfa, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { statutEleve, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
