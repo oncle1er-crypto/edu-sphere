@@ -29,11 +29,10 @@ function derniereTranchePayee(e: EleveScolarite): number {
   return payees.length ? Math.max(...payees) : 0;
 }
 
-// SMS automatique
+// SMS automatique basé sur les modèles personnalisables
 function buildSmsRelance(e: EleveScolarite): string {
-  const trancheRetard = e.tranches.find((t) => t.statut === "retard");
-  const lib = trancheRetard ? `${trancheRetard.label} (échue le ${trancheRetard.echeance})` : "scolarité";
-  return `GSP - Bonjour ${e.parent}, rappel : ${fcfa(e.resteDu)} FCFA dus pour ${e.prenom} ${e.nom} (${e.classe}) au titre de ${lib}. Merci de régulariser. Foi, Savoir, Excellence.`;
+  const { key, tranche } = pickTrancheCible(e);
+  return renderTemplate(getTemplate(key).message, e, tranche);
 }
 
 export default function Unpaid() {
@@ -44,6 +43,10 @@ export default function Unpaid() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedEleve, setSelectedEleve] = useState<EleveScolarite | null>(null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
+  const [paymentEleve, setPaymentEleve] = useState<EleveScolarite | null>(null);
+  const [paymentTranche, setPaymentTranche] = useState<number | undefined>(undefined);
+  const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
+  const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
 
   const classesDispo = useMemo(() => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
