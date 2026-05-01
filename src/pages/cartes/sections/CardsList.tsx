@@ -29,11 +29,25 @@ function statusBadge(s: CardStatut) {
 }
 
 export default function CardsList() {
-  const { cards } = useCards();
+  const { cards, addCards } = useCards();
   const [q, setQ] = useState("");
   const [type, setType] = useState<CardType | "all">("all");
   const [statut, setStatut] = useState<CardStatut | "all">("all");
   const [preview, setPreview] = useState<typeof cards[number] | null>(null);
+
+  const reissue = (c: typeof cards[number]) => {
+    const today = new Date().toISOString().slice(0, 10);
+    const annee = c.anneeScolaire;
+    const valid = `${annee.split("-")[1]}-07-31`;
+    addCards([{
+      ...c,
+      id: `${c.matricule}-${Date.now()}`,
+      statut: "active",
+      dateEmission: today,
+      validJusqu: valid,
+    }]);
+    toast.success(`Carte réémise pour ${c.prenom} ${c.nom}`);
+  };
 
   const filtered = cards.filter((c) => {
     if (type !== "all" && c.type !== type) return false;
