@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
-import { Eye, Search, Printer } from "lucide-react";
+import { Eye, Search, Printer, Plus, Layers, RefreshCw } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SchoolCard } from "@/pages/cartes/components/SchoolCard";
 import type { CardType } from "@/pages/cartes/components/SchoolCard";
+import { toast } from "sonner";
 
 const TYPE_LABELS: Record<CardType, string> = {
   eleve: "Élève", personnel: "Personnel", cantine: "Cantine",
