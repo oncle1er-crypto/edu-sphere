@@ -13,6 +13,7 @@ const sections = [
   { to: "evaluations", label: "Évaluations & devoirs", icon: ClipboardList, group: "Évaluations" },
   { to: "compositions", label: "Compositions & examens", icon: FileBarChart, group: "Évaluations" },
   { to: "saisie-notes", label: "Saisie des notes", icon: PenSquare, group: "Évaluations" },
+  { to: "saisie-rapide", label: "Saisie rapide ⚡", icon: PenSquare, group: "Évaluations" },
 
   { to: "bulletins", label: "Bulletins scolaires", icon: GraduationCap, group: "Résultats" },
   { to: "moyennes", label: "Moyennes & classements", icon: Award, group: "Résultats" },
