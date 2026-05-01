@@ -194,6 +194,17 @@ import TransportStatsG from "@/pages/statistiques/sections/TransportStatsGlobal"
 import LibraryStatsG from "@/pages/statistiques/sections/LibraryStatsGlobal";
 import GlobalReports from "@/pages/statistiques/sections/GlobalReports";
 import StatsConfig from "@/pages/statistiques/sections/StatsConfig";
+import SubjectsLayout from "@/pages/matieres/SubjectsLayout";
+import SubjectsDashboard from "@/pages/matieres/sections/SubjectsDashboard";
+import SubjectsList from "@/pages/matieres/sections/SubjectsList";
+import SubjectsCategories from "@/pages/matieres/sections/SubjectsCategories";
+import SubjectsClassesAssignment from "@/pages/matieres/sections/SubjectsClassesAssignment";
+import SubjectsTeachersAssignment from "@/pages/matieres/sections/SubjectsTeachersAssignment";
+import SubjectsVolumesPage from "@/pages/matieres/sections/SubjectsVolumes";
+import SubjectsScales from "@/pages/matieres/sections/SubjectsScales";
+import SubjectsPrograms from "@/pages/matieres/sections/SubjectsPrograms";
+import SubjectsReports from "@/pages/matieres/sections/SubjectsReports";
+import SubjectsConfig from "@/pages/matieres/sections/SubjectsConfig";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -391,6 +402,18 @@ const App = () => (
               <Route path="perdues" element={<CardsLost />} />
               <Route path="templates" element={<CardsTemplates />} />
               <Route path="configuration" element={<CardsConfig />} />
+            </Route>
+            <Route path="/matieres" element={<SubjectsLayout />}>
+              <Route path="tableau" element={<SubjectsDashboard />} />
+              <Route path="liste" element={<SubjectsList />} />
+              <Route path="categories" element={<SubjectsCategories />} />
+              <Route path="affectation-classes" element={<SubjectsClassesAssignment />} />
+              <Route path="affectation-enseignants" element={<SubjectsTeachersAssignment />} />
+              <Route path="volumes" element={<SubjectsVolumesPage />} />
+              <Route path="baremes" element={<SubjectsScales />} />
+              <Route path="programmes" element={<SubjectsPrograms />} />
+              <Route path="rapports" element={<SubjectsReports />} />
+              <Route path="configuration" element={<SubjectsConfig />} />
             </Route>
             
             <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />

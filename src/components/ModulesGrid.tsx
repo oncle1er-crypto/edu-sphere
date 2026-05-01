@@ -29,7 +29,7 @@ const modules: ModuleItem[] = [
   { title: "ÉLÈVES", description: "Gérer les élèves", icon: GraduationCap, to: "/eleves", iconBg: "bg-accent/15", iconColor: "text-accent" },
   { title: "ENSEIGNANTS", description: "Gérer les enseignants", icon: Users, to: "/enseignants", iconBg: "bg-primary/10", iconColor: "text-primary" },
   { title: "CLASSES", description: "Gérer les classes", icon: BookOpen, to: "/classes", iconBg: "bg-accent/15", iconColor: "text-accent" },
-  { title: "MATIÈRES", description: "Gérer les matières", icon: Library, to: "/ecoles", iconBg: "bg-primary/10", iconColor: "text-primary" },
+  { title: "MATIÈRES", description: "Gérer les matières", icon: Library, to: "/matieres", iconBg: "bg-primary/10", iconColor: "text-primary" },
   { title: "NOTES", description: "Saisir et consulter les notes", icon: ClipboardList, to: "/examens", iconBg: "bg-accent/15", iconColor: "text-accent" },
   { title: "BULLETINS", description: "Générer les bulletins", icon: FileText, to: "/examens", iconBg: "bg-primary/10", iconColor: "text-primary" },
   { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps", icon: Calendar, to: "/emploi-du-temps", iconBg: "bg-accent/15", iconColor: "text-accent" },
