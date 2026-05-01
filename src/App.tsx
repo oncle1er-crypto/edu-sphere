@@ -2,8 +2,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import LoginPage from "@/pages/auth/LoginPage";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import StudentsLayout from "@/pages/eleves/StudentsLayout";
@@ -211,17 +213,29 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+function RequireAuth({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><span className="text-muted-foreground">Chargement…</span></div>;
+  if (!session) return <Navigate to="/connexion" replace />;
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <AuthProvider>
         <EcoleProvider>
         <AcademicPeriodProvider>
-        <AppLayout>
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/*" element={
+              <RequireAuth>
+                <AppLayout>
+                  <Routes>
+                    <Route path="/" element={<Home />} />
             <Route path="/statistiques" element={<StatsLayout />}>
               <Route path="tableau" element={<GlobalDashboard />} />
               <Route path="ecoles" element={<SchoolsCompare />} />
@@ -439,10 +453,14 @@ const App = () => (
               <Route path="avance" element={<AdvancedSettings />} />
             </Route>
             <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AppLayout>
+              </RequireAuth>
+            } />
           </Routes>
-        </AppLayout>
         </AcademicPeriodProvider>
         </EcoleProvider>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
