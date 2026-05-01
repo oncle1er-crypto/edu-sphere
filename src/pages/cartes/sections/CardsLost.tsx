@@ -96,12 +96,15 @@ export default function CardsLost() {
                   <TableCell className="font-mono text-xs">{c.matricule}</TableCell>
                   <TableCell>{badge(c.statut)}</TableCell>
                   <TableCell className="text-right">
-                    <Button
+                    <ConfirmButton
                       size="sm" variant="ghost"
-                      onClick={() => { setStatut(c.id, "active"); toast.success("Carte réactivée"); }}
+                      confirmTitle={`Réactiver la carte de ${c.prenom} ${c.nom} ?`}
+                      confirmDescription="Le QR code redeviendra valide et la carte pourra à nouveau être scannée à l'entrée, à la cantine et au transport."
+                      confirmLabel="Réactiver"
+                      onConfirm={() => { setStatut(c.id, "active"); toast.success("Carte réactivée"); }}
                     >
                       <RotateCcw className="h-3.5 w-3.5" />Réactiver
-                    </Button>
+                    </ConfirmButton>
                   </TableCell>
                 </TableRow>
               ))}
