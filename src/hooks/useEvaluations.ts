@@ -71,5 +71,26 @@ export function useEvaluations() {
     return data;
   };
 
-  return { evaluations, loading: loading || ecoleLoading, fetchEvaluations, addEvaluation, ecoleId, anneeId };
+  const updateEvaluation = async (
+    id: string,
+    updates: Database["public"]["Tables"]["evaluations"]["Update"]
+  ) => {
+    const { error } = await supabase.from("evaluations").update(updates).eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    toast.success("Évaluation mise à jour");
+    await fetchEvaluations();
+    return true;
+  };
+
+  const deleteEvaluation = async (id: string) => {
+    // Delete associated notes first
+    await supabase.from("notes").delete().eq("evaluation_id", id);
+    const { error } = await supabase.from("evaluations").delete().eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    toast.success("Évaluation supprimée");
+    await fetchEvaluations();
+    return true;
+  };
+
+  return { evaluations, loading: loading || ecoleLoading, fetchEvaluations, addEvaluation, updateEvaluation, deleteEvaluation, ecoleId, anneeId };
 }
