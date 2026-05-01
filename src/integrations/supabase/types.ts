@@ -401,6 +401,48 @@ export type Database = {
           },
         ]
       }
+      decisions_fin_annee: {
+        Row: {
+          annee_id: string
+          classe_destination_id: string | null
+          classe_origine_id: string
+          created_at: string
+          decide_par: string | null
+          decision: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          motif: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          classe_destination_id?: string | null
+          classe_origine_id: string
+          created_at?: string
+          decide_par?: string | null
+          decision?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          classe_destination_id?: string | null
+          classe_origine_id?: string
+          created_at?: string
+          decide_par?: string | null
+          decision?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       ecoles: {
         Row: {
           adresse: string | null
