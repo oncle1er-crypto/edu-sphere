@@ -16,6 +16,7 @@ import {
   UtensilsCrossed,
   Bus,
   ClipboardCheck,
+  IdCard,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -56,6 +57,7 @@ const otherItems = [
   { title: "Transport", url: "/transport", icon: Bus },
   { title: "Bibliothèque", url: "/bibliotheque", icon: Library },
   { title: "Communication", url: "/communication", icon: MessageSquare },
+  { title: "Cartes & Badges", url: "/cartes", icon: IdCard },
   { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
 ];
 

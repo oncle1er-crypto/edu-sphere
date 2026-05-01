@@ -172,6 +172,15 @@ import SchoolsStats from "@/pages/ecoles/sections/SchoolsStats";
 import SchoolsConfig from "@/pages/ecoles/sections/SchoolsConfig";
 import { EcoleProvider } from "@/context/EcoleContext";
 import { AcademicPeriodProvider } from "@/context/AcademicPeriodContext";
+import CardsLayout from "@/pages/cartes/CardsLayout";
+import CardsDashboard from "@/pages/cartes/sections/CardsDashboard";
+import CardsList from "@/pages/cartes/sections/CardsList";
+import CardsIssue from "@/pages/cartes/sections/CardsIssue";
+import CardsPrintQueue from "@/pages/cartes/sections/CardsPrintQueue";
+import CardsRenewal from "@/pages/cartes/sections/CardsRenewal";
+import CardsLost from "@/pages/cartes/sections/CardsLost";
+import CardsTemplates from "@/pages/cartes/sections/CardsTemplates";
+import CardsConfig from "@/pages/cartes/sections/CardsConfig";
 import StatsLayout from "@/pages/statistiques/StatsLayout";
 import GlobalDashboard from "@/pages/statistiques/sections/GlobalDashboard";
 import SchoolsCompare from "@/pages/statistiques/sections/SchoolsCompare";
@@ -372,6 +381,16 @@ const App = () => (
               <Route path="medias" element={<MediaLibrary />} />
               <Route path="envois" element={<SendHistory />} />
               <Route path="configuration" element={<CommunicationConfig />} />
+            </Route>
+            <Route path="/cartes" element={<CardsLayout />}>
+              <Route path="tableau" element={<CardsDashboard />} />
+              <Route path="liste" element={<CardsList />} />
+              <Route path="emission" element={<CardsIssue />} />
+              <Route path="impression" element={<CardsPrintQueue />} />
+              <Route path="renouvellement" element={<CardsRenewal />} />
+              <Route path="perdues" element={<CardsLost />} />
+              <Route path="templates" element={<CardsTemplates />} />
+              <Route path="configuration" element={<CardsConfig />} />
             </Route>
             
             <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />
