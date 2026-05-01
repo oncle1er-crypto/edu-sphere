@@ -376,6 +376,25 @@ export default function Unpaid() {
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelectedEleve(null); setOpenTrancheNum(undefined); } }}
       />
+
+      <PaymentDialog
+        eleve={paymentEleve}
+        defaultTrancheNum={paymentTranche}
+        open={!!paymentEleve}
+        onOpenChange={(o) => { if (!o) { setPaymentEleve(null); setPaymentTranche(undefined); } }}
+      />
+
+      <SmsPreviewDialog
+        eleve={smsEleve}
+        open={!!smsEleve}
+        onOpenChange={(o) => { if (!o) setSmsEleve(null); }}
+      />
+
+      <StatusDialog
+        eleve={statusEleve}
+        open={!!statusEleve}
+        onOpenChange={(o) => { if (!o) setStatusEleve(null); }}
+      />
     </div>
   );
 }
