@@ -171,6 +171,7 @@ import SchoolsCreate from "@/pages/ecoles/sections/SchoolsCreate";
 import SchoolsStats from "@/pages/ecoles/sections/SchoolsStats";
 import SchoolsConfig from "@/pages/ecoles/sections/SchoolsConfig";
 import { EcoleProvider } from "@/context/EcoleContext";
+import { AcademicPeriodProvider } from "@/context/AcademicPeriodContext";
 import StatsLayout from "@/pages/statistiques/StatsLayout";
 import GlobalDashboard from "@/pages/statistiques/sections/GlobalDashboard";
 import SchoolsCompare from "@/pages/statistiques/sections/SchoolsCompare";
