@@ -24,15 +24,15 @@ export default function SchoolProfile() {
       </FieldRow>
 
       <FieldRow label="Nom officiel">
-        <Input defaultValue="École Notre Avenir" />
+        <Input defaultValue="GROUPE SCOLAIRE LA PROVIDENCE" />
       </FieldRow>
 
       <FieldRow label="Sigle / abréviation">
-        <Input defaultValue="ENA" maxLength={10} />
+        <Input defaultValue="GSP" maxLength={10} />
       </FieldRow>
 
       <FieldRow label="Devise / slogan">
-        <Input defaultValue="Une école, un avenir, une réussite" />
+        <Input defaultValue="La Providence guide nos pas vers l'excellence" />
       </FieldRow>
 
       <FieldRow label="Type d'établissement">
