@@ -305,7 +305,7 @@ export default function Unpaid() {
                   </div>
                   <Badge variant="outline" className={e.taux >= 90 ? "bg-accent/15 text-accent border-accent/30" : e.taux >= 70 ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : "bg-destructive/15 text-destructive border-destructive/30"}>{e.taux}%</Badge>
                 </div>
-                <p className="text-[11px] text-muted-foreground mb-3">📅 Échéance : {e.date}</p>
+                <p className="text-[11px] text-muted-foreground mb-3">Tranche {e.num}</p>
                 <Progress value={e.taux} className="h-2" />
                 <div className="grid grid-cols-2 gap-2 mt-3">
                   <div><p className="text-[10px] text-muted-foreground uppercase">Encaissé</p><p className="text-sm font-bold text-accent">{fcfa(e.paye)}</p></div>
