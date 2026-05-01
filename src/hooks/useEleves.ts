@@ -46,7 +46,7 @@ export function useEleves() {
     if (!ecoleLoading && !ecoleId) setLoading(false);
   }, [ecoleLoading, ecoleId, fetchEleves]);
 
-  const addEleve = async (eleve: Omit<Eleve, "id" | "ecole_id" | "classe_nom" | "cycle_nom">) => {
+  const addEleve = async (eleve: Database["public"]["Tables"]["eleves"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase
       .from("eleves")
