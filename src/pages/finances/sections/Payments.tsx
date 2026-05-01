@@ -65,7 +65,7 @@ export default function Payments() {
       const matchStatut = statut === "all" || statutEleve(e) === statut;
       return matchSearch && matchNom && matchPrenom && matchClasseAdv && matchTel && matchCycle && matchClasse && matchStatut;
     });
-  }, [search, adv, cycle, classe, statut]);
+  }, [search, adv, cycle, classe, statut, ELEVES_SCOLARITE]);
 
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
