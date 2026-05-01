@@ -52,10 +52,18 @@ export default function Payments() {
         hideSave
       >
         <div className="flex justify-end">
-          <Button size="sm" disabled={lock.locked} title={lock.locked ? lock.reason : undefined}>
+          <ConfirmButton
+            size="sm"
+            disabled={lock.locked}
+            title={lock.locked ? lock.reason : undefined}
+            confirmTitle="Enregistrer ce paiement ?"
+            confirmDescription="Le paiement sera ajouté à la caisse et un reçu sera émis. Cette opération est traçable et ne peut pas être supprimée — seule une annulation comptable sera possible."
+            confirmLabel="Enregistrer"
+            onConfirm={() => toast.success("Paiement enregistré")}
+          >
             <Plus className="h-4 w-4" />
             Saisir un paiement
-          </Button>
+          </ConfirmButton>
         </div>
         <div className="border rounded-lg overflow-hidden">
           <Table>
