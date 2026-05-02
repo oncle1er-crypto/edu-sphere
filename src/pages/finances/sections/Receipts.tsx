@@ -58,6 +58,7 @@ export default function Receipts() {
               <TableHead className="text-right">Montant</TableHead>
               <TableHead>Mode</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead className="text-right">PDF</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
