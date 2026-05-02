@@ -250,6 +250,51 @@ export type Database = {
         }
         Relationships: []
       }
+      bulletins_paie: {
+        Row: {
+          annee: number
+          created_at: string
+          date_paiement: string | null
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          mois: number
+          net_a_payer: number
+          retenues: number
+          salaire_brut: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee: number
+          created_at?: string
+          date_paiement?: string | null
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          mois: number
+          net_a_payer?: number
+          retenues?: number
+          salaire_brut?: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee?: number
+          created_at?: string
+          date_paiement?: string | null
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          mois?: number
+          net_a_payer?: number
+          retenues?: number
+          salaire_brut?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       cartes: {
         Row: {
           annee_id: string | null
@@ -444,6 +489,42 @@ export type Database = {
           },
         ]
       }
+      comptes_tresorerie: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          id: string
+          nom: string
+          numero: string | null
+          solde: number
+          statut: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          id?: string
+          nom: string
+          numero?: string | null
+          solde?: number
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          nom?: string
+          numero?: string | null
+          solde?: number
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       creneaux_emploi_temps: {
         Row: {
           annee_id: string
@@ -577,6 +658,62 @@ export type Database = {
           verrouille_par?: string | null
         }
         Relationships: []
+      }
+      depenses: {
+        Row: {
+          categorie: string | null
+          created_at: string
+          date_depense: string
+          ecole_id: string
+          enregistre_par: string | null
+          fournisseur_id: string | null
+          id: string
+          libelle: string
+          montant: number
+          notes: string | null
+          reference: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          categorie?: string | null
+          created_at?: string
+          date_depense?: string
+          ecole_id: string
+          enregistre_par?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          libelle: string
+          montant: number
+          notes?: string | null
+          reference?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string | null
+          created_at?: string
+          date_depense?: string
+          ecole_id?: string
+          enregistre_par?: string | null
+          fournisseur_id?: string | null
+          id?: string
+          libelle?: string
+          montant?: number
+          notes?: string | null
+          reference?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depenses_fournisseur_id_fkey"
+            columns: ["fournisseur_id"]
+            isOneToOne: false
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ecoles: {
         Row: {
@@ -1042,6 +1179,48 @@ export type Database = {
           },
         ]
       }
+      fournisseurs: {
+        Row: {
+          adresse: string | null
+          categorie: string | null
+          contact: string | null
+          created_at: string
+          ecole_id: string
+          email: string | null
+          id: string
+          nom: string
+          solde_du: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          categorie?: string | null
+          contact?: string | null
+          created_at?: string
+          ecole_id: string
+          email?: string | null
+          id?: string
+          nom: string
+          solde_du?: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          categorie?: string | null
+          contact?: string | null
+          created_at?: string
+          ecole_id?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          solde_du?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       frais_scolarite: {
         Row: {
           annee_id: string
@@ -1143,6 +1322,42 @@ export type Database = {
           gravite?: string | null
           id?: string
           motif?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lignes_budget: {
+        Row: {
+          annee_id: string
+          created_at: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_prevu: number
+          montant_realise: number
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant_prevu?: number
+          montant_realise?: number
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_prevu?: number
+          montant_realise?: number
           type?: string
           updated_at?: string
         }
@@ -1352,6 +1567,50 @@ export type Database = {
           sujet?: string
         }
         Relationships: []
+      }
+      mouvements_tresorerie: {
+        Row: {
+          compte_id: string
+          created_at: string
+          date_mouvement: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant: number
+          reference: string | null
+          type: string
+        }
+        Insert: {
+          compte_id: string
+          created_at?: string
+          date_mouvement?: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant: number
+          reference?: string | null
+          type?: string
+        }
+        Update: {
+          compte_id?: string
+          created_at?: string
+          date_mouvement?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          reference?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mouvements_tresorerie_compte_id_fkey"
+            columns: ["compte_id"]
+            isOneToOne: false
+            referencedRelation: "comptes_tresorerie"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notes: {
         Row: {
