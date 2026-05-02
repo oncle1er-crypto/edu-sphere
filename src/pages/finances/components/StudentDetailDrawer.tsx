@@ -7,7 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
-import { useRelances, addRelance, formatRelanceDate } from "../relances-store";
+import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { toast } from "sonner";
 
 interface Props {
@@ -37,13 +37,16 @@ const STATUT_LABEL: Record<Tranche["statut"], string> = {
 };
 
 export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Props) {
-  const relances = useRelances(eleve?.id);
+  const { relances, fetchRelances, addRelance } = useRelances(eleve?.id);
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (eleve) fetchRelances();
+  }, [eleve, fetchRelances]);
 
   // Auto-scroll vers la tranche ouverte si fournie
   useEffect(() => {
     if (eleve && openTrancheNum) {
-      // léger délai pour laisser le drawer s'ouvrir
       const t = setTimeout(() => {
         const el = trancheRefs.current[openTrancheNum];
         if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -52,9 +55,9 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
     }
   }, [eleve, openTrancheNum]);
 
-  const handleSendSms = () => {
+  const handleSendSms = async () => {
     if (!eleve) return;
-    addRelance({
+    await addRelance({
       eleveId: eleve.id,
       canal: "SMS",
       message: buildSmsRelance(eleve),
@@ -63,9 +66,9 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
     toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
   };
 
-  const handleSendEmail = () => {
+  const handleSendEmail = async () => {
     if (!eleve) return;
-    addRelance({
+    await addRelance({
       eleveId: eleve.id,
       canal: "Email",
       message: `Relance scolarité - reste dû ${fcfa(eleve.resteDu)} FCFA`,
@@ -74,9 +77,9 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
     toast.success(`Email envoyé à ${eleve.parent}`);
   };
 
-  const handleLogCall = () => {
+  const handleLogCall = async () => {
     if (!eleve) return;
-    addRelance({
+    await addRelance({
       eleveId: eleve.id,
       canal: "Appel",
       message: `Appel téléphonique de relance.`,
@@ -86,6 +89,12 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
   };
 
   const enRetard = !!eleve && eleve.tranches.some((t) => t.statut === "retard");
+
+  const canalLabel = (type: string) => {
+    if (type === "sms") return "SMS";
+    if (type === "email") return "Email";
+    return "Appel";
+  };
 
   return (
     <Sheet open={!!eleve} onOpenChange={onOpenChange}>
@@ -137,7 +146,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
                 <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p></CardContent></Card>
               </div>
 
-              {/* Détail tranches — celle pré-ouverte est mise en évidence */}
+              {/* Détail tranches */}
               <div>
                 <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-primary" />Détail des tranches
@@ -146,14 +155,8 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
                   {eleve.tranches.map((t) => {
                     const isHighlighted = openTrancheNum === t.num;
                     return (
-                      <div
-                        key={t.num}
-                        ref={(el) => { trancheRefs.current[t.num] = el; }}
-                      >
-                        <Card className={cn(
-                          "border transition-all",
-                          isHighlighted && "border-primary ring-2 ring-primary/30 shadow-lg"
-                        )}>
+                      <div key={t.num} ref={(el) => { trancheRefs.current[t.num] = el; }}>
+                        <Card className={cn("border transition-all", isHighlighted && "border-primary ring-2 ring-primary/30 shadow-lg")}>
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between gap-2">
                               <div>
@@ -163,9 +166,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
                                 </div>
                                 <p className="text-[11px] text-muted-foreground mt-1">📅 Échéance : {t.echeance}</p>
                               </div>
-                              <Badge variant="outline" className={STATUT_BADGE[t.statut]}>
-                                {STATUT_LABEL[t.statut]}
-                              </Badge>
+                              <Badge variant="outline" className={STATUT_BADGE[t.statut]}>{STATUT_LABEL[t.statut]}</Badge>
                             </div>
                             <div className="mt-3">
                               <div className="flex justify-between text-xs mb-1">
@@ -203,28 +204,30 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange }: Pro
                   </Card>
                 ) : (
                   <div className="border rounded-lg divide-y">
-                    {relances.map((r) => (
-                      <div key={r.id} className="p-3 flex items-start gap-3">
-                        <div className={cn(
-                          "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
-                          r.canal === "SMS" ? "bg-primary/15 text-primary" :
-                          r.canal === "Email" ? "bg-accent/15 text-accent" :
-                          "bg-orange-500/15 text-orange-600"
-                        )}>
-                          {r.canal === "SMS" ? <MessageSquare className="h-4 w-4" /> :
-                           r.canal === "Email" ? <Mail className="h-4 w-4" /> :
-                           <Phone className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="text-xs font-bold">{r.canal}</p>
-                            <p className="text-[10px] text-muted-foreground">{formatRelanceDate(r.date)}</p>
+                    {relances.map((r) => {
+                      const canal = canalLabel(r.type);
+                      return (
+                        <div key={r.id} className="p-3 flex items-start gap-3">
+                          <div className={cn(
+                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                            canal === "SMS" ? "bg-primary/15 text-primary" :
+                            canal === "Email" ? "bg-accent/15 text-accent" :
+                            "bg-orange-500/15 text-orange-600"
+                          )}>
+                            {canal === "SMS" ? <MessageSquare className="h-4 w-4" /> :
+                             canal === "Email" ? <Mail className="h-4 w-4" /> :
+                             <Phone className="h-4 w-4" />}
                           </div>
-                          <p className="text-xs text-foreground mt-1 line-clamp-2">{r.message}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">→ {r.destinataire}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold">{canal}</p>
+                              <p className="text-[10px] text-muted-foreground">{formatRelanceDate(r.date_envoi)}</p>
+                            </div>
+                            <p className="text-xs text-foreground mt-1 line-clamp-2">{r.message}</p>
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
