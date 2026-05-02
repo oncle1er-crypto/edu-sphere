@@ -203,7 +203,7 @@ export default function Unpaid() {
                   {nbRelances > 0 ? (
                     <div>
                       <p className="text-xs font-semibold">{nbRelances} envoyée{nbRelances > 1 ? "s" : ""}</p>
-                      {dern && <p className="text-[10px] text-muted-foreground">Dern. : {formatRelanceDate(dern.date).split(" ")[0]}</p>}
+                      {dern && <p className="text-[10px] text-muted-foreground">Dern. : {formatRelanceDate(dern.date_envoi).split(" ")[0]}</p>}
                     </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>
