@@ -1327,6 +1327,48 @@ export type Database = {
         }
         Relationships: []
       }
+      justifications: {
+        Row: {
+          created_at: string
+          date_traitement: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          motif: string
+          piece_jointe: string | null
+          presence_id: string | null
+          statut: string
+          traite_par: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_traitement?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          motif: string
+          piece_jointe?: string | null
+          presence_id?: string | null
+          statut?: string
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_traitement?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          motif?: string
+          piece_jointe?: string | null
+          presence_id?: string | null
+          statut?: string
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lignes_budget: {
         Row: {
           annee_id: string
@@ -1669,6 +1711,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications_parents: {
+        Row: {
+          canal: string
+          created_at: string
+          date_envoi: string
+          destinataire: string | null
+          ecole_id: string
+          eleve_id: string
+          envoye_par: string | null
+          id: string
+          message: string | null
+          type: string
+        }
+        Insert: {
+          canal?: string
+          created_at?: string
+          date_envoi?: string
+          destinataire?: string | null
+          ecole_id: string
+          eleve_id: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          type?: string
+        }
+        Update: {
+          canal?: string
+          created_at?: string
+          date_envoi?: string
+          destinataire?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          type?: string
+        }
+        Relationships: []
       }
       paiements: {
         Row: {
@@ -2036,6 +2117,99 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      retards: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_retard: string
+          duree_minutes: number | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          heure_arrivee: string | null
+          id: string
+          motif: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_retard?: string
+          duree_minutes?: number | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_retard?: string
+          duree_minutes?: number | null
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sanctions_presences: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_sanction: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          id: string
+          motif: string | null
+          nb_absences_declencheur: number | null
+          notifie_parents: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_sanction?: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          id?: string
+          motif?: string | null
+          nb_absences_declencheur?: number | null
+          notifie_parents?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_sanction?: string
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          id?: string
+          motif?: string | null
+          nb_absences_declencheur?: number | null
+          notifie_parents?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       stocks_cantine: {
         Row: {

@@ -1,10 +1,12 @@
-import { Receipt, Loader2 } from "lucide-react";
+import { Receipt, Loader2, Download } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface PaiementRecu {
   id: string;
@@ -56,6 +58,7 @@ export default function Receipts() {
               <TableHead className="text-right">Montant</TableHead>
               <TableHead>Mode</TableHead>
               <TableHead>Date</TableHead>
+              <TableHead className="text-right">PDF</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,10 +69,24 @@ export default function Receipts() {
                 <TableCell className="text-right font-semibold">{fcfa(r.montant)} FCFA</TableCell>
                 <TableCell className="text-muted-foreground capitalize">{r.mode.replace("_", " ")}</TableCell>
                 <TableCell className="text-muted-foreground">{new Date(r.date_paiement).toLocaleDateString("fr-FR")}</TableCell>
-              </TableRow>
-            ))}
+                <TableCell className="text-right">
+                  <Button size="icon" variant="ghost" className="h-8 w-8" title="Télécharger le reçu PDF" onClick={() => {
+                    const pdf = generateRecuPDF({
+                      ecole: { nom: "Groupe Scolaire La Providence", devise: "Foi, Savoir, Excellence", adresse: "Abidjan, Côte d'Ivoire", telephone: "+225 00 00 00 00" },
+                      reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
+                      eleve: { nom: r.eleve_nom.split(" ").slice(1).join(" "), prenom: r.eleve_nom.split(" ")[0], matricule: "", classe: "" },
+                      montant: r.montant,
+                      mode: r.mode,
+                      date_paiement: r.date_paiement,
+                    });
+                    pdf.save(`recu-${r.reference ?? r.id.slice(0, 8)}.pdf`);
+                  }}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>))}
             {recus.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Aucun paiement enregistré.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Aucun paiement enregistré.</TableCell></TableRow>
             )}
           </TableBody>
         </Table>

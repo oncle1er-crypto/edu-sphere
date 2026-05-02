@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, Bell, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, type Cycle, type EleveScolarite } from "../scolarite-data";
-import { addRelance, getRelancesCount, getDerniereRelance, formatRelanceDate } from "../relances-store";
+import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 import { PaymentDialog } from "../components/PaymentDialog";
 import { SmsPreviewDialog } from "../components/SmsPreviewDialog";
@@ -38,6 +38,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 
 export default function Unpaid() {
   const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { relances, fetchRelances, addRelance, getRelancesCount, getDerniereRelance } = useRelances();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [classe, setClasse] = useState<string>("all");
@@ -49,6 +50,8 @@ export default function Unpaid() {
   const [paymentTranche, setPaymentTranche] = useState<number | undefined>(undefined);
   const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
   const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
+
+  useEffect(() => { fetchRelances(); }, [fetchRelances]);
 
   const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);
@@ -200,7 +203,7 @@ export default function Unpaid() {
                   {nbRelances > 0 ? (
                     <div>
                       <p className="text-xs font-semibold">{nbRelances} envoyée{nbRelances > 1 ? "s" : ""}</p>
-                      {dern && <p className="text-[10px] text-muted-foreground">Dern. : {formatRelanceDate(dern.date).split(" ")[0]}</p>}
+                      {dern && <p className="text-[10px] text-muted-foreground">Dern. : {formatRelanceDate(dern.date_envoi).split(" ")[0]}</p>}
                     </div>
                   ) : (
                     <span className="text-xs text-muted-foreground">—</span>
