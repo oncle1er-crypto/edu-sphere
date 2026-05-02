@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { MessageSquare, Send, Settings2 } from "lucide-react";
 import { type EleveScolarite } from "../scolarite-data";
-import { addRelance } from "../relances-store";
+import { useRelances } from "@/hooks/useRelances";
 import {
   useSmsTemplates, pickTrancheCible, renderTemplate, updateTemplate,
   TEMPLATE_VARIABLES, type TrancheKey,
@@ -24,6 +24,7 @@ interface Props {
 
 export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }: Props) {
   const templates = useSmsTemplates();
+  const { addRelance } = useRelances();
   const [templateKey, setTemplateKey] = useState<TrancheKey>("GENERIC");
   const [editedMessage, setEditedMessage] = useState("");
   const [editTemplate, setEditTemplate] = useState(false);
@@ -52,8 +53,8 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
 
   if (!eleve) return null;
 
-  const handleSend = () => {
-    addRelance({
+  const handleSend = async () => {
+    await addRelance({
       eleveId: eleve.id,
       canal: "SMS",
       message: editedMessage,
@@ -64,11 +65,9 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
   };
 
   const handleSaveTemplate = () => {
-    // sauvegarde le message *brut* (avec variables)
     updateTemplate(templateKey, editedMessage);
     toast.success(`Modèle ${templates[templateKey].label} mis à jour`);
     setEditTemplate(false);
-    // re-render preview from saved
     const t = eleve.tranches.find((x) => `T${x.num}` === templateKey);
     setEditedMessage(renderTemplate(editedMessage, eleve, t));
   };
