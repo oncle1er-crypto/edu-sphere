@@ -1,10 +1,12 @@
-import { Receipt, Loader2 } from "lucide-react";
+import { Receipt, Loader2, Download } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface PaiementRecu {
   id: string;
