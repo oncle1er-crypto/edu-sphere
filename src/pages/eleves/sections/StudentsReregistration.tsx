@@ -1,23 +1,28 @@
+import { useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { FileText, Send, Search } from "lucide-react";
-import { useState } from "react";
-
-const data = [
-  { id: "ELV-001", nom: "Diallo Aminata", classeAct: "3ème A", classeNext: "2nde C", statut: "En attente", paye: false },
-  { id: "ELV-002", nom: "Traoré Moussa", classeAct: "6ème B", classeNext: "5ème B", statut: "Réinscrit", paye: true },
-  { id: "ELV-005", nom: "Bamba Aïcha", classeAct: "CM2", classeNext: "6ème A", statut: "En attente", paye: false },
-  { id: "ELV-007", nom: "Sangaré Mariam", classeAct: "1ère L", classeNext: "Tle L", statut: "Réinscrit", paye: true },
-  { id: "ELV-008", nom: "Keita Oumar", classeAct: "GS", classeNext: "CP", statut: "Refusé", paye: false },
-];
+import { FileText, Search, Loader2 } from "lucide-react";
+import { useEleves } from "@/hooks/useEleves";
 
 export default function StudentsReregistration() {
+  const { eleves, loading } = useEleves();
   const [q, setQ] = useState("");
-  const filtered = data.filter(d => d.nom.toLowerCase().includes(q.toLowerCase()) || d.id.toLowerCase().includes(q.toLowerCase()));
+
+  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif");
+  const filtered = inscrits.filter(
+    (d) =>
+      d.nom.toLowerCase().includes(q.toLowerCase()) ||
+      d.prenom.toLowerCase().includes(q.toLowerCase()) ||
+      d.matricule.toLowerCase().includes(q.toLowerCase())
+  );
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <SettingsSection
@@ -32,7 +37,6 @@ export default function StudentsReregistration() {
           <Input placeholder="Rechercher..." className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm"><Send className="h-4 w-4" />Notifier les parents</Button>
           <Button size="sm">Valider la sélection</Button>
         </div>
       </div>
@@ -45,8 +49,6 @@ export default function StudentsReregistration() {
               <TableHead>Matricule</TableHead>
               <TableHead>Élève</TableHead>
               <TableHead>Classe actuelle</TableHead>
-              <TableHead>Classe suivante</TableHead>
-              <TableHead>Frais payés</TableHead>
               <TableHead>Statut</TableHead>
             </TableRow>
           </TableHeader>
@@ -54,22 +56,21 @@ export default function StudentsReregistration() {
             {filtered.map((d) => (
               <TableRow key={d.id}>
                 <TableCell><Checkbox /></TableCell>
-                <TableCell className="font-mono text-xs text-muted-foreground">{d.id}</TableCell>
-                <TableCell className="font-medium">{d.nom}</TableCell>
-                <TableCell><Badge variant="secondary">{d.classeAct}</Badge></TableCell>
-                <TableCell><Badge>{d.classeNext}</Badge></TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{d.matricule}</TableCell>
+                <TableCell className="font-medium">{d.prenom} {d.nom}</TableCell>
+                <TableCell><Badge variant="secondary">{d.classe_nom ?? "Non affecté"}</Badge></TableCell>
                 <TableCell>
-                  {d.paye
-                    ? <Badge className="bg-emerald-600 hover:bg-emerald-600">Payé</Badge>
-                    : <Badge variant="destructive">Impayé</Badge>}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={d.statut === "Réinscrit" ? "default" : d.statut === "Refusé" ? "destructive" : "secondary"}>
+                  <Badge variant={d.statut === "inscrit" || d.statut === "actif" ? "default" : "secondary"}>
                     {d.statut}
                   </Badge>
                 </TableCell>
               </TableRow>
             ))}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Aucun élève trouvé.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

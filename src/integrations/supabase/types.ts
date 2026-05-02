@@ -175,6 +175,45 @@ export type Database = {
           },
         ]
       }
+      annonces: {
+        Row: {
+          audience: string | null
+          auteur_id: string | null
+          contenu: string | null
+          created_at: string
+          ecole_id: string
+          id: string
+          publie: boolean | null
+          publie_le: string | null
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string | null
+          auteur_id?: string | null
+          contenu?: string | null
+          created_at?: string
+          ecole_id: string
+          id?: string
+          publie?: boolean | null
+          publie_le?: string | null
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string | null
+          auteur_id?: string | null
+          contenu?: string | null
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          publie?: boolean | null
+          publie_le?: string | null
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_decisions_fin_annee: {
         Row: {
           action: string
@@ -1061,6 +1100,54 @@ export type Database = {
           },
         ]
       }
+      incidents_discipline: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_incident: string
+          decision: string | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          gravite: string | null
+          id: string
+          motif: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_incident?: string
+          decision?: string | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          gravite?: string | null
+          id?: string
+          motif?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_incident?: string
+          decision?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          gravite?: string | null
+          id?: string
+          motif?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lignes_transport: {
         Row: {
           arrivee: string
@@ -1202,6 +1289,69 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      menus_cantine: {
+        Row: {
+          created_at: string
+          date_menu: string
+          description: string | null
+          ecole_id: string
+          id: string
+          repas: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_menu: string
+          description?: string | null
+          ecole_id: string
+          id?: string
+          repas?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_menu?: string
+          description?: string | null
+          ecole_id?: string
+          id?: string
+          repas?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          contenu: string | null
+          created_at: string
+          destinataire_id: string | null
+          ecole_id: string
+          expediteur_id: string
+          id: string
+          lu: boolean | null
+          sujet: string
+        }
+        Insert: {
+          contenu?: string | null
+          created_at?: string
+          destinataire_id?: string | null
+          ecole_id: string
+          expediteur_id: string
+          id?: string
+          lu?: boolean | null
+          sujet: string
+        }
+        Update: {
+          contenu?: string | null
+          created_at?: string
+          destinataire_id?: string | null
+          ecole_id?: string
+          expediteur_id?: string
+          id?: string
+          lu?: boolean | null
+          sujet?: string
+        }
+        Relationships: []
       }
       notes: {
         Row: {
@@ -1628,6 +1778,39 @@ export type Database = {
           },
         ]
       }
+      stocks_cantine: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          id: string
+          produit: string
+          quantite: number
+          seuil_alerte: number | null
+          unite: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          id?: string
+          produit: string
+          quantite?: number
+          seuil_alerte?: number | null
+          unite?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          produit?: string
+          quantite?: number
+          seuil_alerte?: number | null
+          unite?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tranches: {
         Row: {
           created_at: string
@@ -1776,6 +1959,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      visites_infirmerie: {
+        Row: {
+          classe_id: string | null
+          created_at: string
+          date_visite: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          id: string
+          motif: string
+          suivi: string | null
+          traitement: string | null
+          updated_at: string
+        }
+        Insert: {
+          classe_id?: string | null
+          created_at?: string
+          date_visite?: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          id?: string
+          motif: string
+          suivi?: string | null
+          traitement?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string | null
+          created_at?: string
+          date_visite?: string
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          id?: string
+          motif?: string
+          suivi?: string | null
+          traitement?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {

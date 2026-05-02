@@ -1,66 +1,50 @@
+import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { LayoutDashboard, Bus, Users, MapPin, AlertTriangle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-
-const kpis = [
-  { label: "Véhicules en service", value: "8 / 9", icon: Bus, color: "text-primary" },
-  { label: "Élèves transportés", value: "412", icon: Users, color: "text-accent" },
-  { label: "Lignes actives", value: "6", icon: MapPin, color: "text-primary" },
-  { label: "Incidents (mois)", value: "2", icon: AlertTriangle, color: "text-destructive" },
-];
+import { LayoutDashboard, Bus, Users, MapPin, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 
 export default function TransportDashboard() {
+  const { ecoleId } = useEcoleId();
+  const [stats, setStats] = useState({ lignes: 0, vehicules: 0, abonnes: 0 });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!ecoleId) { setLoading(false); return; }
+    (async () => {
+      const [lRes, vRes, aRes] = await Promise.all([
+        supabase.from("lignes_transport").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
+        supabase.from("vehicules").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
+        supabase.from("abonnements_transport").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
+      ]);
+      setStats({ lignes: lRes.count ?? 0, vehicules: vRes.count ?? 0, abonnes: aRes.count ?? 0 });
+      setLoading(false);
+    })();
+  }, [ecoleId]);
+
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const kpis = [
+    { label: "Lignes", value: stats.lignes.toString(), icon: MapPin, color: "text-primary" },
+    { label: "Véhicules", value: stats.vehicules.toString(), icon: Bus, color: "text-blue-600" },
+    { label: "Abonnés actifs", value: stats.abonnes.toString(), icon: Users, color: "text-emerald-600" },
+  ];
+
   return (
-    <SettingsSection
-      title="Tableau de bord — Transport"
-      description="Vue d'ensemble de la flotte et des trajets."
-      icon={<LayoutDashboard className="h-5 w-5" />}
-      hideSave
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <SettingsSection icon={<LayoutDashboard className="h-5 w-5" />} title="Vue d'ensemble Transport" description="Indicateurs clés." hideSave>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {kpis.map((k) => (
-          <Card key={k.label} className="border shadow-[var(--shadow-card)]">
+          <Card key={k.label} className="border">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground font-medium">{k.label}</p>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">{k.label}</span>
                 <k.icon className={`h-4 w-4 ${k.color}`} />
               </div>
-              <p className="text-2xl font-bold mt-2">{k.value}</p>
+              <p className="text-2xl font-extrabold font-display">{k.value}</p>
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="border shadow-[var(--shadow-card)]">
-          <CardContent className="p-4">
-            <h3 className="font-bold mb-3">Taux de remplissage par ligne</h3>
-            <div className="space-y-2">
-              {[["Ligne A — Nord", 84], ["Ligne B — Sud", 84], ["Ligne C — Est", 94], ["Ligne D — Ouest", 87]].map(([l, v]) => (
-                <div key={l as string}>
-                  <div className="flex justify-between text-xs mb-1">
-                    <span>{l}</span><span className="font-semibold">{v}%</span>
-                  </div>
-                  <div className="h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary" style={{ width: `${v}%` }} />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border shadow-[var(--shadow-card)]">
-          <CardContent className="p-4">
-            <h3 className="font-bold mb-3">Coûts du mois</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex justify-between"><span>Carburant</span><span className="font-semibold">485 000 FCFA</span></li>
-              <li className="flex justify-between"><span>Maintenance</span><span className="font-semibold">120 000 FCFA</span></li>
-              <li className="flex justify-between"><span>Salaires chauffeurs</span><span className="font-semibold">640 000 FCFA</span></li>
-              <li className="flex justify-between border-t pt-2"><span className="text-muted-foreground">Recettes abonnements</span><span className="font-semibold text-primary">2.1M FCFA</span></li>
-            </ul>
-          </CardContent>
-        </Card>
       </div>
     </SettingsSection>
   );
