@@ -238,6 +238,7 @@ const App = () => (
                 <AppLayout>
                   <Routes>
                     <Route path="/" element={<Home />} />
+                    <Route path="/index" element={<Navigate to="/" replace />} />
             <Route path="/statistiques" element={<StatsLayout />}>
               <Route path="tableau" element={<GlobalDashboard />} />
               <Route path="ecoles" element={<SchoolsCompare />} />
