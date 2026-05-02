@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, Bell, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, type Cycle, type EleveScolarite } from "../scolarite-data";
-import { addRelance, getRelancesCount, getDerniereRelance, formatRelanceDate } from "../relances-store";
+import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 import { PaymentDialog } from "../components/PaymentDialog";
 import { SmsPreviewDialog } from "../components/SmsPreviewDialog";
