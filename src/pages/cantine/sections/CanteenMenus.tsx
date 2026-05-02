@@ -1,43 +1,78 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { UtensilsCrossed, Plus } from "lucide-react";
+import { UtensilsCrossed, Plus, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import { toast } from "sonner";
 
-const menus = [
-  { jour: "Lundi", entree: "Salade verte", plat: "Riz au poisson", dessert: "Fruit", prix: 500, kcal: 720 },
-  { jour: "Mardi", entree: "Soupe de légumes", plat: "Poulet braisé + frites", dessert: "Yaourt", prix: 500, kcal: 850 },
-  { jour: "Mercredi", entree: "Crudités", plat: "Couscous viande", dessert: "Fruit", prix: 500, kcal: 780 },
-  { jour: "Jeudi", entree: "Salade composée", plat: "Spaghetti bolognaise", dessert: "Gâteau", prix: 500, kcal: 820 },
-  { jour: "Vendredi", entree: "Soupe", plat: "Thiéboudienne", dessert: "Fruit", prix: 500, kcal: 760 },
-];
+interface Menu { id: string; date_menu: string; repas: string; description: string | null; }
 
 export default function CanteenMenus() {
+  const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const [menus, setMenus] = useState<Menu[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ date_menu: new Date().toISOString().slice(0, 10), repas: "dejeuner", description: "" });
+
+  const fetch = useCallback(async () => {
+    if (!ecoleId) return;
+    const { data } = await supabase.from("menus_cantine").select("*").eq("ecole_id", ecoleId).order("date_menu", { ascending: false }).limit(30);
+    if (data) setMenus(data);
+    setLoading(false);
+  }, [ecoleId]);
+
+  useEffect(() => { if (!ecoleLoading && ecoleId) fetch(); if (!ecoleLoading && !ecoleId) setLoading(false); }, [ecoleLoading, ecoleId, fetch]);
+
+  const handleSubmit = async () => {
+    if (!ecoleId || !form.description) return;
+    const { error } = await supabase.from("menus_cantine").insert({ ecole_id: ecoleId, date_menu: form.date_menu, repas: form.repas, description: form.description });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Menu ajouté");
+    setForm({ date_menu: new Date().toISOString().slice(0, 10), repas: "dejeuner", description: "" });
+    setOpen(false);
+    fetch();
+  };
+
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const JOURS = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
   return (
-    <SettingsSection
-      title="Menus de la semaine"
-      description="Composez et publiez les repas servis."
-      icon={<UtensilsCrossed className="h-5 w-5" />}
-      hideSave
-    >
+    <SettingsSection title={`Menus (${menus.length})`} description="Composez et publiez les repas servis." icon={<UtensilsCrossed className="h-5 w-5" />} hideSave>
       <div className="flex justify-end">
-        <Button size="sm" className="gap-2"><Plus className="h-4 w-4" /> Nouveau menu</Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouveau menu</Button></DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Ajouter un menu</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label>Date</Label><Input type="date" value={form.date_menu} onChange={(e) => setForm({ ...form, date_menu: e.target.value })} /></div>
+                <div><Label>Repas</Label><Input value={form.repas} onChange={(e) => setForm({ ...form, repas: e.target.value })} placeholder="dejeuner" /></div>
+              </div>
+              <div><Label>Description (entrée, plat, dessert...)</Label><Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} /></div>
+              <Button onClick={handleSubmit} className="w-full">Ajouter</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {menus.map((m) => (
-          <Card key={m.jour} className="border shadow-[var(--shadow-card)]">
+          <Card key={m.id} className="border shadow-[var(--shadow-card)]">
             <CardHeader className="pb-2 flex-row items-center justify-between">
-              <CardTitle className="text-base font-display">{m.jour}</CardTitle>
-              <Badge variant="secondary">{m.prix} FCFA</Badge>
+              <CardTitle className="text-base font-display">{JOURS[new Date(m.date_menu).getDay()]} {new Date(m.date_menu).toLocaleDateString("fr-FR")}</CardTitle>
+              <Badge variant="secondary">{m.repas}</Badge>
             </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-muted-foreground">Entrée</span><span className="font-medium">{m.entree}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Plat</span><span className="font-medium">{m.plat}</span></div>
-              <div className="flex justify-between"><span className="text-muted-foreground">Dessert</span><span className="font-medium">{m.dessert}</span></div>
-              <div className="flex justify-between border-t pt-2"><span className="text-muted-foreground">Apport</span><span className="font-medium">{m.kcal} kcal</span></div>
-            </CardContent>
+            <CardContent className="text-sm text-muted-foreground whitespace-pre-line">{m.description ?? "—"}</CardContent>
           </Card>
         ))}
+        {menus.length === 0 && <p className="text-sm text-muted-foreground col-span-full text-center py-8">Aucun menu enregistré.</p>}
       </div>
     </SettingsSection>
   );

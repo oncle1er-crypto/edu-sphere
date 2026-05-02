@@ -1,73 +1,114 @@
-import { Wallet, Plus } from "lucide-react";
+import { Wallet, Plus, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useDepenses } from "@/hooks/useDepenses";
+import { useFournisseurs } from "@/hooks/useFournisseurs";
+import { useState } from "react";
 
-const categories = [
-  { name: "Salaires & paie", spent: 4200000, budget: 5000000 },
-  { name: "Fournitures pédagogiques", spent: 850000, budget: 1200000 },
-  { name: "Maintenance & entretien", spent: 620000, budget: 800000 },
-  { name: "Énergie & utilities", spent: 480000, budget: 600000 },
-  { name: "Transport scolaire", spent: 720000, budget: 900000 },
-  { name: "Cantine", spent: 950000, budget: 1100000 },
-];
-
-const expenses = [
-  { id: "DEP-0421", label: "Achat manuels SVT 6e", category: "Fournitures", amount: "320 000", supplier: "Librairie Etoile", date: "25/04/2026", status: "Validée" },
-  { id: "DEP-0420", label: "Facture ENEO Avril", category: "Énergie", amount: "187 500", supplier: "ENEO", date: "24/04/2026", status: "Validée" },
-  { id: "DEP-0419", label: "Réparation bus n°2", category: "Transport", amount: "245 000", supplier: "Garage Auto+", date: "22/04/2026", status: "En attente" },
-  { id: "DEP-0418", label: "Approvisionnement cantine", category: "Cantine", amount: "412 000", supplier: "Marché Mokolo", date: "20/04/2026", status: "Validée" },
-];
+const CATEGORIES = ["Fournitures pédagogiques", "Énergie & utilities", "Maintenance & entretien", "Transport scolaire", "Cantine", "Télécoms", "Autre"];
 
 export default function Expenses() {
+  const { depenses, loading, addDepense, updateStatut } = useDepenses();
+  const { fournisseurs } = useFournisseurs();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+
+  // Budget tracking by category
+  const parCategorie = CATEGORIES.map((cat) => {
+    const items = depenses.filter((d) => d.categorie === cat && d.statut === "validee");
+    const spent = items.reduce((s, d) => s + d.montant, 0);
+    return { name: cat, spent };
+  }).filter((c) => c.spent > 0);
+
+  const handleSubmit = async () => {
+    if (!form.libelle || !form.montant) return;
+    await addDepense({
+      libelle: form.libelle,
+      categorie: form.categorie || null,
+      montant: Number(form.montant),
+      fournisseur_id: form.fournisseur_id || null,
+      date_depense: form.date_depense,
+      statut: "en_attente",
+      reference: null,
+      notes: null,
+    });
+    setForm({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+    setOpen(false);
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const totalDepenses = depenses.filter((d) => d.statut === "validee").reduce((s, d) => s + d.montant, 0);
+
   return (
     <div className="space-y-6">
-      <SettingsSection
-        title="Suivi budgétaire par catégorie"
-        description="Comparaison dépenses réelles / budget prévisionnel."
-        icon={<Wallet className="h-5 w-5" />}
-        hideSave
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {categories.map((c) => {
-            const pct = Math.round((c.spent / c.budget) * 100);
-            return (
-              <Card key={c.name} className="border">
-                <CardContent className="p-4">
-                  <div className="flex justify-between items-baseline mb-2">
-                    <p className="text-sm font-semibold">{c.name}</p>
-                    <span className={`text-xs font-bold ${pct > 90 ? "text-destructive" : pct > 75 ? "text-orange-600" : "text-accent"}`}>
-                      {pct}%
-                    </span>
-                  </div>
-                  <Progress value={pct} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {c.spent.toLocaleString()} / {c.budget.toLocaleString()} FCFA
-                  </p>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </SettingsSection>
+      {parCategorie.length > 0 && (
+        <SettingsSection title="Répartition par catégorie" description="Dépenses validées par poste." icon={<Wallet className="h-5 w-5" />} hideSave>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {parCategorie.map((c) => {
+              const pct = totalDepenses > 0 ? Math.round((c.spent / totalDepenses) * 100) : 0;
+              return (
+                <Card key={c.name} className="border">
+                  <CardContent className="p-4">
+                    <div className="flex justify-between items-baseline mb-2">
+                      <p className="text-sm font-semibold">{c.name}</p>
+                      <span className="text-xs font-bold text-primary">{pct}%</span>
+                    </div>
+                    <Progress value={pct} className="h-2" />
+                    <p className="text-xs text-muted-foreground mt-2">{c.spent.toLocaleString("fr-FR")} FCFA</p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </SettingsSection>
+      )}
 
-      <SettingsSection
-        title="Dépenses récentes"
-        description="Toutes les sorties de trésorerie enregistrées."
-        icon={<Wallet className="h-5 w-5" />}
-        hideSave
-      >
+      <SettingsSection title={`Dépenses (${depenses.length})`} description="Toutes les sorties de trésorerie enregistrées." icon={<Wallet className="h-5 w-5" />} hideSave>
         <div className="flex justify-end">
-          <Button size="sm"><Plus className="h-4 w-4" />Nouvelle dépense</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4" />Nouvelle dépense</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Enregistrer une dépense</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div><Label>Libellé *</Label><Input value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} /></div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><Label>Montant (FCFA) *</Label><Input type="number" value={form.montant} onChange={(e) => setForm({ ...form, montant: e.target.value })} /></div>
+                  <div><Label>Date</Label><Input type="date" value={form.date_depense} onChange={(e) => setForm({ ...form, date_depense: e.target.value })} /></div>
+                </div>
+                <div><Label>Catégorie</Label>
+                  <Select value={form.categorie} onValueChange={(v) => setForm({ ...form, categorie: v })}>
+                    <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                    <SelectContent>{CATEGORIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                {fournisseurs.length > 0 && (
+                  <div><Label>Fournisseur</Label>
+                    <Select value={form.fournisseur_id} onValueChange={(v) => setForm({ ...form, fournisseur_id: v })}>
+                      <SelectTrigger><SelectValue placeholder="Optionnel" /></SelectTrigger>
+                      <SelectContent>{fournisseurs.map((f) => <SelectItem key={f.id} value={f.id}>{f.nom}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                )}
+                <Button onClick={handleSubmit} className="w-full">Enregistrer</Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40">
-                <TableHead>Référence</TableHead>
                 <TableHead>Libellé</TableHead>
                 <TableHead>Catégorie</TableHead>
                 <TableHead>Fournisseur</TableHead>
@@ -77,23 +118,27 @@ export default function Expenses() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {expenses.map((e) => (
+              {depenses.map((e) => (
                 <TableRow key={e.id}>
-                  <TableCell className="font-mono text-xs">{e.id}</TableCell>
-                  <TableCell className="font-medium">{e.label}</TableCell>
-                  <TableCell className="text-muted-foreground">{e.category}</TableCell>
-                  <TableCell className="text-muted-foreground">{e.supplier}</TableCell>
-                  <TableCell className="text-right font-semibold">{e.amount} FCFA</TableCell>
-                  <TableCell className="text-muted-foreground">{e.date}</TableCell>
+                  <TableCell className="font-medium">{e.libelle}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{e.fournisseur_nom ?? "—"}</TableCell>
+                  <TableCell className="text-right font-semibold">{e.montant.toLocaleString("fr-FR")} FCFA</TableCell>
+                  <TableCell className="text-muted-foreground">{new Date(e.date_depense).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={
-                      e.status === "Validée"
-                        ? "bg-accent/15 text-accent border-accent/30"
-                        : "bg-orange-500/15 text-orange-600 border-orange-500/30"
-                    }>{e.status}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={e.statut === "validee" ? "bg-accent/15 text-accent border-accent/30 cursor-default" : "bg-orange-500/15 text-orange-600 border-orange-500/30 cursor-pointer"}
+                      onClick={() => e.statut !== "validee" && updateStatut(e.id, "validee")}
+                    >
+                      {e.statut === "validee" ? "Validée" : e.statut === "rejetee" ? "Rejetée" : "En attente"}
+                    </Badge>
                   </TableCell>
                 </TableRow>
               ))}
+              {depenses.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Aucune dépense enregistrée.</TableCell></TableRow>
+              )}
             </TableBody>
           </Table>
         </div>

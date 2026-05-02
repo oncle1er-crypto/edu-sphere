@@ -1,50 +1,54 @@
-import { FileSpreadsheet, Download } from "lucide-react";
+import { FileSpreadsheet, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 
-const entries = [
-  { date: "26/04/2026", account: "411 - Clients", debit: "1 250 000", credit: "", label: "FAC-2025-0142" },
-  { date: "26/04/2026", account: "706 - Prestations services", debit: "", credit: "1 250 000", label: "Scolarité Avril" },
-  { date: "26/04/2026", account: "606 - Énergie", debit: "187 500", credit: "", label: "Facture ENEO" },
-  { date: "26/04/2026", account: "401 - Fournisseurs", debit: "", credit: "187 500", label: "ENEO" },
-  { date: "25/04/2026", account: "641 - Salaires", debit: "357 000", credit: "", label: "Mme Fouda Claire" },
-  { date: "25/04/2026", account: "512 - Banque", debit: "", credit: "357 000", label: "Virement" },
-];
+interface EcritureComptable {
+  date: string;
+  account: string;
+  label: string;
+  debit: number;
+  credit: number;
+}
 
 export default function Ledger() {
-  return (
-    <SettingsSection
-      title="Grand livre comptable"
-      description="Écritures comptables détaillées (plan comptable OHADA)."
-      icon={<FileSpreadsheet className="h-5 w-5" />}
-      hideSave
-    >
-      <div className="flex flex-wrap justify-between gap-3">
-        <div className="flex gap-2">
-          <Select defaultValue="all">
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les comptes</SelectItem>
-              <SelectItem value="411">411 - Clients</SelectItem>
-              <SelectItem value="401">401 - Fournisseurs</SelectItem>
-              <SelectItem value="512">512 - Banque</SelectItem>
-              <SelectItem value="641">641 - Salaires</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select defaultValue="april">
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="april">Avril 2026</SelectItem>
-              <SelectItem value="march">Mars 2026</SelectItem>
-              <SelectItem value="trimester">Trimestre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export Excel</Button>
-      </div>
+  const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const [ecritures, setEcritures] = useState<EcritureComptable[]>([]);
+  const [loading, setLoading] = useState(true);
 
+  useEffect(() => {
+    if (!ecoleId) { setLoading(false); return; }
+
+    Promise.all([
+      supabase.from("paiements").select("montant, date_paiement, mode, reference, eleves(nom, prenom)").eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(30),
+      supabase.from("depenses").select("montant, date_depense, libelle, categorie").eq("ecole_id", ecoleId).eq("statut", "validee").order("date_depense", { ascending: false }).limit(30),
+    ]).then(([pRes, dRes]) => {
+      const entries: EcritureComptable[] = [];
+
+      (pRes.data ?? []).forEach((p: any) => {
+        const nom = p.eleves ? `${p.eleves.prenom} ${p.eleves.nom}` : "Scolarité";
+        entries.push({ date: p.date_paiement, account: "411 - Clients", label: nom, debit: Number(p.montant), credit: 0 });
+        entries.push({ date: p.date_paiement, account: "706 - Prestations services", label: "Scolarité", debit: 0, credit: Number(p.montant) });
+      });
+
+      (dRes.data ?? []).forEach((d: any) => {
+        const compte = d.categorie?.includes("nergie") ? "606 - Énergie" : d.categorie?.includes("alaire") ? "641 - Salaires" : "601 - Achats";
+        entries.push({ date: d.date_depense, account: compte, label: d.libelle, debit: Number(d.montant), credit: 0 });
+        entries.push({ date: d.date_depense, account: "401 - Fournisseurs", label: d.libelle, debit: 0, credit: Number(d.montant) });
+      });
+
+      entries.sort((a, b) => b.date.localeCompare(a.date));
+      setEcritures(entries.slice(0, 50));
+      setLoading(false);
+    });
+  }, [ecoleId]);
+
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  return (
+    <SettingsSection title={`Grand livre comptable (${ecritures.length} écritures)`} description="Écritures comptables générées automatiquement (plan OHADA)." icon={<FileSpreadsheet className="h-5 w-5" />} hideSave>
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
@@ -57,15 +61,18 @@ export default function Ledger() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((e, i) => (
+            {ecritures.map((e, i) => (
               <TableRow key={i}>
-                <TableCell className="text-muted-foreground text-xs">{e.date}</TableCell>
+                <TableCell className="text-muted-foreground text-xs">{new Date(e.date).toLocaleDateString("fr-FR")}</TableCell>
                 <TableCell className="font-mono text-xs">{e.account}</TableCell>
                 <TableCell className="text-muted-foreground">{e.label}</TableCell>
-                <TableCell className="text-right font-semibold">{e.debit}</TableCell>
-                <TableCell className="text-right font-semibold">{e.credit}</TableCell>
+                <TableCell className="text-right font-semibold">{e.debit > 0 ? e.debit.toLocaleString("fr-FR") : ""}</TableCell>
+                <TableCell className="text-right font-semibold">{e.credit > 0 ? e.credit.toLocaleString("fr-FR") : ""}</TableCell>
               </TableRow>
             ))}
+            {ecritures.length === 0 && (
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Aucune écriture. Les paiements et dépenses apparaîtront ici automatiquement.</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
