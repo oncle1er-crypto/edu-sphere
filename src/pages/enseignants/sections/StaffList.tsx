@@ -7,19 +7,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Users, Search, Plus, Download, MoreHorizontal } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { FieldRow } from "@/components/settings/SettingsSection";
+import { Users, Search, Plus, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import { useEnseignants } from "@/hooks/useEnseignants";
+import { toast } from "sonner";
 
-const STAFF = [
-  { id: "ENS-001", nom: "Sidibé Amadou", role: "Enseignant", matiere: "Mathématiques", contrat: "CDI", classes: 3, tel: "+223 76 00 11 22", email: "a.sidibe@edu.ml", statut: "Actif" },
-  { id: "ENS-002", nom: "Touré Fatoumata", role: "Enseignant", matiere: "Français", contrat: "CDI", classes: 4, tel: "+223 66 33 44 55", email: "f.toure@edu.ml", statut: "Actif" },
-  { id: "ENS-003", nom: "Diarra Mamadou", role: "Enseignant", matiere: "Physique-Chimie", contrat: "Vacataire", classes: 2, tel: "+223 70 66 77 88", email: "m.diarra@edu.ml", statut: "Actif" },
-  { id: "ENS-004", nom: "Sanogo Aïssata", role: "Enseignant", matiere: "Anglais", contrat: "CDD", classes: 3, tel: "+223 65 99 00 11", email: "a.sanogo@edu.ml", statut: "Congé" },
-  { id: "ADM-001", nom: "Konaté Boubacar", role: "Surveillant", matiere: "—", contrat: "CDI", classes: 0, tel: "+223 78 22 33 44", email: "b.konate@edu.ml", statut: "Actif" },
-  { id: "ADM-002", nom: "Cissé Kadiatou", role: "Comptable", matiere: "—", contrat: "CDI", classes: 0, tel: "+223 69 55 66 77", email: "k.cisse@edu.ml", statut: "Actif" },
-  { id: "ADM-003", nom: "Diakité Salif", role: "Directeur", matiere: "—", contrat: "CDI", classes: 0, tel: "+223 76 11 22 33", email: "s.diakite@edu.ml", statut: "Actif" },
-];
-
-const initials = (n: string) => n.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+const initials = (nom: string, prenom: string) => `${(prenom?.[0] ?? "")}${(nom?.[0] ?? "")}`.toUpperCase();
 const contratColor: Record<string, string> = {
   CDI: "bg-emerald-600 hover:bg-emerald-600",
   CDD: "bg-amber-500 hover:bg-amber-500",
@@ -27,16 +21,49 @@ const contratColor: Record<string, string> = {
 };
 
 export default function StaffList() {
+  const { enseignants, loading, addEnseignant, deleteEnseignant } = useEnseignants();
   const [search, setSearch] = useState("");
-  const [role, setRole] = useState("all");
   const [contrat, setContrat] = useState("all");
-
-  const filtered = STAFF.filter((s) => {
-    const ms = s.nom.toLowerCase().includes(search.toLowerCase()) || s.id.toLowerCase().includes(search.toLowerCase()) || s.matiere.toLowerCase().includes(search.toLowerCase());
-    const mr = role === "all" || s.role === role;
-    const mc = contrat === "all" || s.contrat === contrat;
-    return ms && mr && mc;
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    nom: "", prenom: "", sexe: "" as "" | "F" | "M",
+    email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
   });
+
+  const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+
+  const filtered = enseignants.filter((s) => {
+    const ms = `${s.nom} ${s.prenom} ${s.matricule ?? ""} ${s.specialite ?? ""}`.toLowerCase().includes(search.toLowerCase());
+    const mc = contrat === "all" || s.type_contrat === contrat;
+    return ms && mc;
+  });
+
+  const handleAdd = async () => {
+    if (!form.nom || !form.prenom) { toast.error("Nom et prénom obligatoires"); return; }
+    setSaving(true);
+    const year = new Date().getFullYear().toString().slice(-2);
+    const rand = Math.floor(1000 + Math.random() * 9000);
+    await addEnseignant({
+      matricule: `ENS-${year}${rand}`,
+      nom: form.nom,
+      prenom: form.prenom,
+      sexe: (form.sexe || null) as any,
+      email: form.email || null,
+      telephone: form.telephone || null,
+      specialite: form.specialite || null,
+      type_contrat: form.type_contrat || "CDI",
+      diplome: form.diplome || null,
+      ecole_id: "",
+    });
+    setForm({ nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "" });
+    setOpen(false);
+    setSaving(false);
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
 
   return (
     <SettingsSection
@@ -51,16 +78,6 @@ export default function StaffList() {
           <Input placeholder="Nom, matricule, matière..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Select value={role} onValueChange={setRole}>
-            <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tous les rôles</SelectItem>
-              <SelectItem value="Enseignant">Enseignant</SelectItem>
-              <SelectItem value="Surveillant">Surveillant</SelectItem>
-              <SelectItem value="Comptable">Comptable</SelectItem>
-              <SelectItem value="Directeur">Direction</SelectItem>
-            </SelectContent>
-          </Select>
           <Select value={contrat} onValueChange={setContrat}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -71,7 +88,44 @@ export default function StaffList() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
-          <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Nouvel enseignant</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <FieldRow label="Nom *"><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} /></FieldRow>
+                <FieldRow label="Prénom *"><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FieldRow>
+                <FieldRow label="Sexe">
+                  <Select value={form.sexe} onValueChange={(v) => set("sexe", v)}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="F">Féminin</SelectItem>
+                      <SelectItem value="M">Masculin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldRow>
+                <FieldRow label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FieldRow>
+                <FieldRow label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FieldRow>
+                <FieldRow label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FieldRow>
+                <FieldRow label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FieldRow>
+                <FieldRow label="Contrat">
+                  <Select value={form.type_contrat} onValueChange={(v) => set("type_contrat", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="CDI">CDI</SelectItem>
+                      <SelectItem value="CDD">CDD</SelectItem>
+                      <SelectItem value="Vacataire">Vacataire</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FieldRow>
+                <Button className="w-full" onClick={handleAdd} disabled={saving}>
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -81,9 +135,8 @@ export default function StaffList() {
             <TableRow>
               <TableHead>Matricule</TableHead>
               <TableHead>Membre</TableHead>
-              <TableHead>Rôle / Matière</TableHead>
+              <TableHead>Spécialité</TableHead>
               <TableHead>Contrat</TableHead>
-              <TableHead className="hidden md:table-cell">Classes</TableHead>
               <TableHead className="hidden lg:table-cell">Contact</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="w-10" />
@@ -92,31 +145,23 @@ export default function StaffList() {
           <TableBody>
             {filtered.map((s) => (
               <TableRow key={s.id} className="hover:bg-muted/50">
-                <TableCell className="font-mono text-xs text-muted-foreground">{s.id}</TableCell>
+                <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule ?? "—"}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-3">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{initials(s.nom)}</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{initials(s.nom, s.prenom)}</AvatarFallback>
                     </Avatar>
-                    <p className="font-medium">{s.nom}</p>
+                    <p className="font-medium">{s.prenom} {s.nom}</p>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <div className="leading-tight">
-                    <p className="text-sm font-medium">{s.role}</p>
-                    {s.matiere !== "—" && <p className="text-[11px] text-muted-foreground">{s.matiere}</p>}
-                  </div>
-                </TableCell>
-                <TableCell><Badge className={contratColor[s.contrat] ?? ""}>{s.contrat}</Badge></TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {s.classes > 0 ? <Badge variant="secondary">{s.classes} classe(s)</Badge> : <span className="text-xs text-muted-foreground">—</span>}
-                </TableCell>
+                <TableCell className="text-sm">{s.specialite ?? "—"}</TableCell>
+                <TableCell><Badge className={contratColor[s.type_contrat ?? ""] ?? ""}>{s.type_contrat}</Badge></TableCell>
                 <TableCell className="hidden lg:table-cell text-xs">
-                  <p>{s.tel}</p>
-                  <p className="text-muted-foreground">{s.email}</p>
+                  <p>{s.telephone ?? "—"}</p>
+                  <p className="text-muted-foreground">{s.email ?? "—"}</p>
                 </TableCell>
                 <TableCell>
-                  <Badge variant={s.statut === "Actif" ? "default" : "secondary"} className="text-[10px]">{s.statut}</Badge>
+                  <Badge variant={s.statut === "actif" ? "default" : "secondary"} className="text-[10px]">{s.statut}</Badge>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -126,14 +171,17 @@ export default function StaffList() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>Voir la fiche</DropdownMenuItem>
                       <DropdownMenuItem>Modifier</DropdownMenuItem>
-                      <DropdownMenuItem>Voir l'emploi du temps</DropdownMenuItem>
-                      <DropdownMenuItem>Bulletin de paie</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">Désactiver</DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive" onClick={() => deleteEnseignant(s.id)}>Supprimer</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
+            {filtered.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Aucun membre trouvé.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
