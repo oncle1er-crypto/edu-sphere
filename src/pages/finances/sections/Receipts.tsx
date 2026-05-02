@@ -1,57 +1,76 @@
-import { Receipt, Download, Printer, Mail } from "lucide-react";
+import { Receipt, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useFinanceData, fcfa } from "../useFinanceData";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 
-const receipts = [
-  { id: "REC-2025-0892", student: "Mballa Junior", amount: "75 000", date: "26/04/2026", sent: true },
-  { id: "REC-2025-0891", student: "Nguemo Sarah", amount: "150 000", date: "26/04/2026", sent: true },
-  { id: "REC-2025-0890", student: "Tchoumi Paul", amount: "37 500", date: "25/04/2026", sent: false },
-  { id: "REC-2025-0889", student: "Kamga Yves", amount: "350 000", date: "24/04/2026", sent: true },
-  { id: "REC-2025-0888", student: "Fopa Inès", amount: "60 000", date: "23/04/2026", sent: true },
-];
+interface PaiementRecu {
+  id: string;
+  reference: string | null;
+  eleve_nom: string;
+  montant: number;
+  date_paiement: string;
+  mode: string;
+}
 
 export default function Receipts() {
+  const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const [recus, setRecus] = useState<PaiementRecu[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!ecoleId) { setLoading(false); return; }
+    supabase
+      .from("paiements")
+      .select("id, reference, montant, date_paiement, mode, eleves(nom, prenom)")
+      .eq("ecole_id", ecoleId)
+      .order("date_paiement", { ascending: false })
+      .limit(50)
+      .then(({ data }) => {
+        if (data) {
+          setRecus(data.map((p: any) => ({
+            id: p.id,
+            reference: p.reference,
+            eleve_nom: p.eleves ? `${p.eleves.prenom} ${p.eleves.nom}` : "—",
+            montant: Number(p.montant),
+            date_paiement: p.date_paiement,
+            mode: p.mode,
+          })));
+        }
+        setLoading(false);
+      });
+  }, [ecoleId]);
+
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
   return (
-    <SettingsSection
-      title="Reçus & quittances"
-      description="Documents officiels remis aux familles après paiement."
-      icon={<Receipt className="h-5 w-5" />}
-      hideSave
-    >
+    <SettingsSection title={`Reçus & quittances (${recus.length})`} description="Documents générés après chaque paiement enregistré." icon={<Receipt className="h-5 w-5" />} hideSave>
       <div className="border rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/40">
-              <TableHead>N° reçu</TableHead>
+              <TableHead>Référence</TableHead>
               <TableHead>Élève</TableHead>
               <TableHead className="text-right">Montant</TableHead>
-              <TableHead>Date d'émission</TableHead>
-              <TableHead>Envoyé</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Mode</TableHead>
+              <TableHead>Date</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {receipts.map((r) => (
+            {recus.map((r) => (
               <TableRow key={r.id}>
-                <TableCell className="font-mono text-xs">{r.id}</TableCell>
-                <TableCell className="font-medium">{r.student}</TableCell>
-                <TableCell className="text-right font-semibold">{r.amount} FCFA</TableCell>
-                <TableCell className="text-muted-foreground">{r.date}</TableCell>
-                <TableCell>
-                  <span className={r.sent ? "text-accent text-xs font-semibold" : "text-muted-foreground text-xs"}>
-                    {r.sent ? "✓ Envoyé" : "Non envoyé"}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Télécharger PDF"><Download className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Imprimer"><Printer className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Envoyer par email"><Mail className="h-4 w-4" /></Button>
-                  </div>
-                </TableCell>
+                <TableCell className="font-mono text-xs">{r.reference ?? r.id.slice(0, 8).toUpperCase()}</TableCell>
+                <TableCell className="font-medium">{r.eleve_nom}</TableCell>
+                <TableCell className="text-right font-semibold">{fcfa(r.montant)} FCFA</TableCell>
+                <TableCell className="text-muted-foreground capitalize">{r.mode.replace("_", " ")}</TableCell>
+                <TableCell className="text-muted-foreground">{new Date(r.date_paiement).toLocaleDateString("fr-FR")}</TableCell>
               </TableRow>
             ))}
+            {recus.length === 0 && (
+              <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Aucun paiement enregistré.</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
