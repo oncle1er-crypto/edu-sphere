@@ -119,6 +119,7 @@ export function useFinanceData() {
       const entry = eleveMap.get(eleveId)!;
       const statut = mapTrancheStatut(t.statut, Number(t.paye), Number(t.montant), t.echeance);
       entry.tranches.push({
+        id: t.id,
         num: t.numero as 1 | 2 | 3,
         label: t.label,
         echeance: t.echeance,
