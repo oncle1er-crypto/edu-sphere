@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
+import { PaymentDialog } from "../components/PaymentDialog";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
