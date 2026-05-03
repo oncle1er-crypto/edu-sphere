@@ -15,10 +15,12 @@ import { toast } from "sonner";
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
 
 export default function StudentSummary() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [selectedId, setSelectedId] = useState<string>("");
+  const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>();
+  const [payOpen, setPayOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
