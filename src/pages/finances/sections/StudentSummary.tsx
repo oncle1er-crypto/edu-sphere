@@ -226,6 +226,15 @@ export default function StudentSummary() {
           </div>
         </div>
       </SettingsSection>
+
+      <PaymentDialog
+        eleve={eleve}
+        defaultTrancheNum={payTrancheNum}
+        open={payOpen}
+        onOpenChange={(o) => { if (!o) { setPayOpen(false); setPayTrancheNum(undefined); } }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
+      />
     </div>
   );
 }
