@@ -214,7 +214,7 @@ export default function StudentSummary() {
                         <Progress value={tpct} className="h-1.5" />
                       </div>
                       {t.statut !== "payee" && (
-                        <Button size="sm" className="mt-3 w-full" onClick={() => toast.success(`Encaissement enregistré pour ${eleve.prenom}`)}>
+                        <Button size="sm" className="mt-3 w-full" onClick={() => { setPayTrancheNum(t.num); setPayOpen(true); }}>
                           <Plus className="h-4 w-4" />Encaisser cette tranche
                         </Button>
                       )}
