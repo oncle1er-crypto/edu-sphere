@@ -401,6 +401,8 @@ export default function Unpaid() {
         defaultTrancheNum={paymentTranche}
         open={!!paymentEleve}
         onOpenChange={(o) => { if (!o) { setPaymentEleve(null); setPaymentTranche(undefined); } }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
       />
 
       <SmsPreviewDialog
