@@ -394,6 +394,8 @@ export default function Unpaid() {
         eleve={selectedEleve}
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelectedEleve(null); setOpenTrancheNum(undefined); } }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
       />
 
       <PaymentDialog
