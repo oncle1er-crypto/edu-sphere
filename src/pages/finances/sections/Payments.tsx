@@ -31,7 +31,7 @@ const EMPTY_ADV: AdvSearch = { nom: "", prenom: "", classe: "", telephone: "" };
 
 export default function Payments() {
   const lock = useLock("paiements");
-  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
@@ -284,6 +284,8 @@ export default function Payments() {
         eleve={selected}
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelected(null); setOpenTrancheNum(undefined); } }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
       />
     </div>
   );
