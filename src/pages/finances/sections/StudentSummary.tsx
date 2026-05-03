@@ -9,15 +9,18 @@ import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
+import { PaymentDialog } from "../components/PaymentDialog";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
 
 export default function StudentSummary() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [selectedId, setSelectedId] = useState<string>("");
+  const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>();
+  const [payOpen, setPayOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
@@ -211,7 +214,7 @@ export default function StudentSummary() {
                         <Progress value={tpct} className="h-1.5" />
                       </div>
                       {t.statut !== "payee" && (
-                        <Button size="sm" className="mt-3 w-full" onClick={() => toast.success(`Encaissement enregistré pour ${eleve.prenom}`)}>
+                        <Button size="sm" className="mt-3 w-full" onClick={() => { setPayTrancheNum(t.num); setPayOpen(true); }}>
                           <Plus className="h-4 w-4" />Encaisser cette tranche
                         </Button>
                       )}
@@ -223,6 +226,15 @@ export default function StudentSummary() {
           </div>
         </div>
       </SettingsSection>
+
+      <PaymentDialog
+        eleve={eleve}
+        defaultTrancheNum={payTrancheNum}
+        open={payOpen}
+        onOpenChange={(o) => { if (!o) { setPayOpen(false); setPayTrancheNum(undefined); } }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
+      />
     </div>
   );
 }

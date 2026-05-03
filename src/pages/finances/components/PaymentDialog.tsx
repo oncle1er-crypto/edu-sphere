@@ -6,8 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Wallet } from "lucide-react";
+import { Plus, Wallet, Loader2 } from "lucide-react";
 import { fcfa, type EleveScolarite } from "../scolarite-data";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 interface Props {
@@ -15,11 +17,24 @@ interface Props {
   defaultTrancheNum?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onPaymentRecorded?: () => void;
+  ecoleId?: string | null;
 }
 
-const MOYENS = ["Espèces", "Wave", "Orange Money", "MTN MoMo", "Moov Money", "Virement", "Chèque"] as const;
+const MOYENS: { label: string; value: string }[] = [
+  { label: "Espèces", value: "especes" },
+  { label: "Wave", value: "wave" },
+  { label: "Orange Money", value: "orange_money" },
+  { label: "MTN MoMo", value: "mtn_money" },
+  { label: "Moov Money", value: "moov_money" },
+  { label: "Virement", value: "virement" },
+  { label: "Chèque", value: "cheque" },
+];
 
-export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: Props) {
+export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
+  const { user } = useAuth();
+  const [saving, setSaving] = useState(false);
+
   const tranchesPayables = useMemo(
     () => (eleve ? eleve.tranches.filter((t) => t.statut !== "payee") : []),
     [eleve],
@@ -27,7 +42,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: 
 
   const [trancheNum, setTrancheNum] = useState<string>("");
   const [montant, setMontant] = useState<string>("");
-  const [moyen, setMoyen] = useState<string>("Wave");
+  const [moyen, setMoyen] = useState<string>("wave");
   const [reference, setReference] = useState<string>("");
 
   useEffect(() => {
@@ -38,7 +53,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: 
       setTrancheNum(String(target.num));
       setMontant(String(Math.max(0, target.montant - target.paye)));
     }
-    setMoyen("Wave");
+    setMoyen("wave");
     setReference("");
   }, [open, eleve, defaultTrancheNum, tranchesPayables]);
 
@@ -49,12 +64,51 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: 
   const montantNum = Number(montant) || 0;
   const valid = !!tranche && montantNum > 0 && montantNum <= restantTranche;
 
-  const handleSubmit = () => {
-    if (!valid || !tranche) return;
-    toast.success(`Encaissement enregistré`, {
-      description: `${fcfa(montantNum)} FCFA · ${moyen} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
-    });
-    onOpenChange(false);
+  const handleSubmit = async () => {
+    if (!valid || !tranche || !ecoleId) return;
+    setSaving(true);
+
+    try {
+      // 1. Insert paiement record
+      const { error: payErr } = await supabase.from("paiements").insert({
+        ecole_id: ecoleId,
+        eleve_id: eleve.id,
+        tranche_id: (tranche as any).id ?? null,
+        montant: montantNum,
+        mode: moyen as any,
+        reference: reference || null,
+        recu_par: user?.id ?? null,
+      });
+
+      if (payErr) throw payErr;
+
+      // 2. Update tranche: paye += montantNum, statut changes
+      const newPaye = tranche.paye + montantNum;
+      const newStatut = newPaye >= tranche.montant ? "payee" : "partielle";
+
+      // We need the tranche DB id — it's stored on the tranche object if useFinanceData mapped it
+      const trancheId = (tranche as any).id;
+      if (trancheId) {
+        const { error: trErr } = await supabase
+          .from("tranches")
+          .update({ paye: newPaye, statut: newStatut })
+          .eq("id", trancheId);
+
+        if (trErr) throw trErr;
+      }
+
+      toast.success("Encaissement enregistré", {
+        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
+      });
+
+      onOpenChange(false);
+      onPaymentRecorded?.();
+    } catch (err: any) {
+      console.error("Payment error:", err);
+      toast.error("Erreur lors de l'enregistrement", { description: err.message });
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -112,7 +166,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: 
               <Select value={moyen} onValueChange={setMoyen}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {MOYENS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -130,9 +184,10 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange }: 
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={handleSubmit} disabled={!valid}>
-            <Plus className="h-4 w-4" />Enregistrer l'encaissement
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuler</Button>
+          <Button onClick={handleSubmit} disabled={!valid || saving}>
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            Enregistrer l'encaissement
           </Button>
         </DialogFooter>
       </DialogContent>

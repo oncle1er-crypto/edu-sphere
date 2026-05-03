@@ -5,6 +5,7 @@ export type Cycle = "Maternelle" | "Primaire" | "Collège" | "Lycée";
 export type TrancheStatut = "payee" | "partielle" | "due" | "retard";
 
 export interface Tranche {
+  id?: string; // DB uuid — present when loaded from DB
   num: 1 | 2 | 3;
   label: string;
   echeance: string; // DD/MM/YYYY
