@@ -64,7 +64,7 @@ function buildClassesSynthese(allEleves: EleveScolarite[]): ClasseSyntheseRow[] 
 }
 
 export default function ClassSummary() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -286,6 +286,8 @@ export default function ClassSummary() {
       <StudentDetailDrawer
         eleve={selectedEleve}
         onOpenChange={(o) => { if (!o) setSelectedEleve(null); }}
+        ecoleId={ecoleId}
+        onPaymentRecorded={refetch}
       />
     </div>
   );
