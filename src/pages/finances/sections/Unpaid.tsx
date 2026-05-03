@@ -37,7 +37,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 export default function Unpaid() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading } = useFinanceData();
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
   const { relances, fetchRelances, addRelance, getRelancesCount, getDerniereRelance } = useRelances();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
