@@ -3,12 +3,13 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Users, Search, Plus, Download, MoreHorizontal, Filter, Loader2, Shuffle, Eye, Pencil, Trash2, Printer } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
@@ -21,6 +22,8 @@ const formatDate = (d: string | null) => {
   return new Date(d).toLocaleDateString("fr-FR");
 };
 
+type ViewMode = "list" | "grid";
+
 export default function StudentsList() {
   const { eleves, loading, updateEleve, deleteEleve } = useEleves();
   const { classes } = useClasses();
@@ -28,6 +31,7 @@ export default function StudentsList() {
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("list");
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
@@ -74,6 +78,42 @@ export default function StudentsList() {
     );
   }
 
+  const statusBadge = (s: typeof eleves[0]) => (
+    <Badge variant={s.statut === "inscrit" || s.statut === "actif" ? "default" : "destructive"} className="text-[10px]">
+      {s.statut}
+    </Badge>
+  );
+
+  const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
+    <Avatar className={size}>
+      {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.prenom} ${s.nom}`} /> : null}
+      <AvatarFallback className={`${textSize} bg-accent/20 text-accent-foreground`}>
+        {initials(s.nom, s.prenom)}
+      </AvatarFallback>
+    </Avatar>
+  );
+
+  const studentActions = (s: typeof eleves[0]) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => setViewEleve(s)}>
+          <Eye className="h-4 w-4 mr-2" />Voir la fiche
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => { setTransferEleve(s); setTransferClasseId(s.classe_id ?? ""); }}>
+          <Shuffle className="h-4 w-4 mr-2" />Transférer de classe
+        </DropdownMenuItem>
+        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(s)}>
+          <Trash2 className="h-4 w-4 mr-2" />Désinscrire
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   return (
     <>
       <SettingsSection
@@ -113,79 +153,109 @@ export default function StudentsList() {
               </SelectContent>
             </Select>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+            <div className="flex border rounded-md overflow-hidden">
+              <Button
+                variant={viewMode === "list" ? "default" : "ghost"}
+                size="icon"
+                className="h-9 w-9 rounded-none"
+                onClick={() => setViewMode("list")}
+                title="Vue liste"
+              >
+                <List className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "grid" ? "default" : "ghost"}
+                size="icon"
+                className="h-9 w-9 rounded-none"
+                onClick={() => setViewMode("grid")}
+                title="Vue miniatures"
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
 
-        <div className="border rounded-lg overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Matricule</TableHead>
-                <TableHead>Élève</TableHead>
-                <TableHead>Classe</TableHead>
-                <TableHead className="hidden md:table-cell">Né(e) le</TableHead>
-                <TableHead>Statut</TableHead>
-                <TableHead className="w-10" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((s) => (
-                <TableRow key={s.id} className="hover:bg-muted/50">
-                  <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">
-                          {initials(s.nom, s.prenom)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium leading-tight">{s.prenom} {s.nom}</p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"} • {s.cycle_nom ?? "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
-                  <TableCell>
-                    <Badge variant={s.statut === "inscrit" || s.statut === "actif" ? "default" : "destructive"} className="text-[10px]">
-                      {s.statut}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setViewEleve(s)}>
-                          <Eye className="h-4 w-4 mr-2" />Voir la fiche
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { setTransferEleve(s); setTransferClasseId(s.classe_id ?? ""); }}>
-                          <Shuffle className="h-4 w-4 mr-2" />Transférer de classe
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(s)}>
-                          <Trash2 className="h-4 w-4 mr-2" />Désinscrire
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {filtered.length === 0 && (
+        {/* LIST VIEW */}
+        {viewMode === "list" && (
+          <div className="border rounded-lg overflow-x-auto">
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
-                    Aucun élève trouvé.
-                  </TableCell>
+                  <TableHead>Matricule</TableHead>
+                  <TableHead>Élève</TableHead>
+                  <TableHead>Classe</TableHead>
+                  <TableHead className="hidden md:table-cell">Né(e) le</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {filtered.map((s) => (
+                  <TableRow key={s.id} className="hover:bg-muted/50">
+                    <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {studentAvatar(s)}
+                        <div>
+                          <p className="font-medium leading-tight">{s.prenom} {s.nom}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"} • {s.cycle_nom ?? "—"}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
+                    <TableCell>{statusBadge(s)}</TableCell>
+                    <TableCell>{studentActions(s)}</TableCell>
+                  </TableRow>
+                ))}
+                {filtered.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                      Aucun élève trouvé.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+
+        {/* GRID / CARD VIEW */}
+        {viewMode === "grid" && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {filtered.map((s) => (
+              <Card
+                key={s.id}
+                className="relative group p-3 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => setViewEleve(s)}
+              >
+                <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                  {studentActions(s)}
+                </div>
+                {studentAvatar(s, "h-16 w-16", "text-xl")}
+                <div className="min-w-0 w-full">
+                  <p className="font-semibold text-sm leading-tight truncate">{s.prenom} {s.nom}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{s.matricule}</p>
+                </div>
+                <Badge variant="secondary" className="text-[10px]">{s.classe_nom ?? "Non affecté"}</Badge>
+                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                  <span>{s.sexe === "F" ? "F" : s.sexe === "M" ? "M" : "—"}</span>
+                  <span>•</span>
+                  <span>{formatDate(s.date_naissance)}</span>
+                </div>
+                {statusBadge(s)}
+              </Card>
+            ))}
+            {filtered.length === 0 && (
+              <div className="col-span-full text-center text-sm text-muted-foreground py-8">
+                Aucun élève trouvé.
+              </div>
+            )}
+          </div>
+        )}
       </SettingsSection>
 
       {/* View student dialog */}
@@ -195,11 +265,7 @@ export default function StudentsList() {
           {viewEleve && (
             <div className="space-y-3">
               <div className="flex items-center gap-4">
-                <Avatar className="h-14 w-14">
-                  <AvatarFallback className="text-lg bg-accent/20 text-accent-foreground">
-                    {initials(viewEleve.nom, viewEleve.prenom)}
-                  </AvatarFallback>
-                </Avatar>
+                {studentAvatar(viewEleve, "h-14 w-14", "text-lg")}
                 <div>
                   <h3 className="text-lg font-bold">{viewEleve.prenom} {viewEleve.nom}</h3>
                   <p className="text-sm text-muted-foreground font-mono">{viewEleve.matricule}</p>
@@ -212,7 +278,7 @@ export default function StudentsList() {
                 <div><span className="text-muted-foreground">Nationalité :</span> {viewEleve.nationalite ?? "—"}</div>
                 <div><span className="text-muted-foreground">Classe :</span> {viewEleve.classe_nom ?? "Non affecté"}</div>
                 <div><span className="text-muted-foreground">Cycle :</span> {viewEleve.cycle_nom ?? "—"}</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Statut :</span> <Badge variant={viewEleve.statut === "inscrit" || viewEleve.statut === "actif" ? "default" : "destructive"}>{viewEleve.statut}</Badge></div>
+                <div className="col-span-2"><span className="text-muted-foreground">Statut :</span> {statusBadge(viewEleve)}</div>
                 {viewEleve.adresse && <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> {viewEleve.adresse}</div>}
               </div>
             </div>
