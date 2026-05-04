@@ -59,6 +59,7 @@ export default function ClassesList() {
   // Eleves dialog
   const [viewElevesClass, setViewElevesClass] = useState<Classe | null>(null);
   const { eleves } = useEleves();
+  const [showImport, setShowImport] = useState(false);
 
   const filtered = classes.filter((c) => {
     const ms =
