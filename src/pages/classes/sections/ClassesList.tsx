@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BookOpen, Search, Plus, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import { BookOpen, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { useClasses, Classe } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useEnseignants } from "@/hooks/useEnseignants";
@@ -16,6 +16,20 @@ import { useEleves } from "@/hooks/useEleves";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+
+const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
+  { key: "nom", label: "Nom", required: true },
+  { key: "cycle", label: "Cycle", required: true },
+  { key: "capacite", label: "Capacité" },
+  { key: "salle", label: "Salle" },
+];
+
+const EXAMPLE_ROWS_CLASSES = [
+  { nom: "6ème A", cycle: "Collège", capacite: "45", salle: "Salle 101" },
+  { nom: "5ème B", cycle: "Collège", capacite: "40", salle: "Salle 102" },
+  { nom: "CM2 A", cycle: "Primaire", capacite: "35", salle: "Salle 201" },
+];
 
 export default function ClassesList() {
   const { classes, loading, addClass, fetchClasses, ecoleId } = useClasses();
@@ -45,6 +59,7 @@ export default function ClassesList() {
   // Eleves dialog
   const [viewElevesClass, setViewElevesClass] = useState<Classe | null>(null);
   const { eleves } = useEleves();
+  const [showImport, setShowImport] = useState(false);
 
   const filtered = classes.filter((c) => {
     const ms =
@@ -118,6 +133,27 @@ export default function ClassesList() {
     }
   };
 
+  const handleImportClasses = async (rows: Record<string, string>[]) => {
+    if (!ecoleId || !anneeId) return { success: 0, errors: 0 };
+    let success = 0, errors = 0;
+    for (const row of rows) {
+      if (!row.nom || !row.cycle) { errors++; continue; }
+      const cycleMatch = cycles.find((c) => c.nom.toLowerCase() === row.cycle.toLowerCase());
+      if (!cycleMatch) { errors++; continue; }
+      const res = await addClass({
+        nom: row.nom,
+        cycle_id: cycleMatch.id,
+        annee_id: anneeId,
+        capacite: parseInt(row.capacite) || 40,
+        salle: row.salle || null,
+        professeur_principal_id: null,
+        ecole_id: ecoleId,
+      });
+      if (res) success++; else errors++;
+    }
+    return { success, errors };
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -155,6 +191,9 @@ export default function ClassesList() {
             </Select>
             <Button size="sm" onClick={() => setShowNew(true)}>
               <Plus className="h-4 w-4" />Nouvelle classe
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Upload className="h-4 w-4" />Import CSV
             </Button>
           </div>
         </div>
@@ -356,6 +395,15 @@ export default function ClassesList() {
           )}
         </DialogContent>
       </Dialog>
+      <ImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Import de classes"
+        columns={IMPORT_COLUMNS_CLASSES}
+        exampleRows={EXAMPLE_ROWS_CLASSES}
+        exampleFileName="modele_classes.csv"
+        onImport={handleImportClasses}
+      />
     </>
   );
 }

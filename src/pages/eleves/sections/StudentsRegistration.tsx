@@ -12,6 +12,24 @@ import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
+import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "nom", label: "Nom", required: true },
+  { key: "prenom", label: "Prénom", required: true },
+  { key: "sexe", label: "Sexe" },
+  { key: "date_naissance", label: "Date de naissance" },
+  { key: "lieu_naissance", label: "Lieu de naissance" },
+  { key: "nationalite", label: "Nationalité" },
+  { key: "adresse", label: "Adresse" },
+  { key: "classe", label: "Classe" },
+];
+
+const EXAMPLE_ROWS = [
+  { nom: "Diallo", prenom: "Aminata", sexe: "F", date_naissance: "2015-03-12", lieu_naissance: "Abidjan", nationalite: "Ivoirienne", adresse: "Cocody", classe: "6ème A" },
+  { nom: "Koné", prenom: "Ibrahim", sexe: "M", date_naissance: "2014-07-25", lieu_naissance: "Bouaké", nationalite: "Ivoirienne", adresse: "Yopougon", classe: "5ème B" },
+  { nom: "Touré", prenom: "Fatou", sexe: "F", date_naissance: "2016-01-08", lieu_naissance: "Man", nationalite: "Ivoirienne", adresse: "Plateau", classe: "6ème A" },
+];
 
 export default function StudentsRegistration() {
   const { addEleve, ecoleId } = useEleves();
@@ -20,6 +38,7 @@ export default function StudentsRegistration() {
   const { anneeId } = useAnneeId();
 
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -68,13 +87,44 @@ export default function StudentsRegistration() {
     setSaving(false);
   };
 
+  const handleImport = async (rows: Record<string, string>[]) => {
+    if (!ecoleId) return { success: 0, errors: 0 };
+    let success = 0, errors = 0;
+    for (const row of rows) {
+      if (!row.nom || !row.prenom) { errors++; continue; }
+      const classeMatch = row.classe ? classes.find((c) => c.nom.toLowerCase() === row.classe.toLowerCase()) : null;
+      const res = await addEleve({
+        matricule: generateMatricule(),
+        nom: row.nom,
+        prenom: row.prenom,
+        sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : null) as "F" | "M" | null,
+        date_naissance: row.date_naissance || null,
+        lieu_naissance: row.lieu_naissance || null,
+        nationalite: row.nationalite || "Ivoirienne",
+        adresse: row.adresse || null,
+        classe_id: classeMatch?.id ?? null,
+        annee_id: anneeId,
+        ecole_id: ecoleId!,
+        statut: "inscrit",
+      });
+      if (res) success++; else errors++;
+    }
+    return { success, errors };
+  };
+
   return (
     <SettingsSection
       icon={<UserPlus className="h-5 w-5" />}
       title="Nouvelle inscription"
-      description="Enregistrez un nouvel élève avec ses informations personnelles et scolaires."
+      description="Enregistrez un nouvel élève ou importez une liste depuis un fichier CSV."
       onSave={handleSubmit}
     >
+      <div className="flex justify-end mb-2">
+        <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+          <Upload className="h-4 w-4" /> Import CSV
+        </Button>
+      </div>
+
       <Tabs defaultValue="identite" className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="identite">Identité</TabsTrigger>
@@ -134,6 +184,16 @@ export default function StudentsRegistration() {
           </FieldRow>
         </TabsContent>
       </Tabs>
+
+      <ImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Import d'élèves"
+        columns={IMPORT_COLUMNS}
+        exampleRows={EXAMPLE_ROWS}
+        exampleFileName="modele_eleves.csv"
+        onImport={handleImport}
+      />
     </SettingsSection>
   );
 }

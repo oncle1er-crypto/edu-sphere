@@ -9,9 +9,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FieldRow } from "@/components/settings/SettingsSection";
-import { Users, Search, Plus, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
+import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+
+const IMPORT_COLUMNS: ImportColumn[] = [
+  { key: "nom", label: "Nom", required: true },
+  { key: "prenom", label: "Prénom", required: true },
+  { key: "sexe", label: "Sexe" },
+  { key: "email", label: "Email" },
+  { key: "telephone", label: "Téléphone" },
+  { key: "specialite", label: "Spécialité" },
+  { key: "diplome", label: "Diplôme" },
+  { key: "type_contrat", label: "Type de contrat" },
+];
+
+const EXAMPLE_ROWS_ENS = [
+  { nom: "Konan", prenom: "Jean-Marc", sexe: "M", email: "jm.konan@email.ci", telephone: "+225 07 01 02 03", specialite: "Mathématiques", diplome: "CAPES", type_contrat: "CDI" },
+  { nom: "Bamba", prenom: "Aïssatou", sexe: "F", email: "a.bamba@email.ci", telephone: "+225 05 04 05 06", specialite: "Français", diplome: "Licence", type_contrat: "CDD" },
+  { nom: "Yao", prenom: "Kouadio", sexe: "M", email: "k.yao@email.ci", telephone: "+225 01 07 08 09", specialite: "Anglais", diplome: "Master", type_contrat: "Vacataire" },
+];
 
 const initials = (nom: string, prenom: string) => `${(prenom?.[0] ?? "")}${(nom?.[0] ?? "")}`.toUpperCase();
 const contratColor: Record<string, string> = {
@@ -26,6 +44,7 @@ export default function StaffList() {
   const [contrat, setContrat] = useState("all");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
@@ -61,6 +80,29 @@ export default function StaffList() {
     setSaving(false);
   };
 
+  const handleImport = async (rows: Record<string, string>[]) => {
+    let success = 0, errors = 0;
+    for (const row of rows) {
+      if (!row.nom || !row.prenom) { errors++; continue; }
+      const year = new Date().getFullYear().toString().slice(-2);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const res = await addEnseignant({
+        matricule: `ENS-${year}${rand}`,
+        nom: row.nom,
+        prenom: row.prenom,
+        sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : null) as any,
+        email: row.email || null,
+        telephone: row.telephone || null,
+        specialite: row.specialite || null,
+        type_contrat: row.type_contrat || "CDI",
+        diplome: row.diplome || null,
+        ecole_id: "",
+      });
+      if (res) success++; else errors++;
+    }
+    return { success, errors };
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
@@ -88,6 +130,7 @@ export default function StaffList() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" />Import CSV</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
@@ -185,6 +228,15 @@ export default function StaffList() {
           </TableBody>
         </Table>
       </div>
+      <ImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Import d'enseignants"
+        columns={IMPORT_COLUMNS}
+        exampleRows={EXAMPLE_ROWS_ENS}
+        exampleFileName="modele_enseignants.csv"
+        onImport={handleImport}
+      />
     </SettingsSection>
   );
 }
