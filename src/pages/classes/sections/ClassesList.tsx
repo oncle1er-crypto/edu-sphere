@@ -395,6 +395,15 @@ export default function ClassesList() {
           )}
         </DialogContent>
       </Dialog>
+      <ImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Import de classes"
+        columns={IMPORT_COLUMNS_CLASSES}
+        exampleRows={EXAMPLE_ROWS_CLASSES}
+        exampleFileName="modele_classes.csv"
+        onImport={handleImportClasses}
+      />
     </>
   );
 }
