@@ -715,6 +715,48 @@ export type Database = {
           },
         ]
       }
+      documents_eleves: {
+        Row: {
+          chemin_stockage: string
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mime_type: string | null
+          nom_fichier: string
+          taille: number | null
+          type_document: string
+          updated_at: string
+          uploade_par: string | null
+        }
+        Insert: {
+          chemin_stockage: string
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier: string
+          taille?: number | null
+          type_document: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Update: {
+          chemin_stockage?: string
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier?: string
+          taille?: number | null
+          type_document?: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Relationships: []
+      }
       ecoles: {
         Row: {
           adresse: string | null
