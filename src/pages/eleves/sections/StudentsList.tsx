@@ -14,6 +14,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { toast } from "sonner";
+import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
