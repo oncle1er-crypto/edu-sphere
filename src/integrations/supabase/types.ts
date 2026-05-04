@@ -525,6 +525,54 @@ export type Database = {
         }
         Relationships: []
       }
+      config_module_eleves: {
+        Row: {
+          age_max_lycee: number
+          age_min_maternelle: number
+          archivage_auto: boolean
+          capacite_classe_defaut: number
+          created_at: string
+          ecole_id: string
+          format_matricule: string
+          generation_carnet: boolean
+          id: string
+          nb_documents_obligatoires: number
+          notification_sms: boolean
+          photo_obligatoire: boolean
+          updated_at: string
+        }
+        Insert: {
+          age_max_lycee?: number
+          age_min_maternelle?: number
+          archivage_auto?: boolean
+          capacite_classe_defaut?: number
+          created_at?: string
+          ecole_id: string
+          format_matricule?: string
+          generation_carnet?: boolean
+          id?: string
+          nb_documents_obligatoires?: number
+          notification_sms?: boolean
+          photo_obligatoire?: boolean
+          updated_at?: string
+        }
+        Update: {
+          age_max_lycee?: number
+          age_min_maternelle?: number
+          archivage_auto?: boolean
+          capacite_classe_defaut?: number
+          created_at?: string
+          ecole_id?: string
+          format_matricule?: string
+          generation_carnet?: boolean
+          id?: string
+          nb_documents_obligatoires?: number
+          notification_sms?: boolean
+          photo_obligatoire?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       creneaux_emploi_temps: {
         Row: {
           annee_id: string
