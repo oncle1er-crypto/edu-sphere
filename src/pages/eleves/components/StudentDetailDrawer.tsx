@@ -455,6 +455,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
         )}
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Modifications non enregistrées</AlertDialogTitle>
+          <AlertDialogDescription>
+            Vous avez des modifications en cours. Voulez-vous vraiment quitter sans enregistrer ?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continuer l'édition</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Abandonner les modifications
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
