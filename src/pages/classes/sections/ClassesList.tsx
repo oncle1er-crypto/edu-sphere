@@ -192,6 +192,9 @@ export default function ClassesList() {
             <Button size="sm" onClick={() => setShowNew(true)}>
               <Plus className="h-4 w-4" />Nouvelle classe
             </Button>
+            <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
+              <Upload className="h-4 w-4" />Import CSV
+            </Button>
           </div>
         </div>
 
