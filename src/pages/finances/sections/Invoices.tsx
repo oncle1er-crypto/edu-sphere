@@ -173,8 +173,8 @@ export default function Invoices() {
                 <TableCell className="text-right">
                   <ConfirmButton
                     onConfirm={() => deleteFacture(f.id)}
-                    title="Supprimer cette facture ?"
-                    description="Cette action est irréversible."
+                    confirmTitle="Supprimer cette facture ?"
+                    confirmDescription="Cette action est irréversible."
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-destructive"
