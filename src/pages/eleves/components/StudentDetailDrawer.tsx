@@ -169,6 +169,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
   return (
+    <>
     <Sheet open={open} onOpenChange={guardedClose}>
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="pb-4">
