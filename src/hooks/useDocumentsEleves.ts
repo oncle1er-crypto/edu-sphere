@@ -17,7 +17,7 @@ export interface DocumentEleve {
 }
 
 export function useDocumentsEleves(eleveId?: string) {
-  const ecoleId = useEcoleId();
+  const { ecoleId } = useEcoleId();
   const [documents, setDocuments] = useState<DocumentEleve[]>([]);
   const [loading, setLoading] = useState(false);
 
