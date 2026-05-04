@@ -6,21 +6,29 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen,
+  Check, X, Clock, BookOpen, Pencil, Save,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useClasses } from "@/hooks/useClasses";
+import { toast } from "sonner";
 
 interface Props {
   eleve: any | null;
   open: boolean;
   onClose: () => void;
+  onUpdated?: () => void;
 }
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
 
-export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
+export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }: Props) {
   const [presences, setPresences] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
@@ -28,41 +36,25 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
   const [parents, setParents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Edit mode
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<Record<string, any>>({});
+  const { classes } = useClasses();
+
   useEffect(() => {
-    if (!eleve || !open) return;
+    if (!eleve || !open) { setEditing(false); return; }
     setLoading(true);
+    setEditing(false);
     const id = eleve.id;
     const ecoleId = eleve.ecole_id;
 
     Promise.all([
-      supabase
-        .from("presences")
-        .select("*")
-        .eq("eleve_id", id)
-        .order("date_presence", { ascending: false })
-        .limit(30),
-      supabase
-        .from("paiements")
-        .select("*")
-        .eq("eleve_id", id)
-        .eq("ecole_id", ecoleId)
-        .order("date_paiement", { ascending: false })
-        .limit(20),
-      supabase
-        .from("incidents_discipline")
-        .select("*")
-        .eq("eleve_id", id)
-        .order("date_incident", { ascending: false })
-        .limit(20),
-      supabase
-        .from("documents_eleves")
-        .select("*")
-        .eq("eleve_id", id)
-        .eq("ecole_id", ecoleId),
-      supabase
-        .from("eleve_parents")
-        .select("*, parents:parent_id(nom, prenom, telephone, email)")
-        .eq("eleve_id", id),
+      supabase.from("presences").select("*").eq("eleve_id", id).order("date_presence", { ascending: false }).limit(30),
+      supabase.from("paiements").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(20),
+      supabase.from("incidents_discipline").select("*").eq("eleve_id", id).order("date_incident", { ascending: false }).limit(20),
+      supabase.from("documents_eleves").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId),
+      supabase.from("eleve_parents").select("*, parents:parent_id(nom, prenom, telephone, email)").eq("eleve_id", id),
     ]).then(([presR, paiR, incR, docR, parR]) => {
       setPresences((presR.data as any[]) ?? []);
       setPaiements((paiR.data as any[]) ?? []);
@@ -72,6 +64,46 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
       setLoading(false);
     });
   }, [eleve, open]);
+
+  const startEditing = () => {
+    if (!eleve) return;
+    setForm({
+      nom: eleve.nom ?? "",
+      prenom: eleve.prenom ?? "",
+      sexe: eleve.sexe ?? "",
+      date_naissance: eleve.date_naissance ?? "",
+      lieu_naissance: eleve.lieu_naissance ?? "",
+      nationalite: eleve.nationalite ?? "",
+      adresse: eleve.adresse ?? "",
+      classe_id: eleve.classe_id ?? "",
+      statut: eleve.statut ?? "inscrit",
+    });
+    setEditing(true);
+  };
+
+  const handleSave = async () => {
+    if (!eleve) return;
+    setSaving(true);
+    const { error } = await supabase.from("eleves").update({
+      nom: form.nom,
+      prenom: form.prenom,
+      sexe: form.sexe || null,
+      date_naissance: form.date_naissance || null,
+      lieu_naissance: form.lieu_naissance || null,
+      nationalite: form.nationalite || null,
+      adresse: form.adresse || null,
+      classe_id: form.classe_id || null,
+      statut: form.statut,
+    }).eq("id", eleve.id);
+    setSaving(false);
+    if (error) {
+      toast.error("Erreur lors de la sauvegarde : " + error.message);
+    } else {
+      toast.success("Élève mis à jour avec succès");
+      setEditing(false);
+      onUpdated?.();
+    }
+  };
 
   if (!eleve) return null;
 
@@ -92,6 +124,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
     felicitation: "Félicitation", encouragement: "Encouragement",
   };
 
+  const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
+
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
@@ -102,7 +136,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
                 {init}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1 min-w-0">
               <SheetTitle className="text-xl">
                 {eleve.prenom} {eleve.nom}
               </SheetTitle>
@@ -112,6 +146,11 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
                 <Badge>{eleve.statut}</Badge>
               </div>
             </div>
+            {!editing && !loading && (
+              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={startEditing}>
+                <Pencil className="h-3.5 w-3.5" /> Modifier
+              </Button>
+            )}
           </div>
         </SheetHeader>
 
@@ -131,35 +170,108 @@ export default function StudentDetailDrawer({ eleve, open, onClose }: Props) {
 
             {/* IDENTITÉ */}
             <TabsContent value="identite" className="space-y-4 mt-3">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <Info label="Sexe" value={eleve.sexe === "F" ? "Féminin" : eleve.sexe === "M" ? "Masculin" : "—"} />
-                <Info label="Né(e) le" value={fmt(eleve.date_naissance)} />
-                <Info label="Lieu de naissance" value={eleve.lieu_naissance} />
-                <Info label="Nationalité" value={eleve.nationalite} />
-                <Info label="Classe" value={eleve.classe_nom ?? "Non affecté"} />
-                <Info label="Cycle" value={eleve.cycle_nom} />
-                <Info label="Date inscription" value={fmt(eleve.date_inscription)} />
-                {eleve.adresse && <Info label="Adresse" value={eleve.adresse} span2 />}
-              </div>
-
-              {parents.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold text-sm flex items-center gap-2">
-                    <User className="h-4 w-4" /> Parent(s) / Tuteur(s)
-                  </h4>
-                  {parents.map((p, i) => (
-                    <Card key={i} className="border">
-                      <CardContent className="p-3 text-sm">
-                        <p className="font-medium">
-                          {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
-                        </p>
-                        <p className="text-muted-foreground">
-                          {(p as any).parents?.telephone ?? "—"} • {(p as any).parents?.email ?? "—"}
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
+              {editing ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label>Nom</Label>
+                      <Input value={form.nom} onChange={(e) => updateField("nom", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Prénom</Label>
+                      <Input value={form.prenom} onChange={(e) => updateField("prenom", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Sexe</Label>
+                      <Select value={form.sexe} onValueChange={(v) => updateField("sexe", v)}>
+                        <SelectTrigger><SelectValue placeholder="Sexe" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="M">Masculin</SelectItem>
+                          <SelectItem value="F">Féminin</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Date de naissance</Label>
+                      <Input type="date" value={form.date_naissance} onChange={(e) => updateField("date_naissance", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Lieu de naissance</Label>
+                      <Input value={form.lieu_naissance} onChange={(e) => updateField("lieu_naissance", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Nationalité</Label>
+                      <Input value={form.nationalite} onChange={(e) => updateField("nationalite", e.target.value)} />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Classe</Label>
+                      <Select value={form.classe_id} onValueChange={(v) => updateField("classe_id", v)}>
+                        <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
+                        <SelectContent>
+                          {classes.map((c) => (
+                            <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label>Statut</Label>
+                      <Select value={form.statut} onValueChange={(v) => updateField("statut", v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inscrit">Inscrit</SelectItem>
+                          <SelectItem value="actif">Actif</SelectItem>
+                          <SelectItem value="suspendu">Suspendu</SelectItem>
+                          <SelectItem value="sorti">Sorti</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label>Adresse</Label>
+                    <Textarea value={form.adresse} onChange={(e) => updateField("adresse", e.target.value)} rows={2} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={saving}>Annuler</Button>
+                    <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
+                      {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                      Enregistrer
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <Info label="Sexe" value={eleve.sexe === "F" ? "Féminin" : eleve.sexe === "M" ? "Masculin" : "—"} />
+                    <Info label="Né(e) le" value={fmt(eleve.date_naissance)} />
+                    <Info label="Lieu de naissance" value={eleve.lieu_naissance} />
+                    <Info label="Nationalité" value={eleve.nationalite} />
+                    <Info label="Classe" value={eleve.classe_nom ?? "Non affecté"} />
+                    <Info label="Cycle" value={eleve.cycle_nom} />
+                    <Info label="Date inscription" value={fmt(eleve.date_inscription)} />
+                    {eleve.adresse && <Info label="Adresse" value={eleve.adresse} span2 />}
+                  </div>
+
+                  {parents.length > 0 && (
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <User className="h-4 w-4" /> Parent(s) / Tuteur(s)
+                      </h4>
+                      {parents.map((p, i) => (
+                        <Card key={i} className="border">
+                          <CardContent className="p-3 text-sm">
+                            <p className="font-medium">
+                              {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
+                            </p>
+                            <p className="text-muted-foreground">
+                              {(p as any).parents?.telephone ?? "—"} • {(p as any).parents?.email ?? "—"}
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </TabsContent>
 
