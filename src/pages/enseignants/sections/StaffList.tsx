@@ -12,7 +12,8 @@ import { FieldRow } from "@/components/settings/SettingsSection";
 import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
-import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -80,10 +81,33 @@ export default function StaffList() {
     setSaving(false);
   };
 
-  const handleImport = async (rows: Record<string, string>[]) => {
-    let success = 0, errors = 0;
+  const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
+    let success = 0, errors = 0, skipped = 0, updated = 0;
+
+    // Fetch existing for dedup by email or matricule
+    const { data: existing } = await supabase
+      .from("enseignants").select("id, email, matricule, nom, prenom").eq("ecole_id", enseignants[0]?.ecole_id ?? "");
+    const byEmail = new Map((existing ?? []).filter((e) => e.email).map((e) => [e.email!.toLowerCase(), e]));
+    const byName = new Map((existing ?? []).map((e) => [`${e.nom.toLowerCase()}|${e.prenom.toLowerCase()}`, e]));
+
     for (const row of rows) {
       if (!row.nom || !row.prenom) { errors++; continue; }
+      const dup = (row.email && byEmail.get(row.email.toLowerCase())) || byName.get(`${row.nom.toLowerCase()}|${row.prenom.toLowerCase()}`);
+
+      if (dup) {
+        if (dedupMode === "skip") { skipped++; continue; }
+        const { error } = await supabase.from("enseignants").update({
+          email: row.email || undefined,
+          telephone: row.telephone || undefined,
+          specialite: row.specialite || undefined,
+          type_contrat: row.type_contrat || undefined,
+          diplome: row.diplome || undefined,
+          sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : undefined) as any,
+        }).eq("id", dup.id);
+        if (!error) updated++; else errors++;
+        continue;
+      }
+
       const year = new Date().getFullYear().toString().slice(-2);
       const rand = Math.floor(1000 + Math.random() * 9000);
       const res = await addEnseignant({
@@ -100,7 +124,7 @@ export default function StaffList() {
       });
       if (res) success++; else errors++;
     }
-    return { success, errors };
+    return { success, errors, skipped, updated };
   };
 
   if (loading) {
@@ -236,6 +260,7 @@ export default function StaffList() {
         exampleRows={EXAMPLE_ROWS_ENS}
         exampleFileName="modele_enseignants.csv"
         onImport={handleImport}
+        dedupDescription="email ou nom + prénom"
       />
     </SettingsSection>
   );
