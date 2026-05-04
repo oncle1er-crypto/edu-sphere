@@ -44,6 +44,7 @@ export default function StaffList() {
   const [contrat, setContrat] = useState("all");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [form, setForm] = useState({
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
