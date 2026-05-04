@@ -80,6 +80,29 @@ export default function StaffList() {
     setSaving(false);
   };
 
+  const handleImport = async (rows: Record<string, string>[]) => {
+    let success = 0, errors = 0;
+    for (const row of rows) {
+      if (!row.nom || !row.prenom) { errors++; continue; }
+      const year = new Date().getFullYear().toString().slice(-2);
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const res = await addEnseignant({
+        matricule: `ENS-${year}${rand}`,
+        nom: row.nom,
+        prenom: row.prenom,
+        sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : null) as any,
+        email: row.email || null,
+        telephone: row.telephone || null,
+        specialite: row.specialite || null,
+        type_contrat: row.type_contrat || "CDI",
+        diplome: row.diplome || null,
+        ecole_id: "",
+      });
+      if (res) success++; else errors++;
+    }
+    return { success, errors };
+  };
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
