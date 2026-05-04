@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
+import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
