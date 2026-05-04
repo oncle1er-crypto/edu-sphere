@@ -274,7 +274,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                     <Textarea value={form.adresse} onChange={(e) => updateField("adresse", e.target.value)} rows={2} />
                   </div>
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={saving}>Annuler</Button>
+                    <Button variant="outline" size="sm" onClick={guardedCancel} disabled={saving}>Annuler</Button>
                     <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                       Enregistrer
