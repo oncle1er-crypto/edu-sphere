@@ -45,7 +45,15 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
+  const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
+  const initialFormRef = useRef<Record<string, any>>({});
+  const pendingActionRef = useRef<"cancel" | "close" | null>(null);
   const { classes } = useClasses();
+
+  const isDirty = useCallback(() => {
+    const init = initialFormRef.current;
+    return Object.keys(init).some((k) => (form[k] ?? "") !== (init[k] ?? ""));
+  }, [form]);
 
   useEffect(() => {
     if (!eleve || !open) { setEditing(false); return; }
