@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,16 @@ export default function StudentsList() {
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Keep drawer eleve in sync with realtime-refreshed list
+  useEffect(() => {
+    if (viewEleve) {
+      const fresh = eleves.find((e) => e.id === viewEleve.id);
+      if (fresh && JSON.stringify(fresh) !== JSON.stringify(viewEleve)) {
+        setViewEleve(fresh);
+      }
+    }
+  }, [eleves, viewEleve]);
 
   const filtered = eleves.filter((s) => {
     const matchSearch =
@@ -264,7 +274,7 @@ export default function StudentsList() {
         eleve={viewEleve}
         open={!!viewEleve}
         onClose={() => setViewEleve(null)}
-        onUpdated={() => { fetchEleves(); setViewEleve(null); }}
+        onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
       />
 
       {/* Transfer dialog */}

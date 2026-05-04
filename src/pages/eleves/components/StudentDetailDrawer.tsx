@@ -142,6 +142,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       toast.error("Erreur lors de la sauvegarde : " + error.message);
     } else {
       toast.success("Élève mis à jour avec succès");
+      // Update initial form ref so dirty check resets
+      initialFormRef.current = { ...form };
       setEditing(false);
       onUpdated?.();
     }
