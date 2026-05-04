@@ -41,6 +41,16 @@ export default function StudentsList() {
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Keep drawer eleve in sync with realtime-refreshed list
+  useEffect(() => {
+    if (viewEleve) {
+      const fresh = eleves.find((e) => e.id === viewEleve.id);
+      if (fresh && JSON.stringify(fresh) !== JSON.stringify(viewEleve)) {
+        setViewEleve(fresh);
+      }
+    }
+  }, [eleves, viewEleve]);
+
   const filtered = eleves.filter((s) => {
     const matchSearch =
       s.nom.toLowerCase().includes(search.toLowerCase()) ||
