@@ -80,7 +80,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
 
   const startEditing = () => {
     if (!eleve) return;
-    setForm({
+    const initial = {
       nom: eleve.nom ?? "",
       prenom: eleve.prenom ?? "",
       sexe: eleve.sexe ?? "",
@@ -90,8 +90,37 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       adresse: eleve.adresse ?? "",
       classe_id: eleve.classe_id ?? "",
       statut: eleve.statut ?? "inscrit",
-    });
+    };
+    initialFormRef.current = initial;
+    setForm({ ...initial });
     setEditing(true);
+  };
+
+  const guardedCancel = () => {
+    if (isDirty()) {
+      pendingActionRef.current = "cancel";
+      setShowUnsavedAlert(true);
+    } else {
+      setEditing(false);
+    }
+  };
+
+  const guardedClose = () => {
+    if (editing && isDirty()) {
+      pendingActionRef.current = "close";
+      setShowUnsavedAlert(true);
+    } else {
+      setEditing(false);
+      onClose();
+    }
+  };
+
+  const confirmDiscard = () => {
+    setShowUnsavedAlert(false);
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    setEditing(false);
+    if (action === "close") onClose();
   };
 
   const handleSave = async () => {
