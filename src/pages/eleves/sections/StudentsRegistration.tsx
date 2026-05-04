@@ -5,7 +5,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Switch } from "@/components/ui/switch";
 import { UserPlus, Upload, Loader2 } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
@@ -32,6 +31,8 @@ const EXAMPLE_ROWS = [
   { nom: "Touré", prenom: "Fatou", sexe: "F", date_naissance: "2016-01-08", lieu_naissance: "Man", nationalite: "Ivoirienne", adresse: "Plateau", classe: "6ème A" },
 ];
 
+const LIEN_OPTIONS = ["père", "mère", "tuteur", "tutrice", "oncle", "tante", "grand-père", "grand-mère", "autre"];
+
 export default function StudentsRegistration() {
   const { addEleve, ecoleId } = useEleves();
   const { classes } = useClasses();
@@ -52,7 +53,18 @@ export default function StudentsRegistration() {
     cycle_id: "",
   });
 
+  const [parent, setParent] = useState({
+    nom: "",
+    prenom: "",
+    telephone: "",
+    telephone2: "",
+    email: "",
+    profession: "",
+    lien: "père",
+  });
+
   const set = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+  const setP = (key: string, value: string) => setParent((p) => ({ ...p, [key]: value }));
 
   const filteredClasses = form.cycle_id
     ? classes.filter((c) => c.cycle_id === form.cycle_id)
@@ -70,7 +82,7 @@ export default function StudentsRegistration() {
       return;
     }
     setSaving(true);
-    await addEleve({
+    const eleve = await addEleve({
       matricule: generateMatricule(),
       nom: form.nom,
       prenom: form.prenom,
@@ -84,7 +96,35 @@ export default function StudentsRegistration() {
       ecole_id: ecoleId!,
       statut: "inscrit",
     });
+
+    // Créer le parent/tuteur si renseigné
+    if (eleve && parent.nom && parent.telephone && ecoleId) {
+      const { data: parentData, error: parentErr } = await supabase
+        .from("parents")
+        .insert({
+          ecole_id: ecoleId,
+          nom: parent.nom,
+          prenom: parent.prenom,
+          telephone: parent.telephone,
+          telephone2: parent.telephone2 || null,
+          email: parent.email || null,
+          profession: parent.profession || null,
+        })
+        .select("id")
+        .single();
+
+      if (!parentErr && parentData) {
+        await supabase.from("eleve_parents").insert({
+          eleve_id: eleve.id,
+          parent_id: parentData.id,
+          lien: parent.lien,
+          est_contact_principal: true,
+        });
+      }
+    }
+
     setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "" });
+    setParent({ nom: "", prenom: "", telephone: "", telephone2: "", email: "", profession: "", lien: "père" });
     setSaving(false);
   };
 
@@ -92,7 +132,6 @@ export default function StudentsRegistration() {
     if (!ecoleId) return { success: 0, errors: 0, skipped: 0, updated: 0 };
     let success = 0, errors = 0, skipped = 0, updated = 0;
 
-    // Fetch existing eleves for dedup (nom+prenom+classe)
     const { data: existing } = await supabase
       .from("eleves").select("id, nom, prenom, classe_id").eq("ecole_id", ecoleId);
     const existingMap = new Map(
@@ -107,7 +146,6 @@ export default function StudentsRegistration() {
 
       if (dup) {
         if (dedupMode === "skip") { skipped++; continue; }
-        // Update existing
         const { error } = await supabase.from("eleves").update({
           sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : undefined) as any,
           date_naissance: row.date_naissance || undefined,
@@ -154,6 +192,7 @@ export default function StudentsRegistration() {
       <Tabs defaultValue="identite" className="w-full">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="identite">Identité</TabsTrigger>
+          <TabsTrigger value="parent">Parent / Tuteur</TabsTrigger>
           <TabsTrigger value="scolarite">Scolarité</TabsTrigger>
         </TabsList>
 
@@ -184,6 +223,37 @@ export default function StudentsRegistration() {
           </FieldRow>
           <FieldRow label="Adresse">
             <Textarea rows={2} value={form.adresse} onChange={(e) => set("adresse", e.target.value)} />
+          </FieldRow>
+        </TabsContent>
+
+        <TabsContent value="parent" className="space-y-4 mt-4">
+          <FieldRow label="Lien de parenté">
+            <Select value={parent.lien} onValueChange={(v) => setP("lien", v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {LIEN_OPTIONS.map((l) => (
+                  <SelectItem key={l} value={l}>{l.charAt(0).toUpperCase() + l.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+          <FieldRow label="Nom du parent">
+            <Input placeholder="Diallo" value={parent.nom} onChange={(e) => setP("nom", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="Prénom(s)">
+            <Input placeholder="Moussa" value={parent.prenom} onChange={(e) => setP("prenom", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="Téléphone *">
+            <Input placeholder="+225 07 XX XX XX XX" value={parent.telephone} onChange={(e) => setP("telephone", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="Téléphone 2">
+            <Input placeholder="+225 05 XX XX XX XX" value={parent.telephone2} onChange={(e) => setP("telephone2", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="Email">
+            <Input type="email" placeholder="parent@email.com" value={parent.email} onChange={(e) => setP("email", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="Profession">
+            <Input placeholder="Commerçant" value={parent.profession} onChange={(e) => setP("profession", e.target.value)} />
           </FieldRow>
         </TabsContent>
 

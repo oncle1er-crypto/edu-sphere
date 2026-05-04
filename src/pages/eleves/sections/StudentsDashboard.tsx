@@ -1,18 +1,78 @@
+import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2 } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 
 export default function StudentsDashboard() {
   const { eleves, loading: loadingE } = useEleves();
   const { classes, loading: loadingC } = useClasses();
   const { cycles, loading: loadingCy } = useCycles();
+  const { ecoleId } = useEcoleId();
+
+  const [tauxPresence, setTauxPresence] = useState<number | null>(null);
+  const [retardPaiement, setRetardPaiement] = useState(0);
 
   const loading = loadingE || loadingC || loadingCy;
+
+  useEffect(() => {
+    if (!ecoleId) return;
+
+    // Calcul taux de présence (30 derniers jours)
+    const fetchPresence = async () => {
+      const il30j = new Date();
+      il30j.setDate(il30j.getDate() - 30);
+      const { data } = await supabase
+        .from("presences")
+        .select("statut")
+        .eq("ecole_id", ecoleId)
+        .gte("date", il30j.toISOString().slice(0, 10));
+      if (data && data.length > 0) {
+        const presents = data.filter((p: any) => p.statut === "present").length;
+        setTauxPresence(Math.round((presents / data.length) * 100));
+      }
+    };
+
+    // Élèves en retard de paiement
+    const fetchRetard = async () => {
+      const { data } = await supabase
+        .from("paiements")
+        .select("eleve_id, montant")
+        .eq("ecole_id", ecoleId);
+      const { data: frais } = await supabase
+        .from("frais_scolarite")
+        .select("montant_annuel, cycle_id")
+        .eq("ecole_id", ecoleId);
+
+      if (data && frais) {
+        const paiementsByEleve = new Map<string, number>();
+        data.forEach((p: any) => {
+          paiementsByEleve.set(p.eleve_id, (paiementsByEleve.get(p.eleve_id) ?? 0) + Number(p.montant));
+        });
+        const fraisByCycle = new Map<string, number>();
+        frais.forEach((f: any) => fraisByCycle.set(f.cycle_id, Number(f.montant_annuel)));
+
+        let count = 0;
+        for (const e of eleves.filter((e) => e.statut === "inscrit" && e.classe_id)) {
+          const cl = classes.find((c) => c.id === e.classe_id);
+          if (!cl) continue;
+          const total = fraisByCycle.get(cl.cycle_id) ?? 0;
+          const paye = paiementsByEleve.get(e.id) ?? 0;
+          if (total > 0 && paye < total * 0.5) count++;
+        }
+        setRetardPaiement(count);
+      }
+    };
+
+    fetchPresence();
+    fetchRetard();
+  }, [ecoleId, eleves, classes]);
 
   if (loading) {
     return (
@@ -24,10 +84,17 @@ export default function StudentsDashboard() {
 
   const total = eleves.length;
   const inscrits = eleves.filter((e) => e.statut === "inscrit").length;
+  const garcons = eleves.filter((e) => e.sexe === "M" && e.statut === "inscrit").length;
+  const filles = eleves.filter((e) => e.sexe === "F" && e.statut === "inscrit").length;
+
+  // Nouveaux inscrits ce mois
+  const now = new Date();
+  const debutMois = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+  const nouveauxCeMois = eleves.filter((e) => e.date_inscription && e.date_inscription >= debutMois).length;
 
   const repartition = cycles.map((cy) => {
     const classeIds = classes.filter((c) => c.cycle_id === cy.id).map((c) => c.id);
-    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id)).length;
+    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id) && e.statut === "inscrit").length;
     const capacite = classes
       .filter((c) => c.cycle_id === cy.id)
       .reduce((sum, c) => sum + (c.capacite ?? 50), 0);
@@ -36,11 +103,17 @@ export default function StudentsDashboard() {
 
   const kpis = [
     { label: "Total élèves", value: total.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
-    { label: "Nouvelles inscriptions", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
+    { label: "Inscrits actifs", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
     { label: "Classes", value: classes.length.toString(), icon: GraduationCap, color: "text-accent-foreground" },
+    { label: "Taux de présence (30j)", value: tauxPresence !== null ? `${tauxPresence}%` : "—", icon: CalendarCheck, color: "text-blue-600" },
+    { label: "Nouveaux ce mois", value: nouveauxCeMois.toString(), icon: UserCheck, color: "text-violet-600" },
+    { label: "Retard de paiement", value: retardPaiement.toString(), icon: AlertTriangle, color: "text-destructive" },
   ];
 
   const cycleColors = ["bg-pink-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500"];
+
+  const pctFilles = inscrits > 0 ? Math.round((filles / inscrits) * 100) : 0;
+  const pctGarcons = inscrits > 0 ? Math.round((garcons / inscrits) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -62,6 +135,31 @@ export default function StudentsDashboard() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      </SettingsSection>
+
+      {/* Répartition garçons/filles */}
+      <SettingsSection
+        icon={<Users className="h-5 w-5" />}
+        title="Répartition par genre"
+        description={`${garcons} garçons — ${filles} filles`}
+        hideSave
+      >
+        <div className="space-y-3">
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Garçons</span>
+              <span className="font-semibold">{garcons} ({pctGarcons}%)</span>
+            </div>
+            <Progress value={pctGarcons} className="h-2.5" />
+          </div>
+          <div>
+            <div className="flex justify-between text-sm mb-1">
+              <span>Filles</span>
+              <span className="font-semibold">{filles} ({pctFilles}%)</span>
+            </div>
+            <Progress value={pctFilles} className="h-2.5" />
+          </div>
         </div>
       </SettingsSection>
 
