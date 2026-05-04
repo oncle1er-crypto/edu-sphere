@@ -12,7 +12,8 @@ import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
-import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -87,12 +88,37 @@ export default function StudentsRegistration() {
     setSaving(false);
   };
 
-  const handleImport = async (rows: Record<string, string>[]) => {
-    if (!ecoleId) return { success: 0, errors: 0 };
-    let success = 0, errors = 0;
+  const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
+    if (!ecoleId) return { success: 0, errors: 0, skipped: 0, updated: 0 };
+    let success = 0, errors = 0, skipped = 0, updated = 0;
+
+    // Fetch existing eleves for dedup (nom+prenom+classe)
+    const { data: existing } = await supabase
+      .from("eleves").select("id, nom, prenom, classe_id").eq("ecole_id", ecoleId);
+    const existingMap = new Map(
+      (existing ?? []).map((e) => [`${e.nom.toLowerCase()}|${e.prenom.toLowerCase()}|${e.classe_id ?? ""}`, e])
+    );
+
     for (const row of rows) {
       if (!row.nom || !row.prenom) { errors++; continue; }
       const classeMatch = row.classe ? classes.find((c) => c.nom.toLowerCase() === row.classe.toLowerCase()) : null;
+      const dedupKey = `${row.nom.toLowerCase()}|${row.prenom.toLowerCase()}|${classeMatch?.id ?? ""}`;
+      const dup = existingMap.get(dedupKey);
+
+      if (dup) {
+        if (dedupMode === "skip") { skipped++; continue; }
+        // Update existing
+        const { error } = await supabase.from("eleves").update({
+          sexe: (row.sexe === "F" || row.sexe === "M" ? row.sexe : undefined) as any,
+          date_naissance: row.date_naissance || undefined,
+          lieu_naissance: row.lieu_naissance || undefined,
+          nationalite: row.nationalite || undefined,
+          adresse: row.adresse || undefined,
+        }).eq("id", dup.id);
+        if (!error) updated++; else errors++;
+        continue;
+      }
+
       const res = await addEleve({
         matricule: generateMatricule(),
         nom: row.nom,
@@ -109,7 +135,7 @@ export default function StudentsRegistration() {
       });
       if (res) success++; else errors++;
     }
-    return { success, errors };
+    return { success, errors, skipped, updated };
   };
 
   return (
@@ -193,6 +219,7 @@ export default function StudentsRegistration() {
         exampleRows={EXAMPLE_ROWS}
         exampleFileName="modele_eleves.csv"
         onImport={handleImport}
+        dedupDescription="nom + prénom + classe"
       />
     </SettingsSection>
   );

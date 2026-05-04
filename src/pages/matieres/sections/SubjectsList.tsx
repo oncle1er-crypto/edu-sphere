@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { FieldRow } from "@/components/settings/SettingsSection";
 import { Library, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { useMatieres } from "@/hooks/useMatieres";
-import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const CATEGORIES = ["Fondamentale", "Scientifique", "Littéraire", "Religieuse", "Artistique", "Sportive", "Optionnelle"];
 
@@ -54,14 +55,31 @@ export default function SubjectsList() {
     setSaving(false);
   };
 
-  const handleImport = async (rows: Record<string, string>[]) => {
-    let success = 0, errors = 0;
+  const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
+    let success = 0, errors = 0, skipped = 0, updated = 0;
+
+    // Dedup by nom or code
+    const existingByName = new Map(matieres.map((m) => [m.nom.toLowerCase(), m]));
+    const existingByCode = new Map(matieres.filter((m) => m.code).map((m) => [m.code!.toLowerCase(), m]));
+
     for (const row of rows) {
       if (!row.nom) { errors++; continue; }
+      const dup = (row.code && existingByCode.get(row.code.toLowerCase())) || existingByName.get(row.nom.toLowerCase());
+
+      if (dup) {
+        if (dedupMode === "skip") { skipped++; continue; }
+        const { error } = await supabase.from("matieres").update({
+          code: row.code || undefined,
+          categorie: row.categorie || undefined,
+        }).eq("id", dup.id);
+        if (!error) updated++; else errors++;
+        continue;
+      }
+
       const res = await addMatiere({ nom: row.nom, code: row.code || null, categorie: row.categorie || null, ecole_id: "" });
       if (res) success++; else errors++;
     }
-    return { success, errors };
+    return { success, errors, skipped, updated };
   };
 
   if (loading) {
@@ -161,6 +179,7 @@ export default function SubjectsList() {
         exampleRows={EXAMPLE_ROWS}
         exampleFileName="modele_matieres.csv"
         onImport={handleImport}
+        dedupDescription="nom ou code"
       />
     </SettingsSection>
   );
