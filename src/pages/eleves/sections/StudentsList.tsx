@@ -14,6 +14,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { toast } from "sonner";
+import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -192,7 +193,7 @@ export default function StudentsList() {
               </TableHeader>
               <TableBody>
                 {filtered.map((s) => (
-                  <TableRow key={s.id} className="hover:bg-muted/50">
+                  <TableRow key={s.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setViewEleve(s)}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -258,33 +259,12 @@ export default function StudentsList() {
         )}
       </SettingsSection>
 
-      {/* View student dialog */}
-      <Dialog open={!!viewEleve} onOpenChange={() => setViewEleve(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Fiche élève</DialogTitle></DialogHeader>
-          {viewEleve && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                {studentAvatar(viewEleve, "h-14 w-14", "text-lg")}
-                <div>
-                  <h3 className="text-lg font-bold">{viewEleve.prenom} {viewEleve.nom}</h3>
-                  <p className="text-sm text-muted-foreground font-mono">{viewEleve.matricule}</p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-muted-foreground">Sexe :</span> {viewEleve.sexe === "F" ? "Féminin" : viewEleve.sexe === "M" ? "Masculin" : "—"}</div>
-                <div><span className="text-muted-foreground">Né(e) le :</span> {formatDate(viewEleve.date_naissance)}</div>
-                <div><span className="text-muted-foreground">Lieu :</span> {viewEleve.lieu_naissance ?? "—"}</div>
-                <div><span className="text-muted-foreground">Nationalité :</span> {viewEleve.nationalite ?? "—"}</div>
-                <div><span className="text-muted-foreground">Classe :</span> {viewEleve.classe_nom ?? "Non affecté"}</div>
-                <div><span className="text-muted-foreground">Cycle :</span> {viewEleve.cycle_nom ?? "—"}</div>
-                <div className="col-span-2"><span className="text-muted-foreground">Statut :</span> {statusBadge(viewEleve)}</div>
-                {viewEleve.adresse && <div className="col-span-2"><span className="text-muted-foreground">Adresse :</span> {viewEleve.adresse}</div>}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      {/* Student detail drawer */}
+      <StudentDetailDrawer
+        eleve={viewEleve}
+        open={!!viewEleve}
+        onClose={() => setViewEleve(null)}
+      />
 
       {/* Transfer dialog */}
       <Dialog open={!!transferEleve} onOpenChange={() => setTransferEleve(null)}>

@@ -525,6 +525,54 @@ export type Database = {
         }
         Relationships: []
       }
+      config_module_eleves: {
+        Row: {
+          age_max_lycee: number
+          age_min_maternelle: number
+          archivage_auto: boolean
+          capacite_classe_defaut: number
+          created_at: string
+          ecole_id: string
+          format_matricule: string
+          generation_carnet: boolean
+          id: string
+          nb_documents_obligatoires: number
+          notification_sms: boolean
+          photo_obligatoire: boolean
+          updated_at: string
+        }
+        Insert: {
+          age_max_lycee?: number
+          age_min_maternelle?: number
+          archivage_auto?: boolean
+          capacite_classe_defaut?: number
+          created_at?: string
+          ecole_id: string
+          format_matricule?: string
+          generation_carnet?: boolean
+          id?: string
+          nb_documents_obligatoires?: number
+          notification_sms?: boolean
+          photo_obligatoire?: boolean
+          updated_at?: string
+        }
+        Update: {
+          age_max_lycee?: number
+          age_min_maternelle?: number
+          archivage_auto?: boolean
+          capacite_classe_defaut?: number
+          created_at?: string
+          ecole_id?: string
+          format_matricule?: string
+          generation_carnet?: boolean
+          id?: string
+          nb_documents_obligatoires?: number
+          notification_sms?: boolean
+          photo_obligatoire?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       creneaux_emploi_temps: {
         Row: {
           annee_id: string
@@ -714,6 +762,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      documents_eleves: {
+        Row: {
+          chemin_stockage: string
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mime_type: string | null
+          nom_fichier: string
+          taille: number | null
+          type_document: string
+          updated_at: string
+          uploade_par: string | null
+        }
+        Insert: {
+          chemin_stockage: string
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier: string
+          taille?: number | null
+          type_document: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Update: {
+          chemin_stockage?: string
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier?: string
+          taille?: number | null
+          type_document?: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Relationships: []
       }
       ecoles: {
         Row: {
