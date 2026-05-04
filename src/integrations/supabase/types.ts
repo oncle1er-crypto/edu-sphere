@@ -1269,6 +1269,57 @@ export type Database = {
           },
         ]
       }
+      factures: {
+        Row: {
+          annee_id: string
+          created_at: string
+          date_echeance: string
+          date_emission: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          libelle: string
+          montant: number
+          montant_paye: number
+          notes: string | null
+          numero: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          date_echeance: string
+          date_emission?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          libelle?: string
+          montant?: number
+          montant_paye?: number
+          notes?: string | null
+          numero: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          date_echeance?: string
+          date_emission?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          montant_paye?: number
+          notes?: string | null
+          numero?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fournisseurs: {
         Row: {
           adresse: string | null
