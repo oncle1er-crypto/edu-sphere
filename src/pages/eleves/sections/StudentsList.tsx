@@ -26,7 +26,7 @@ const formatDate = (d: string | null) => {
 type ViewMode = "list" | "grid";
 
 export default function StudentsList() {
-  const { eleves, loading, updateEleve, deleteEleve } = useEleves();
+  const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves();
   const { classes } = useClasses();
   const { cycles } = useCycles();
   const [search, setSearch] = useState("");
