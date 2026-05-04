@@ -1,5 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -40,7 +45,15 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
+  const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
+  const initialFormRef = useRef<Record<string, any>>({});
+  const pendingActionRef = useRef<"cancel" | "close" | null>(null);
   const { classes } = useClasses();
+
+  const isDirty = useCallback(() => {
+    const init = initialFormRef.current;
+    return Object.keys(init).some((k) => (form[k] ?? "") !== (init[k] ?? ""));
+  }, [form]);
 
   useEffect(() => {
     if (!eleve || !open) { setEditing(false); return; }
@@ -67,7 +80,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
 
   const startEditing = () => {
     if (!eleve) return;
-    setForm({
+    const initial = {
       nom: eleve.nom ?? "",
       prenom: eleve.prenom ?? "",
       sexe: eleve.sexe ?? "",
@@ -77,8 +90,37 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       adresse: eleve.adresse ?? "",
       classe_id: eleve.classe_id ?? "",
       statut: eleve.statut ?? "inscrit",
-    });
+    };
+    initialFormRef.current = initial;
+    setForm({ ...initial });
     setEditing(true);
+  };
+
+  const guardedCancel = () => {
+    if (isDirty()) {
+      pendingActionRef.current = "cancel";
+      setShowUnsavedAlert(true);
+    } else {
+      setEditing(false);
+    }
+  };
+
+  const guardedClose = () => {
+    if (editing && isDirty()) {
+      pendingActionRef.current = "close";
+      setShowUnsavedAlert(true);
+    } else {
+      setEditing(false);
+      onClose();
+    }
+  };
+
+  const confirmDiscard = () => {
+    setShowUnsavedAlert(false);
+    const action = pendingActionRef.current;
+    pendingActionRef.current = null;
+    setEditing(false);
+    if (action === "close") onClose();
   };
 
   const handleSave = async () => {
@@ -127,7 +169,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <>
+    <Sheet open={open} onOpenChange={guardedClose}>
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center gap-4">
@@ -232,7 +275,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                     <Textarea value={form.adresse} onChange={(e) => updateField("adresse", e.target.value)} rows={2} />
                   </div>
                   <div className="flex gap-2 justify-end">
-                    <Button variant="outline" size="sm" onClick={() => setEditing(false)} disabled={saving}>Annuler</Button>
+                    <Button variant="outline" size="sm" onClick={guardedCancel} disabled={saving}>Annuler</Button>
                     <Button size="sm" onClick={handleSave} disabled={saving} className="gap-1.5">
                       {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                       Enregistrer
@@ -413,6 +456,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
         )}
       </SheetContent>
     </Sheet>
+
+    <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Modifications non enregistrées</AlertDialogTitle>
+          <AlertDialogDescription>
+            Vous avez des modifications en cours. Voulez-vous vraiment quitter sans enregistrer ?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Continuer l'édition</AlertDialogCancel>
+          <AlertDialogAction onClick={confirmDiscard} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            Abandonner les modifications
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 
