@@ -228,6 +228,15 @@ export default function StaffList() {
           </TableBody>
         </Table>
       </div>
+      <ImportDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        title="Import d'enseignants"
+        columns={IMPORT_COLUMNS}
+        exampleRows={EXAMPLE_ROWS_ENS}
+        exampleFileName="modele_enseignants.csv"
+        onImport={handleImport}
+      />
     </SettingsSection>
   );
 }
