@@ -82,20 +82,22 @@ export default function StudentsAttendance() {
         description="Faites l'appel pour une classe."
         hideSave
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <FieldRow label="Classe">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Classe</label>
             <Select value={classeId} onValueChange={setClasseId}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Sélectionner une classe" /></SelectTrigger>
               <SelectContent>
                 {classes.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </FieldRow>
-          <FieldRow label="Date">
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Date</label>
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </FieldRow>
+          </div>
         </div>
 
         {classeId && (
