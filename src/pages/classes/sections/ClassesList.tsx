@@ -133,7 +133,27 @@ export default function ClassesList() {
     }
   };
 
-  if (loading) {
+  const handleImportClasses = async (rows: Record<string, string>[]) => {
+    if (!ecoleId || !anneeId) return { success: 0, errors: 0 };
+    let success = 0, errors = 0;
+    for (const row of rows) {
+      if (!row.nom || !row.cycle) { errors++; continue; }
+      const cycleMatch = cycles.find((c) => c.nom.toLowerCase() === row.cycle.toLowerCase());
+      if (!cycleMatch) { errors++; continue; }
+      const res = await addClass({
+        nom: row.nom,
+        cycle_id: cycleMatch.id,
+        annee_id: anneeId,
+        capacite: parseInt(row.capacite) || 40,
+        salle: row.salle || null,
+        professeur_principal_id: null,
+        ecole_id: ecoleId,
+      });
+      if (res) success++; else errors++;
+    }
+    return { success, errors };
+  };
+
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
