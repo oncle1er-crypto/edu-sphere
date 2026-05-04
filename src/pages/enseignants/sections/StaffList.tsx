@@ -130,6 +130,7 @@ export default function StaffList() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+          <Button variant="outline" size="sm" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" />Import CSV</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
