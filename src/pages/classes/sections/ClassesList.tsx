@@ -16,7 +16,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 
 const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -133,13 +133,30 @@ export default function ClassesList() {
     }
   };
 
-  const handleImportClasses = async (rows: Record<string, string>[]) => {
-    if (!ecoleId || !anneeId) return { success: 0, errors: 0 };
-    let success = 0, errors = 0;
+  const handleImportClasses = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
+    if (!ecoleId || !anneeId) return { success: 0, errors: 0, skipped: 0, updated: 0 };
+    let success = 0, errors = 0, skipped = 0, updated = 0;
+
+    // Dedup by class name
+    const existingMap = new Map(classes.map((c) => [c.nom.toLowerCase(), c]));
+
     for (const row of rows) {
       if (!row.nom || !row.cycle) { errors++; continue; }
       const cycleMatch = cycles.find((c) => c.nom.toLowerCase() === row.cycle.toLowerCase());
       if (!cycleMatch) { errors++; continue; }
+
+      const dup = existingMap.get(row.nom.toLowerCase());
+      if (dup) {
+        if (dedupMode === "skip") { skipped++; continue; }
+        const { error } = await supabase.from("classes").update({
+          cycle_id: cycleMatch.id,
+          capacite: parseInt(row.capacite) || undefined,
+          salle: row.salle || undefined,
+        }).eq("id", dup.id);
+        if (!error) { updated++; await fetchClasses(); } else errors++;
+        continue;
+      }
+
       const res = await addClass({
         nom: row.nom,
         cycle_id: cycleMatch.id,
@@ -151,7 +168,7 @@ export default function ClassesList() {
       });
       if (res) success++; else errors++;
     }
-    return { success, errors };
+    return { success, errors, skipped, updated };
   };
 
   if (loading) {
@@ -403,6 +420,7 @@ export default function ClassesList() {
         exampleRows={EXAMPLE_ROWS_CLASSES}
         exampleFileName="modele_classes.csv"
         onImport={handleImportClasses}
+        dedupDescription="nom de la classe"
       />
     </>
   );
