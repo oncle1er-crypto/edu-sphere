@@ -5,15 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import {
   TrendingUp, Wallet, AlertTriangle, CheckCircle2, Clock, Users,
-  Calendar, ArrowRight, GraduationCap, Loader2,
+  Calendar, ArrowRight, GraduationCap, Loader2, Landmark, PiggyBank, FileText, Receipt,
 } from "lucide-react";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve } from "../scolarite-data";
+import { useTresorerie } from "@/hooks/useTresorerie";
+import { useBudget } from "@/hooks/useBudget";
+import { useDepenses } from "@/hooks/useDepenses";
+import { useFactures } from "@/hooks/useFactures";
 
 export default function FinanceDashboard() {
   const { data: ELEVES, loading } = useFinanceData();
+  const { comptes, loading: tresLoading } = useTresorerie();
+  const { lignes, loading: budgetLoading } = useBudget();
+  const { depenses, loading: depLoading } = useDepenses();
+  const { factures, loading: facLoading } = useFactures();
 
-  if (loading) {
+  if (loading || tresLoading || budgetLoading || depLoading || facLoading) {
     return (
       <div className="flex items-center justify-center py-20">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -21,6 +29,7 @@ export default function FinanceDashboard() {
     );
   }
 
+  // === Scolarité stats ===
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
   const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
   const totalDu = totalAttendu - totalPaye;
@@ -29,6 +38,26 @@ export default function FinanceDashboard() {
   const ajour = ELEVES.filter((e) => statutEleve(e) === "ajour").length;
   const partiel = ELEVES.filter((e) => statutEleve(e) === "partiel").length;
   const retard = ELEVES.filter((e) => statutEleve(e) === "retard").length;
+
+  // === Trésorerie ===
+  const soldeTresorerie = comptes.reduce((s, c) => s + c.solde, 0);
+
+  // === Budget ===
+  const budgetRecettes = lignes.filter((l) => l.type === "recette");
+  const budgetDepenses = lignes.filter((l) => l.type === "depense");
+  const totalBudgetPrevu = budgetDepenses.reduce((s, l) => s + l.montant_prevu, 0);
+  const totalBudgetRealise = budgetDepenses.reduce((s, l) => s + l.montant_realise, 0);
+  const tauxExecution = totalBudgetPrevu > 0 ? Math.round((totalBudgetRealise / totalBudgetPrevu) * 100) : 0;
+
+  // === Dépenses du mois ===
+  const now = new Date();
+  const moisCourant = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const depensesMois = depenses.filter((d) => d.date_depense.startsWith(moisCourant));
+  const totalDepensesMois = depensesMois.reduce((s, d) => s + Number(d.montant), 0);
+
+  // === Factures récentes ===
+  const facturesRecentes = factures.slice(0, 5);
+  const facturesImpayees = factures.filter((f) => f.statut === "en_retard" || f.statut === "emise");
 
   // Échéancier par tranche
   const echeancier = [1, 2, 3].map((num) => {
@@ -55,8 +84,22 @@ export default function FinanceDashboard() {
     .sort((a, b) => b.resteDu - a.resteDu)
     .slice(0, 5);
 
+  const STATUT_CLASS: Record<string, string> = {
+    payee: "bg-accent/15 text-accent border-accent/30",
+    partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
+    en_retard: "bg-destructive/15 text-destructive border-destructive/30",
+    brouillon: "bg-muted text-muted-foreground border-border",
+    emise: "bg-blue-500/15 text-blue-600 border-blue-500/30",
+    annulee: "bg-muted text-muted-foreground border-border",
+  };
+  const STATUT_LABEL: Record<string, string> = {
+    brouillon: "Brouillon", emise: "Émise", payee: "Payée",
+    partielle: "Partielle", en_retard: "En retard", annulee: "Annulée",
+  };
+
   return (
     <div className="space-y-6">
+      {/* Alert banner */}
       {retard > 0 && (
         <Card className="border-destructive/30 bg-destructive/5">
           <CardContent className="p-4 flex items-center justify-between gap-4 flex-wrap">
@@ -76,6 +119,7 @@ export default function FinanceDashboard() {
         </Card>
       )}
 
+      {/* KPI Row 1 — Scolarité */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5" /> Frais attendus</div>
@@ -99,6 +143,31 @@ export default function FinanceDashboard() {
         </CardContent></Card>
       </div>
 
+      {/* KPI Row 2 — Trésorerie, Budget, Dépenses, Factures impayées */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Landmark className="h-3.5 w-3.5" /> Solde trésorerie</div>
+          <p className={`text-xl md:text-2xl font-bold font-display mt-2 ${soldeTresorerie >= 0 ? "text-accent" : "text-destructive"}`}>{fcfa(soldeTresorerie)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">FCFA · {comptes.length} compte{comptes.length > 1 ? "s" : ""}</p>
+        </CardContent></Card>
+        <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><PiggyBank className="h-3.5 w-3.5" /> Exécution budget</div>
+          <p className="text-xl md:text-2xl font-bold font-display text-primary mt-2">{tauxExecution}%</p>
+          <Progress value={tauxExecution} className="h-1.5 mt-2" />
+        </CardContent></Card>
+        <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><Receipt className="h-3.5 w-3.5" /> Dépenses du mois</div>
+          <p className="text-xl md:text-2xl font-bold font-display text-foreground mt-2">{fcfa(totalDepensesMois)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">FCFA · {depensesMois.length} opération{depensesMois.length > 1 ? "s" : ""}</p>
+        </CardContent></Card>
+        <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><FileText className="h-3.5 w-3.5" /> Factures en attente</div>
+          <p className="text-xl md:text-2xl font-bold font-display text-orange-600 mt-2">{facturesImpayees.length}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">{fcfa(facturesImpayees.reduce((s, f) => s + f.montant - f.montant_paye, 0))} FCFA dues</p>
+        </CardContent></Card>
+      </div>
+
+      {/* Répartition des familles */}
       <Card className="border shadow-[var(--shadow-card)]">
         <CardContent className="p-5">
           <div className="flex items-center justify-between mb-4">
@@ -121,10 +190,11 @@ export default function FinanceDashboard() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Échéancier */}
         <Card className="border shadow-[var(--shadow-card)]">
           <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center gap-2">
             <Calendar className="h-4 w-4 text-primary" />
-            <div><h3 className="font-bold font-display text-primary">Échéancier des tranches</h3></div>
+            <h3 className="font-bold font-display text-primary">Échéancier des tranches</h3>
           </div>
           <CardContent className="p-6 space-y-5">
             {echeancier.map((e) => (
@@ -147,10 +217,11 @@ export default function FinanceDashboard() {
           </CardContent>
         </Card>
 
+        {/* Recouvrement par cycle */}
         <Card className="border shadow-[var(--shadow-card)]">
           <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center gap-2">
             <GraduationCap className="h-4 w-4 text-primary" />
-            <div><h3 className="font-bold font-display text-primary">Recouvrement par cycle</h3></div>
+            <h3 className="font-bold font-display text-primary">Recouvrement par cycle</h3>
           </div>
           <CardContent className="p-6 space-y-4">
             {parCycle.map((c) => (
@@ -167,6 +238,41 @@ export default function FinanceDashboard() {
         </Card>
       </div>
 
+      {/* Dernières factures */}
+      {facturesRecentes.length > 0 && (
+        <Card className="border shadow-[var(--shadow-card)]">
+          <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <h3 className="font-bold font-display text-primary">Dernières factures</h3>
+            </div>
+            <Button asChild size="sm" variant="ghost"><Link to="/finances/factures">Voir toutes <ArrowRight className="h-4 w-4" /></Link></Button>
+          </div>
+          <CardContent className="p-0">
+            <ul className="divide-y">
+              {facturesRecentes.map((f) => (
+                <li key={f.id} className="flex items-center justify-between gap-3 px-6 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold truncate">
+                      {f.eleve_prenom} {f.eleve_nom}
+                      <span className="text-xs text-muted-foreground font-normal ml-2">{f.numero}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground">{f.libelle} · Échéance {new Date(f.date_echeance).toLocaleDateString("fr-FR")}</p>
+                  </div>
+                  <div className="text-right shrink-0 flex items-center gap-2">
+                    <p className="text-sm font-bold">{fcfa(f.montant)} FCFA</p>
+                    <Badge variant="outline" className={STATUT_CLASS[f.statut] ?? ""}>
+                      {STATUT_LABEL[f.statut] ?? f.statut}
+                    </Badge>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Top des impayés */}
       {topRetards.length > 0 && (
         <Card className="border shadow-[var(--shadow-card)]">
           <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center justify-between">
