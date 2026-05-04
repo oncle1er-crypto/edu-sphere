@@ -97,7 +97,7 @@ export default function StudentsConfig() {
       title="Configuration du module"
       description="Paramètres généraux pour la gestion des élèves."
       onSave={handleSave}
-      saving={saving}
+      
     >
       <FieldRow label="Format du matricule" hint="Préfixe + année + numéro">
         <Input
