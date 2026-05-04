@@ -71,11 +71,11 @@ export default function DailyCall() {
       hideSave
     >
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        <div>
+        <div className="space-y-1.5">
           <Label className="text-xs">Date</Label>
           <Input type="date" value={callDate} onChange={(e) => setCallDate(e.target.value)} />
         </div>
-        <div>
+        <div className="space-y-1.5">
           <Label className="text-xs">Classe</Label>
           <Select value={classeId} onValueChange={setClasseId}>
             <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
