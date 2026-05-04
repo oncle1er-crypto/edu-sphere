@@ -264,6 +264,7 @@ export default function StudentsList() {
         eleve={viewEleve}
         open={!!viewEleve}
         onClose={() => setViewEleve(null)}
+        onUpdated={() => { fetchEleves(); setViewEleve(null); }}
       />
 
       {/* Transfer dialog */}
