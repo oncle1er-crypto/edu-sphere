@@ -46,6 +46,20 @@ export function useEleves() {
     if (!ecoleLoading && !ecoleId) setLoading(false);
   }, [ecoleLoading, ecoleId, fetchEleves]);
 
+  // Realtime subscription
+  useEffect(() => {
+    if (!ecoleId) return;
+    const channel = supabase
+      .channel("eleves-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "eleves", filter: `ecole_id=eq.${ecoleId}` },
+        () => { fetchEleves(); }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ecoleId, fetchEleves]);
+
   const addEleve = async (eleve: Database["public"]["Tables"]["eleves"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase
