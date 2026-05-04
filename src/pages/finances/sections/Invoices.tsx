@@ -1,33 +1,64 @@
 import { useState } from "react";
-import { FileText, Plus, Search, Download, Eye } from "lucide-react";
+import { FileText, Plus, Search, Download, Eye, Trash2, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { ConfirmButton } from "@/components/ConfirmButton";
+import { useFactures } from "@/hooks/useFactures";
+import { useEleves } from "@/hooks/useEleves";
 
-const invoices = [
-  { id: "FAC-2025-0142", student: "Mballa Junior", class: "6e A", amount: "150 000", due: "30/04/2026", status: "Payée" },
-  { id: "FAC-2025-0141", student: "Nguemo Sarah", class: "Term D", amount: "225 000", due: "30/04/2026", status: "Payée" },
-  { id: "FAC-2025-0140", student: "Tchoumi Paul", class: "CE2", amount: "75 000", due: "30/04/2026", status: "Partielle" },
-  { id: "FAC-2025-0139", student: "Atangana Léa", class: "5e B", amount: "150 000", due: "15/04/2026", status: "En retard" },
-  { id: "FAC-2025-0138", student: "Kamga Yves", class: "L2 Info", amount: "350 000", due: "30/04/2026", status: "Brouillon" },
-  { id: "FAC-2025-0137", student: "Fopa Inès", class: "GS", amount: "60 000", due: "30/04/2026", status: "Payée" },
-];
+const STATUT_LABEL: Record<string, string> = {
+  brouillon: "Brouillon",
+  emise: "Émise",
+  payee: "Payée",
+  partielle: "Partielle",
+  en_retard: "En retard",
+  annulee: "Annulée",
+};
 
-const statusVariant: Record<string, string> = {
-  "Payée": "bg-accent/15 text-accent border-accent/30",
-  "Partielle": "bg-orange-500/15 text-orange-600 border-orange-500/30",
-  "En retard": "bg-destructive/15 text-destructive border-destructive/30",
-  "Brouillon": "bg-muted text-muted-foreground border-border",
+const STATUT_CLASS: Record<string, string> = {
+  payee: "bg-accent/15 text-accent border-accent/30",
+  partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
+  en_retard: "bg-destructive/15 text-destructive border-destructive/30",
+  brouillon: "bg-muted text-muted-foreground border-border",
+  emise: "bg-blue-500/15 text-blue-600 border-blue-500/30",
+  annulee: "bg-muted text-muted-foreground border-border line-through",
 };
 
 export default function Invoices() {
+  const { factures, loading, addFacture, updateStatut, deleteFacture } = useFactures();
+  const { eleves } = useEleves();
   const [q, setQ] = useState("");
-  const filtered = invoices.filter(
-    (i) => i.student.toLowerCase().includes(q.toLowerCase()) || i.id.toLowerCase().includes(q.toLowerCase())
-  );
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ eleve_id: "", libelle: "Frais de scolarité", montant: "", date_echeance: "", notes: "" });
+
+  const filtered = factures.filter((f) => {
+    const matchQ = !q || f.numero.toLowerCase().includes(q.toLowerCase()) ||
+      `${f.eleve_prenom} ${f.eleve_nom}`.toLowerCase().includes(q.toLowerCase());
+    const matchStatus = statusFilter === "all" || f.statut === statusFilter;
+    return matchQ && matchStatus;
+  });
+
+  const handleSubmit = async () => {
+    if (!form.eleve_id || !form.montant || !form.date_echeance) return;
+    await addFacture({
+      eleve_id: form.eleve_id,
+      libelle: form.libelle,
+      montant: Number(form.montant),
+      date_echeance: form.date_echeance,
+      notes: form.notes || undefined,
+    });
+    setForm({ eleve_id: "", libelle: "Frais de scolarité", montant: "", date_echeance: "", notes: "" });
+    setOpen(false);
+  };
+
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection
@@ -40,33 +71,64 @@ export default function Invoices() {
         <div className="flex flex-1 gap-2">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une facture ou un élève..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              className="pl-9"
-            />
+            <Input placeholder="Rechercher une facture ou un élève..." value={q} onChange={(e) => setQ(e.target.value)} className="pl-9" />
           </div>
-          <Select defaultValue="all">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Tous les statuts</SelectItem>
-              <SelectItem value="paid">Payée</SelectItem>
-              <SelectItem value="partial">Partielle</SelectItem>
-              <SelectItem value="late">En retard</SelectItem>
-              <SelectItem value="draft">Brouillon</SelectItem>
+              <SelectItem value="brouillon">Brouillon</SelectItem>
+              <SelectItem value="emise">Émise</SelectItem>
+              <SelectItem value="payee">Payée</SelectItem>
+              <SelectItem value="partielle">Partielle</SelectItem>
+              <SelectItem value="en_retard">En retard</SelectItem>
+              <SelectItem value="annulee">Annulée</SelectItem>
             </SelectContent>
           </Select>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4" />
-            Exporter
-          </Button>
-          <Button size="sm">
-            <Plus className="h-4 w-4" />
-            Nouvelle facture
-          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1" />Nouvelle facture</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Créer une facture</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div>
+                  <Label>Élève</Label>
+                  <Select value={form.eleve_id} onValueChange={(v) => setForm({ ...form, eleve_id: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
+                    <SelectContent>
+                      {eleves.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Libellé</Label>
+                  <Input value={form.libelle} onChange={(e) => setForm({ ...form, libelle: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Montant (FCFA)</Label>
+                    <Input type="number" value={form.montant} onChange={(e) => setForm({ ...form, montant: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label>Date d'échéance</Label>
+                    <Input type="date" value={form.date_echeance} onChange={(e) => setForm({ ...form, date_echeance: e.target.value })} />
+                  </div>
+                </div>
+                <div>
+                  <Label>Notes</Label>
+                  <Input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+                </div>
+                <Button onClick={handleSubmit} className="w-full" disabled={!form.eleve_id || !form.montant || !form.date_echeance}>
+                  Créer la facture
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -78,27 +140,47 @@ export default function Invoices() {
               <TableHead>Élève</TableHead>
               <TableHead>Classe</TableHead>
               <TableHead className="text-right">Montant</TableHead>
+              <TableHead className="text-right">Payé</TableHead>
               <TableHead>Échéance</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((i) => (
-              <TableRow key={i.id}>
-                <TableCell className="font-mono text-xs">{i.id}</TableCell>
-                <TableCell className="font-medium">{i.student}</TableCell>
-                <TableCell className="text-muted-foreground">{i.class}</TableCell>
-                <TableCell className="text-right font-semibold">{i.amount} FCFA</TableCell>
-                <TableCell className="text-muted-foreground">{i.due}</TableCell>
+            {filtered.length === 0 && (
+              <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Aucune facture trouvée</TableCell></TableRow>
+            )}
+            {filtered.map((f) => (
+              <TableRow key={f.id}>
+                <TableCell className="font-mono text-xs">{f.numero}</TableCell>
+                <TableCell className="font-medium">{f.eleve_prenom} {f.eleve_nom}</TableCell>
+                <TableCell className="text-muted-foreground">{f.classe_nom ?? "—"}</TableCell>
+                <TableCell className="text-right font-semibold">{f.montant.toLocaleString()} FCFA</TableCell>
+                <TableCell className="text-right">{f.montant_paye.toLocaleString()} FCFA</TableCell>
+                <TableCell className="text-muted-foreground">{new Date(f.date_echeance).toLocaleDateString("fr-FR")}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={statusVariant[i.status]}>{i.status}</Badge>
+                  <Select value={f.statut} onValueChange={(v) => updateStatut(f.id, v)}>
+                    <SelectTrigger className="h-7 w-28 text-xs p-1">
+                      <Badge variant="outline" className={STATUT_CLASS[f.statut] ?? ""}>{STATUT_LABEL[f.statut] ?? f.statut}</Badge>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(STATUT_LABEL).map(([k, v]) => (
+                        <SelectItem key={k} value={k}>{v}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8"><Eye className="h-4 w-4" /></Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8"><Download className="h-4 w-4" /></Button>
-                  </div>
+                  <ConfirmButton
+                    onConfirm={() => deleteFacture(f.id)}
+                    confirmTitle="Supprimer cette facture ?"
+                    confirmDescription="Cette action est irréversible."
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </ConfirmButton>
                 </TableCell>
               </TableRow>
             ))}
