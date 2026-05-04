@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BookOpen, Search, Plus, Download, MoreHorizontal, Loader2 } from "lucide-react";
+import { BookOpen, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
 import { useClasses, Classe } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useEnseignants } from "@/hooks/useEnseignants";
@@ -16,6 +16,20 @@ import { useEleves } from "@/hooks/useEleves";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ImportDialog, ImportColumn } from "@/components/ImportDialog";
+
+const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
+  { key: "nom", label: "Nom", required: true },
+  { key: "cycle", label: "Cycle", required: true },
+  { key: "capacite", label: "Capacité" },
+  { key: "salle", label: "Salle" },
+];
+
+const EXAMPLE_ROWS_CLASSES = [
+  { nom: "6ème A", cycle: "Collège", capacite: "45", salle: "Salle 101" },
+  { nom: "5ème B", cycle: "Collège", capacite: "40", salle: "Salle 102" },
+  { nom: "CM2 A", cycle: "Primaire", capacite: "35", salle: "Salle 201" },
+];
 
 export default function ClassesList() {
   const { classes, loading, addClass, fetchClasses, ecoleId } = useClasses();
