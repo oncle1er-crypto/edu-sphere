@@ -1,0 +1,140 @@
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
+
+interface SmsRequest {
+  ecole_id: string;
+  destinataires: string[]; // phone numbers
+  message: string;
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify user
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(JSON.stringify({ error: "Non autorisé" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const body: SmsRequest = await req.json();
+    const { ecole_id, destinataires, message } = body;
+
+    if (!ecole_id || !destinataires?.length || !message) {
+      return new Response(JSON.stringify({ error: "Champs requis: ecole_id, destinataires, message" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get SMS config for this school
+    const { data: config, error: configError } = await supabase
+      .from("sms_config")
+      .select("*")
+      .eq("ecole_id", ecole_id)
+      .single();
+
+    if (configError || !config) {
+      return new Response(JSON.stringify({ error: "Configuration SMS non trouvée. Veuillez configurer YellikaSMS dans les paramètres." }), {
+        status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!config.is_active) {
+      return new Response(JSON.stringify({ error: "Le service SMS est désactivé." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!config.api_token) {
+      return new Response(JSON.stringify({ error: "Clé API YellikaSMS non configurée." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const results: { destinataire: string; success: boolean; response?: unknown }[] = [];
+
+    for (const destinataire of destinataires) {
+      try {
+        const response = await fetch(config.base_url, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${config.api_token}`,
+          },
+          body: JSON.stringify({
+            recipient: destinataire,
+            sender_id: config.sender_id,
+            message,
+          }),
+        });
+
+        const data = await response.json();
+        const success = response.ok;
+
+        // Log
+        await supabase.from("sms_logs").insert({
+          ecole_id,
+          destinataire,
+          message,
+          sender_id: config.sender_id,
+          statut: success ? "envoye" : "echoue",
+          provider_response: data,
+          cout: config.cout_unitaire * Math.ceil(message.length / 160),
+          envoye_par: user.id,
+        });
+
+        results.push({ destinataire, success, response: data });
+      } catch (err) {
+        await supabase.from("sms_logs").insert({
+          ecole_id,
+          destinataire,
+          message,
+          sender_id: config.sender_id,
+          statut: "echoue",
+          provider_response: { error: String(err) },
+          cout: 0,
+          envoye_par: user.id,
+        });
+        results.push({ destinataire, success: false, response: { error: String(err) } });
+      }
+    }
+
+    const sent = results.filter((r) => r.success).length;
+    const failed = results.filter((r) => !r.success).length;
+
+    return new Response(JSON.stringify({ sent, failed, total: results.length, results }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
