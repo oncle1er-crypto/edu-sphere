@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   Building2, User, GraduationCap, Users, ShieldCheck, Wallet, FileSignature,
-  Bell, Globe, Palette, Database, Plug, ScrollText, LifeBuoy, Cog,
+  Bell, Globe, Palette, Database, Plug, ScrollText, LifeBuoy, Cog, Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -14,6 +14,7 @@ const sections = [
   { to: "finances", label: "Finances & facturation", icon: Wallet, group: "Opérations" },
   { to: "documents", label: "Modèles de documents", icon: FileSignature, group: "Opérations" },
   { to: "notifications", label: "Notifications & communication", icon: Bell, group: "Opérations" },
+  { to: "sms", label: "SMS (YellikaSMS)", icon: Smartphone, group: "Opérations" },
 
   { to: "apparence", label: "Apparence & branding", icon: Palette, group: "Personnalisation" },
   { to: "localisation", label: "Localisation & affichage", icon: Globe, group: "Personnalisation" },

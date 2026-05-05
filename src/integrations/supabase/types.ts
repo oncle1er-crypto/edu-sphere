@@ -2352,6 +2352,100 @@ export type Database = {
         }
         Relationships: []
       }
+      sms_config: {
+        Row: {
+          api_token: string
+          base_url: string
+          cout_unitaire: number
+          created_at: string
+          ecole_id: string
+          id: string
+          is_active: boolean
+          provider: string
+          sender_id: string
+          updated_at: string
+        }
+        Insert: {
+          api_token?: string
+          base_url?: string
+          cout_unitaire?: number
+          created_at?: string
+          ecole_id: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Update: {
+          api_token?: string
+          base_url?: string
+          cout_unitaire?: number
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          sender_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_config_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_logs: {
+        Row: {
+          cout: number
+          created_at: string
+          destinataire: string
+          ecole_id: string
+          envoye_par: string | null
+          id: string
+          message: string
+          provider_response: Json | null
+          sender_id: string
+          statut: string
+        }
+        Insert: {
+          cout?: number
+          created_at?: string
+          destinataire: string
+          ecole_id: string
+          envoye_par?: string | null
+          id?: string
+          message: string
+          provider_response?: Json | null
+          sender_id?: string
+          statut?: string
+        }
+        Update: {
+          cout?: number
+          created_at?: string
+          destinataire?: string
+          ecole_id?: string
+          envoye_par?: string | null
+          id?: string
+          message?: string
+          provider_response?: Json | null
+          sender_id?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stocks_cantine: {
         Row: {
           created_at: string

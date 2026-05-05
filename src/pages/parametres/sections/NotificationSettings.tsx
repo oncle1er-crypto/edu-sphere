@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 const channels = [
   { id: "email", icon: Mail, label: "Email", desc: "Via SMTP intégré", active: true, badge: "Recommandé" },
-  { id: "sms", icon: Smartphone, label: "SMS", desc: "Via Twilio / Africa's Talking", active: true },
+  { id: "sms", icon: Smartphone, label: "SMS", desc: "Via YellikaSMS", active: true },
   { id: "push", icon: Bell, label: "Notifications push", desc: "Application mobile", active: false },
   { id: "whatsapp", icon: Send, label: "WhatsApp", desc: "Via WhatsApp Business API", active: false, badge: "Bientôt" },
   { id: "inapp", icon: MessageSquare, label: "Messagerie interne", desc: "Tableau de bord parents/élèves", active: true },

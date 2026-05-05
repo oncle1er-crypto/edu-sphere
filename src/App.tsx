@@ -104,6 +104,7 @@ import IntegrationsSettings from "@/pages/parametres/sections/IntegrationsSettin
 import ActivityLogs from "@/pages/parametres/sections/ActivityLogs";
 import SupportSettings from "@/pages/parametres/sections/SupportSettings";
 import AdvancedSettings from "@/pages/parametres/sections/AdvancedSettings";
+import SmsSettings from "@/pages/parametres/sections/SmsSettings";
 import ExamsLayout from "@/pages/examens/ExamsLayout";
 import ExamsDashboard from "@/pages/examens/sections/ExamsDashboard";
 import ExamsCalendar from "@/pages/examens/sections/ExamsCalendar";
@@ -447,6 +448,7 @@ const App = () => (
               <Route path="finances" element={<FinanceSettings />} />
               <Route path="documents" element={<DocumentTemplates />} />
               <Route path="notifications" element={<NotificationSettings />} />
+              <Route path="sms" element={<SmsSettings />} />
               <Route path="apparence" element={<AppearanceSettings />} />
               <Route path="localisation" element={<LocalizationSettings />} />
               <Route path="sauvegarde" element={<BackupSettings />} />
