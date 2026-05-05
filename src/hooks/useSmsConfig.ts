@@ -14,12 +14,18 @@ export interface SmsConfig {
   cout_unitaire: number;
 }
 
+/** Mask an API token, showing only the last 4 characters */
+export function maskToken(token: string): string {
+  if (!token || token.length <= 4) return token ? "••••" : "";
+  return "••••••••" + token.slice(-4);
+}
+
 export function useSmsConfig() {
   const { ecoleId } = useEcoleId();
   const [config, setConfig] = useState<SmsConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetch = useCallback(async () => {
+  const fetchConfig = useCallback(async () => {
     if (!ecoleId) return;
     setLoading(true);
     const { data, error } = await supabase
@@ -35,7 +41,7 @@ export function useSmsConfig() {
     setLoading(false);
   }, [ecoleId]);
 
-  useEffect(() => { fetch(); }, [fetch]);
+  useEffect(() => { fetchConfig(); }, [fetchConfig]);
 
   const save = async (values: Partial<SmsConfig>) => {
     if (!ecoleId) return;
@@ -54,7 +60,7 @@ export function useSmsConfig() {
       if (error) { toast.error("Erreur de création"); return; }
     }
     toast.success("Configuration SMS enregistrée");
-    await fetch();
+    await fetchConfig();
   };
 
   const sendSms = async (destinataires: string[], message: string) => {
@@ -85,11 +91,12 @@ export function useSmsConfig() {
       if (result.sent > 0) toast.success("SMS de test envoyé !");
       else toast.error("Échec de l'envoi du SMS de test");
       return result;
-    } catch (e: any) {
-      toast.error(e.message);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erreur inconnue";
+      toast.error(msg);
       throw e;
     }
   };
 
-  return { config, loading, save, sendSms, testSms, refetch: fetch };
+  return { config, loading, save, sendSms, testSms, refetch: fetchConfig };
 }
