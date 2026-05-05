@@ -15,7 +15,7 @@ export interface SmsConfig {
 }
 
 export function useSmsConfig() {
-  const ecoleId = useEcoleId();
+  const { ecoleId } = useEcoleId();
   const [config, setConfig] = useState<SmsConfig | null>(null);
   const [loading, setLoading] = useState(true);
 
