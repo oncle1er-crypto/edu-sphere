@@ -1320,6 +1320,74 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_settings: {
+        Row: {
+          banque: string | null
+          created_at: string
+          devise: string
+          ecole_id: string
+          id: string
+          modes_paiement: string[] | null
+          numero_momo: string | null
+          numero_om: string | null
+          penalite_retard: number | null
+          position_symbole: string
+          prefixe_facture: string | null
+          prefixe_recu: string | null
+          prochain_numero_facture: number | null
+          rappel_auto: boolean | null
+          rib: string | null
+          taux_tva: number
+          updated_at: string
+        }
+        Insert: {
+          banque?: string | null
+          created_at?: string
+          devise?: string
+          ecole_id: string
+          id?: string
+          modes_paiement?: string[] | null
+          numero_momo?: string | null
+          numero_om?: string | null
+          penalite_retard?: number | null
+          position_symbole?: string
+          prefixe_facture?: string | null
+          prefixe_recu?: string | null
+          prochain_numero_facture?: number | null
+          rappel_auto?: boolean | null
+          rib?: string | null
+          taux_tva?: number
+          updated_at?: string
+        }
+        Update: {
+          banque?: string | null
+          created_at?: string
+          devise?: string
+          ecole_id?: string
+          id?: string
+          modes_paiement?: string[] | null
+          numero_momo?: string | null
+          numero_om?: string | null
+          penalite_retard?: number | null
+          position_symbole?: string
+          prefixe_facture?: string | null
+          prefixe_recu?: string | null
+          prochain_numero_facture?: number | null
+          rappel_auto?: boolean | null
+          rib?: string | null
+          taux_tva?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_settings_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fournisseurs: {
         Row: {
           adresse: string | null
