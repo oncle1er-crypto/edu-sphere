@@ -2692,6 +2692,10 @@ export type Database = {
         }
         Returns: string
       }
+      decrypt_sms_api_token: {
+        Args: { _config_id: string; _passphrase: string }
+        Returns: string
+      }
       get_user_ecole_id: { Args: never; Returns: string }
       has_ecole_role: {
         Args: {
