@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   Building2, User, GraduationCap, Users, ShieldCheck, Wallet, FileSignature,
-  Bell, Globe, Palette, Database, Plug, ScrollText, LifeBuoy, Cog,
+  Bell, Globe, Palette, Database, Plug, ScrollText, LifeBuoy, Cog, Smartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
