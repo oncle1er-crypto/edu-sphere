@@ -36,7 +36,7 @@ const DEFAULTS: FinanceSettingsData = {
 };
 
 export function useFinanceSettings() {
-  const ecoleId = useEcoleId();
+  const { ecoleId } = useEcoleId();
   const qc = useQueryClient();
   const key = ["finance_settings", ecoleId];
 
@@ -51,16 +51,16 @@ export function useFinanceSettings() {
         .maybeSingle();
       if (error) throw error;
       if (!data) return { ...DEFAULTS };
-      return data as FinanceSettingsData & { id: string; ecole_id: string };
+      return data as unknown as FinanceSettingsData & { id: string; ecole_id: string };
     },
   });
 
   const mutation = useMutation({
     mutationFn: async (values: Partial<FinanceSettingsData>) => {
-      // upsert
+      const payload: Record<string, unknown> = { ecole_id: ecoleId!, ...values };
       const { error } = await supabase
         .from("finance_settings")
-        .upsert({ ecole_id: ecoleId!, ...values }, { onConflict: "ecole_id" });
+        .upsert(payload as any, { onConflict: "ecole_id" });
       if (error) throw error;
     },
     onSuccess: () => {
