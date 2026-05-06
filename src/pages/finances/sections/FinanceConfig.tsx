@@ -1,49 +1,125 @@
-import { Settings2, Wallet } from "lucide-react";
+import { Settings2, Wallet, Bus, UtensilsCrossed, Info } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-
-const tuitionByLevel = [
-  { level: "Maternelle", amount: 60000 },
-  { level: "Primaire", amount: 75000 },
-  { level: "Collège", amount: 150000 },
-  { level: "Lycée", amount: 225000 },
-  { level: "Université", amount: 350000 },
-];
+import { Badge } from "@/components/ui/badge";
+import {
+  TARIFS_SCOLARITE, TARIFS_SERVICES,
+  ECHEANCES_SCOLARITE, ECHEANCES_SERVICES,
+  fcfa,
+} from "../scolarite-data";
 
 const paymentMethods = [
   { id: "cash", label: "Espèces" },
   { id: "momo", label: "MTN Mobile Money" },
   { id: "om", label: "Orange Money" },
+  { id: "wave", label: "Wave" },
   { id: "bank", label: "Virement bancaire" },
-  { id: "stripe", label: "Carte bancaire (Stripe)" },
   { id: "check", label: "Chèque" },
 ];
 
 export default function FinanceConfig() {
   return (
     <div className="space-y-6">
+      {/* ─── Grille tarifaire scolarité ─── */}
       <SettingsSection
-        title="Frais de scolarité par cycle"
-        description="Montants trimestriels facturés automatiquement aux familles."
+        title="Grille tarifaire — Scolarité"
+        description="Tarifs indicatifs incluant inscription + scolarité annuelle + frais annexes."
         icon={<Wallet className="h-5 w-5" />}
       >
-        {tuitionByLevel.map((t) => (
-          <FieldRow key={t.level} label={t.level}>
-            <div className="flex items-center gap-2">
-              <Input type="number" defaultValue={t.amount} className="w-40" />
-              <span className="text-sm text-muted-foreground">FCFA / trimestre</span>
-            </div>
-          </FieldRow>
-        ))}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b-2 border-primary/20">
+                <th className="text-left py-3 px-3 font-bold text-foreground">Niveau</th>
+                {ECHEANCES_SCOLARITE.map((e) => (
+                  <th key={e} className="text-right py-3 px-3 font-bold text-foreground">{e}</th>
+                ))}
+                <th className="text-right py-3 px-3 font-extrabold text-primary">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TARIFS_SCOLARITE.map((t, i) => (
+                <tr key={t.niveau} className={i % 2 === 0 ? "bg-muted/30" : ""}>
+                  <td className="py-2.5 px-3 font-medium italic text-foreground">{t.niveau}</td>
+                  {t.tranches.map((m, j) => (
+                    <td key={j} className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
+                      {fcfa(m)}
+                    </td>
+                  ))}
+                  <td className="py-2.5 px-3 text-right tabular-nums font-bold text-primary">
+                    {fcfa(t.total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
+          <p className="flex items-start gap-1.5">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span><strong>Grande Section :</strong> Ancien = {fcfa(140_000)} F / Nouveau = {fcfa(150_000)} F</span>
+          </p>
+          <p className="flex items-start gap-1.5">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>Tarifs indicatifs incluant inscription + scolarité annuelle + frais annexes.</span>
+          </p>
+          <p className="flex items-start gap-1.5">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>L'achat des papiers hygiéniques, crayons de couleur et des feutres pour la maternelle ainsi que le paquet de papiers rames et cansons sont compris dans les frais annexes, même les fêtes de l'école.</span>
+          </p>
+        </div>
       </SettingsSection>
 
+      {/* ─── Grille tarifaire Car & Cantine ─── */}
+      <SettingsSection
+        title="Grille tarifaire — Car & Cantine"
+        description="Frais de transport scolaire et de restauration par trimestre."
+        icon={<Bus className="h-5 w-5" />}
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b-2 border-primary/20">
+                <th className="text-left py-3 px-3 font-bold text-foreground">Désignation</th>
+                {ECHEANCES_SERVICES.map((e) => (
+                  <th key={e} className="text-right py-3 px-3 font-bold text-foreground">{e}</th>
+                ))}
+                <th className="text-right py-3 px-3 font-extrabold text-primary">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TARIFS_SERVICES.map((t, i) => (
+                <tr key={t.designation} className={i % 2 === 0 ? "bg-muted/30" : ""}>
+                  <td className="py-2.5 px-3 font-medium text-foreground">{t.designation}</td>
+                  {t.tranches.map((m, j) => (
+                    <td key={j} className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
+                      {fcfa(m)}
+                    </td>
+                  ))}
+                  <td className="py-2.5 px-3 text-right tabular-nums font-bold text-primary">
+                    {fcfa(t.total)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-3 p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground">
+          <p className="flex items-start gap-1.5">
+            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+            <span>Les frais du car et de la cantine sont payés au début de chaque trimestre de préférence avant le 27 du mois antérieur. Les places sont limitées et la priorité est accordée aux plus petits et plus éloignés.</span>
+          </p>
+        </div>
+      </SettingsSection>
+
+      {/* ─── Numérotation & paiements ─── */}
       <SettingsSection
         title="Numérotation & paiements"
-        description="Préfixes de documents et modes acceptés."
+        description="Préfixes de documents et modes de paiement acceptés."
         icon={<Settings2 className="h-5 w-5" />}
       >
         <FieldRow label="Devise">
@@ -53,7 +129,6 @@ export default function FinanceConfig() {
               <SelectItem value="XAF">Franc CFA (FCFA)</SelectItem>
               <SelectItem value="EUR">Euro (€)</SelectItem>
               <SelectItem value="USD">Dollar US ($)</SelectItem>
-              <SelectItem value="MAD">Dirham (DH)</SelectItem>
             </SelectContent>
           </Select>
         </FieldRow>
@@ -70,7 +145,7 @@ export default function FinanceConfig() {
           <div className="grid grid-cols-2 gap-3">
             {paymentMethods.map((m) => (
               <div key={m.id} className="flex items-center gap-2">
-                <Checkbox id={m.id} defaultChecked={["cash", "momo", "om", "bank"].includes(m.id)} />
+                <Checkbox id={m.id} defaultChecked={["cash", "momo", "om", "wave", "bank"].includes(m.id)} />
                 <Label htmlFor={m.id} className="text-sm cursor-pointer">{m.label}</Label>
               </div>
             ))}
