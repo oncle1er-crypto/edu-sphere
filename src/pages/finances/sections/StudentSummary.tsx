@@ -12,7 +12,7 @@ import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarit
 import { PaymentDialog } from "../components/PaymentDialog";
 import { toast } from "sonner";
 
-const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
+const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
 export default function StudentSummary() {
   const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
