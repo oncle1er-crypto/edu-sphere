@@ -19,7 +19,7 @@ import { StatusDialog } from "../components/StatusDialog";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { toast } from "sonner";
 
-const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège", "Lycée"];
+const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
 type SortKey = "retard" | "resteDu" | "derniereTranchePayee" | "nom";
 type SortDir = "asc" | "desc";
