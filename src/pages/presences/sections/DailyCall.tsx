@@ -10,6 +10,16 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 import { usePresences } from "@/hooks/usePresences";
 import { useAuth } from "@/context/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Status = "present" | "absent" | "retard";
 
@@ -22,6 +32,7 @@ export default function DailyCall() {
   const [callDate, setCallDate] = useState(new Date().toISOString().slice(0, 10));
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const classEleves = eleves.filter((e) => e.classe_id === classeId);
 
@@ -57,6 +68,7 @@ export default function DailyCall() {
     }));
     await savePresences(items);
     setSaving(false);
+    setConfirmOpen(false);
   };
 
   if (loadingC || loadingE) {
@@ -124,7 +136,7 @@ export default function DailyCall() {
 
           {classEleves.length > 0 && (
             <div className="flex justify-end">
-              <Button onClick={handleSave} disabled={saving}>
+              <Button onClick={() => setConfirmOpen(true)} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 Enregistrer l'appel
               </Button>
@@ -132,6 +144,38 @@ export default function DailyCall() {
           )}
         </>
       )}
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer l'enregistrement de l'appel</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>
+                  Vous êtes sur le point d'enregistrer l'appel pour la classe sélectionnée
+                  à la date du <strong>{new Date(callDate).toLocaleDateString("fr-FR")}</strong>.
+                </p>
+                <div className="rounded-lg border p-3 bg-muted/40 space-y-1 text-sm">
+                  <div className="flex justify-between"><span>Effectif total</span><strong>{classEleves.length}</strong></div>
+                  <div className="flex justify-between text-emerald-700"><span>Présents</span><strong>{counts.present}</strong></div>
+                  <div className="flex justify-between text-red-700"><span>Absents</span><strong>{counts.absent}</strong></div>
+                  <div className="flex justify-between text-amber-700"><span>Retards</span><strong>{counts.retard}</strong></div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Les élèves non marqués seront enregistrés comme « Présents ». Vous pourrez modifier l'appel ultérieurement.
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={saving}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSave} disabled={saving}>
+              {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SettingsSection>
   );
 }
