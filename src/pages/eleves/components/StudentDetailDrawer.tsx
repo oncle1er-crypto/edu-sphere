@@ -170,9 +170,6 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
 
   const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
-  const photoInputRef = useRef<HTMLInputElement>(null);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-
   const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !eleve?.id) return;
@@ -206,7 +203,6 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       if (photoInputRef.current) photoInputRef.current.value = "";
     }
   };
-
 
   return (
     <>
