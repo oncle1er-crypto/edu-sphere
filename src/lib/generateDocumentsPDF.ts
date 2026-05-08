@@ -266,7 +266,7 @@ export function generateCertificatPDF(data: CertificatData): jsPDF {
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(100, 100, 100);
-  doc.text(`Réf. : GSP/${data.annee.replace("-", "")}/${data.eleve.matricule}`, m, y);
+  doc.text(`Réf. : CSP/${data.annee.replace("-", "")}/${data.eleve.matricule}`, m, y);
   doc.text(`Abidjan, le ${new Date().toLocaleDateString("fr-FR")}`, w - m, y, { align: "right" });
 
   y += 15;

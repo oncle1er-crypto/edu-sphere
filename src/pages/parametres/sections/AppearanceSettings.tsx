@@ -97,7 +97,7 @@ export default function AppearanceSettings() {
 
       <SettingsSection
         title="Identité visuelle de l'établissement"
-        description="Les couleurs principales suivent la charte du Groupe Scolaire La Providence (Rouge Bordeaux & Jaune Poussin)."
+        description="Les couleurs principales suivent la charte du Complexe Scolaire La Providence (Rouge Bordeaux & Jaune Poussin)."
         icon={<Palette className="h-5 w-5" />}
         hideSave
       >

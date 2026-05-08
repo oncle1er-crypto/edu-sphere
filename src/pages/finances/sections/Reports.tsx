@@ -26,7 +26,7 @@ import {
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 
-const ECOLE_NOM = "Groupe Scolaire La Providence";
+const ECOLE_NOM = "Complexe Scolaire La Providence";
 
 // ── Helper: group finance data by classe ──
 function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]): RecouvrementData {

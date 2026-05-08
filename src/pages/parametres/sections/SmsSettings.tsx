@@ -180,7 +180,7 @@ export default function SmsSettings() {
         <FieldRow label="Sender ID" hint="Nom qui apparaît comme expéditeur (max 11 car.)">
           <div className="space-y-1">
             <Input
-              placeholder="GSP"
+              placeholder="CSP"
               maxLength={11}
               value={senderId}
               onChange={(e) => {

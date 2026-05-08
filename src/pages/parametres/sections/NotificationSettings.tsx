@@ -33,7 +33,7 @@ const DEFAULTS = {
   canaux: { email: true, sms: true, push: false, whatsapp: false, inapp: true } as Record<string, boolean>,
   evenements: Object.fromEntries(EVENTS.map(e => [e.id, true])) as Record<string, boolean>,
   smtp_from_email: "no-reply@laprovidence.ci",
-  smtp_from_name: "Groupe Scolaire La Providence",
+  smtp_from_name: "Complexe Scolaire La Providence",
   smtp_host: "",
   smtp_port: 587,
   smtp_user: "",

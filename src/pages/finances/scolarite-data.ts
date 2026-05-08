@@ -1,4 +1,4 @@
-// Données réelles scolarité GSP — Groupe Scolaire La Providence (FCFA)
+// Données réelles scolarité CSP — Complexe Scolaire La Providence (FCFA)
 // Paiements en 3 échéances : Octobre, Novembre, Janvier
 
 export type NiveauScolarite =
@@ -27,7 +27,7 @@ export interface TarifNiveau {
   total: number;
 }
 
-// ─── Tarifs scolarité réels GSP ───
+// ─── Tarifs scolarité réels CSP ───
 export const TARIFS_SCOLARITE: TarifNiveau[] = [
   { niveau: "Maternelle 1",              tranches: [85_000, 35_000, 30_000], total: 150_000 },
   { niveau: "Maternelle 2",              tranches: [80_000, 35_000, 20_000], total: 135_000 },
@@ -162,21 +162,21 @@ function makeEleve(
 }
 
 export const ELEVES_SCOLARITE: EleveScolarite[] = [
-  makeEleve("1", "GSP-2025-0142", "KOUASSI", "Junior", "CE2 A", "M. Kouassi Pierre", "+225 07 11 22 33 44", "ajour"),
-  makeEleve("2", "GSP-2025-0089", "KONÉ", "Sarah", "6e B", "Mme Koné Esther", "+225 05 88 77 66 55", "ajour"),
-  makeEleve("3", "GSP-2025-0203", "COULIBALY", "Léa", "5e B", "M. Coulibaly Jean", "+225 07 44 55 66 77", "retard1", 11, "20/04/2026"),
-  makeEleve("4", "GSP-2025-0317", "BAMBA", "Eric", "4e A", "Mme Bamba Aïcha", "+225 01 22 33 44 55", "retard2", 24, "15/04/2026"),
-  makeEleve("5", "GSP-2025-0418", "DIALLO", "Carine", "CM1 A", "M. Diallo Paul", "+225 07 99 88 77 66", "partiel", 5),
-  makeEleve("6", "GSP-2025-0512", "N'GUESSAN", "Joël", "4e B", "M. N'Guessan François", "+225 05 11 22 33 44", "tout-du", 38, "10/04/2026"),
-  makeEleve("7", "GSP-2025-0099", "YAO", "Marie", "PS B", "Mme Yao Brigitte", "+225 07 22 33 44 55", "retard1", 8, "22/04/2026"),
-  makeEleve("8", "GSP-2025-0145", "OUATTARA", "Paul", "CE1 A", "M. Ouattara Albert", "+225 01 55 66 77 88", "ajour"),
-  makeEleve("9", "GSP-2025-0267", "TRAORÉ", "Yves", "4e A", "Mme Traoré Sylvie", "+225 05 33 44 55 66", "ajour"),
-  makeEleve("10", "GSP-2025-0188", "AHOU", "Inès", "GS A", "M. Ahou René", "+225 07 66 77 88 99", "partiel", 3),
-  makeEleve("11", "GSP-2025-0298", "TOURÉ", "Aboubacar", "5e A", "M. Touré Issouf", "+225 05 77 88 99 00", "retard2", 18, "18/04/2026"),
-  makeEleve("12", "GSP-2025-0344", "KOFFI", "Aya", "CM2 A", "Mme Koffi Adjoua", "+225 07 88 99 00 11", "ajour"),
-  makeEleve("13", "GSP-2025-0411", "DIABATÉ", "Mariam", "CP A", "M. Diabaté Yacouba", "+225 01 99 00 11 22", "retard1", 14, "12/04/2026"),
-  makeEleve("14", "GSP-2025-0501", "GNAMBA", "Kouamé", "6e A", "Mme Gnamba Affoué", "+225 05 00 11 22 33", "partiel", 6),
-  makeEleve("15", "GSP-2025-0078", "SÉRI", "Fatim", "MS A", "M. Séri Lassina", "+225 07 11 33 55 77", "ajour"),
+  makeEleve("1", "CSP-2025-0142", "KOUASSI", "Junior", "CE2 A", "M. Kouassi Pierre", "+225 07 11 22 33 44", "ajour"),
+  makeEleve("2", "CSP-2025-0089", "KONÉ", "Sarah", "6e B", "Mme Koné Esther", "+225 05 88 77 66 55", "ajour"),
+  makeEleve("3", "CSP-2025-0203", "COULIBALY", "Léa", "5e B", "M. Coulibaly Jean", "+225 07 44 55 66 77", "retard1", 11, "20/04/2026"),
+  makeEleve("4", "CSP-2025-0317", "BAMBA", "Eric", "4e A", "Mme Bamba Aïcha", "+225 01 22 33 44 55", "retard2", 24, "15/04/2026"),
+  makeEleve("5", "CSP-2025-0418", "DIALLO", "Carine", "CM1 A", "M. Diallo Paul", "+225 07 99 88 77 66", "partiel", 5),
+  makeEleve("6", "CSP-2025-0512", "N'GUESSAN", "Joël", "4e B", "M. N'Guessan François", "+225 05 11 22 33 44", "tout-du", 38, "10/04/2026"),
+  makeEleve("7", "CSP-2025-0099", "YAO", "Marie", "PS B", "Mme Yao Brigitte", "+225 07 22 33 44 55", "retard1", 8, "22/04/2026"),
+  makeEleve("8", "CSP-2025-0145", "OUATTARA", "Paul", "CE1 A", "M. Ouattara Albert", "+225 01 55 66 77 88", "ajour"),
+  makeEleve("9", "CSP-2025-0267", "TRAORÉ", "Yves", "4e A", "Mme Traoré Sylvie", "+225 05 33 44 55 66", "ajour"),
+  makeEleve("10", "CSP-2025-0188", "AHOU", "Inès", "GS A", "M. Ahou René", "+225 07 66 77 88 99", "partiel", 3),
+  makeEleve("11", "CSP-2025-0298", "TOURÉ", "Aboubacar", "5e A", "M. Touré Issouf", "+225 05 77 88 99 00", "retard2", 18, "18/04/2026"),
+  makeEleve("12", "CSP-2025-0344", "KOFFI", "Aya", "CM2 A", "Mme Koffi Adjoua", "+225 07 88 99 00 11", "ajour"),
+  makeEleve("13", "CSP-2025-0411", "DIABATÉ", "Mariam", "CP A", "M. Diabaté Yacouba", "+225 01 99 00 11 22", "retard1", 14, "12/04/2026"),
+  makeEleve("14", "CSP-2025-0501", "GNAMBA", "Kouamé", "6e A", "Mme Gnamba Affoué", "+225 05 00 11 22 33", "partiel", 6),
+  makeEleve("15", "CSP-2025-0078", "SÉRI", "Fatim", "MS A", "M. Séri Lassina", "+225 07 11 33 55 77", "ajour"),
 ];
 
 // Frais par cycle (legacy compat — moyennes)
