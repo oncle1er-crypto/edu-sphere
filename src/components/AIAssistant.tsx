@@ -25,6 +25,7 @@ const WELCOME: Msg = {
 
 export function AIAssistant() {
   const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([WELCOME]);
