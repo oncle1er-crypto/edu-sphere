@@ -96,9 +96,9 @@ export default function StudentsList() {
   );
 
   const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
-    <Avatar className={size}>
+    <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
       {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.prenom} ${s.nom}`} /> : null}
-      <AvatarFallback className={`${textSize} bg-accent/20 text-accent-foreground`}>
+      <AvatarFallback className={`${textSize} bg-accent/20 text-accent-foreground font-semibold`}>
         {initials(s.nom, s.prenom)}
       </AvatarFallback>
     </Avatar>
