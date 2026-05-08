@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sparkles, X, Send, Loader2, Bot, User as UserIcon } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -24,6 +25,7 @@ const WELCOME: Msg = {
 
 export function AIAssistant() {
   const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Msg[]>([WELCOME]);
@@ -177,7 +179,33 @@ export function AIAssistant() {
                     : "bg-card border",
                 )}
               >
-                <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => {
+                      const isInternal = !!href && href.startsWith("/");
+                      return (
+                        <a
+                          href={href}
+                          {...props}
+                          onClick={(e) => {
+                            if (isInternal) {
+                              e.preventDefault();
+                              navigate(href!);
+                              setOpen(false);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+                          target={isInternal ? undefined : "_blank"}
+                          rel={isInternal ? undefined : "noreferrer"}
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
+                  }}
+                >
+                  {m.content || "…"}
+                </ReactMarkdown>
               </div>
             </div>
           ))}
