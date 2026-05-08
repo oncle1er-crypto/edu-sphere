@@ -101,7 +101,7 @@ export default function Bulletins() {
     const { data: ecole } = await supabase.from("ecoles").select("nom, devise, adresse, telephone").eq("id", ecoleId).single();
 
     // Fetch student details
-    const { data: eleve } = await supabase.from("eleves").select("date_naissance, sexe, classe_id").eq("id", row.eleve_id).single();
+    const { data: eleve } = await supabase.from("eleves").select("date_naissance, sexe, classe_id, photo_url").eq("id", row.eleve_id).single();
 
     // Fetch class name
     const classeObj = classes.find((c) => c.id === selectedClasse);
