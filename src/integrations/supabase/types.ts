@@ -808,15 +808,21 @@ export type Database = {
       ecoles: {
         Row: {
           adresse: string | null
+          agrement: string | null
+          annee_creation: number | null
           code: string
           created_at: string
+          cycles: string | null
           devise: string | null
+          diocese: string | null
           directeur: string | null
           email: string | null
           id: string
           logo_url: string | null
           nom: string
           pays: string
+          sigle: string | null
+          site_web: string | null
           status: Database["public"]["Enums"]["ecole_status"]
           telephone: string | null
           type: string
@@ -825,15 +831,21 @@ export type Database = {
         }
         Insert: {
           adresse?: string | null
+          agrement?: string | null
+          annee_creation?: number | null
           code: string
           created_at?: string
+          cycles?: string | null
           devise?: string | null
+          diocese?: string | null
           directeur?: string | null
           email?: string | null
           id?: string
           logo_url?: string | null
           nom: string
           pays?: string
+          sigle?: string | null
+          site_web?: string | null
           status?: Database["public"]["Enums"]["ecole_status"]
           telephone?: string | null
           type?: string
@@ -842,15 +854,21 @@ export type Database = {
         }
         Update: {
           adresse?: string | null
+          agrement?: string | null
+          annee_creation?: number | null
           code?: string
           created_at?: string
+          cycles?: string | null
           devise?: string | null
+          diocese?: string | null
           directeur?: string | null
           email?: string | null
           id?: string
           logo_url?: string | null
           nom?: string
           pays?: string
+          sigle?: string | null
+          site_web?: string | null
           status?: Database["public"]["Enums"]["ecole_status"]
           telephone?: string | null
           type?: string
@@ -2024,6 +2042,45 @@ export type Database = {
           },
         ]
       }
+      parametres_localisation: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          format_date: string
+          format_heure: string
+          fuseau: string
+          id: string
+          langue: string
+          premier_jour: string
+          separateur_decimal: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          format_date?: string
+          format_heure?: string
+          fuseau?: string
+          id?: string
+          langue?: string
+          premier_jour?: string
+          separateur_decimal?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          format_date?: string
+          format_heure?: string
+          fuseau?: string
+          id?: string
+          langue?: string
+          premier_jour?: string
+          separateur_decimal?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parcours_scolaire: {
         Row: {
           annee_id: string
@@ -2236,27 +2293,36 @@ export type Database = {
           avatar_url: string | null
           created_at: string
           ecole_id: string | null
+          fonction: string | null
           full_name: string | null
           id: string
+          langue: string | null
           phone: string | null
+          preferences: Json | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
           ecole_id?: string | null
+          fonction?: string | null
           full_name?: string | null
           id: string
+          langue?: string | null
           phone?: string | null
+          preferences?: Json | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
           ecole_id?: string | null
+          fonction?: string | null
           full_name?: string | null
           id?: string
+          langue?: string | null
           phone?: string | null
+          preferences?: Json | null
           updated_at?: string
         }
         Relationships: [
