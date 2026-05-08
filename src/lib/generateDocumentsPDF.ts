@@ -279,6 +279,16 @@ export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF
   doc.text(`Réf. : CSP/${data.annee.replace("-", "")}/${data.eleve.matricule}`, m, y);
   doc.text(`Abidjan, le ${new Date().toLocaleDateString("fr-FR")}`, w - m, y, { align: "right" });
 
+  // Photo de l'élève (sous le titre, à droite)
+  if (data.eleve.photo_url) {
+    const photo = await loadImageAsDataURL(data.eleve.photo_url);
+    if (photo) {
+      try {
+        doc.addImage(photo.data, "JPEG", w - m - 30, y + 6, 28, 32);
+      } catch { /* ignore */ }
+    }
+  }
+
   y += 15;
 
   // Body
