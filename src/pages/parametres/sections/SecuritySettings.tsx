@@ -1,102 +1,82 @@
-import { ShieldCheck, Smartphone, KeyRound, LogOut, Globe } from "lucide-react";
+import { ShieldCheck, Smartphone, KeyRound, LogOut, Globe, Loader2 } from "lucide-react";
+import { useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const sessions = [
-  { device: "MacBook Pro — Safari", location: "Abidjan, CI", date: "Aujourd'hui à 09:42", current: true },
-  { device: "iPhone 15 — App mobile", location: "Abidjan, CI", date: "Hier à 18:15", current: false },
-  { device: "Windows — Chrome", location: "Douala, CM", date: "Il y a 3 jours", current: false },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 export default function SecuritySettings() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [pwd, setPwd] = useState({ next: "", confirm: "" });
+  const [saving, setSaving] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  const handleChangePassword = async () => {
+    if (pwd.next.length < 12) return toast.error("Minimum 12 caractères requis");
+    if (pwd.next !== pwd.confirm) return toast.error("Les mots de passe ne correspondent pas");
+    setSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: pwd.next });
+    setSaving(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Mot de passe modifié"); setPwd({ next: "", confirm: "" }); }
+  };
+
+  const handleSignOutAll = async () => {
+    setSigningOut(true);
+    const { error } = await supabase.auth.signOut({ scope: "global" });
+    setSigningOut(false);
+    if (error) toast.error(error.message);
+    else { toast.success("Toutes les sessions ont été fermées"); navigate("/auth", { replace: true }); }
+  };
+
   return (
     <div className="space-y-6">
       <SettingsSection
         title="Mot de passe"
         description="Modifiez votre mot de passe régulièrement pour plus de sécurité."
         icon={<KeyRound className="h-5 w-5" />}
+        hideSave
       >
-        <FieldRow label="Mot de passe actuel"><Input type="password" placeholder="••••••••" /></FieldRow>
-        <FieldRow label="Nouveau mot de passe" hint="Min. 12 caractères, 1 majuscule, 1 chiffre, 1 symbole">
-          <Input type="password" placeholder="••••••••" />
+        <FieldRow label="Nouveau mot de passe" hint="Min. 12 caractères">
+          <Input type="password" value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} placeholder="••••••••" />
         </FieldRow>
-        <FieldRow label="Confirmer"><Input type="password" placeholder="••••••••" /></FieldRow>
+        <FieldRow label="Confirmer">
+          <Input type="password" value={pwd.confirm} onChange={e => setPwd(p => ({ ...p, confirm: e.target.value }))} placeholder="••••••••" />
+        </FieldRow>
+        <div className="flex justify-end">
+          <Button onClick={handleChangePassword} disabled={saving || !pwd.next}>
+            {saving && <Loader2 className="h-4 w-4 animate-spin" />} Modifier le mot de passe
+          </Button>
+        </div>
       </SettingsSection>
 
       <SettingsSection
         title="Authentification à deux facteurs (2FA)"
-        description="Ajoutez une couche de sécurité supplémentaire à votre compte."
+        description="Bientôt disponible : ajoutez une couche de sécurité supplémentaire."
         icon={<Smartphone className="h-5 w-5" />}
+        hideSave
       >
-        <FieldRow label="Activer la 2FA"><Switch /></FieldRow>
-        <FieldRow label="2FA obligatoire pour les admins">
-          <Switch defaultChecked />
-        </FieldRow>
+        <FieldRow label="Activer la 2FA"><Switch disabled /></FieldRow>
       </SettingsSection>
 
       <SettingsSection
-        title="Politique de mot de passe"
-        description="Règles appliquées à tous les utilisateurs de la plateforme."
-        icon={<ShieldCheck className="h-5 w-5" />}
-      >
-        <FieldRow label="Longueur minimale">
-          <Input type="number" defaultValue={12} className="w-32" />
-        </FieldRow>
-        <FieldRow label="Vérifier mots de passe compromis (HIBP)" hint="Refuse les mots de passe ayant fuité">
-          <Switch defaultChecked />
-        </FieldRow>
-        <FieldRow label="Expiration du mot de passe">
-          <Select defaultValue="never">
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="never">Jamais</SelectItem>
-              <SelectItem value="90">Tous les 90 jours</SelectItem>
-              <SelectItem value="180">Tous les 6 mois</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
-        <FieldRow label="Durée de session" hint="Déconnexion automatique après inactivité">
-          <Select defaultValue="60">
-            <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="15">15 minutes</SelectItem>
-              <SelectItem value="60">1 heure</SelectItem>
-              <SelectItem value="480">8 heures</SelectItem>
-              <SelectItem value="never">Aucune</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Sessions actives"
-        description="Appareils actuellement connectés à votre compte."
+        title="Sessions"
+        description="Gestion des connexions actives sur votre compte."
         icon={<Globe className="h-5 w-5" />}
         hideSave
       >
-        <div className="border rounded-lg divide-y">
-          {sessions.map((s, i) => (
-            <div key={i} className="flex items-center justify-between p-3">
-              <div>
-                <div className="text-sm font-medium flex items-center gap-2">
-                  {s.device}
-                  {s.current && <span className="text-xs text-success font-semibold">• Actuelle</span>}
-                </div>
-                <div className="text-xs text-muted-foreground">{s.location} • {s.date}</div>
-              </div>
-              {!s.current && (
-                <Button size="sm" variant="ghost" className="text-destructive">
-                  <LogOut className="h-4 w-4" />Déconnecter
-                </Button>
-              )}
-            </div>
-          ))}
+        <div className="text-sm text-muted-foreground">
+          Connecté en tant que <span className="font-medium text-foreground">{user?.email}</span>
         </div>
-        <Button variant="outline" className="w-full mt-3 text-destructive border-destructive/30 hover:bg-destructive/10">
-          <LogOut className="h-4 w-4" />Déconnecter toutes les autres sessions
+        <Button variant="outline" className="w-full text-destructive border-destructive/30 hover:bg-destructive/10" onClick={handleSignOutAll} disabled={signingOut}>
+          {signingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+          Déconnecter toutes les sessions
         </Button>
       </SettingsSection>
     </div>
