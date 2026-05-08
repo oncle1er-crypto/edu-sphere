@@ -1,90 +1,217 @@
 import jsPDF from "jspdf";
 
 export interface RecuData {
-  ecole: { nom: string; devise: string; adresse: string; telephone: string };
+  ecole: {
+    nom: string;
+    sigle?: string;
+    devise: string;
+    adresse: string;
+    telephone: string;
+    email?: string;
+    logoUrl?: string | null;
+  };
   reference: string;
   eleve: { nom: string; prenom: string; matricule: string; classe: string };
   montant: number;
   mode: string;
   date_paiement: string;
+  total_du?: number;
+  total_paye?: number;
+  recu_par?: string;
 }
 
-export function generateRecuPDF(data: RecuData): jsPDF {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a5" });
-  const w = doc.internal.pageSize.getWidth();
-  const m = 12;
-  let y = m;
+async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(r.result as string);
+      r.onerror = reject;
+      r.readAsDataURL(blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => resolve({ w: 1, h: 1 });
+      img.src = dataUrl;
+    });
+    return { data: dataUrl, w: dims.w, h: dims.h };
+  } catch {
+    return null;
+  }
+}
 
-  const primary: [number, number, number] = [110, 26, 44]; // #6E1A2C
-  const accent: [number, number, number] = [252, 227, 77]; // #FCE34D
+const formatFCFA = (n: number) => `${Math.round(n).toLocaleString("fr-FR").replace(/\u202f/g, " ")} FCFA`;
 
-  // Header band
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, w, 28, "F");
-  doc.setFontSize(14);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.ecole.nom, w / 2, 12, { align: "center" });
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "normal");
-  doc.text(data.ecole.devise, w / 2, 18, { align: "center" });
-  doc.text(`${data.ecole.adresse} • ${data.ecole.telephone}`, w / 2, 23, { align: "center" });
+const monthsFR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
+const formatDateLong = (iso: string) => {
+  const d = new Date(iso);
+  return `${d.getDate().toString().padStart(2, "0")} ${monthsFR[d.getMonth()]} ${d.getFullYear()}`;
+};
 
-  y = 35;
-  doc.setFillColor(...accent);
-  doc.rect(m, y, w - 2 * m, 8, "F");
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(11);
-  doc.setFont("helvetica", "bold");
-  doc.text("REÇU DE PAIEMENT", w / 2, y + 6, { align: "center" });
+export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();   // 210
+  const H = doc.internal.pageSize.getHeight();  // 297
+  const halfH = H / 2;
 
-  y += 14;
-  doc.setFontSize(9);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
+  const ink: [number, number, number] = [40, 40, 45];
+  const muted: [number, number, number] = [120, 120, 128];
+  const line: [number, number, number] = [210, 210, 215];
+  const primary: [number, number, number] = [110, 26, 44];
+  const success: [number, number, number] = [22, 122, 70];
+  const warn: [number, number, number] = [180, 95, 6];
 
-  const field = (label: string, value: string) => {
-    doc.setFont("helvetica", "bold");
-    doc.text(label, m, y);
+  const logo = data.ecole.logoUrl ? await loadImageAsDataURL(data.ecole.logoUrl) : null;
+
+  const totalDu = data.total_du ?? 0;
+  const totalPaye = data.total_paye ?? data.montant;
+  const reste = Math.max(0, totalDu - totalPaye);
+  const solde = totalDu > 0 && reste <= 0;
+
+  const drawCopy = (offsetY: number, label: string) => {
+    const M = 16;
+    let y = offsetY + 12;
+
+    // ── Header (no color band, just typography + logo) ──
+    if (logo) {
+      const logoH = 16;
+      const logoW = (logo.w / logo.h) * logoH;
+      doc.addImage(logo.data, "PNG", M, y, logoW, logoH);
+    }
+    const tx = logo ? M + 22 : M;
+    doc.setFont("times", "bold");
+    doc.setFontSize(15);
+    doc.setTextColor(...primary);
+    doc.text(data.ecole.nom.toUpperCase(), tx, y + 6);
+    doc.setFont("times", "italic");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...muted);
+    doc.text(`« ${data.ecole.devise} »`, tx, y + 11);
     doc.setFont("helvetica", "normal");
-    doc.text(value, m + 35, y);
+    doc.setFontSize(7.5);
+    doc.text(`${data.ecole.adresse} • Tél : ${data.ecole.telephone}${data.ecole.email ? " • " + data.ecole.email : ""}`, tx, y + 15);
+
+    // Copy label (top right)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text(label.toUpperCase(), W - M, y + 2, { align: "right" });
+    doc.setFont("times", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...ink);
+    doc.text("REÇU DE PAIEMENT", W - M, y + 9, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text(`N° ${data.reference}`, W - M, y + 14, { align: "right" });
+
+    // Thin separator
+    y += 22;
+    doc.setDrawColor(...line);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+
+    // ── Info grid (2 columns) ──
     y += 7;
+    const colW = (W - 2 * M) / 2;
+    const drawField = (label: string, value: string, x: number, yy: number) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text(label.toUpperCase(), x, yy);
+      doc.setFont("times", "bold");
+      doc.setFontSize(10.5);
+      doc.setTextColor(...ink);
+      doc.text(value || "—", x, yy + 5);
+    };
+
+    // Row 1
+    drawField("Élève", `${data.eleve.prenom} ${data.eleve.nom}`, M, y);
+    drawField("Date du paiement", formatDateLong(data.date_paiement), M + colW, y);
+    // Row 2
+    drawField("Matricule", data.eleve.matricule || "—", M, y + 12);
+    drawField("Classe", data.eleve.classe || "—", M + colW, y + 12);
+    // Row 3
+    drawField("Mode de règlement", data.mode.replace(/_/g, " ").toUpperCase(), M, y + 24);
+    drawField("Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
+
+    // ── Amount line (no filled box, just typography) ──
+    y += 36;
+    doc.setDrawColor(...line);
+    doc.setLineWidth(0.3);
+    doc.line(M, y, W - M, y);
+
+    y += 9;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...muted);
+    doc.text("MONTANT REÇU", M, y);
+    doc.setFont("times", "bold");
+    doc.setFontSize(20);
+    doc.setTextColor(...primary);
+    doc.text(formatFCFA(data.montant), W - M, y + 2, { align: "right" });
+
+    // ── Status / Solde ──
+    y += 10;
+    if (totalDu > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(...muted);
+      doc.text(`Total dû : ${formatFCFA(totalDu)}    •    Total réglé : ${formatFCFA(totalPaye)}`, M, y);
+    }
+
+    // Badge
+    y += 6;
+    const badgeText = solde ? "SOLDÉ" : `RESTE À PAYER : ${formatFCFA(reste)}`;
+    const badgeColor = solde ? success : warn;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const tw = doc.getTextWidth(badgeText) + 8;
+    doc.setDrawColor(...badgeColor);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(M, y, tw, 7, 1.5, 1.5, "S");
+    doc.setTextColor(...badgeColor);
+    doc.text(badgeText, M + 4, y + 4.8);
+
+    // ── Footer / signature ──
+    const footY = offsetY + halfH - 16;
+    doc.setDrawColor(...line);
+    doc.line(W - M - 55, footY, W - M, footY);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...muted);
+    doc.text("Signature & cachet", W - M - 27.5, footY + 4, { align: "center" });
+
+    doc.setFont("helvetica", "italic");
+    doc.setFontSize(7);
+    doc.setTextColor(...muted);
+    doc.text(
+      "Ce reçu fait foi de paiement. Aucun remboursement ne sera effectué sans présentation du présent document.",
+      M, footY + 4, { maxWidth: W - 2 * M - 65 }
+    );
   };
 
-  field("Référence :", data.reference);
-  field("Date :", new Date(data.date_paiement).toLocaleDateString("fr-FR"));
-  y += 3;
-  field("Élève :", `${data.eleve.prenom} ${data.eleve.nom}`);
-  field("Matricule :", data.eleve.matricule);
-  field("Classe :", data.eleve.classe);
-  y += 3;
-  field("Mode :", data.mode.replace("_", " ").toUpperCase());
+  // Top half — Exemplaire client
+  drawCopy(0, "Exemplaire — Famille");
 
-  // Amount box
-  y += 5;
-  doc.setFillColor(240, 240, 240);
-  doc.roundedRect(m, y, w - 2 * m, 16, 3, 3, "F");
-  doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.text("Montant reçu :", m + 5, y + 7);
-  doc.setFontSize(14);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...primary);
-  doc.text(`${data.montant.toLocaleString("fr-FR")} FCFA`, w - m - 5, y + 10, { align: "right" });
-
-  // Footer
-  y += 28;
-  doc.setFontSize(8);
-  doc.setFont("helvetica", "italic");
-  doc.setTextColor(150, 150, 150);
-  doc.text("Ce document fait foi de paiement. Conservez-le précieusement.", w / 2, y, { align: "center" });
-
-  y += 12;
+  // Dotted separator (scissor cut line)
+  const sepY = halfH;
+  doc.setDrawColor(160, 160, 165);
+  doc.setLineWidth(0.25);
+  doc.setLineDashPattern([1.5, 1.5], 0);
+  doc.line(8, sepY, W - 8, sepY);
+  doc.setLineDashPattern([], 0);
+  // little scissor hint
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(80, 80, 80);
-  doc.setFontSize(8);
-  doc.text("Signature & cachet de l'école", w - m - 5, y, { align: "right" });
-  doc.line(w - m - 45, y + 2, w - m, y + 2);
+  doc.setFontSize(7);
+  doc.setTextColor(160, 160, 165);
+  doc.text("✂  -  -  -  -  Découper le long des pointillés  -  -  -  -", W / 2, sepY - 1, { align: "center" });
+
+  // Bottom half — Souche école
+  drawCopy(halfH, "Souche — École");
 
   return doc;
 }
