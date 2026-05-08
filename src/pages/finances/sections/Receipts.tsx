@@ -90,6 +90,7 @@ export default function Receipts() {
             eleve_prenom: p.eleves?.prenom ?? "",
             matricule: p.eleves?.matricule ?? "",
             classe: p.eleves?.classes?.nom ?? "",
+            photo_url: p.eleves?.photo_url ?? null,
             montant: Number(p.montant),
             date_paiement: p.date_paiement,
             mode: p.mode,
