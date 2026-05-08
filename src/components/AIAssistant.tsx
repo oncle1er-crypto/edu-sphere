@@ -179,7 +179,33 @@ export function AIAssistant() {
                     : "bg-card border",
                 )}
               >
-                <ReactMarkdown>{m.content || "…"}</ReactMarkdown>
+                <ReactMarkdown
+                  components={{
+                    a: ({ href, children, ...props }) => {
+                      const isInternal = !!href && href.startsWith("/");
+                      return (
+                        <a
+                          href={href}
+                          {...props}
+                          onClick={(e) => {
+                            if (isInternal) {
+                              e.preventDefault();
+                              navigate(href!);
+                              setOpen(false);
+                            }
+                          }}
+                          className="inline-flex items-center gap-1 font-semibold text-primary underline decoration-primary/40 underline-offset-2 hover:decoration-primary"
+                          target={isInternal ? undefined : "_blank"}
+                          rel={isInternal ? undefined : "noreferrer"}
+                        >
+                          {children}
+                        </a>
+                      );
+                    },
+                  }}
+                >
+                  {m.content || "…"}
+                </ReactMarkdown>
               </div>
             </div>
           ))}
