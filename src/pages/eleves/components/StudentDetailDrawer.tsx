@@ -170,6 +170,44 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
 
   const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !eleve?.id) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez choisir une image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image trop lourde (max 5 Mo)");
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `eleves/${eleve.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const { error: updErr } = await supabase
+        .from("eleves")
+        .update({ photo_url: pub.publicUrl })
+        .eq("id", eleve.id);
+      if (updErr) throw updErr;
+      eleve.photo_url = pub.publicUrl;
+      toast.success("Photo mise à jour");
+      onUpdated?.();
+    } catch (err: any) {
+      toast.error("Erreur upload : " + err.message);
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+
   return (
     <>
     <Sheet open={open} onOpenChange={guardedClose}>
