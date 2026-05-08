@@ -11,7 +11,7 @@ export interface RecuData {
     logoUrl?: string | null;
   };
   reference: string;
-  eleve: { nom: string; prenom: string; matricule: string; classe: string };
+  eleve: { nom: string; prenom: string; matricule: string; classe: string; photo_url?: string | null };
   montant: number;
   mode: string;
   date_paiement: string;
