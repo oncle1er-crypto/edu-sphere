@@ -32,6 +32,7 @@ export default function DailyCall() {
   const [callDate, setCallDate] = useState(new Date().toISOString().slice(0, 10));
   const [statuses, setStatuses] = useState<Record<string, Status>>({});
   const [saving, setSaving] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const classEleves = eleves.filter((e) => e.classe_id === classeId);
 
