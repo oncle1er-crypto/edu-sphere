@@ -71,6 +71,9 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
   const reste = Math.max(0, totalDu - totalPaye);
   const solde = totalDu > 0 && reste <= 0;
 
+  // Précharge la photo une seule fois (évite double await dans les 2 copies)
+  const photoData = data.eleve.photo_url ? await loadImageAsDataURL(data.eleve.photo_url) : null;
+
   const drawCopy = (offsetY: number, label: string) => {
     const M = 16;
     let y = offsetY + 12;
