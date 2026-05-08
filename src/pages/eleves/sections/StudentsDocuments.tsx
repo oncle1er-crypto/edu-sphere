@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useDocumentsEleves, DocumentEleve } from "@/hooks/useDocumentsEleves";
+import { useExigencesDocuments } from "@/hooks/useExigencesDocuments";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
