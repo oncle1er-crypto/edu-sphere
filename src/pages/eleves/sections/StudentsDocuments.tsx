@@ -16,6 +16,7 @@ import { useExigencesDocuments } from "@/hooks/useExigencesDocuments";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import ExigencesTemplatesPanel from "../components/ExigencesTemplatesPanel";
 
 const DOC_TYPES = [
   { key: "acte_naissance", label: "Acte de naissance", icon: FileText },
