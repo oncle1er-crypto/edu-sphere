@@ -55,7 +55,7 @@ export function useFinanceData() {
     // Fetch tranches with student info
     const { data: tranchesData, error: trErr } = await supabase
       .from("tranches")
-      .select("*, eleves(id, matricule, nom, prenom, sexe, classe_id, classes(nom, cycles(nom)))")
+      .select("*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
       .eq("ecole_id", ecoleId)
       .order("numero");
 

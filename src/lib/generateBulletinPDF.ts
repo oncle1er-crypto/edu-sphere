@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { urlToDataUrl } from "./imageCompression";
 
 export interface BulletinSubjectRow {
   matiere: string;
@@ -11,7 +12,7 @@ export interface BulletinSubjectRow {
 
 export interface BulletinData {
   ecole: { nom: string; devise: string; adresse: string; telephone: string };
-  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; sexe: string };
+  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; sexe: string; photo_url?: string | null };
   classe: string;
   annee: string;
   periode: string;
@@ -31,7 +32,7 @@ function getAppreciation(note: number | null): string {
   return "Insuffisant";
 }
 
-export function generateBulletinPDF(data: BulletinData): jsPDF {
+export async function generateBulletinPDF(data: BulletinData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
@@ -79,6 +80,17 @@ export function generateBulletinPDF(data: BulletinData): jsPDF {
   doc.setDrawColor(...bordeaux);
   doc.setLineWidth(0.4);
   doc.roundedRect(margin, y, pageWidth - 2 * margin, 24, 2, 2, "S");
+
+  // Photo de l'élève (si disponible)
+  if (data.eleve.photo_url) {
+    const dataUrl = await urlToDataUrl(data.eleve.photo_url);
+    if (dataUrl) {
+      try {
+        const fmt = dataUrl.includes("image/png") ? "PNG" : "JPEG";
+        doc.addImage(dataUrl, fmt, pageWidth - margin - 20, y + 2, 18, 20);
+      } catch { /* ignore */ }
+    }
+  }
 
   const col1 = margin + 4;
   const col2 = pageWidth / 2 + 5;

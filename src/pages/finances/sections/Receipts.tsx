@@ -17,6 +17,7 @@ interface PaiementRecu {
   eleve_prenom: string;
   matricule: string;
   classe: string;
+  photo_url?: string | null;
   montant: number;
   date_paiement: string;
   mode: string;
@@ -75,7 +76,7 @@ export default function Receipts() {
     if (!ecoleId) { setLoading(false); return; }
     supabase
       .from("paiements")
-      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, classe_id, classes(nom))")
+      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId)
       .order("date_paiement", { ascending: false })
       .limit(50)
@@ -89,6 +90,7 @@ export default function Receipts() {
             eleve_prenom: p.eleves?.prenom ?? "",
             matricule: p.eleves?.matricule ?? "",
             classe: p.eleves?.classes?.nom ?? "",
+            photo_url: p.eleves?.photo_url ?? null,
             montant: Number(p.montant),
             date_paiement: p.date_paiement,
             mode: p.mode,
@@ -117,7 +119,7 @@ export default function Receipts() {
         logoUrl: ecole.logo_url,
       },
       reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
-      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe },
+      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe, photo_url: r.photo_url },
       montant: r.montant,
       mode: r.mode,
       date_paiement: r.date_paiement,

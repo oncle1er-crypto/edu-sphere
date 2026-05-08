@@ -101,7 +101,7 @@ export default function Bulletins() {
     const { data: ecole } = await supabase.from("ecoles").select("nom, devise, adresse, telephone").eq("id", ecoleId).single();
 
     // Fetch student details
-    const { data: eleve } = await supabase.from("eleves").select("date_naissance, sexe, classe_id").eq("id", row.eleve_id).single();
+    const { data: eleve } = await supabase.from("eleves").select("date_naissance, sexe, classe_id, photo_url").eq("id", row.eleve_id).single();
 
     // Fetch class name
     const classeObj = classes.find((c) => c.id === selectedClasse);
@@ -164,7 +164,7 @@ export default function Bulletins() {
       };
     });
 
-    const doc = generateBulletinPDF({
+    const doc = await generateBulletinPDF({
       ecole: {
         nom: ecole?.nom ?? "GROUPE SCOLAIRE LA PROVIDENCE",
         devise: ecole?.devise ?? "Foi, Savoir, Excellence",
@@ -177,6 +177,7 @@ export default function Bulletins() {
         matricule: row.matricule,
         date_naissance: eleve?.date_naissance ?? "",
         sexe: eleve?.sexe ?? "",
+        photo_url: eleve?.photo_url ?? null,
       },
       classe: className,
       annee: annee?.libelle ?? "",

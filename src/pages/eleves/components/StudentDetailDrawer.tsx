@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
+import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
 
 interface Props {
@@ -179,23 +180,28 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       toast.error("Veuillez choisir une image");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image trop lourde (max 5 Mo)");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Image trop lourde (max 10 Mo)");
       return;
     }
     setUploadingPhoto(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const path = `eleves/${eleve.id}-${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      // Compression + redimensionnement (max 800px, JPEG q=0.82)
+      const compressed = await compressImage(file, { maxSize: 800, quality: 0.82 });
+      const path = `eleves/${eleve.id}-${Date.now()}.jpg`;
+      const { error: upErr } = await supabase.storage
+        .from("avatars")
+        .upload(path, compressed, { upsert: true, contentType: "image/jpeg", cacheControl: "3600" });
       if (upErr) throw upErr;
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      // Cache-busting pour forcer le refresh dans toutes les vues
+      const photoUrl = `${pub.publicUrl}?v=${Date.now()}`;
       const { error: updErr } = await supabase
         .from("eleves")
-        .update({ photo_url: pub.publicUrl })
+        .update({ photo_url: photoUrl })
         .eq("id", eleve.id);
       if (updErr) throw updErr;
-      eleve.photo_url = pub.publicUrl;
+      eleve.photo_url = photoUrl;
       toast.success("Photo mise à jour");
       onUpdated?.();
     } catch (err: any) {

@@ -11,7 +11,7 @@ export interface RecuData {
     logoUrl?: string | null;
   };
   reference: string;
-  eleve: { nom: string; prenom: string; matricule: string; classe: string };
+  eleve: { nom: string; prenom: string; matricule: string; classe: string; photo_url?: string | null };
   montant: number;
   mode: string;
   date_paiement: string;
@@ -71,6 +71,9 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
   const reste = Math.max(0, totalDu - totalPaye);
   const solde = totalDu > 0 && reste <= 0;
 
+  // Précharge la photo une seule fois (évite double await dans les 2 copies)
+  const photoData = data.eleve.photo_url ? await loadImageAsDataURL(data.eleve.photo_url) : null;
+
   const drawCopy = (offsetY: number, label: string) => {
     const M = 16;
     let y = offsetY + 12;
@@ -127,6 +130,13 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.setTextColor(...ink);
       doc.text(value || "—", x, yy + 5);
     };
+
+    // Photo de l'élève (coin droit)
+    if (photoData) {
+      try {
+        doc.addImage(photoData.data, "JPEG", W - M - 18, y - 2, 16, 18);
+      } catch { /* ignore */ }
+    }
 
     // Row 1
     drawField("Élève", `${data.eleve.prenom} ${data.eleve.nom}`, M, y);
@@ -218,13 +228,13 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
 
 export interface CertificatData {
   ecole: { nom: string; devise: string; adresse: string; telephone: string; directeur: string };
-  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; lieu_naissance: string };
+  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; lieu_naissance: string; photo_url?: string | null };
   classe: string;
   annee: string;
   type: "scolarite" | "inscription" | "frequentation";
 }
 
-export function generateCertificatPDF(data: CertificatData): jsPDF {
+export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const m = 20;
@@ -268,6 +278,16 @@ export function generateCertificatPDF(data: CertificatData): jsPDF {
   doc.setTextColor(100, 100, 100);
   doc.text(`Réf. : CSP/${data.annee.replace("-", "")}/${data.eleve.matricule}`, m, y);
   doc.text(`Abidjan, le ${new Date().toLocaleDateString("fr-FR")}`, w - m, y, { align: "right" });
+
+  // Photo de l'élève (sous le titre, à droite)
+  if (data.eleve.photo_url) {
+    const photo = await loadImageAsDataURL(data.eleve.photo_url);
+    if (photo) {
+      try {
+        doc.addImage(photo.data, "JPEG", w - m - 30, y + 6, 28, 32);
+      } catch { /* ignore */ }
+    }
+  }
 
   y += 15;
 
