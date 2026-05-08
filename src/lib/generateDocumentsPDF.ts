@@ -128,6 +128,16 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.text(value || "—", x, yy + 5);
     };
 
+    // Photo de l'élève (coin droit)
+    if (data.eleve.photo_url) {
+      const photo = await loadImageAsDataURL(data.eleve.photo_url);
+      if (photo) {
+        try {
+          doc.addImage(photo.data, "JPEG", W - M - 18, y - 2, 16, 18);
+        } catch { /* ignore */ }
+      }
+    }
+
     // Row 1
     drawField("Élève", `${data.eleve.prenom} ${data.eleve.nom}`, M, y);
     drawField("Date du paiement", formatDateLong(data.date_paiement), M + colW, y);
