@@ -119,7 +119,7 @@ export default function Receipts() {
         logoUrl: ecole.logo_url,
       },
       reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
-      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe },
+      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe, photo_url: r.photo_url },
       montant: r.montant,
       mode: r.mode,
       date_paiement: r.date_paiement,
