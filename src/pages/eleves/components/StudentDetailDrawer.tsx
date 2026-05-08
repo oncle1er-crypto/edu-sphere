@@ -48,6 +48,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [showUnsavedAlert, setShowUnsavedAlert] = useState(false);
   const initialFormRef = useRef<Record<string, any>>({});
   const pendingActionRef = useRef<"cancel" | "close" | null>(null);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const { classes } = useClasses();
 
   const isDirty = useCallback(() => {
