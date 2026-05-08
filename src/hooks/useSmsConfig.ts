@@ -87,7 +87,7 @@ export function useSmsConfig() {
 
   const testSms = async (phone: string) => {
     try {
-      const result = await sendSms([phone], "Test SMS GSP La Providence - Configuration reussie. Merci.");
+      const result = await sendSms([phone], "Test SMS CS La Providence - Configuration reussie. Merci.");
       if (result.sent > 0) toast.success("SMS de test envoyé !");
       else toast.error("Échec de l'envoi du SMS de test");
       return result;

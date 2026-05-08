@@ -38,7 +38,7 @@ function addFooter(doc: jsPDF) {
     const w = doc.internal.pageSize.getWidth();
     doc.setFontSize(7);
     doc.setTextColor(130);
-    doc.text(`Groupe Scolaire La Providence — Rapport confidentiel`, 15, h - 8);
+    doc.text(`Complexe Scolaire La Providence — Rapport confidentiel`, 15, h - 8);
     doc.text(`Page ${i}/${pages}`, w - 15, h - 8, { align: "right" });
     doc.setTextColor(0);
   }
