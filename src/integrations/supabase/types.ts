@@ -2963,26 +2963,6 @@ export type Database = {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
       }
-      get_user_ecole_id: { Args: never; Returns: string }
-      has_ecole_role: {
-        Args: {
-          _ecole_id: string
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      user_belongs_to_ecole: {
-        Args: { _ecole_id: string; _user_id: string }
-        Returns: boolean
-      }
     }
     Enums: {
       annee_statut: "active" | "preparation" | "verrouillee" | "archivee"
