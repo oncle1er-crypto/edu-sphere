@@ -16,6 +16,7 @@ import { useExigencesDocuments } from "@/hooks/useExigencesDocuments";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import ExigencesTemplatesPanel from "../components/ExigencesTemplatesPanel";
 
 const DOC_TYPES = [
   { key: "acte_naissance", label: "Acte de naissance", icon: FileText },
@@ -127,6 +128,9 @@ export default function StudentsDocuments() {
         accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
         onChange={handleFileChange}
       />
+
+      {/* Templates panel */}
+      <ExigencesTemplatesPanel docTypes={DOC_TYPES} />
 
       {/* Student selector */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
