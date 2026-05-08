@@ -129,6 +129,9 @@ export default function StudentsDocuments() {
         onChange={handleFileChange}
       />
 
+      {/* Templates panel */}
+      <ExigencesTemplatesPanel docTypes={DOC_TYPES} />
+
       {/* Student selector */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
         <div className="relative w-full sm:max-w-xs">
