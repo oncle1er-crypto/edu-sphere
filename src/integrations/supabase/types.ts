@@ -1903,6 +1903,42 @@ export type Database = {
         }
         Relationships: []
       }
+      modeles_exigences_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          ecole_id: string
+          est_defaut: boolean
+          id: string
+          nom: string
+          types_obligatoires: string[]
+          types_optionnels: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ecole_id: string
+          est_defaut?: boolean
+          id?: string
+          nom: string
+          types_obligatoires?: string[]
+          types_optionnels?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ecole_id?: string
+          est_defaut?: boolean
+          id?: string
+          nom?: string
+          types_obligatoires?: string[]
+          types_optionnels?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mouvements_tresorerie: {
         Row: {
           compte_id: string
