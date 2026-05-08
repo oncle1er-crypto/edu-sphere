@@ -89,11 +89,16 @@ export default function StudentsList() {
     );
   }
 
-  const statusBadge = (s: typeof eleves[0]) => (
-    <Badge variant={s.statut === "inscrit" || s.statut === "actif" ? "default" : "destructive"} className="text-[10px]">
-      {s.statut}
-    </Badge>
-  );
+  const statusBadge = (s: typeof eleves[0]) => {
+    const v = s.statut;
+    const variant: "default" | "secondary" | "destructive" | "outline" =
+      v === "inscrit" || v === "actif" ? "default"
+      : v === "pre_inscrit" ? "secondary"
+      : v === "suspendu" ? "outline"
+      : "destructive";
+    const label = v === "pre_inscrit" ? "pré-inscrit" : v;
+    return <Badge variant={variant} className="text-[10px] capitalize">{label}</Badge>;
+  };
 
   const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
     <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
@@ -157,6 +162,7 @@ export default function StudentsList() {
               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous statuts</SelectItem>
+                <SelectItem value="pre_inscrit">Pré-inscrit</SelectItem>
                 <SelectItem value="inscrit">Inscrit</SelectItem>
                 <SelectItem value="actif">Actif</SelectItem>
                 <SelectItem value="suspendu">Suspendu</SelectItem>

@@ -2942,6 +2942,10 @@ export type Database = {
         Args: { _annee_id: string; _ecole_id: string; _user_id: string }
         Returns: Json
       }
+      check_and_promote_eleve: {
+        Args: { _eleve_id: string }
+        Returns: undefined
+      }
       check_creneau_overlap: {
         Args: {
           _annee_id: string

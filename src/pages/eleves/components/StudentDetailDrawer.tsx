@@ -247,9 +247,11 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                 {eleve.prenom} {eleve.nom}
               </SheetTitle>
               <p className="text-sm text-muted-foreground font-mono">{eleve.matricule}</p>
-              <div className="flex gap-2 mt-1">
+              <div className="flex gap-2 mt-1 flex-wrap">
                 <Badge variant="secondary">{eleve.classe_nom ?? "Non affecté"}</Badge>
-                <Badge>{eleve.statut}</Badge>
+                <Badge variant={eleve.statut === "inscrit" || eleve.statut === "actif" ? "default" : eleve.statut === "pre_inscrit" ? "secondary" : "destructive"} className="capitalize">
+                  {eleve.statut === "pre_inscrit" ? "pré-inscrit" : eleve.statut}
+                </Badge>
               </div>
             </div>
             {!editing && !loading && (
@@ -265,7 +267,34 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
         ) : (
-          <Tabs defaultValue="identite" className="mt-2">
+          <>
+            {eleve.statut === "pre_inscrit" && (() => {
+              const cDocs = documents.length >= 3;
+              const cPaie = paiements.length > 0;
+              const cClasse = !!eleve.classe_id;
+              const total = [cDocs, cPaie, cClasse].filter(Boolean).length;
+              const Item = ({ ok, label }: { ok: boolean; label: string }) => (
+                <div className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-700" : "text-muted-foreground"}`}>
+                  <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${ok ? "bg-green-100 text-green-700" : "bg-muted"}`}>
+                    {ok ? "✓" : "•"}
+                  </span>
+                  {label}
+                </div>
+              );
+              return (
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-xs font-medium text-amber-900 mb-2">
+                    Conditions pour passage en « inscrit » ({total}/3)
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <Item ok={cDocs} label={`Dossier (${documents.length}/3 docs)`} />
+                    <Item ok={cPaie} label="1ʳᵉ tranche payée" />
+                    <Item ok={cClasse} label="Classe affectée" />
+                  </div>
+                </div>
+              );
+            })()}
+            <Tabs defaultValue="identite" className="mt-2">
             <TabsList className="flex-wrap h-auto">
               <TabsTrigger value="identite" className="text-xs"><User className="h-3.5 w-3.5 mr-1" />Identité</TabsTrigger>
               <TabsTrigger value="presences" className="text-xs"><CalendarCheck className="h-3.5 w-3.5 mr-1" />Présences</TabsTrigger>
@@ -516,6 +545,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
               )}
             </TabsContent>
           </Tabs>
+          </>
         )}
       </SheetContent>
     </Sheet>
