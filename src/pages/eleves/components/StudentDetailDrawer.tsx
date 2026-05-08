@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
+import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
 
 interface Props {
