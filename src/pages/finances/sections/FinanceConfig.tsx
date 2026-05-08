@@ -1,11 +1,13 @@
-import { Settings2, Wallet, Bus, UtensilsCrossed, Info } from "lucide-react";
+import { Settings2, Wallet, Bus, Info, Save, Loader2 } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
 import {
   TARIFS_SCOLARITE, TARIFS_SERVICES,
   ECHEANCES_SCOLARITE, ECHEANCES_SERVICES,
@@ -17,6 +19,7 @@ const paymentMethods = [
   { id: "momo", label: "MTN Mobile Money" },
   { id: "om", label: "Orange Money" },
   { id: "wave", label: "Wave" },
+  { id: "moov", label: "Moov Money" },
   { id: "bank", label: "Virement bancaire" },
   { id: "check", label: "Chèque" },
 ];
