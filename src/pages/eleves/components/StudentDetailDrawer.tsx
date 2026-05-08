@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
