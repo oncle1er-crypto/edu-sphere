@@ -17,6 +17,7 @@ interface PaiementRecu {
   eleve_prenom: string;
   matricule: string;
   classe: string;
+  photo_url?: string | null;
   montant: number;
   date_paiement: string;
   mode: string;
