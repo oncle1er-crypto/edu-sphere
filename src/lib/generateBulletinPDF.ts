@@ -12,7 +12,7 @@ export interface BulletinSubjectRow {
 
 export interface BulletinData {
   ecole: { nom: string; devise: string; adresse: string; telephone: string };
-  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; sexe: string };
+  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; sexe: string; photo_url?: string | null };
   classe: string;
   annee: string;
   periode: string;
