@@ -68,6 +68,7 @@ export default function DailyCall() {
     }));
     await savePresences(items);
     setSaving(false);
+    setConfirmOpen(false);
   };
 
   if (loadingC || loadingE) {
