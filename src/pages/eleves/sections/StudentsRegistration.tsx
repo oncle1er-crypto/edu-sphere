@@ -94,7 +94,7 @@ export default function StudentsRegistration() {
       classe_id: form.classe_id || null,
       annee_id: anneeId,
       ecole_id: ecoleId!,
-      statut: "inscrit",
+      statut: "pre_inscrit",
     });
 
     // Créer le parent/tuteur si renseigné
