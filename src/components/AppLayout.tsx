@@ -1,6 +1,7 @@
 import { AppHeader } from "@/components/AppHeader";
 import { TopNav } from "@/components/TopNav";
 import { AppFooter } from "@/components/AppFooter";
+import { AIAssistant } from "@/components/AIAssistant";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,6 +12,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
       <AppFooter />
+      <AIAssistant />
     </div>
   );
 }
