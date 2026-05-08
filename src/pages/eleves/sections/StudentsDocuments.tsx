@@ -46,6 +46,7 @@ export default function StudentsDocuments() {
 
   const { documents, loading: loadingDocs, uploadDocument, deleteDocument, downloadDocument } =
     useDocumentsEleves(selectedEleve || undefined);
+  const { setObligatoire, isObligatoire } = useExigencesDocuments(selectedEleve || undefined);
 
   const filteredEleves = eleves.filter(
     (e) =>
