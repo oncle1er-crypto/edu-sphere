@@ -38,7 +38,7 @@ export default function Receipts() {
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
     nom: "Complexe Scolaire La Providence",
-    sigle: "GSP",
+    sigle: "CSP",
     devise: "Foi, Savoir, Excellence",
     adresse: "Abidjan, Côte d'Ivoire",
     telephone: "+225 00 00 00 00",

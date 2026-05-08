@@ -1,4 +1,4 @@
-// Données réelles scolarité GSP — Complexe Scolaire La Providence (FCFA)
+// Données réelles scolarité CSP — Complexe Scolaire La Providence (FCFA)
 // Paiements en 3 échéances : Octobre, Novembre, Janvier
 
 export type NiveauScolarite =
@@ -27,7 +27,7 @@ export interface TarifNiveau {
   total: number;
 }
 
-// ─── Tarifs scolarité réels GSP ───
+// ─── Tarifs scolarité réels CSP ───
 export const TARIFS_SCOLARITE: TarifNiveau[] = [
   { niveau: "Maternelle 1",              tranches: [85_000, 35_000, 30_000], total: 150_000 },
   { niveau: "Maternelle 2",              tranches: [80_000, 35_000, 20_000], total: 135_000 },
