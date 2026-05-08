@@ -180,6 +180,7 @@ export default function StudentsDocuments() {
               {DOC_TYPES.map((d) => {
                 const doc = getDocForType(d.key);
                 const isUploaded = !!doc;
+                const obligatoire = isObligatoire(d.key);
                 return (
                   <Card
                     key={d.key}
@@ -201,7 +202,15 @@ export default function StudentsDocuments() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm truncate">{d.label}</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium text-sm truncate">{d.label}</p>
+                            <Badge
+                              variant={obligatoire ? "default" : "secondary"}
+                              className="text-[10px] px-1.5 py-0"
+                            >
+                              {obligatoire ? "Obligatoire" : "Optionnel"}
+                            </Badge>
+                          </div>
                           {isUploaded ? (
                             <div>
                               <p className="text-[11px] text-muted-foreground truncate">
@@ -216,6 +225,16 @@ export default function StudentsDocuments() {
                             <p className="text-[11px] text-muted-foreground">Non téléversé</p>
                           )}
                         </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-2 pl-12">
+                        <Switch
+                          checked={obligatoire}
+                          onCheckedChange={(v) => setObligatoire(d.key, v)}
+                          aria-label="Obligatoire"
+                        />
+                        <span className="text-[11px] text-muted-foreground">
+                          Exiger ce document pour cet élève
+                        </span>
                       </div>
                       <div className="flex gap-1 mt-3">
                         {isUploaded ? (
