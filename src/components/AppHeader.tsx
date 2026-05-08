@@ -1,6 +1,8 @@
 import { GraduationCap, ChevronDown, User, LogOut, Settings, Menu, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,16 +84,27 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{userName}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/parametres?section=profile")}>
                 <User className="mr-2 h-4 w-4" />
                 Mon profil
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/parametres")}>
                 <Settings className="mr-2 h-4 w-4" />
                 Paramètres
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={async () => {
+                  try {
+                    await supabase.auth.signOut();
+                    toast.success("Déconnexion réussie");
+                    navigate("/auth", { replace: true });
+                  } catch (err: any) {
+                    toast.error("Erreur", { description: err.message });
+                  }
+                }}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 Déconnexion
               </DropdownMenuItem>
