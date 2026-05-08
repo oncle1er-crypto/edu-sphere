@@ -164,7 +164,7 @@ export default function Bulletins() {
       };
     });
 
-    const doc = generateBulletinPDF({
+    const doc = await generateBulletinPDF({
       ecole: {
         nom: ecole?.nom ?? "GROUPE SCOLAIRE LA PROVIDENCE",
         devise: ecole?.devise ?? "Foi, Savoir, Excellence",
