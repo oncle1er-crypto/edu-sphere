@@ -32,7 +32,7 @@ function getAppreciation(note: number | null): string {
   return "Insuffisant";
 }
 
-export function generateBulletinPDF(data: BulletinData): jsPDF {
+export async function generateBulletinPDF(data: BulletinData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 15;
