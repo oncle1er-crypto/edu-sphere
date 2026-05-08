@@ -12,6 +12,7 @@ import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 interface PaiementRecu {
   id: string;
   reference: string | null;
+  eleve_id: string;
   eleve_nom: string;
   eleve_prenom: string;
   matricule: string;
@@ -23,9 +24,12 @@ interface PaiementRecu {
 
 interface EcoleInfo {
   nom: string;
+  sigle?: string;
   devise: string;
   adresse: string;
   telephone: string;
+  email?: string;
+  logo_url?: string | null;
 }
 
 export default function Receipts() {
@@ -34,39 +38,44 @@ export default function Receipts() {
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
     nom: "Groupe Scolaire La Providence",
+    sigle: "GSP",
     devise: "Foi, Savoir, Excellence",
     adresse: "Abidjan, Côte d'Ivoire",
     telephone: "+225 00 00 00 00",
+    email: "",
+    logo_url: null,
   });
   const [previewRecu, setPreviewRecu] = useState<PaiementRecu | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  // Load school info
   useEffect(() => {
     if (!ecoleId) return;
     supabase
       .from("ecoles")
-      .select("nom, devise, adresse, telephone")
+      .select("nom, sigle, devise, adresse, telephone, email, logo_url")
       .eq("id", ecoleId)
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
           setEcole({
             nom: data.nom || "Groupe Scolaire La Providence",
+            sigle: data.sigle || "",
             devise: data.devise || "Foi, Savoir, Excellence",
             adresse: data.adresse || "Abidjan, Côte d'Ivoire",
             telephone: data.telephone || "+225 00 00 00 00",
+            email: data.email || "",
+            logo_url: data.logo_url || null,
           });
         }
       });
   }, [ecoleId]);
 
-  // Load payments with student details
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     supabase
       .from("paiements")
-      .select("id, reference, montant, date_paiement, mode, eleves(nom, prenom, matricule, classe_id, classes(nom))")
+      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId)
       .order("date_paiement", { ascending: false })
       .limit(50)
@@ -75,6 +84,7 @@ export default function Receipts() {
           setRecus(data.map((p: any) => ({
             id: p.id,
             reference: p.reference,
+            eleve_id: p.eleve_id,
             eleve_nom: p.eleves?.nom ?? "—",
             eleve_prenom: p.eleves?.prenom ?? "",
             matricule: p.eleves?.matricule ?? "",
@@ -88,26 +98,51 @@ export default function Receipts() {
       });
   }, [ecoleId]);
 
-  const buildPDF = (r: PaiementRecu) => generateRecuPDF({
-    ecole,
-    reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
-    eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe },
-    montant: r.montant,
-    mode: r.mode,
-    date_paiement: r.date_paiement,
-  });
+  const buildPDF = async (r: PaiementRecu) => {
+    const [{ data: tranches }, { data: paiements }] = await Promise.all([
+      supabase.from("tranches").select("montant").eq("ecole_id", ecoleId!).eq("eleve_id", r.eleve_id),
+      supabase.from("paiements").select("montant").eq("ecole_id", ecoleId!).eq("eleve_id", r.eleve_id),
+    ]);
+    const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
+    const total_paye = (paiements ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
 
-  const handleDownload = (r: PaiementRecu) => {
-    const pdf = buildPDF(r);
-    pdf.save(`recu-${r.reference ?? r.id.slice(0, 8)}.pdf`);
+    return generateRecuPDF({
+      ecole: {
+        nom: ecole.nom,
+        sigle: ecole.sigle,
+        devise: ecole.devise,
+        adresse: ecole.adresse,
+        telephone: ecole.telephone,
+        email: ecole.email,
+        logoUrl: ecole.logo_url,
+      },
+      reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
+      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe },
+      montant: r.montant,
+      mode: r.mode,
+      date_paiement: r.date_paiement,
+      total_du,
+      total_paye,
+    });
   };
 
-  const handlePreview = (r: PaiementRecu) => {
+  const handleDownload = async (r: PaiementRecu) => {
+    setBusy(true);
+    try {
+      const pdf = await buildPDF(r);
+      pdf.save(`recu-${r.reference ?? r.id.slice(0, 8)}.pdf`);
+    } finally { setBusy(false); }
+  };
+
+  const handlePreview = async (r: PaiementRecu) => {
+    setBusy(true);
     setPreviewRecu(r);
-    const pdf = buildPDF(r);
-    const blob = pdf.output("blob");
-    const url = URL.createObjectURL(blob);
-    setPdfUrl(url);
+    try {
+      const pdf = await buildPDF(r);
+      const blob = pdf.output("blob");
+      const url = URL.createObjectURL(blob);
+      setPdfUrl(url);
+    } finally { setBusy(false); }
   };
 
   const closePreview = () => {
@@ -142,10 +177,10 @@ export default function Receipts() {
                 <TableCell className="text-muted-foreground">{new Date(r.date_paiement).toLocaleDateString("fr-FR")}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Prévisualiser" onClick={() => handlePreview(r)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Prévisualiser" onClick={() => handlePreview(r)} disabled={busy}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Télécharger le reçu PDF" onClick={() => handleDownload(r)}>
+                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Télécharger le reçu PDF" onClick={() => handleDownload(r)} disabled={busy}>
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>
@@ -158,19 +193,20 @@ export default function Receipts() {
         </Table>
       </div>
 
-      {/* PDF Preview Dialog */}
       <Dialog open={!!previewRecu} onOpenChange={(open) => { if (!open) closePreview(); }}>
-        <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
+        <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Reçu — {previewRecu?.eleve_prenom} {previewRecu?.eleve_nom}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0">
-            {pdfUrl && (
+            {pdfUrl ? (
               <iframe src={pdfUrl} className="w-full h-full rounded border" title="Aperçu du reçu PDF" />
+            ) : (
+              <div className="flex items-center justify-center h-full"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
             )}
           </div>
           <div className="flex justify-end pt-2">
-            <Button onClick={() => previewRecu && handleDownload(previewRecu)} className="gap-2">
+            <Button onClick={() => previewRecu && handleDownload(previewRecu)} className="gap-2" disabled={busy}>
               <Download className="h-4 w-4" /> Télécharger PDF
             </Button>
           </div>
