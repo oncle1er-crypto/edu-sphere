@@ -75,7 +75,7 @@ export default function Receipts() {
     if (!ecoleId) { setLoading(false); return; }
     supabase
       .from("paiements")
-      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, classe_id, classes(nom))")
+      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId)
       .order("date_paiement", { ascending: false })
       .limit(50)
