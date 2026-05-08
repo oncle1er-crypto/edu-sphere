@@ -269,28 +269,63 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
         ) : (
           <>
             {eleve.statut === "pre_inscrit" && (() => {
-              const cDocs = documents.length >= 3;
-              const cPaie = paiements.length > 0;
+              const REQUIRED_DOCS = [
+                { key: "acte_naissance", label: "Acte de naissance" },
+                { key: "photo_identite", label: "Photo d'identité" },
+                { key: "certificat_scolarite", label: "Certificat de scolarité" },
+              ];
+              const docTypes = new Set(documents.map((d) => d.type_document));
+              const missingDocs = REQUIRED_DOCS.filter((d) => !docTypes.has(d.key));
+              const cDocs = missingDocs.length === 0;
+              const totalPaye = paiements.reduce((s, p) => s + Number(p.montant ?? 0), 0);
+              const cPaie = totalPaye > 0;
               const cClasse = !!eleve.classe_id;
-              const total = [cDocs, cPaie, cClasse].filter(Boolean).length;
-              const Item = ({ ok, label }: { ok: boolean; label: string }) => (
-                <div className={`flex items-center gap-1.5 text-xs ${ok ? "text-green-700" : "text-muted-foreground"}`}>
-                  <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full text-[10px] ${ok ? "bg-green-100 text-green-700" : "bg-muted"}`}>
-                    {ok ? "✓" : "•"}
+              const done = [cDocs, cPaie, cClasse].filter(Boolean).length;
+
+              const Row = ({ ok, title, detail }: { ok: boolean; title: string; detail?: React.ReactNode }) => (
+                <div className="flex items-start gap-2 text-xs">
+                  <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${ok ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                    {ok ? "✓" : "!"}
                   </span>
-                  {label}
+                  <div className="min-w-0">
+                    <p className={`font-medium ${ok ? "text-green-800" : "text-amber-900"}`}>{title}</p>
+                    {detail && <p className="text-muted-foreground mt-0.5">{detail}</p>}
+                  </div>
                 </div>
               );
+
               return (
-                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-xs font-medium text-amber-900 mb-2">
-                    Conditions pour passage en « inscrit » ({total}/3)
+                <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/60 p-3 space-y-2.5">
+                  <p className="text-xs font-semibold text-amber-900">
+                    Conditions restantes pour passage en « inscrit » — {done}/3 validées
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <Item ok={cDocs} label={`Dossier (${documents.length}/3 docs)`} />
-                    <Item ok={cPaie} label="1ʳᵉ tranche payée" />
-                    <Item ok={cClasse} label="Classe affectée" />
-                  </div>
+                  <Row
+                    ok={cDocs}
+                    title={`Dossier administratif (${REQUIRED_DOCS.length - missingDocs.length}/${REQUIRED_DOCS.length})`}
+                    detail={
+                      cDocs
+                        ? "Tous les documents obligatoires sont fournis."
+                        : <>Manque : <span className="font-medium">{missingDocs.map((d) => d.label).join(", ")}</span></>
+                    }
+                  />
+                  <Row
+                    ok={cPaie}
+                    title="Paiement 1ʳᵉ tranche"
+                    detail={
+                      cPaie
+                        ? `${totalPaye.toLocaleString("fr-FR")} FCFA déjà encaissé.`
+                        : "Aucun paiement enregistré — saisir un règlement dans l'onglet Finances."
+                    }
+                  />
+                  <Row
+                    ok={cClasse}
+                    title="Affectation à une classe"
+                    detail={
+                      cClasse
+                        ? `Classe : ${eleve.classe_nom ?? "—"}`
+                        : "Aucune classe affectée — utiliser « Modifier » ou la page Affectation aux classes."
+                    }
+                  />
                 </div>
               );
             })()}
