@@ -81,6 +81,17 @@ export async function generateBulletinPDF(data: BulletinData): Promise<jsPDF> {
   doc.setLineWidth(0.4);
   doc.roundedRect(margin, y, pageWidth - 2 * margin, 24, 2, 2, "S");
 
+  // Photo de l'élève (si disponible)
+  if (data.eleve.photo_url) {
+    const dataUrl = await urlToDataUrl(data.eleve.photo_url);
+    if (dataUrl) {
+      try {
+        const fmt = dataUrl.includes("image/png") ? "PNG" : "JPEG";
+        doc.addImage(dataUrl, fmt, pageWidth - margin - 20, y + 2, 18, 20);
+      } catch { /* ignore */ }
+    }
+  }
+
   const col1 = margin + 4;
   const col2 = pageWidth / 2 + 5;
   doc.setFontSize(9);
