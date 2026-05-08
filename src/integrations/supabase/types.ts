@@ -1323,6 +1323,36 @@ export type Database = {
           },
         ]
       }
+      exigences_documents_eleves: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          obligatoire: boolean
+          type_document: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          obligatoire?: boolean
+          type_document: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          obligatoire?: boolean
+          type_document?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       factures: {
         Row: {
           annee_id: string
