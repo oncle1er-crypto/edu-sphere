@@ -50,7 +50,7 @@ export function useEleves() {
   useEffect(() => {
     if (!ecoleId) return;
     const channel = supabase
-      .channel("eleves-realtime")
+      .channel(`eleves-realtime-${ecoleId}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "eleves", filter: `ecole_id=eq.${ecoleId}` },
