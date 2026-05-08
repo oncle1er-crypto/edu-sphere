@@ -177,6 +177,7 @@ export default function Bulletins() {
         matricule: row.matricule,
         date_naissance: eleve?.date_naissance ?? "",
         sexe: eleve?.sexe ?? "",
+        photo_url: eleve?.photo_url ?? null,
       },
       classe: className,
       annee: annee?.libelle ?? "",
