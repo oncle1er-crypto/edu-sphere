@@ -25,6 +25,41 @@ const paymentMethods = [
 ];
 
 export default function FinanceConfig() {
+  const { settings, isLoading, save, isSaving } = useFinanceSettings();
+  const [form, setForm] = useState<FinanceSettingsData>(settings);
+
+  useEffect(() => {
+    setForm(settings);
+  }, [settings]);
+
+  const update = <K extends keyof FinanceSettingsData>(k: K, v: FinanceSettingsData[K]) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const toggleMode = (id: string, checked: boolean) => {
+    const current = form.modes_paiement ?? [];
+    update("modes_paiement", checked ? [...new Set([...current, id])] : current.filter((m) => m !== id));
+  };
+
+  const handleSave = () => {
+    save({
+      devise: form.devise,
+      prefixe_facture: form.prefixe_facture,
+      prefixe_recu: form.prefixe_recu,
+      modes_paiement: form.modes_paiement,
+      penalite_retard: Number(form.penalite_retard) || 0,
+      rappel_auto: form.rappel_auto,
+      taux_tva: Number(form.taux_tva) || 0,
+      banque: form.banque,
+      rib: form.rib,
+      numero_momo: form.numero_momo,
+      numero_om: form.numero_om,
+    });
+  };
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
   return (
     <div className="space-y-6">
       {/* ─── Grille tarifaire scolarité ─── */}
