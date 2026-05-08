@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { urlToDataUrl } from "./imageCompression";
 
 export interface BulletinSubjectRow {
   matiere: string;
