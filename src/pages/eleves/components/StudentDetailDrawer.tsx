@@ -247,9 +247,11 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                 {eleve.prenom} {eleve.nom}
               </SheetTitle>
               <p className="text-sm text-muted-foreground font-mono">{eleve.matricule}</p>
-              <div className="flex gap-2 mt-1">
+              <div className="flex gap-2 mt-1 flex-wrap">
                 <Badge variant="secondary">{eleve.classe_nom ?? "Non affecté"}</Badge>
-                <Badge>{eleve.statut}</Badge>
+                <Badge variant={eleve.statut === "inscrit" || eleve.statut === "actif" ? "default" : eleve.statut === "pre_inscrit" ? "secondary" : "destructive"} className="capitalize">
+                  {eleve.statut === "pre_inscrit" ? "pré-inscrit" : eleve.statut}
+                </Badge>
               </div>
             </div>
             {!editing && !loading && (
