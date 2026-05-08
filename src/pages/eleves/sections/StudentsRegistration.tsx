@@ -169,7 +169,7 @@ export default function StudentsRegistration() {
         classe_id: classeMatch?.id ?? null,
         annee_id: anneeId,
         ecole_id: ecoleId!,
-        statut: "inscrit",
+        statut: "pre_inscrit",
       });
       if (res) success++; else errors++;
     }
