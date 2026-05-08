@@ -214,11 +214,30 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
-                {init}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="h-16 w-16">
+                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} /> : null}
+                <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
+                  {init}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                title="Changer la photo"
+              >
+                {uploadingPhoto ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+              </button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-xl">
                 {eleve.prenom} {eleve.nom}
