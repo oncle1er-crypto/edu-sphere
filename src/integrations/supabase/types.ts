@@ -250,6 +250,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_logs: {
+        Row: {
+          action: string
+          cible: string | null
+          created_at: string
+          details: Json | null
+          ecole_id: string
+          id: string
+          niveau: string
+          user_id: string | null
+          user_label: string | null
+        }
+        Insert: {
+          action: string
+          cible?: string | null
+          created_at?: string
+          details?: Json | null
+          ecole_id: string
+          id?: string
+          niveau?: string
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Update: {
+          action?: string
+          cible?: string | null
+          created_at?: string
+          details?: Json | null
+          ecole_id?: string
+          id?: string
+          niveau?: string
+          user_id?: string | null
+          user_label?: string | null
+        }
+        Relationships: []
+      }
       bulletins_paie: {
         Row: {
           annee: number
@@ -2042,6 +2078,51 @@ export type Database = {
           },
         ]
       }
+      parametres_documents: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          entete: string | null
+          id: string
+          pied_page: string | null
+          prefixe_bulletin: string | null
+          prefixe_certificat: string | null
+          show_cachet: boolean
+          show_logo: boolean
+          signature_url: string | null
+          templates_actifs: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          entete?: string | null
+          id?: string
+          pied_page?: string | null
+          prefixe_bulletin?: string | null
+          prefixe_certificat?: string | null
+          show_cachet?: boolean
+          show_logo?: boolean
+          signature_url?: string | null
+          templates_actifs?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          entete?: string | null
+          id?: string
+          pied_page?: string | null
+          prefixe_bulletin?: string | null
+          prefixe_certificat?: string | null
+          show_cachet?: boolean
+          show_logo?: boolean
+          signature_url?: string | null
+          templates_actifs?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parametres_localisation: {
         Row: {
           created_at: string
@@ -2077,6 +2158,54 @@ export type Database = {
           langue?: string
           premier_jour?: string
           separateur_decimal?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parametres_notifications: {
+        Row: {
+          canaux: Json
+          created_at: string
+          ecole_id: string
+          evenements: Json
+          id: string
+          silence_a: string | null
+          silence_de: string | null
+          smtp_from_email: string | null
+          smtp_from_name: string | null
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_user: string | null
+          updated_at: string
+        }
+        Insert: {
+          canaux?: Json
+          created_at?: string
+          ecole_id: string
+          evenements?: Json
+          id?: string
+          silence_a?: string | null
+          silence_de?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canaux?: Json
+          created_at?: string
+          ecole_id?: string
+          evenements?: Json
+          id?: string
+          silence_a?: string | null
+          silence_de?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
           updated_at?: string
         }
         Relationships: []

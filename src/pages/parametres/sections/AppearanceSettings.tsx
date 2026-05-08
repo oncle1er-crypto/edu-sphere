@@ -1,29 +1,70 @@
 import { Palette, Sun, Moon, Monitor } from "lucide-react";
+import { useEffect, useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
 
-const presets = [
-  { name: "Bleu & Or (par défaut)", primary: "#0F2A44", accent: "#D4AF37" },
-  { name: "Bordeaux & Crème", primary: "#7B1E2B", accent: "#F5DEB3" },
-  { name: "Vert Émeraude", primary: "#065F46", accent: "#FBBF24" },
-  { name: "Violet Royal", primary: "#4C1D95", accent: "#FCD34D" },
-  { name: "Marine & Argent", primary: "#1E3A8A", accent: "#94A3B8" },
-];
+type Prefs = { theme: "light" | "dark" | "auto"; densite: "compact" | "normal" | "aere" };
+const DEFAULTS: Prefs = { theme: "light", densite: "normal" };
+
+function applyTheme(theme: Prefs["theme"]) {
+  const root = document.documentElement;
+  const dark = theme === "dark" || (theme === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+  root.classList.toggle("dark", dark);
+}
+function applyDensite(d: Prefs["densite"]) {
+  const root = document.documentElement;
+  root.dataset.density = d;
+}
 
 export default function AppearanceSettings() {
+  const { user } = useAuth();
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULTS);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    supabase.from("profiles").select("preferences").eq("id", user.id).single()
+      .then(({ data }) => {
+        const p = (data?.preferences as { appearance?: Partial<Prefs> } | null)?.appearance;
+        if (p) setPrefs({ ...DEFAULTS, ...p });
+        setLoading(false);
+      });
+  }, [user]);
+
+  useEffect(() => {
+    applyTheme(prefs.theme);
+    applyDensite(prefs.densite);
+  }, [prefs]);
+
+  const update = (patch: Partial<Prefs>) => setPrefs(p => ({ ...p, ...patch }));
+
+  const handleSave = async () => {
+    if (!user) return;
+    const { data: current } = await supabase.from("profiles").select("preferences").eq("id", user.id).single();
+    const merged = { ...(current?.preferences as object ?? {}), appearance: prefs };
+    const { error } = await supabase.from("profiles").update({ preferences: merged }).eq("id", user.id);
+    if (error) toast.error(error.message);
+    else toast.success("Préférences d'apparence enregistrées");
+  };
+
+  if (loading) return <Skeleton className="h-96 w-full" />;
+
   return (
     <div className="space-y-6">
       <SettingsSection
         title="Thème"
         description="Apparence de l'interface utilisateur."
         icon={<Palette className="h-5 w-5" />}
+        onSave={handleSave}
       >
         <FieldRow label="Mode d'affichage">
-          <RadioGroup defaultValue="light" className="grid grid-cols-3 gap-3 max-w-md">
+          <RadioGroup value={prefs.theme} onValueChange={v => update({ theme: v as Prefs["theme"] })} className="grid grid-cols-3 gap-3 max-w-md">
             {[
               { value: "light", label: "Clair", icon: Sun },
               { value: "dark", label: "Sombre", icon: Moon },
@@ -43,7 +84,7 @@ export default function AppearanceSettings() {
         </FieldRow>
 
         <FieldRow label="Densité d'affichage">
-          <Select defaultValue="normal">
+          <Select value={prefs.densite} onValueChange={v => update({ densite: v as Prefs["densite"] })}>
             <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="compact">Compact</SelectItem>
@@ -52,75 +93,24 @@ export default function AppearanceSettings() {
             </SelectContent>
           </Select>
         </FieldRow>
-
-        <FieldRow label="Rayon des coins" hint="Plus arrondis = style moderne">
-          <Slider defaultValue={[14]} min={0} max={24} step={2} className="max-w-md" />
-        </FieldRow>
       </SettingsSection>
 
       <SettingsSection
-        title="Palette de couleurs"
-        description="Personnalisez les couleurs principales de votre plateforme."
+        title="Identité visuelle de l'établissement"
+        description="Les couleurs principales suivent la charte du Groupe Scolaire La Providence (Rouge Bordeaux & Jaune Poussin)."
         icon={<Palette className="h-5 w-5" />}
+        hideSave
       >
-        <FieldRow label="Préréglages">
-          <div className="space-y-2">
-            {presets.map((p) => (
-              <button
-                key={p.name}
-                className="w-full flex items-center gap-3 p-3 border rounded-lg hover:border-accent/50 hover:bg-muted/50 transition-colors text-left"
-              >
-                <div className="flex gap-1">
-                  <div className="h-8 w-8 rounded-md border" style={{ background: p.primary }} />
-                  <div className="h-8 w-8 rounded-md border" style={{ background: p.accent }} />
-                </div>
-                <span className="text-sm font-medium">{p.name}</span>
-              </button>
-            ))}
+        <div className="flex items-center gap-4 p-4 border rounded-lg bg-muted/30">
+          <div className="flex gap-2">
+            <div className="h-12 w-12 rounded-md border" style={{ background: "hsl(345 65% 28%)" }} title="Primaire" />
+            <div className="h-12 w-12 rounded-md border" style={{ background: "hsl(50 95% 60%)" }} title="Accent" />
           </div>
-        </FieldRow>
-
-        <FieldRow label="Couleur primaire">
-          <div className="flex gap-2 items-center">
-            <Input type="color" defaultValue="#0F2A44" className="w-16 h-10 p-1 cursor-pointer" />
-            <Input defaultValue="#0F2A44" className="w-32 font-mono" />
+          <div className="text-sm">
+            <div className="font-semibold text-primary">Rouge Bordeaux & Jaune Poussin</div>
+            <div className="text-xs text-muted-foreground">Couleurs institutionnelles — modifiables par l'équipe Lovable uniquement.</div>
           </div>
-        </FieldRow>
-
-        <FieldRow label="Couleur d'accent">
-          <div className="flex gap-2 items-center">
-            <Input type="color" defaultValue="#D4AF37" className="w-16 h-10 p-1 cursor-pointer" />
-            <Input defaultValue="#D4AF37" className="w-32 font-mono" />
-          </div>
-        </FieldRow>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Typographie"
-        description="Police d'écriture utilisée dans l'interface."
-        icon={<Palette className="h-5 w-5" />}
-      >
-        <FieldRow label="Police des titres">
-          <Select defaultValue="jakarta">
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="jakarta">Plus Jakarta Sans</SelectItem>
-              <SelectItem value="inter">Inter</SelectItem>
-              <SelectItem value="poppins">Poppins</SelectItem>
-              <SelectItem value="montserrat">Montserrat</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
-        <FieldRow label="Police du corps">
-          <Select defaultValue="inter">
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="inter">Inter</SelectItem>
-              <SelectItem value="roboto">Roboto</SelectItem>
-              <SelectItem value="opensans">Open Sans</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
+        </div>
       </SettingsSection>
     </div>
   );
