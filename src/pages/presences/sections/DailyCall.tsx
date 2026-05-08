@@ -10,6 +10,16 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 import { usePresences } from "@/hooks/usePresences";
 import { useAuth } from "@/context/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Status = "present" | "absent" | "retard";
 
