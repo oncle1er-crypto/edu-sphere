@@ -162,6 +162,7 @@ export default function StudentsList() {
               <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous statuts</SelectItem>
+                <SelectItem value="pre_inscrit">Pré-inscrit</SelectItem>
                 <SelectItem value="inscrit">Inscrit</SelectItem>
                 <SelectItem value="actif">Actif</SelectItem>
                 <SelectItem value="suspendu">Suspendu</SelectItem>
