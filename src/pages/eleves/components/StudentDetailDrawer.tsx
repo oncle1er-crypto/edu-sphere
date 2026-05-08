@@ -6,7 +6,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
@@ -170,17 +170,74 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
 
   const updateField = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !eleve?.id) return;
+    if (!file.type.startsWith("image/")) {
+      toast.error("Veuillez choisir une image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image trop lourde (max 5 Mo)");
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `eleves/${eleve.id}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      const { error: updErr } = await supabase
+        .from("eleves")
+        .update({ photo_url: pub.publicUrl })
+        .eq("id", eleve.id);
+      if (updErr) throw updErr;
+      eleve.photo_url = pub.publicUrl;
+      toast.success("Photo mise à jour");
+      onUpdated?.();
+    } catch (err: any) {
+      toast.error("Erreur upload : " + err.message);
+    } finally {
+      setUploadingPhoto(false);
+      if (photoInputRef.current) photoInputRef.current.value = "";
+    }
+  };
+
+
   return (
     <>
     <Sheet open={open} onOpenChange={guardedClose}>
       <SheetContent className="sm:max-w-xl w-full overflow-y-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
-                {init}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative group">
+              <Avatar className="h-16 w-16">
+                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} /> : null}
+                <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
+                  {init}
+                </AvatarFallback>
+              </Avatar>
+              <button
+                type="button"
+                onClick={() => photoInputRef.current?.click()}
+                disabled={uploadingPhoto}
+                className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                title="Changer la photo"
+              >
+                {uploadingPhoto ? <Loader2 className="h-5 w-5 animate-spin" /> : <Camera className="h-5 w-5" />}
+              </button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
+            </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-xl">
                 {eleve.prenom} {eleve.nom}
