@@ -545,6 +545,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
               )}
             </TabsContent>
           </Tabs>
+          </>
         )}
       </SheetContent>
     </Sheet>
