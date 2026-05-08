@@ -115,10 +115,3 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
     </header>
   );
 }
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
-    </header>
-  );
-}
