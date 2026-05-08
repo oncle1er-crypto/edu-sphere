@@ -228,13 +228,13 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
 
 export interface CertificatData {
   ecole: { nom: string; devise: string; adresse: string; telephone: string; directeur: string };
-  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; lieu_naissance: string };
+  eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; lieu_naissance: string; photo_url?: string | null };
   classe: string;
   annee: string;
   type: "scolarite" | "inscription" | "frequentation";
 }
 
-export function generateCertificatPDF(data: CertificatData): jsPDF {
+export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const w = doc.internal.pageSize.getWidth();
   const m = 20;
