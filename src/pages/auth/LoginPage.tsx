@@ -79,7 +79,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: "admin@gsp.ci",
+        email: "admin@csp.ci",
         password: "admin123",
       });
       if (error) throw error;
@@ -410,7 +410,7 @@ export default function LoginPage() {
                   className="w-full h-10 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-100"
                 >
                   <LogIn className="h-3.5 w-3.5" />
-                  Connexion rapide démo (admin@gsp.ci)
+                  Connexion rapide démo (admin@csp.ci)
                 </Button>
               )}
             </form>
