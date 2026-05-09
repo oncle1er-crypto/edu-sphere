@@ -433,7 +433,7 @@ export default function LoginPage() {
             {[
               { icon: GraduationCap, t: "Plateforme éducative", s: "Moderne et intuitive" },
               { icon: ShieldCheck, t: "100% Sécurisé", s: "Données protégées" },
-              { icon: Headphones, t: "Support 24/7", s: "À votre service" },
+              { icon: Users, t: "Communauté unie", s: "Parents & enseignants" },
             ].map(({ icon: Icon, t, s }) => (
               <div key={t} className="flex flex-col items-center gap-1">
                 <Icon className="h-4 w-4" style={{ color: GOLD }} />
