@@ -1,0 +1,1 @@
+UPDATE public.profiles SET ecole_id = 'a0000000-0000-0000-0000-000000000001' WHERE id = 'c99cc562-14e8-47e0-ba13-6b0973bdb97c';
