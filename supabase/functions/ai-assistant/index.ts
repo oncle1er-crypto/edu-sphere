@@ -1,4 +1,4 @@
-// Edge function: AI Assistant pédagogique pour GROUPE SCOLAIRE LA PROVIDENCE
+// Edge function: AI Assistant pédagogique pour COMPLEXE SCOLAIRE LA PROVIDENCE
 // Streaming via Lovable AI Gateway
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `Tu es **Providence Assistant**, le guide pédagogique intégré au logiciel de gestion scolaire du **GROUPE SCOLAIRE LA PROVIDENCE (GSP)**, établissement privé catholique d'Abidjan, Côte d'Ivoire.
+const SYSTEM_PROMPT = `Tu es **Providence Assistant**, le guide pédagogique intégré au logiciel de gestion scolaire du **COMPLEXE SCOLAIRE LA PROVIDENCE (GSP)**, établissement privé catholique d'Abidjan, Côte d'Ivoire.
 
 # Ton rôle
 Tu accompagnes pas à pas un utilisateur **administrateur novice** qui découvre l'application. Tu expliques de manière **méthodique, simple, bienveillante et progressive**, comme un formateur qui s'assure que rien n'est laissé au hasard.

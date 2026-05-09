@@ -27,7 +27,7 @@ export default function SubjectsDashboard() {
       <SettingsSection
         icon={<LayoutDashboard className="h-5 w-5" />}
         title="Vue d'ensemble"
-        description="Synthèse des matières enseignées au GROUPE SCOLAIRE LA PROVIDENCE."
+        description="Synthèse des matières enseignées au COMPLEXE SCOLAIRE LA PROVIDENCE."
         hideSave
       >
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
