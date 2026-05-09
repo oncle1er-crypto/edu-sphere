@@ -8,7 +8,7 @@ Deno.serve(async () => {
 
   // Update password for existing admin user
   const { data: users } = await supabaseAdmin.auth.admin.listUsers();
-  const admin = users?.users?.find((u) => u.email === "admin@gsp.ci");
+  const admin = users?.users?.find((u) => u.email === "admin@csp.ci");
 
   if (admin) {
     const { error } = await supabaseAdmin.auth.admin.updateUserById(admin.id, {
@@ -21,7 +21,7 @@ Deno.serve(async () => {
 
   // Create if not exists
   const { data, error } = await supabaseAdmin.auth.admin.createUser({
-    email: "admin@gsp.ci",
+    email: "admin@csp.ci",
     password: "admin123",
     email_confirm: true,
     user_metadata: { full_name: "Administrateur GSP" },
