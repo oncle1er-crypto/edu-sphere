@@ -1,4 +1,4 @@
-// Edge function: AI Assistant pédagogique pour GROUPE SCOLAIRE LA PROVIDENCE
+// Edge function: AI Assistant pédagogique pour COMPLEXE SCOLAIRE LA PROVIDENCE
 // Streaming via Lovable AI Gateway
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
