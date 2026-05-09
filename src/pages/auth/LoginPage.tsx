@@ -79,7 +79,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: "admin@gsp.ci",
+        email: "admin@csp.ci",
         password: "admin123",
       });
       if (error) throw error;
