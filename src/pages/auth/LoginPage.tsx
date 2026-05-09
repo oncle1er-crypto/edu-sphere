@@ -14,8 +14,8 @@ import {
   Eye,
   EyeOff,
   ShieldCheck,
-  Clock,
-  Headphones,
+  BookOpen,
+  Users,
   GraduationCap,
   Loader2,
 } from "lucide-react";
