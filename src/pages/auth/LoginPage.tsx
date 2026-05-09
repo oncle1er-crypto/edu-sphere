@@ -201,14 +201,14 @@ export default function LoginPage() {
                 text: "Vos données protégées avec les meilleurs standards.",
               },
               {
-                icon: Clock,
-                title: "Disponible 24/7",
-                text: "Accédez à votre plateforme à tout moment.",
+                icon: BookOpen,
+                title: "Suivi Pédagogique",
+                text: "Notes, bulletins et progression de chaque élève.",
               },
               {
-                icon: Headphones,
-                title: "Support Dédié",
-                text: "Une équipe à votre écoute pour vous accompagner.",
+                icon: Users,
+                title: "Communauté Éducative",
+                text: "Élèves, enseignants et parents connectés.",
               },
             ].map(({ icon: Icon, title, text }) => (
               <div
