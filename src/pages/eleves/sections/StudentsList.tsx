@@ -11,12 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
-import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid } from "lucide-react";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { toast } from "sonner";
 import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
+import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -50,6 +51,7 @@ export default function StudentsList() {
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
+  const [workflowEleve, setWorkflowEleve] = useState<typeof eleves[0] | null>(null);
   const [transferEleve, setTransferEleve] = useState<typeof eleves[0] | null>(null);
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
@@ -124,6 +126,20 @@ export default function StudentsList() {
     return <Badge variant={variant} className="text-[10px] capitalize">{label}</Badge>;
   };
 
+  const finalizeButton = (s: typeof eleves[0]) => (
+    s.statut === "pre_inscrit" ? (
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 text-[10px] gap-1 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+        onClick={(e) => { e.stopPropagation(); setWorkflowEleve(s); }}
+        title="Finaliser l'inscription définitive de cet élève"
+      >
+        <Sparkles className="h-3 w-3" /> Finaliser
+      </Button>
+    ) : null
+  );
+
   const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
     <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
       {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.prenom} ${s.nom}`} /> : null}
@@ -144,6 +160,11 @@ export default function StudentsList() {
         <DropdownMenuItem onClick={() => setViewEleve(s)}>
           <Eye className="h-4 w-4 mr-2" />Voir la fiche
         </DropdownMenuItem>
+        {s.statut === "pre_inscrit" && (
+          <DropdownMenuItem onClick={() => setWorkflowEleve(s)}>
+            <Sparkles className="h-4 w-4 mr-2" />Finaliser l'inscription
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => { setTransferEleve(s); setTransferClasseId(s.classe_id ?? ""); }}>
           <Shuffle className="h-4 w-4 mr-2" />Transférer de classe
         </DropdownMenuItem>
@@ -252,7 +273,7 @@ export default function StudentsList() {
                     </TableCell>
                     <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
-                    <TableCell>{statusBadge(s)}</TableCell>
+                    <TableCell><div className="flex items-center gap-1.5 flex-wrap">{statusBadge(s)}{finalizeButton(s)}</div></TableCell>
                     <TableCell>{studentActions(s)}</TableCell>
                   </TableRow>
                 ))}
@@ -292,6 +313,7 @@ export default function StudentsList() {
                   <span>{formatDate(s.date_naissance)}</span>
                 </div>
                 {statusBadge(s)}
+                {finalizeButton(s)}
               </Card>
             ))}
             {filtered.length === 0 && (
@@ -328,6 +350,15 @@ export default function StudentsList() {
         open={!!viewEleve}
         onClose={() => setViewEleve(null)}
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
+      />
+
+      {/* Inscription workflow */}
+      <InscriptionWorkflowDialog
+        eleve={workflowEleve}
+        open={!!workflowEleve}
+        onClose={() => setWorkflowEleve(null)}
+        onOpenDrawer={() => setViewEleve(workflowEleve)}
+        onUpdated={() => fetchEleves()}
       />
 
       {/* Transfer dialog */}
