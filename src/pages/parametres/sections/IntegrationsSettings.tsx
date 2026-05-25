@@ -1,23 +1,28 @@
 import { Plug, CreditCard, MessageSquare, Calendar, Video, Send, Webhook } from "lucide-react";
+import { Link } from "react-router-dom";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-const integrations = [
-  { icon: CreditCard, name: "Stripe", desc: "Paiements en ligne par carte bancaire", connected: false, category: "Paiements" },
-  { icon: CreditCard, name: "CinetPay", desc: "Paiements Mobile Money Afrique", connected: true, category: "Paiements" },
-  { icon: MessageSquare, name: "Twilio", desc: "Envoi de SMS internationaux", connected: false, category: "Communication" },
-  { icon: MessageSquare, name: "Africa's Talking", desc: "SMS Afrique à bas coût", connected: true, category: "Communication" },
-  { icon: Send, name: "WhatsApp Business", desc: "Messagerie WhatsApp officielle", connected: false, category: "Communication" },
-  { icon: Calendar, name: "Google Calendar", desc: "Synchroniser les emplois du temps", connected: false, category: "Productivité" },
-  { icon: Video, name: "Zoom", desc: "Cours en ligne intégrés", connected: false, category: "Productivité" },
-  { icon: Webhook, name: "Webhooks", desc: "Notifications HTTP personnalisées", connected: false, category: "Développeur" },
-];
-
-const categories = Array.from(new Set(integrations.map((i) => i.category)));
+import { useSmsConfig } from "@/hooks/useSmsConfig";
 
 export default function IntegrationsSettings() {
+  const { config } = useSmsConfig();
+  const smsConnected = !!config?.is_active && !!config?.api_token;
+  const waConnected = !!config?.whatsapp_enabled && !!config?.api_token;
+
+  const integrations = [
+    { icon: CreditCard, name: "Stripe", desc: "Paiements en ligne par carte bancaire", connected: false, category: "Paiements", to: null as string | null },
+    { icon: CreditCard, name: "CinetPay", desc: "Paiements Mobile Money Afrique (Wave, Orange, MTN, Moov)", connected: false, category: "Paiements", to: null },
+    { icon: MessageSquare, name: "YellikaSMS", desc: "Envoi de SMS via YellikaSMS", connected: smsConnected, category: "Communication", to: "/parametres/sms" },
+    { icon: Send, name: "WhatsApp (YellikaSMS)", desc: "Messagerie WhatsApp via YellikaSMS", connected: waConnected, category: "Communication", to: "/parametres/sms" },
+    { icon: Calendar, name: "Google Calendar", desc: "Synchroniser les emplois du temps", connected: false, category: "Productivité", to: null },
+    { icon: Video, name: "Zoom", desc: "Cours en ligne intégrés", connected: false, category: "Productivité", to: null },
+    { icon: Webhook, name: "Webhooks", desc: "Notifications HTTP personnalisées", connected: false, category: "Développeur", to: null },
+  ];
+
+  const categories = Array.from(new Set(integrations.map((i) => i.category)));
+
   return (
     <SettingsSection
       title="Intégrations & API"
@@ -40,9 +45,15 @@ export default function IntegrationsSettings() {
                     {i.connected && <Badge className="bg-success text-success-foreground text-[10px]">Connecté</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{i.desc}</p>
-                  <Button size="sm" variant={i.connected ? "outline" : "default"} className="mt-2">
-                    {i.connected ? "Configurer" : "Connecter"}
-                  </Button>
+                  {i.to ? (
+                    <Button asChild size="sm" variant={i.connected ? "outline" : "default"} className="mt-2">
+                      <Link to={i.to}>{i.connected ? "Configurer" : "Connecter"}</Link>
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant={i.connected ? "outline" : "default"} className="mt-2" disabled>
+                      Bientôt disponible
+                    </Button>
+                  )}
                 </div>
               </Card>
             ))}
