@@ -352,6 +352,15 @@ export default function StudentsList() {
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
       />
 
+      {/* Inscription workflow */}
+      <InscriptionWorkflowDialog
+        eleve={workflowEleve}
+        open={!!workflowEleve}
+        onClose={() => setWorkflowEleve(null)}
+        onOpenDrawer={() => setViewEleve(workflowEleve)}
+        onUpdated={() => fetchEleves()}
+      />
+
       {/* Transfer dialog */}
       <Dialog open={!!transferEleve} onOpenChange={() => setTransferEleve(null)}>
         <DialogContent>
