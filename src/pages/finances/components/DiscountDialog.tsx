@@ -75,7 +75,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
       const trancheId = (tranche as any).id;
       if (!trancheId) throw new Error("Tranche sans identifiant en base");
 
-      const { error } = await supabase.rpc("appliquer_remise", {
+      const { data: paiementId, error } = await supabase.rpc("appliquer_remise", {
         _ecole_id: ecoleId,
         _eleve_id: eleve.id,
         _tranche_id: trancheId,
@@ -91,11 +91,15 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
         description: `${fcfa(montantNum)} FCFA · ${TYPES.find(t => t.value === type)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
       });
 
+      if (paiementId && typeof paiementId === "string") {
+        downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type });
+      }
+
       onOpenChange(false);
       onApplied?.();
     } catch (err: any) {
       console.error("Discount error:", err);
-      toast.error("Remise refusée", { description: err?.message ?? "Erreur inconnue" });
+      toast.error("Remise refusée", { description: friendlyRpcError(err) });
       onApplied?.();
     } finally {
       submittingRef.current = false;
