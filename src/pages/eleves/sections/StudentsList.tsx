@@ -296,7 +296,26 @@ export default function StudentsList() {
             )}
           </div>
         )}
+
+        {/* Pagination footer */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-2 pt-2 text-sm">
+            <p className="text-muted-foreground text-xs">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground tabular-nums">Page {currentPage} / {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </SettingsSection>
+
 
       {/* Student detail drawer */}
       <StudentDetailDrawer
