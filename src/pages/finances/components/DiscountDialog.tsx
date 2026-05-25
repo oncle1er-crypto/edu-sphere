@@ -3,10 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Wallet, Loader2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Tag, Loader2 } from "lucide-react";
 import { fcfa, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -17,37 +18,30 @@ interface Props {
   defaultTrancheNum?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPaymentRecorded?: () => void;
+  onApplied?: () => void;
   ecoleId?: string | null;
 }
 
-const MOYENS: { label: string; value: string }[] = [
-  { label: "Espèces", value: "especes" },
-  { label: "Wave", value: "wave" },
-  { label: "Orange Money", value: "orange_money" },
-  { label: "MTN MoMo", value: "mtn_money" },
-  { label: "Moov Money", value: "moov_money" },
-  { label: "Virement", value: "virement" },
-  { label: "Chèque", value: "cheque" },
+const TYPES: { label: string; value: "remise" | "bourse" | "prise_en_charge"; hint: string }[] = [
+  { label: "Remise commerciale", value: "remise", hint: "Geste commercial accordé à la famille." },
+  { label: "Bourse", value: "bourse", hint: "Bourse d'études (mérite, sociale, diocésaine)." },
+  { label: "Prise en charge", value: "prise_en_charge", hint: "Tiers payeur (entreprise, paroisse, ONG…)." },
 ];
 
-export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
+export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, onApplied, ecoleId }: Props) {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
 
-  const tranchesPayables = useMemo(() => {
-    if (!eleve) return [];
-    // Seule la 1ère tranche non soldée est encaissable (séquentiel)
-    const sorted = [...eleve.tranches].sort((a, b) => a.num - b.num);
-    const next = sorted.find((t) => t.statut !== "payee");
-    return next ? [next] : [];
-  }, [eleve]);
+  const tranchesPayables = useMemo(
+    () => (eleve ? eleve.tranches.filter((t) => t.statut !== "payee") : []),
+    [eleve],
+  );
 
   const [trancheNum, setTrancheNum] = useState<string>("");
   const [montant, setMontant] = useState<string>("");
-  const [moyen, setMoyen] = useState<string>("wave");
-  const [reference, setReference] = useState<string>("");
+  const [type, setType] = useState<"remise" | "bourse" | "prise_en_charge">("remise");
+  const [motif, setMotif] = useState<string>("");
 
   useEffect(() => {
     if (!open || !eleve) return;
@@ -58,8 +52,8 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       setTrancheNum(String(target.num));
       setMontant(String(Math.max(0, target.montant - target.paye)));
     }
-    setMoyen("wave");
-    setReference("");
+    setType("remise");
+    setMotif("");
   }, [open, eleve, defaultTrancheNum, tranchesPayables]);
 
   if (!eleve) return null;
@@ -67,11 +61,12 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
   const tranche = eleve.tranches.find((t) => t.num === Number(trancheNum));
   const restantTranche = tranche ? tranche.montant - tranche.paye : 0;
   const montantNum = Number(montant) || 0;
-  const valid = !!tranche && montantNum > 0 && montantNum <= restantTranche;
+  const motifTrim = motif.trim();
+  const valid = !!tranche && montantNum > 0 && montantNum <= restantTranche && motifTrim.length >= 3;
 
   const handleSubmit = async () => {
     if (!valid || !tranche || !ecoleId) return;
-    if (submittingRef.current) return; // anti double-clic infaillible
+    if (submittingRef.current) return;
     submittingRef.current = true;
     setSaving(true);
 
@@ -79,33 +74,28 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       const trancheId = (tranche as any).id;
       if (!trancheId) throw new Error("Tranche sans identifiant en base");
 
-      const { data, error } = await supabase.rpc("enregistrer_paiement", {
+      const { error } = await supabase.rpc("appliquer_remise", {
         _ecole_id: ecoleId,
         _eleve_id: eleve.id,
         _tranche_id: trancheId,
         _montant: montantNum,
-        _mode: moyen,
-        _reference: reference || null,
-        _recu_par: user?.id ?? null,
+        _type_remise: type,
+        _motif: motifTrim,
+        _accorde_par: user?.id ?? null,
       });
 
       if (error) throw error;
 
-      toast.success("Encaissement enregistré", {
-        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
+      toast.success("Remise appliquée", {
+        description: `${fcfa(montantNum)} FCFA · ${TYPES.find(t => t.value === type)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
       });
 
       onOpenChange(false);
-      onPaymentRecorded?.();
+      onApplied?.();
     } catch (err: any) {
-      console.error("Payment error:", err);
-      const msg = err?.message ?? "Erreur inconnue";
-      const friendly = msg.includes("Surpaiement")
-        ? "Cette tranche est déjà soldée. Les données ont été rafraîchies."
-        : msg;
-      toast.error("Encaissement refusé", { description: friendly });
-      // Refetch dans tous les cas pour resynchroniser
-      onPaymentRecorded?.();
+      console.error("Discount error:", err);
+      toast.error("Remise refusée", { description: err?.message ?? "Erreur inconnue" });
+      onApplied?.();
     } finally {
       submittingRef.current = false;
       setSaving(false);
@@ -117,7 +107,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-primary">
-            <Wallet className="h-5 w-5" />Enregistrer un encaissement
+            <Tag className="h-5 w-5" />Appliquer une remise / bourse
           </DialogTitle>
           <DialogDescription>
             {eleve.prenom} {eleve.nom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
@@ -147,39 +137,46 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
             <Card className="border bg-muted/30">
               <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
                 <div><p className="text-[10px] text-muted-foreground uppercase">Tranche</p><p className="text-xs font-bold">{fcfa(tranche.montant)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground uppercase">Déjà versé</p><p className="text-xs font-bold text-primary">{fcfa(tranche.paye)}</p></div>
+                <div><p className="text-[10px] text-muted-foreground uppercase">Déjà couvert</p><p className="text-xs font-bold text-primary">{fcfa(tranche.paye)}</p></div>
                 <div><p className="text-[10px] text-muted-foreground uppercase">Restant</p><p className="text-xs font-bold text-destructive">{fcfa(restantTranche)}</p></div>
               </CardContent>
             </Card>
           )}
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Montant encaissé (FCFA)</Label>
+            <Label className="text-xs">Type</Label>
+            <Select value={type} onValueChange={(v: any) => setType(v)}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <p className="text-[11px] text-muted-foreground">{TYPES.find(t => t.value === type)?.hint}</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Montant accordé (FCFA)</Label>
             <Input type="number" value={montant} onChange={(e) => setMontant(e.target.value)} />
             {tranche && montantNum > restantTranche && (
               <p className="text-[11px] text-destructive">Le montant dépasse le reste de la tranche.</p>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Moyen de paiement</Label>
-              <Select value={moyen} onValueChange={setMoyen}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Référence</Label>
-              <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Motif <span className="text-destructive">*</span></Label>
+            <Textarea
+              placeholder="Ex: Bourse au mérite — moyenne annuelle ≥ 16/20 — décision conseil du 12/04/2026"
+              value={motif}
+              onChange={(e) => setMotif(e.target.value)}
+              maxLength={500}
+              rows={3}
+            />
+            <p className="text-[11px] text-muted-foreground">{motifTrim.length}/500 · obligatoire (min. 3 caractères)</p>
           </div>
 
-          {tranche && montantNum > 0 && montantNum <= restantTranche && (
+          {valid && (
             <Badge variant="outline" className="bg-accent/10 text-primary border-accent/30">
-              Statut après paiement : {montantNum >= restantTranche ? "✓ Payée" : "◐ Partielle"}
+              Après application : {montantNum >= restantTranche ? "✓ Tranche soldée" : "◐ Tranche partielle"}
             </Badge>
           )}
         </div>
@@ -187,8 +184,8 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuler</Button>
           <Button onClick={handleSubmit} disabled={!valid || saving}>
-            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            Enregistrer l'encaissement
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Tag className="h-4 w-4" />}
+            Appliquer la remise
           </Button>
         </DialogFooter>
       </DialogContent>
