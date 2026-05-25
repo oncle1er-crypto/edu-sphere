@@ -163,8 +163,8 @@ export function useFinanceData() {
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchData();
     if (!ecoleLoading && !ecoleId) {
-      setData(ELEVES_SCOLARITE);
-      setUsingMock(true);
+      setData([]);
+      setUsingMock(false);
       setLoading(false);
     }
   }, [ecoleLoading, ecoleId, fetchData]);
