@@ -18,12 +18,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
+import { ParentEditDialog } from "./ParentEditDialog";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 interface Props {
   eleve: any | null;
