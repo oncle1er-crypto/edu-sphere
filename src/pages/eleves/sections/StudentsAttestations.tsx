@@ -168,7 +168,7 @@ export default function StudentsAttestations() {
           <SelectContent>
             {filtered.slice(0, 50).map((e) => (
               <SelectItem key={e.id} value={e.id}>
-                {e.prenom} {e.nom} — {e.matricule}
+                {e.nom} {e.prenom} — {e.matricule}
               </SelectItem>
             ))}
           </SelectContent>
@@ -180,7 +180,7 @@ export default function StudentsAttestations() {
           <div className="flex items-center gap-3 pb-2 border-b">
             <div>
               <h3 className="font-bold">
-                {eleve.prenom} {eleve.nom}
+                {eleve.nom} {eleve.prenom}
               </h3>
               <p className="text-xs text-muted-foreground">
                 {eleve.matricule} • {(eleve as any).classe_nom ?? "Non affecté"} • Année {currentAnnee()}

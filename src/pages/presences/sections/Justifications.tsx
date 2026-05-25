@@ -22,7 +22,7 @@ export default function Justifications() {
 
   const getEleveName = (id: string) => {
     const e = eleves.find((el) => el.id === id);
-    return e ? `${e.prenom} ${e.nom}` : id.slice(0, 8);
+    return e ? `${e.nom} ${e.prenom}` : id.slice(0, 8);
   };
 
   const handleAdd = async () => {
@@ -59,7 +59,7 @@ export default function Justifications() {
                   <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
                   <SelectContent>
                     {eleves.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                      <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

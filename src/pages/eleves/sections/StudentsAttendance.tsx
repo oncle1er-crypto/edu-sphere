@@ -136,7 +136,7 @@ export default function StudentsAttendance() {
                     return (
                       <TableRow key={e.id}>
                         <TableCell className="font-mono text-xs text-muted-foreground">{e.matricule}</TableCell>
-                        <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                        <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
                         <TableCell>
                           {st === "present" ? <Badge className="bg-emerald-600 hover:bg-emerald-600">Présent</Badge>
                             : st === "absent" ? <Badge variant="destructive">Absent</Badge>

@@ -185,7 +185,7 @@ export function ParentEditDialog({ open, onOpenChange, link, eleveId, ecoleId, o
                       selectedExistingId === p.id ? "border-primary bg-primary/5" : ""
                     }`}
                   >
-                    <p className="font-medium">{p.prenom} {p.nom}</p>
+                    <p className="font-medium">{p.nom} {p.prenom}</p>
                     <p className="text-muted-foreground">{p.telephone ?? "—"} • {p.email ?? "—"}</p>
                   </Card>
                 ))}

@@ -21,25 +21,25 @@ const DEFAULTS: Record<TrancheKey, SmsTemplate> = {
     key: "T1",
     label: "1ère tranche — Rentrée",
     message:
-      "CS - Bonjour {parent}, la 1ère tranche de scolarité de {prenom} {nom} ({classe}) est échue depuis le {echeance}. Montant dû : {montant_du} FCFA. Merci de régulariser. Foi, Savoir, Excellence.",
+      "CS - Bonjour {parent}, la 1ère tranche de scolarité de {nom} {prenom} ({classe}) est échue depuis le {echeance}. Montant dû : {montant_du} FCFA. Merci de régulariser. Foi, Savoir, Excellence.",
   },
   T2: {
     key: "T2",
     label: "2ème tranche — Janvier",
     message:
-      "CS - Bonjour {parent}, rappel : la 2ème tranche de scolarité de {prenom} {nom} ({classe}) était attendue le {echeance}. Montant dû : {montant_du} FCFA ({jours_retard}j de retard). Merci de régulariser.",
+      "CS - Bonjour {parent}, rappel : la 2ème tranche de scolarité de {nom} {prenom} ({classe}) était attendue le {echeance}. Montant dû : {montant_du} FCFA ({jours_retard}j de retard). Merci de régulariser.",
   },
   T3: {
     key: "T3",
     label: "3ème tranche — Avril",
     message:
-      "CS - Bonjour {parent}, la 3ème tranche de scolarité de {prenom} {nom} ({classe}) est en retard depuis le {echeance}. Reste à payer : {montant_du} FCFA. Merci de régulariser rapidement.",
+      "CS - Bonjour {parent}, la 3ème tranche de scolarité de {nom} {prenom} ({classe}) est en retard depuis le {echeance}. Reste à payer : {montant_du} FCFA. Merci de régulariser rapidement.",
   },
   GENERIC: {
     key: "GENERIC",
     label: "Relance générique",
     message:
-      "CS - Bonjour {parent}, rappel : {reste_total} FCFA dus pour la scolarité de {prenom} {nom} ({classe}). Merci de régulariser.",
+      "CS - Bonjour {parent}, rappel : {reste_total} FCFA dus pour la scolarité de {nom} {prenom} ({classe}). Merci de régulariser.",
   },
 };
 

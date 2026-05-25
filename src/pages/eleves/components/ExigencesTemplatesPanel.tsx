@@ -355,7 +355,7 @@ export default function ExigencesTemplatesPanel({ docTypes }: Props) {
                         setSelectedEleves(next);
                       }}
                     />
-                    <span className="text-sm flex-1">{e.prenom} {e.nom}</span>
+                    <span className="text-sm flex-1">{e.nom} {e.prenom}</span>
                     <span className="text-xs text-muted-foreground">
                       {e.matricule} • {e.classe_nom ?? "—"}
                     </span>

@@ -101,7 +101,7 @@ export default function SubjectsTeachersAssignment() {
                         const cl = classes.find((c) => c.id === a.classe_id);
                         return (
                           <Badge key={a.id} variant="outline" className="gap-1">
-                            {ens ? `${ens.prenom} ${ens.nom}` : "—"}{cl ? ` · ${cl.nom}` : ""}
+                            {ens ? `${ens.nom} ${ens.prenom}` : "—"}{cl ? ` · ${cl.nom}` : ""}
                             <button onClick={() => remove(a.id)} className="ml-1 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
                           </Badge>
                         );
@@ -126,7 +126,7 @@ export default function SubjectsTeachersAssignment() {
             </Select>
             <Select value={form.enseignant_id} onValueChange={(v) => setForm({ ...form, enseignant_id: v })}>
               <SelectTrigger><SelectValue placeholder="Enseignant" /></SelectTrigger>
-              <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}</SelectContent>
+              <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={form.classe_id} onValueChange={(v) => setForm({ ...form, classe_id: v })}>
               <SelectTrigger><SelectValue placeholder="Classe (optionnel)" /></SelectTrigger>

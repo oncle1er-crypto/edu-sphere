@@ -68,11 +68,11 @@ export default function ClassesTransfers() {
       user_id: user.id,
       user_label: user.email ?? "Utilisateur",
       action: "transfert_classe",
-      cible: `${eleve.prenom} ${eleve.nom}`,
+      cible: `${eleve.nom} ${eleve.prenom}`,
       niveau: "info",
       details: {
         eleve_id: eleveId,
-        eleve_nom: `${eleve.prenom} ${eleve.nom}`,
+        eleve_nom: `${eleve.nom} ${eleve.prenom}`,
         de: origine?.nom ?? "—",
         vers: dest.nom,
         motif: motif || null,
@@ -138,7 +138,7 @@ export default function ClassesTransfers() {
                 <SelectTrigger><SelectValue placeholder="Choisir un élève" /></SelectTrigger>
                 <SelectContent>
                   {eleves.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} — {classes.find((c) => c.id === e.classe_id)?.nom ?? "Sans classe"}</SelectItem>
+                    <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom} — {classes.find((c) => c.id === e.classe_id)?.nom ?? "Sans classe"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -25,7 +25,7 @@ interface Props {
 function buildSmsRelance(e: EleveScolarite): string {
   const trancheRetard = e.tranches.find((t) => t.statut === "retard");
   const lib = trancheRetard ? `${trancheRetard.label} (échue le ${trancheRetard.echeance})` : "scolarité";
-  return `CSP - Bonjour ${e.parent}, rappel : ${fcfa(e.resteDu)} FCFA dus pour ${e.prenom} ${e.nom} (${e.classe}) au titre de ${lib}. Merci de régulariser. Foi, Savoir, Excellence.`;
+  return `CSP - Bonjour ${e.parent}, rappel : ${fcfa(e.resteDu)} FCFA dus pour ${e.nom} ${e.prenom} (${e.classe}) au titre de ${lib}. Merci de régulariser. Foi, Savoir, Excellence.`;
 }
 
 const STATUT_BADGE: Record<Tranche["statut"], string> = {
@@ -112,7 +112,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
           {eleve && (
             <>
               <SheetHeader>
-                <SheetTitle className="text-primary">{eleve.prenom} {eleve.nom}</SheetTitle>
+                <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
                 <SheetDescription>
                   {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                 </SheetDescription>

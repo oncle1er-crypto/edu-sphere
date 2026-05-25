@@ -249,7 +249,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
           <div className="flex items-center gap-4">
             <div className="relative group">
               <Avatar className="h-16 w-16">
-                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} /> : null}
+                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.nom} ${eleve.prenom}`} /> : null}
                 <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
                   {init}
                 </AvatarFallback>
@@ -273,7 +273,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
             </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-xl">
-                {eleve.prenom} {eleve.nom}
+                {eleve.nom} {eleve.prenom}
               </SheetTitle>
               <p className="text-sm text-muted-foreground font-mono">{eleve.matricule}</p>
               <div className="flex gap-2 mt-1 flex-wrap">
@@ -475,8 +475,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                               .map((p: any) => p.parents?.email)
                               .filter((e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
                             if (emails.length === 0) { toast.error("Aucun email valide sélectionné"); return; }
-                            const subject = encodeURIComponent(`GSP — ${eleve.prenom} ${eleve.nom}`);
-                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.prenom} ${eleve.nom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
+                            const subject = encodeURIComponent(`GSP — ${eleve.nom} ${eleve.prenom}`);
+                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.nom} ${eleve.prenom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
                             window.location.href = `mailto:?bcc=${emails.join(",")}&subject=${subject}&body=${body}`;
                           }}
                         >
@@ -512,7 +512,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                           />
                           <div className="min-w-0 flex-1">
                             <p className="font-medium">
-                              {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
+                              {(p as any).parents?.nom} {(p as any).parents?.prenom} ({p.lien})
                             </p>
                             <p className="text-muted-foreground truncate">
                               {(p as any).parents?.telephone ?? "—"} • {(p as any).parents?.email ?? "—"}
@@ -761,7 +761,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
             nom: `${p.parents?.prenom ?? ""} ${p.parents?.nom ?? ""}`.trim(),
             telephone: p.parents?.telephone ?? "",
           }))}
-        eleveLabel={`${eleve.prenom} ${eleve.nom}`}
+        eleveLabel={`${eleve.nom} ${eleve.prenom}`}
       />
     )}
 

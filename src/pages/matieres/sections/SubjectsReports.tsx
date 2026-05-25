@@ -52,7 +52,7 @@ export default function SubjectsReports() {
       key: "affectations", titre: "Affectations enseignants / matières", desc: "Qui enseigne quoi dans quelle classe.",
       run: () => run("affectations", async () => {
         const { data } = await supabase.from("enseignant_matieres").select("enseignants(nom, prenom), matieres(nom, code), classes(nom)").eq("ecole_id", ecoleId!);
-        const rows = (data ?? []).map((r: any) => ({ enseignant: r.enseignants ? `${r.enseignants.prenom} ${r.enseignants.nom}` : "", matiere: r.matieres?.nom, code: r.matieres?.code, classe: r.classes?.nom || "—" }));
+        const rows = (data ?? []).map((r: any) => ({ enseignant: r.enseignants ? `${r.enseignants.nom} ${r.enseignants.prenom}` : "", matiere: r.matieres?.nom, code: r.matieres?.code, classe: r.classes?.nom || "—" }));
         downloadCSV("affectations_enseignants.csv", rows);
       }),
     },

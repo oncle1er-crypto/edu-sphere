@@ -246,7 +246,7 @@ export default function ClassSummary() {
                                     return (
                                       <TableRow key={e.id} className="hover:bg-muted/40">
                                         <TableCell>
-                                          <p className="font-semibold text-sm">{e.prenom} {e.nom}</p>
+                                          <p className="font-semibold text-sm">{e.nom} {e.prenom}</p>
                                           <p className="text-[10px] text-muted-foreground font-mono">{e.matricule}</p>
                                         </TableCell>
                                         <TableCell>

@@ -95,7 +95,7 @@ export default function StudentsAlumni() {
             {filtered.map((a) => (
               <TableRow key={a.id}>
                 <TableCell className="font-mono text-xs text-muted-foreground">{a.matricule}</TableCell>
-                <TableCell className="font-medium">{a.prenom} {a.nom}</TableCell>
+                <TableCell className="font-medium">{a.nom} {a.prenom}</TableCell>
                 <TableCell><Badge variant="secondary">{a.classe_nom ?? "—"}</Badge></TableCell>
                 <TableCell><Badge>{a.statut}</Badge></TableCell>
               </TableRow>

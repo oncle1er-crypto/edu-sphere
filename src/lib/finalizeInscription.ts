@@ -41,7 +41,7 @@ export async function finalizeInscription(opts: FinalizeOptions): Promise<Finali
     ok: false,
     eleve_id: eleve.id,
     matricule: eleve.matricule,
-    full_name: `${eleve.prenom} ${eleve.nom}`,
+    full_name: `${eleve.nom} ${eleve.prenom}`,
     steps: [],
     warnings: [],
     notifications_sent: 0,
@@ -91,7 +91,7 @@ export async function finalizeInscription(opts: FinalizeOptions): Promise<Finali
     const auditDetails = {
       eleve_id: eleve.id,
       matricule: eleve.matricule,
-      eleve_nom: `${eleve.prenom} ${eleve.nom}`,
+      eleve_nom: `${eleve.nom} ${eleve.prenom}`,
       classe_id: freshEleve?.classe_id ?? null,
       classe: (freshEleve as any)?.classes?.nom ?? null,
       annee: (freshEleve as any)?.annees_scolaires?.libelle ?? null,
@@ -116,7 +116,7 @@ export async function finalizeInscription(opts: FinalizeOptions): Promise<Finali
     // 5. Notify parents
     if (notify) {
       const links = (parentsRes.data ?? []) as any[];
-      const messageBase = `Bonjour, ${eleve.prenom} ${eleve.nom} (matricule ${eleve.matricule}) est désormais définitivement inscrit(e)${(freshEleve as any)?.classes?.nom ? " en " + (freshEleve as any).classes.nom : ""}. ${ecole?.nom ?? "L'établissement"} vous remercie.`;
+      const messageBase = `Bonjour, ${eleve.nom} ${eleve.prenom} (matricule ${eleve.matricule}) est désormais définitivement inscrit(e)${(freshEleve as any)?.classes?.nom ? " en " + (freshEleve as any).classes.nom : ""}. ${ecole?.nom ?? "L'établissement"} vous remercie.`;
 
       const phoneList: string[] = [];
       for (const link of links) {

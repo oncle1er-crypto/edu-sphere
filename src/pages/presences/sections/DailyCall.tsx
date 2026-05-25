@@ -117,7 +117,7 @@ export default function DailyCall() {
               return (
                 <div key={s.id} className="flex items-center justify-between gap-3 p-3">
                   <div>
-                    <p className="font-medium">{s.prenom} {s.nom}</p>
+                    <p className="font-medium">{s.nom} {s.prenom}</p>
                     <p className="text-xs text-muted-foreground">{s.matricule}</p>
                   </div>
                   <div className="flex gap-2">

@@ -29,7 +29,7 @@ export function useIncidentsDiscipline() {
     else {
       setIncidents((data ?? []).map((d: any) => ({
         ...d,
-        eleve_nom: d.eleves ? `${d.eleves.prenom} ${d.eleves.nom}` : "",
+        eleve_nom: d.eleves ? `${d.eleves.nom} ${d.eleves.prenom}` : "",
         classe_nom: d.classes?.nom ?? "",
       })));
     }

@@ -37,7 +37,7 @@ export default function TransportSubscribers() {
     ]);
     setRows(((ab ?? []) as any[]).map((a) => ({
       id: a.id, statut: a.statut,
-      eleve_nom: a.eleves ? `${a.eleves.prenom} ${a.eleves.nom}` : "?",
+      eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
       classe_nom: a.eleves?.classes?.nom ?? "—",
       ligne_nom: a.lignes_transport?.nom ?? "—",
     })));
@@ -77,7 +77,7 @@ export default function TransportSubscribers() {
               <FieldRow label="Élève *">
                 <Select value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}</SelectContent>
+                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
                 </Select>
               </FieldRow>
               <FieldRow label="Ligne *">

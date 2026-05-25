@@ -160,7 +160,7 @@ export default function TeacherPortal() {
               <AvatarFallback className="text-xl bg-accent/20 text-accent-foreground font-bold">{initials}</AvatarFallback>
             </Avatar>
             <div className="flex-1 text-center sm:text-left">
-              <h2 className="text-xl font-bold">{enseignant.prenom} {enseignant.nom}</h2>
+              <h2 className="text-xl font-bold">{enseignant.nom} {enseignant.prenom}</h2>
               <p className="text-sm text-muted-foreground">{enseignant.specialite ?? "Enseignant"}{enseignant.diplome ? ` • ${enseignant.diplome}` : ""}</p>
               <div className="flex flex-wrap gap-2 mt-2 justify-center sm:justify-start">
                 {enseignant.matricule && <Badge variant="outline" className="font-mono text-xs">{enseignant.matricule}</Badge>}

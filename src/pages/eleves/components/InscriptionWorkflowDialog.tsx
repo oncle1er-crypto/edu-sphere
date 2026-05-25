@@ -192,7 +192,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         description: res.warnings.join(" • "),
       });
     } else {
-      toast.success(`${eleve.prenom} ${eleve.nom} inscrit(e) définitivement 🎓`, {
+      toast.success(`${eleve.nom} ${eleve.prenom} inscrit(e) définitivement 🎓`, {
         description: `Notifications : ${res.notifications_sent} • PDF généré`,
       });
     }
@@ -211,7 +211,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
             Finaliser l'inscription
           </DialogTitle>
           <DialogDescription>
-            <strong>{eleve.prenom} {eleve.nom}</strong> ({eleve.matricule}) — complétez les 3 étapes ci-dessous sans quitter cette fenêtre.
+            <strong>{eleve.nom} {eleve.prenom}</strong> ({eleve.matricule}) — complétez les 3 étapes ci-dessous sans quitter cette fenêtre.
           </DialogDescription>
         </DialogHeader>
 

@@ -58,7 +58,7 @@ export default function CardsLost() {
                   <TableCell className="text-right">
                     <ConfirmButton
                       size="sm" variant="outline" tone="danger"
-                      confirmTitle={`Déclarer la carte de ${c.prenom} ${c.nom} perdue ?`}
+                      confirmTitle={`Déclarer la carte de ${c.nom} ${c.prenom} perdue ?`}
                       confirmDescription="Le QR code de cette carte sera invalidé immédiatement et les scans seront refusés. Une nouvelle carte devra être réémise pour le titulaire."
                       confirmLabel="Déclarer perdue"
                       onConfirm={() => { setStatut(c.id, "perdue"); toast.success("Carte marquée perdue"); }}
@@ -98,7 +98,7 @@ export default function CardsLost() {
                   <TableCell className="text-right">
                     <ConfirmButton
                       size="sm" variant="ghost"
-                      confirmTitle={`Réactiver la carte de ${c.prenom} ${c.nom} ?`}
+                      confirmTitle={`Réactiver la carte de ${c.nom} ${c.prenom} ?`}
                       confirmDescription="Le QR code redeviendra valide et la carte pourra à nouveau être scannée à l'entrée, à la cantine et au transport."
                       confirmLabel="Réactiver"
                       onConfirm={() => { setStatut(c.id, "active"); toast.success("Carte réactivée"); }}

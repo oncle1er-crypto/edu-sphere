@@ -52,7 +52,7 @@ export function StatusDialog({ eleve, open, onOpenChange }: Props) {
             <Tag className="h-5 w-5" />Mettre à jour le statut
           </DialogTitle>
           <DialogDescription>
-            {eleve.prenom} {eleve.nom} — {eleve.classe}
+            {eleve.nom} {eleve.prenom} — {eleve.classe}
           </DialogDescription>
         </DialogHeader>
 
@@ -82,7 +82,7 @@ export function StatusDialog({ eleve, open, onOpenChange }: Props) {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button onClick={() => {
-            toast.success(`Statut mis à jour : ${opt.label}`, { description: `${eleve.prenom} ${eleve.nom}` });
+            toast.success(`Statut mis à jour : ${opt.label}`, { description: `${eleve.nom} ${eleve.prenom}` });
             onOpenChange(false);
           }}>Enregistrer</Button>
         </DialogFooter>

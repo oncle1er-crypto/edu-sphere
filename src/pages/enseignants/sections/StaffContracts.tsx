@@ -34,7 +34,7 @@ export default function StaffContracts() {
             {enseignants.map((e) => (
               <TableRow key={e.id}>
                 <TableCell className="font-mono text-xs text-muted-foreground">{e.matricule ?? "—"}</TableCell>
-                <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
                 <TableCell><Badge>{e.type_contrat}</Badge></TableCell>
                 <TableCell className="text-sm">{e.date_embauche ? new Date(e.date_embauche).toLocaleDateString("fr-FR") : "—"}</TableCell>
                 <TableCell className="text-sm">{e.specialite ?? "—"}</TableCell>

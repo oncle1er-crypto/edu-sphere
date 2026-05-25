@@ -98,7 +98,7 @@ export default function TransportDrivers() {
           <TableBody>
             {rows.map((c) => (
               <TableRow key={c.id}>
-                <TableCell className="font-medium">{c.prenom} {c.nom}</TableCell>
+                <TableCell className="font-medium">{c.nom} {c.prenom}</TableCell>
                 <TableCell>{c.telephone ?? "—"}</TableCell>
                 <TableCell className="font-mono text-xs">{c.numero_permis ?? "—"}</TableCell>
                 <TableCell>{c.date_expiration_permis ?? "—"}</TableCell>

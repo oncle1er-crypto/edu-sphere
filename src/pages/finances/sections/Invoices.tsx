@@ -41,7 +41,7 @@ export default function Invoices() {
 
   const filtered = factures.filter((f) => {
     const matchQ = !q || f.numero.toLowerCase().includes(q.toLowerCase()) ||
-      `${f.eleve_prenom} ${f.eleve_nom}`.toLowerCase().includes(q.toLowerCase());
+      `${f.eleve_nom} ${f.eleve_prenom}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = statusFilter === "all" || f.statut === statusFilter;
     return matchQ && matchStatus;
   });
@@ -105,7 +105,7 @@ export default function Invoices() {
                     <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
                     <SelectContent>
                       {eleves.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                        <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -158,7 +158,7 @@ export default function Invoices() {
             {filtered.map((f) => (
               <TableRow key={f.id}>
                 <TableCell className="font-mono text-xs">{f.numero}</TableCell>
-                <TableCell className="font-medium">{f.eleve_prenom} {f.eleve_nom}</TableCell>
+                <TableCell className="font-medium">{f.eleve_nom} {f.eleve_prenom}</TableCell>
                 <TableCell className="text-muted-foreground">{f.classe_nom ?? "—"}</TableCell>
                 <TableCell className="text-right font-semibold">{f.montant.toLocaleString()} FCFA</TableCell>
                 <TableCell className="text-right">{f.montant_paye.toLocaleString()} FCFA</TableCell>

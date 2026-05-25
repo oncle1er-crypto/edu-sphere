@@ -31,7 +31,7 @@ export default function CanteenBilling() {
     setRows(((data ?? []) as any[]).map((f) => ({
       id: f.id, numero: f.numero, libelle: f.libelle, montant: Number(f.montant), montant_paye: Number(f.montant_paye),
       statut: f.statut, date_echeance: f.date_echeance,
-      eleve_nom: f.eleves ? `${f.eleves.prenom} ${f.eleves.nom}` : "?",
+      eleve_nom: f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "?",
     })));
     setLoading(false);
   };
@@ -65,7 +65,7 @@ export default function CanteenBilling() {
               <FieldRow label="Élève *">
                 <Select value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}</SelectContent>
+                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
                 </Select>
               </FieldRow>
               <FieldRow label="Libellé"><Input value={form.libelle} onChange={(e) => setForm((p) => ({ ...p, libelle: e.target.value }))} /></FieldRow>

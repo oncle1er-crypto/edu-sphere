@@ -32,7 +32,7 @@ export default function StaffSubjects() {
         const matNom = r.matieres?.nom ?? "?";
         if (!map.has(matNom)) map.set(matNom, { enseignants: new Set(), classes: new Set() });
         const entry = map.get(matNom)!;
-        if (r.enseignants) entry.enseignants.add(`${r.enseignants.prenom} ${r.enseignants.nom}`);
+        if (r.enseignants) entry.enseignants.add(`${r.enseignants.nom} ${r.enseignants.prenom}`);
         if (r.classes) entry.classes.add(r.classes.nom);
       });
 

@@ -158,7 +158,7 @@ export default function StudentsAssignment() {
                     <TableRow key={e.id} className={selected.has(e.id) ? "bg-accent/10" : ""}>
                       <TableCell><Checkbox checked={selected.has(e.id)} onCheckedChange={() => toggleOne(e.id)} /></TableCell>
                       <TableCell className="font-mono text-xs text-muted-foreground">{e.matricule}</TableCell>
-                      <TableCell className="font-medium">{e.prenom} {e.nom}</TableCell>
+                      <TableCell className="font-medium">{e.nom} {e.prenom}</TableCell>
                       <TableCell><Badge variant="secondary">{e.statut}</Badge></TableCell>
                     </TableRow>
                   ))}

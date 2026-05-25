@@ -309,7 +309,7 @@ export default function ClassesList() {
                 <SelectContent>
                   <SelectItem value="none">— Aucun —</SelectItem>
                   {enseignants.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                    <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -363,7 +363,7 @@ export default function ClassesList() {
                 <SelectContent>
                   <SelectItem value="none">— Aucun —</SelectItem>
                   {enseignants.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                    <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

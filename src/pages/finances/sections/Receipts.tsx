@@ -173,7 +173,7 @@ export default function Receipts() {
             {recus.map((r) => (
               <TableRow key={r.id}>
                 <TableCell className="font-mono text-xs">{r.reference ?? r.id.slice(0, 8).toUpperCase()}</TableCell>
-                <TableCell className="font-medium">{r.eleve_prenom} {r.eleve_nom}</TableCell>
+                <TableCell className="font-medium">{r.eleve_nom} {r.eleve_prenom}</TableCell>
                 <TableCell className="text-right font-semibold">{fcfa(r.montant)} FCFA</TableCell>
                 <TableCell className="text-muted-foreground capitalize">{r.mode.replace("_", " ")}</TableCell>
                 <TableCell className="text-muted-foreground">{new Date(r.date_paiement).toLocaleDateString("fr-FR")}</TableCell>
@@ -198,7 +198,7 @@ export default function Receipts() {
       <Dialog open={!!previewRecu} onOpenChange={(open) => { if (!open) closePreview(); }}>
         <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Reçu — {previewRecu?.eleve_prenom} {previewRecu?.eleve_nom}</DialogTitle>
+            <DialogTitle>Reçu — {previewRecu?.eleve_nom} {previewRecu?.eleve_prenom}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 min-h-0">
             {pdfUrl ? (
