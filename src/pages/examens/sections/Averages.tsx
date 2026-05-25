@@ -84,7 +84,7 @@ export default function Averages() {
       }
 
       // Aggregate per student (weighted by coefficient)
-      const eleveMap = new Map<string, { sum: number; coefSum: number; nom: string; prenom: string; classe_nom: string }>();
+      const eleveMap = new Map<string, { sum: number; coefSum: number; nom: string; prenom: string; matricule: string; classe_nom: string }>();
       const matMap = new Map<string, { sum: number; count: number; min: number; max: number }>();
 
       for (const n of data as any[]) {
@@ -97,6 +97,7 @@ export default function Averages() {
             sum: 0, coefSum: 0,
             nom: n.eleves?.nom ?? "",
             prenom: n.eleves?.prenom ?? "",
+            matricule: n.eleves?.matricule ?? "",
             classe_nom: n.eleves?.classes?.nom ?? "",
           });
         }
@@ -113,13 +114,14 @@ export default function Averages() {
         mm.max = Math.max(mm.max, note);
       }
 
-      const list = Array.from(eleveMap.entries())
+      const list: EleveAvg[] = Array.from(eleveMap.entries())
         .map(([id, v]) => {
           const moyenne = v.coefSum > 0 ? v.sum / v.coefSum : 0;
           return {
             eleve_id: id,
             nom: v.nom,
             prenom: v.prenom,
+            matricule: v.matricule,
             classe_nom: v.classe_nom,
             moyenne,
             rang: 0,
