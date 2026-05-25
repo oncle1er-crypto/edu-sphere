@@ -27,9 +27,11 @@ interface Props {
 export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }: Props) {
   const templates = useSmsTemplates();
   const { addRelance } = useRelances();
+  const { ecoleId } = useEcoleId();
   const [templateKey, setTemplateKey] = useState<TrancheKey>("GENERIC");
   const [editedMessage, setEditedMessage] = useState("");
   const [editTemplate, setEditTemplate] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!open || !eleve) return;
