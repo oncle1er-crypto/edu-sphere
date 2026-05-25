@@ -75,7 +75,9 @@ export default function Payments() {
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
     const pay = filtered.reduce((s, e) => s + e.totalPaye, 0);
-    return { att, pay, du: att - pay, count: filtered.length };
+    const enc = filtered.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
+    const rem = filtered.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
+    return { att, pay, enc, rem, du: att - pay, count: filtered.length };
   }, [filtered]);
 
   const openFiche = (e: EleveScolarite, trancheNum?: number) => {
@@ -91,12 +93,14 @@ export default function Payments() {
     <div className="space-y-6">
       <LockBanner module="paiements" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Élèves filtrés</p><p className="text-xl font-bold font-display text-primary mt-1">{stats.count}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Attendu</p><p className="text-xl font-bold font-display text-foreground mt-1">{fcfa(stats.att)}</p></CardContent></Card>
-        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Encaissé</p><p className="text-xl font-bold font-display text-success mt-1">{fcfa(stats.pay)}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Encaissé</p><p className="text-xl font-bold font-display text-success mt-1">{fcfa(stats.enc)}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Remises / Bourses</p><p className="text-xl font-bold font-display text-orange-600 mt-1">{fcfa(stats.rem)}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reste dû</p><p className="text-xl font-bold font-display text-destructive mt-1">{fcfa(stats.du)}</p></CardContent></Card>
       </div>
+
 
       <SettingsSection
         title="Registre des familles — Scolarité"
