@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { AppLoader, NavigationProgress } from "@/components/loading";
 import LoginPage from "@/pages/auth/LoginPage";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
@@ -221,7 +222,7 @@ const queryClient = new QueryClient();
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><span className="text-muted-foreground">Chargement…</span></div>;
+  if (loading) return <AppLoader label="Vérification de votre session…" />;
   if (!session) return <Navigate to="/connexion" replace />;
   return <>{children}</>;
 }
@@ -232,6 +233,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NavigationProgress />
         <AuthProvider>
         <EcoleProvider>
         <AcademicPeriodProvider>
