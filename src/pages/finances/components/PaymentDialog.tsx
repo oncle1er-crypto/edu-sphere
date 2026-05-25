@@ -36,10 +36,13 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
 
-  const tranchesPayables = useMemo(
-    () => (eleve ? eleve.tranches.filter((t) => t.statut !== "payee") : []),
-    [eleve],
-  );
+  const tranchesPayables = useMemo(() => {
+    if (!eleve) return [];
+    // Seule la 1ère tranche non soldée est encaissable (séquentiel)
+    const sorted = [...eleve.tranches].sort((a, b) => a.num - b.num);
+    const next = sorted.find((t) => t.statut !== "payee");
+    return next ? [next] : [];
+  }, [eleve]);
 
   const [trancheNum, setTrancheNum] = useState<string>("");
   const [montant, setMontant] = useState<string>("");
