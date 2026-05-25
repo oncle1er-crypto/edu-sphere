@@ -162,7 +162,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 ? "Tous les documents obligatoires sont fournis."
                 : <>Manque : <span className="font-medium">{missingDocs.map((d) => d.label).join(", ")}</span></>}
               actionLabel="Téléverser les documents"
-              onAction={() => { onClose(); onOpenDrawer?.(); }}
+              onAction={() => { onClose(); onOpenDrawer?.("documents"); }}
             />
 
             <StepCard
@@ -173,8 +173,9 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 ? `${totalPaye.toLocaleString("fr-FR")} FCFA déjà encaissé.`
                 : "Aucun paiement enregistré pour cet élève."}
               actionLabel="Saisir un règlement"
-              onAction={() => { onClose(); onOpenDrawer?.(); }}
+              onAction={() => { onClose(); onOpenDrawer?.("finances"); }}
             />
+
 
             <StepCard
               ok={cClasse}
