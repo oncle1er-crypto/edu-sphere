@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { FileText, Plus, Search, Download, Eye, Trash2, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_FACTURE } from "@/components/help";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,10 @@ export default function Invoices() {
       icon={<FileText className="h-5 w-5" />}
       hideSave
     >
+      <HelpBanner storageKey="finances-invoices" title="Gérer les factures">
+        Créez une facture, suivez son statut, téléchargez le PDF ou supprimez un brouillon. Les factures <strong>partielles</strong> indiquent qu'un acompte a été versé.
+      </HelpBanner>
+      <StatusLegend title="Statuts des factures" items={STATUTS_FACTURE} />
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="flex flex-1 gap-2">
           <div className="relative flex-1 max-w-sm">

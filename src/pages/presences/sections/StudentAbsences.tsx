@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_PRESENCE } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UserX, Search, Loader2 } from "lucide-react";
@@ -62,6 +63,10 @@ export default function StudentAbsences() {
       description="Historique complet des absences avec leur statut de justification."
       hideSave
     >
+      <HelpBanner storageKey="presences-absences" title="Suivi des absences">
+        Toutes les absences enregistrées. Une absence <strong>justifiée</strong> ne pénalise pas l'élève ; une absence <strong>non justifiée</strong> peut déclencher des sanctions selon le règlement.
+      </HelpBanner>
+      <StatusLegend items={STATUTS_PRESENCE} />
       <div className="flex flex-col md:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

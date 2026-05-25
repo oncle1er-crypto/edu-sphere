@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { AlertTriangle, Bell, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_TRANCHE } from "@/components/help";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -376,6 +377,10 @@ export default function Unpaid() {
         icon={<AlertTriangle className="h-5 w-5" />}
         hideSave
       >
+        <HelpBanner storageKey="finances-unpaid" title="À quoi sert cette page ?">
+          Identifiez en un coup d'œil les familles ayant des <strong>impayés</strong>. Cliquez sur une tranche (T1/T2/T3) pour voir le détail, ou envoyez un <strong>SMS de relance</strong> personnalisé. Le nombre de jours de retard est calculé automatiquement.
+        </HelpBanner>
+        <StatusLegend title="Légende des tranches" items={STATUTS_TRANCHE} />
         <div className="flex flex-wrap gap-2 items-center">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

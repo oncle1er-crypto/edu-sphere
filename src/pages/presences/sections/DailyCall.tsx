@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_PRESENCE } from "@/components/help";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -82,6 +83,10 @@ export default function DailyCall() {
       description="Marquer la présence des élèves pour la séance en cours."
       hideSave
     >
+      <HelpBanner storageKey="presences-appel" title="Comment faire l'appel ?">
+        1. Choisissez la <strong>date</strong> et la <strong>classe</strong>. 2. Cochez <strong>Présent</strong>, <strong>Absent</strong> ou <strong>Retard</strong> pour chaque élève. 3. Cliquez sur <strong>Enregistrer</strong>. Les parents reçoivent une notification automatique si configurée.
+      </HelpBanner>
+      <StatusLegend title="Légende des statuts de présence" items={STATUTS_PRESENCE} />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <div className="space-y-1.5">
           <Label className="text-xs">Date</Label>
