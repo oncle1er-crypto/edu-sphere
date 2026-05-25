@@ -393,8 +393,9 @@ export default function StudentsList() {
       <StudentDetailDrawer
         eleve={viewEleve}
         open={!!viewEleve}
-        onClose={() => setViewEleve(null)}
+        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); }}
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
+        initialTab={viewEleveTab}
       />
 
       {/* Inscription workflow */}
@@ -402,9 +403,10 @@ export default function StudentsList() {
         eleve={workflowEleve}
         open={!!workflowEleve}
         onClose={() => setWorkflowEleve(null)}
-        onOpenDrawer={() => setViewEleve(workflowEleve)}
+        onOpenDrawer={(tab) => { setViewEleveTab(tab); setViewEleve(workflowEleve); }}
         onUpdated={() => fetchEleves()}
       />
+
 
       {/* Bulk finalization */}
       <BulkInscriptionDialog
