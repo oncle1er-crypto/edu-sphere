@@ -302,7 +302,6 @@ export default function Averages() {
                       </li>
                     );
                   })}
-                  ))}
                 </ul>
               </CardContent>
             </Card>
