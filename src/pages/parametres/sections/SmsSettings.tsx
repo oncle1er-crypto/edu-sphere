@@ -89,6 +89,9 @@ export default function SmsSettings() {
       base_url: baseUrl.trim(),
       is_active: isActive,
       cout_unitaire: coutUnitaire,
+      whatsapp_url: waUrl.trim(),
+      whatsapp_enabled: waEnabled,
+      whatsapp_cout_unitaire: waCout,
     };
     // Only send api_token if user actually changed it
     if (apiTokenTouched) {
