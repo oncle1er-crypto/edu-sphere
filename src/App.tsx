@@ -440,7 +440,7 @@ const App = () => (
               <Route path="configuration" element={<SubjectsConfig />} />
             </Route>
             
-            <Route path="/utilisateurs" element={<Placeholder title="Utilisateurs" />} />
+            <Route path="/utilisateurs" element={<UsersRoles />} />
             <Route path="/parametres" element={<SettingsLayout />}>
               <Route path="ecole" element={<SchoolProfile />} />
               <Route path="academique" element={<AcademicSettings />} />
