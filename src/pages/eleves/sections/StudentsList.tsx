@@ -126,6 +126,20 @@ export default function StudentsList() {
     return <Badge variant={variant} className="text-[10px] capitalize">{label}</Badge>;
   };
 
+  const finalizeButton = (s: typeof eleves[0]) => (
+    s.statut === "pre_inscrit" ? (
+      <Button
+        size="sm"
+        variant="outline"
+        className="h-7 text-[10px] gap-1 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+        onClick={(e) => { e.stopPropagation(); setWorkflowEleve(s); }}
+        title="Finaliser l'inscription définitive de cet élève"
+      >
+        <Sparkles className="h-3 w-3" /> Finaliser
+      </Button>
+    ) : null
+  );
+
   const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
     <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
       {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.prenom} ${s.nom}`} /> : null}
@@ -146,6 +160,11 @@ export default function StudentsList() {
         <DropdownMenuItem onClick={() => setViewEleve(s)}>
           <Eye className="h-4 w-4 mr-2" />Voir la fiche
         </DropdownMenuItem>
+        {s.statut === "pre_inscrit" && (
+          <DropdownMenuItem onClick={() => setWorkflowEleve(s)}>
+            <Sparkles className="h-4 w-4 mr-2" />Finaliser l'inscription
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onClick={() => { setTransferEleve(s); setTransferClasseId(s.classe_id ?? ""); }}>
           <Shuffle className="h-4 w-4 mr-2" />Transférer de classe
         </DropdownMenuItem>
