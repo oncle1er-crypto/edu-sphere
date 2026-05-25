@@ -214,6 +214,7 @@ import SubjectsReports from "@/pages/matieres/sections/SubjectsReports";
 import SubjectsConfig from "@/pages/matieres/sections/SubjectsConfig";
 import NotFound from "./pages/NotFound";
 import TeacherPortal from "@/pages/portail-enseignant/TeacherPortal";
+import EvaluationGradesPage from "@/pages/portail-enseignant/EvaluationGradesPage";
 
 const queryClient = new QueryClient();
 
@@ -236,6 +237,7 @@ const App = () => (
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/portail-enseignant" element={<RequireAuth><TeacherPortal /></RequireAuth>} />
+            <Route path="/portail-enseignant/evaluations/:id" element={<RequireAuth><EvaluationGradesPage /></RequireAuth>} />
             <Route path="/*" element={
               <RequireAuth>
                 <AppLayout>
