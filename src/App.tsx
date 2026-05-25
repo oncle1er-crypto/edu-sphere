@@ -237,6 +237,7 @@ const App = () => (
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/portail-enseignant" element={<RequireAuth><TeacherPortal /></RequireAuth>} />
+            <Route path="/portail-enseignant/evaluations/:id" element={<RequireAuth><EvaluationGradesPage /></RequireAuth>} />
             <Route path="/*" element={
               <RequireAuth>
                 <AppLayout>
