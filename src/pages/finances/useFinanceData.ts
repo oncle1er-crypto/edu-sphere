@@ -96,6 +96,39 @@ export function useFinanceData() {
       }
     });
 
+    // Fetch paiements pour bâtir l'historique + totaux remises/encaissements
+    const eleveIdsArr = Array.from(
+      new Set((tranchesData as any[]).map((t) => t.eleves?.id).filter(Boolean) as string[]),
+    );
+    const trancheNumByTrancheId = new Map<string, number>();
+    (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
+
+    const { data: paiementsData } = await supabase
+      .from("paiements")
+      .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
+      .eq("ecole_id", ecoleId)
+      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"])
+      .order("date_paiement", { ascending: false });
+
+    const paiementsByEleve = new Map<string, PaiementHistorique[]>();
+    (paiementsData ?? []).forEach((p: any) => {
+      const meta = modeMeta(p.mode);
+      const item: PaiementHistorique = {
+        id: p.id,
+        date: p.date_paiement,
+        montant: Number(p.montant),
+        mode: p.mode,
+        modeLabel: meta.label,
+        kind: meta.kind,
+        trancheNum: p.tranche_id ? trancheNumByTrancheId.get(p.tranche_id) : undefined,
+        reference: p.reference ?? null,
+        motif: p.motif ?? null,
+      };
+      const arr = paiementsByEleve.get(p.eleve_id) ?? [];
+      arr.push(item);
+      paiementsByEleve.set(p.eleve_id, arr);
+    });
+
     // Group tranches by eleve
     const eleveMap = new Map<string, {
       eleve: any;
@@ -108,11 +141,7 @@ export function useFinanceData() {
       const eleveId = t.eleves.id;
 
       if (!eleveMap.has(eleveId)) {
-        eleveMap.set(eleveId, {
-          eleve: t.eleves,
-          tranches: [],
-          fraisAnnuel: 0,
-        });
+        eleveMap.set(eleveId, { eleve: t.eleves, tranches: [], fraisAnnuel: 0 });
       }
 
       const entry = eleveMap.get(eleveId)!;
@@ -136,6 +165,9 @@ export function useFinanceData() {
       const totalPaye = entry.tranches.reduce((s, t) => s + t.paye, 0);
       const joursRetard = computeJoursRetard(entry.tranches);
       const parent = parentMap[eleveId];
+      const paiements = paiementsByEleve.get(eleveId) ?? [];
+      const totalEncaisse = paiements.filter((p) => p.kind === "encaissement").reduce((s, p) => s + p.montant, 0);
+      const totalRemises  = paiements.filter((p) => p.kind === "remise").reduce((s, p) => s + p.montant, 0);
 
       result.push({
         id: eleveId,
@@ -152,8 +184,12 @@ export function useFinanceData() {
         tranches: entry.tranches.sort((a, b) => a.num - b.num),
         joursRetard,
         derniereRelance: derniereRelanceMap[eleveId],
+        totalEncaisse,
+        totalRemises,
+        paiements,
       });
     }
+
 
     setData(result);
     setUsingMock(false);
