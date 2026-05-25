@@ -18,14 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
 import { ParentEditDialog } from "./ParentEditDialog";
+import { ParentSmsDialog } from "./ParentMessageDialog";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   eleve: any | null;
@@ -45,6 +47,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [loading, setLoading] = useState(false);
   const [parentDialogOpen, setParentDialogOpen] = useState(false);
   const [editingParent, setEditingParent] = useState<any | null>(null);
+  const [selectedParentIds, setSelectedParentIds] = useState<Set<string>>(new Set());
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
 
   const reloadParents = useCallback(async () => {
     if (!eleve) return;
