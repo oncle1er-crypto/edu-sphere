@@ -1,4 +1,4 @@
-import { ShieldCheck, GraduationCap, Clock } from "lucide-react";
+import { ShieldCheck, GraduationCap } from "lucide-react";
 
 const items = [
   {
@@ -11,17 +11,12 @@ const items = [
     title: "NOTRE MISSION",
     text: "Offrir une éducation de qualité pour construire un avenir meilleur.",
   },
-  {
-    icon: Clock,
-    title: "DISPONIBLE 24/7",
-    text: "À votre service à tout moment",
-  },
 ];
 
 export function AppFooter() {
   return (
     <footer className="bg-primary text-primary-foreground border-t-4 border-accent">
-      <div className="px-4 md:px-8 py-6 md:py-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="px-4 md:px-8 py-6 md:py-8 grid grid-cols-1 md:grid-cols-2 gap-6">
         {items.map((item) => (
           <div key={item.title} className="flex items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-accent">
