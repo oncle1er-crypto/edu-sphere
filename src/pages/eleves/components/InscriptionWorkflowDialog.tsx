@@ -15,9 +15,10 @@ interface Props {
   eleve: any | null;
   open: boolean;
   onClose: () => void;
-  onOpenDrawer?: () => void;
+  onOpenDrawer?: (tab?: string) => void;
   onUpdated?: () => void;
 }
+
 
 const REQUIRED_DOCS = [
   { key: "acte_naissance", label: "Acte de naissance" },
