@@ -26,17 +26,17 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 const STATUT_BADGE: Record<Tranche["statut"], string> = {
-  payee: "bg-accent/15 text-primary border-accent/30",
-  partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
+  payee: "bg-green-500/15 text-green-700 border-green-500/30",
+  partielle: "bg-yellow-400/20 text-yellow-700 border-yellow-500/40",
   retard: "bg-destructive/15 text-destructive border-destructive/30",
-  due: "bg-muted text-muted-foreground border-border",
+  due: "bg-destructive/15 text-destructive border-destructive/30",
 };
 
 const STATUT_LABEL: Record<Tranche["statut"], string> = {
-  payee: "✓ Payée",
+  payee: "✓ Soldée",
   partielle: "◐ Partielle",
-  retard: "⚠ En retard",
-  due: "À échoir",
+  retard: "⚠ Non soldée",
+  due: "Non soldée",
 };
 
 export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded }: Props) {
