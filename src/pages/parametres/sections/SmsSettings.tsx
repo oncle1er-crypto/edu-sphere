@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Smartphone, Send, TestTube2, Loader2, Eye, EyeOff, ShieldCheck, MessageCircle } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
+import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -148,6 +149,9 @@ export default function SmsSettings() {
         icon={<Smartphone className="h-5 w-5" />}
         hideSave
       >
+        <HelpBanner storageKey="sms-settings" title="Configurer SMS & WhatsApp">
+          Créez un compte sur <strong>panel.yellikasms.com</strong>, copiez votre <strong>token API</strong> et l'<strong>expéditeur</strong> approuvé. Sans cette configuration, aucun SMS ni WhatsApp ne pourra partir depuis l'application.
+        </HelpBanner>
         <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg mb-4">
           <div className="flex items-center gap-3">
             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
