@@ -8,6 +8,8 @@ import { Loader2, Check, AlertCircle, Files, Wallet, GraduationCap, ArrowRight, 
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { toast } from "sonner";
+import { finalizeInscription } from "@/lib/finalizeInscription";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
   eleve: any | null;
