@@ -2,18 +2,24 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Award, Loader2, TrendingUp, TrendingDown, Medal } from "lucide-react";
+import { Award, Loader2, TrendingUp, Medal, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
+import { useEcoles } from "@/context/EcoleContext";
+import { getHonorRollThreshold, DEFAULT_HONOR_ROLL_THRESHOLD } from "@/lib/honorRoll";
+import { generateTableauHonneurPDF } from "@/lib/generateDocumentsPDF";
+import { toast } from "sonner";
 
 interface EleveAvg {
   eleve_id: string;
   nom: string;
   prenom: string;
+  matricule: string;
   classe_nom: string;
   moyenne: number;
   rang: number;
@@ -47,11 +53,59 @@ const mentionColor: Record<string, string> = {
 export default function Averages() {
   const { ecoleId } = useEcoleId();
   const { classes } = useClasses();
+  const { currentEcole } = useEcoles();
   const [selectedClasse, setSelectedClasse] = useState("");
   const [topEleves, setTopEleves] = useState<EleveAvg[]>([]);
   const [matiereAvgs, setMatiereAvgs] = useState<MatiereAvg[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalStats, setGlobalStats] = useState({ moyenne: 0, admis: 0, total: 0 });
+  const [threshold, setThreshold] = useState<number>(DEFAULT_HONOR_ROLL_THRESHOLD);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setThreshold(getHonorRollThreshold());
+    const onChange = () => setThreshold(getHonorRollThreshold());
+    window.addEventListener("honor-roll-threshold-changed", onChange);
+    return () => window.removeEventListener("honor-roll-threshold-changed", onChange);
+  }, []);
+
+  const printHonneur = async (t: EleveAvg) => {
+    setPrintingId(t.eleve_id);
+    try {
+      const doc = await generateTableauHonneurPDF({
+        ecole: {
+          nom: currentEcole?.nom ?? "Groupe Scolaire La Providence",
+          devise: "Foi, Savoir, Excellence",
+          adresse: currentEcole?.adresse ?? "Abidjan, Côte d'Ivoire",
+          telephone: currentEcole?.telephone ?? "+225",
+          directeur: currentEcole?.directeur ?? "",
+          logoUrl: (currentEcole as any)?.logo_url ?? null,
+        },
+        eleve: { nom: t.nom, prenom: t.prenom, matricule: t.matricule },
+        classe: t.classe_nom || "—",
+        annee: (() => {
+          const now = new Date();
+          const y = now.getFullYear();
+          return now.getMonth() >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+        })(),
+        moyenne: t.moyenne,
+        rang: t.rang,
+        effectif: topEleves.length,
+        mention: t.mention,
+        seuil: threshold,
+      });
+      doc.autoPrint();
+      const url = doc.output("bloburl");
+      const w = window.open(url as unknown as string, "_blank");
+      if (!w) toast.error("Pop-up bloquée — autorisez les fenêtres.");
+      else toast.success("Tableau d'honneur prêt à imprimer");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur de génération");
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
 
   useEffect(() => {
     if (!ecoleId) return;
@@ -78,7 +132,7 @@ export default function Averages() {
       }
 
       // Aggregate per student (weighted by coefficient)
-      const eleveMap = new Map<string, { sum: number; coefSum: number; nom: string; prenom: string; classe_nom: string }>();
+      const eleveMap = new Map<string, { sum: number; coefSum: number; nom: string; prenom: string; matricule: string; classe_nom: string }>();
       const matMap = new Map<string, { sum: number; count: number; min: number; max: number }>();
 
       for (const n of data as any[]) {
@@ -91,6 +145,7 @@ export default function Averages() {
             sum: 0, coefSum: 0,
             nom: n.eleves?.nom ?? "",
             prenom: n.eleves?.prenom ?? "",
+            matricule: n.eleves?.matricule ?? "",
             classe_nom: n.eleves?.classes?.nom ?? "",
           });
         }
@@ -107,13 +162,14 @@ export default function Averages() {
         mm.max = Math.max(mm.max, note);
       }
 
-      const list = Array.from(eleveMap.entries())
+      const list: EleveAvg[] = Array.from(eleveMap.entries())
         .map(([id, v]) => {
           const moyenne = v.coefSum > 0 ? v.sum / v.coefSum : 0;
           return {
             eleve_id: id,
             nom: v.nom,
             prenom: v.prenom,
+            matricule: v.matricule,
             classe_nom: v.classe_nom,
             moyenne,
             rang: 0,
@@ -198,31 +254,54 @@ export default function Averages() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top students */}
             <Card className="border">
-              <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center gap-2">
-                <Medal className="h-4 w-4 text-primary" />
-                <h4 className="font-bold font-display text-primary">Classement des élèves</h4>
+              <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Medal className="h-4 w-4 text-primary" />
+                  <h4 className="font-bold font-display text-primary">Classement des élèves</h4>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  Tableau d'honneur ≥ {threshold.toFixed(2)}
+                </span>
               </div>
               <CardContent className="p-0 max-h-[500px] overflow-y-auto">
                 <ul className="divide-y">
-                  {topEleves.map((t) => (
-                    <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
-                      }`}>
-                        {t.rang}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{t.nom} {t.prenom}</p>
-                        <p className="text-xs text-muted-foreground">{t.classe_nom}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{t.moyenne.toFixed(2)}</p>
-                        <Badge className={`text-[10px] ${mentionColor[t.mention] || ""}`} variant="secondary">
-                          {t.mention}
-                        </Badge>
-                      </div>
-                    </li>
-                  ))}
+                  {topEleves.map((t) => {
+                    const eligible = t.moyenne >= threshold;
+                    return (
+                      <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                          t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
+                        }`}>
+                          {t.rang}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{t.nom} {t.prenom}</p>
+                          <p className="text-xs text-muted-foreground">{t.classe_nom}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-primary">{t.moyenne.toFixed(2)}</p>
+                          <Badge className={`text-[10px] ${mentionColor[t.mention] || ""}`} variant="secondary">
+                            {t.mention}
+                          </Badge>
+                        </div>
+                        {eligible && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 shrink-0"
+                            onClick={() => printHonneur(t)}
+                            disabled={printingId === t.eleve_id}
+                            title="Imprimer le tableau d'honneur"
+                          >
+                            {printingId === t.eleve_id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Printer className="h-3.5 w-3.5" />}
+                            <span className="hidden sm:inline">Honneur</span>
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </CardContent>
             </Card>

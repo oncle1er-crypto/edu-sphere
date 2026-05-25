@@ -324,3 +324,130 @@ export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF
 
   return doc;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Tableau d'honneur — diplôme individuel pour élève méritant
+// ─────────────────────────────────────────────────────────────────────────────
+export interface TableauHonneurData {
+  ecole: { nom: string; devise: string; adresse: string; telephone: string; directeur: string; logoUrl?: string | null };
+  eleve: { nom: string; prenom: string; matricule: string; photo_url?: string | null };
+  classe: string;
+  annee: string;
+  periode?: string;
+  moyenne: number;
+  rang?: number;
+  effectif?: number;
+  mention: string;
+  seuil: number;
+}
+
+export async function generateTableauHonneurPDF(data: TableauHonneurData): Promise<jsPDF> {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+
+  const primary: [number, number, number] = [110, 26, 44];
+  const accent: [number, number, number] = [252, 227, 77];
+  const ink: [number, number, number] = [40, 40, 45];
+  const muted: [number, number, number] = [120, 120, 128];
+
+  doc.setDrawColor(...primary);
+  doc.setLineWidth(1.4);
+  doc.rect(8, 8, W - 16, H - 16);
+  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.5);
+  doc.rect(11, 11, W - 22, H - 22);
+
+  doc.setFillColor(...accent);
+  [[14, 14], [W - 22, 14], [14, H - 22], [W - 22, H - 22]].forEach(([x, y]) => {
+    doc.circle(x + 4, y + 4, 2.5, "F");
+  });
+
+  const logo = data.ecole.logoUrl ? await loadImageAsDataURL(data.ecole.logoUrl) : null;
+  if (logo) {
+    const lh = 18;
+    const lw = (logo.w / logo.h) * lh;
+    doc.addImage(logo.data, "PNG", (W - lw) / 2, 20, lw, lh);
+  }
+
+  let y = logo ? 44 : 28;
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(14);
+  doc.setTextColor(...primary);
+  doc.text(data.ecole.nom.toUpperCase(), W / 2, y, { align: "center" });
+  y += 6;
+  doc.setFont("times", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...muted);
+  doc.text(`« ${data.ecole.devise} »`, W / 2, y, { align: "center" });
+
+  y += 14;
+  doc.setFont("times", "bold");
+  doc.setFontSize(34);
+  doc.setTextColor(...primary);
+  doc.text("TABLEAU D'HONNEUR", W / 2, y, { align: "center" });
+
+  y += 8;
+  doc.setDrawColor(...accent);
+  doc.setLineWidth(0.8);
+  doc.line(W / 2 - 50, y, W / 2 + 50, y);
+
+  y += 12;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(...muted);
+  doc.text("Décerné à", W / 2, y, { align: "center" });
+
+  y += 11;
+  doc.setFont("times", "bold");
+  doc.setFontSize(24);
+  doc.setTextColor(...ink);
+  doc.text(`${data.eleve.prenom} ${data.eleve.nom}`.toUpperCase(), W / 2, y, { align: "center" });
+
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...muted);
+  doc.text(`Matricule ${data.eleve.matricule}  •  Classe de ${data.classe}  •  Année scolaire ${data.annee}`, W / 2, y, { align: "center" });
+
+  y += 12;
+  doc.setFont("times", "italic");
+  doc.setFontSize(11.5);
+  doc.setTextColor(...ink);
+  const rangTxt = data.rang && data.effectif ? ` — ${data.rang}e sur ${data.effectif}` : "";
+  const periodeTxt = data.periode ? ` au titre de ${data.periode}` : "";
+  const phrase = `pour ses brillants résultats scolaires${periodeTxt}, avec une moyenne de ${data.moyenne.toFixed(2)} / 20${rangTxt}, supérieure au seuil d'excellence fixé à ${data.seuil.toFixed(2)} / 20.`;
+  const lines = doc.splitTextToSize(phrase, W - 80);
+  doc.text(lines, W / 2, y, { align: "center" });
+
+  y = H - 60;
+  const boxW = 90;
+  const boxX = (W - boxW) / 2;
+  doc.setFillColor(...accent);
+  doc.roundedRect(boxX, y, boxW, 18, 3, 3, "F");
+  doc.setFont("times", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...primary);
+  doc.text(`MOYENNE : ${data.moyenne.toFixed(2)} / 20`, W / 2, y + 7, { align: "center" });
+  doc.setFontSize(10);
+  doc.text(`Mention : ${data.mention}`, W / 2, y + 13.5, { align: "center" });
+
+  const footY = H - 28;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...ink);
+  doc.text(`Fait à Abidjan, le ${new Date().toLocaleDateString("fr-FR")}`, 25, footY);
+
+  doc.setDrawColor(...muted);
+  doc.setLineWidth(0.3);
+  doc.line(W - 80, footY, W - 25, footY);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(9);
+  doc.text("Le Directeur", W - 52.5, footY + 5, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(data.ecole.directeur || "", W - 52.5, footY + 10, { align: "center" });
+
+  return doc;
+}
