@@ -28,6 +28,7 @@ import {
   useAcademicPeriod, genererPeriodes, LOCKABLE_MODULES,
   type AnneeStatut, type PeriodeStatut, type Decoupage, type LockableModule,
 } from "@/context/AcademicPeriodContext";
+import { getHonorRollThreshold, setHonorRollThreshold } from "@/lib/honorRoll";
 
 const fmt = (iso: string) =>
   new Date(iso).toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
