@@ -2,13 +2,18 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Award, Loader2, TrendingUp, TrendingDown, Medal } from "lucide-react";
+import { Award, Loader2, TrendingUp, Medal, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
+import { useEcoles } from "@/context/EcoleContext";
+import { getHonorRollThreshold, DEFAULT_HONOR_ROLL_THRESHOLD } from "@/lib/honorRoll";
+import { generateTableauHonneurPDF } from "@/lib/generateDocumentsPDF";
+import { toast } from "sonner";
 
 interface EleveAvg {
   eleve_id: string;
