@@ -363,6 +363,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
               <TabsTrigger value="finances" className="text-xs"><Wallet className="h-3.5 w-3.5 mr-1" />Finances</TabsTrigger>
               <TabsTrigger value="discipline" className="text-xs"><Award className="h-3.5 w-3.5 mr-1" />Discipline</TabsTrigger>
               <TabsTrigger value="documents" className="text-xs"><Files className="h-3.5 w-3.5 mr-1" />Documents</TabsTrigger>
+              <TabsTrigger value="historique" className="text-xs"><History className="h-3.5 w-3.5 mr-1" />Historique</TabsTrigger>
             </TabsList>
 
             {/* IDENTITÉ */}
