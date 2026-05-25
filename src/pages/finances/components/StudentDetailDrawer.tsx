@@ -4,11 +4,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
+import { DiscountDialog } from "./DiscountDialog";
 import { toast } from "sonner";
 
 interface Props {
