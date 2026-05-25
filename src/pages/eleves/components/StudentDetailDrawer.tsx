@@ -188,7 +188,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
     try {
       // Compression + redimensionnement (max 800px, JPEG q=0.82)
       const compressed = await compressImage(file, { maxSize: 800, quality: 0.82 });
-      const path = `eleves/${eleve.id}-${Date.now()}.jpg`;
+      const path = `eleves/${eleve.ecole_id}/${eleve.id}-${Date.now()}.jpg`;
       const { error: upErr } = await supabase.storage
         .from("avatars")
         .upload(path, compressed, { upsert: true, contentType: "image/jpeg", cacheControl: "3600" });
