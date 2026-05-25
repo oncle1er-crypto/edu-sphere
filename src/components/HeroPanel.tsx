@@ -15,7 +15,7 @@ export function HeroPanel() {
           transition={{ duration: 0.5 }}
           className="flex h-28 w-28 md:h-36 md:w-36 items-center justify-center rounded-3xl bg-primary shadow-[0_20px_50px_-15px_hsl(var(--primary)/0.5)]"
         >
-          <GraduationCap className="h-14 w-14 md:h-20 md:w-20 text-primary" strokeWidth={1.8} />
+          <GraduationCap className="h-14 w-14 md:h-20 md:w-20 text-primary-foreground" strokeWidth={1.8} />
         </motion.div>
 
         <motion.h2
