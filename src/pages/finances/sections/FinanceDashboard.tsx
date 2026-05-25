@@ -32,6 +32,8 @@ export default function FinanceDashboard() {
   // === Scolarité stats ===
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
   const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
+  const totalEncaisse = ELEVES.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
+  const totalRemises = ELEVES.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
   const totalDu = totalAttendu - totalPaye;
   const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
 
