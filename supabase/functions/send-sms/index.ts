@@ -104,6 +104,29 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- SSRF protection: allowlist YellikaSMS hosts ---
+    const ALLOWED_SMS_HOSTS = new Set([
+      "panel.yellikasms.com",
+      "api.yellikasms.com",
+      "yellikasms.com",
+    ]);
+    let smsUrl: URL;
+    try {
+      smsUrl = new URL(config.base_url);
+    } catch {
+      return new Response(JSON.stringify({ error: "URL SMS invalide." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (smsUrl.protocol !== "https:" || !ALLOWED_SMS_HOSTS.has(smsUrl.hostname)) {
+      return new Response(JSON.stringify({ error: "Endpoint SMS non autorisé." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+
     const results: { destinataire: string; success: boolean; response?: unknown }[] = [];
 
     for (const destinataire of destinataires) {

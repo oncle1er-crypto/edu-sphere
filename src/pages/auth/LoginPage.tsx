@@ -75,21 +75,8 @@ export default function LoginPage() {
     navigate("/");
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: "admin@csp.ci",
-        password: "admin123",
-      });
-      if (error) throw error;
-      navigate("/");
-    } catch (err: any) {
-      toast.error("Erreur", { description: err.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+
+
 
   return (
     <div
@@ -401,18 +388,8 @@ export default function LoginPage() {
                 Continuer avec Google
               </Button>
 
-              {!isSignUp && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={handleDemoLogin}
-                  disabled={loading}
-                  className="w-full h-10 rounded-xl text-xs font-medium text-slate-500 hover:bg-slate-100"
-                >
-                  <LogIn className="h-3.5 w-3.5" />
-                  Connexion rapide démo (admin@csp.ci)
-                </Button>
-              )}
+
+
             </form>
 
             <p className="text-center text-sm text-slate-500 mt-6">

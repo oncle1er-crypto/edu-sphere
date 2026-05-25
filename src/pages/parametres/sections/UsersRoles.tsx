@@ -52,7 +52,7 @@ export default function UsersRoles() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRoles, setNewRoles] = useState<string[]>(["enseignant"]);
-  const [newPassword, setNewPassword] = useState("GSP2025!");
+  const [newPassword, setNewPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
@@ -71,6 +71,10 @@ export default function UsersRoles() {
   const handleCreateUser = async () => {
     if (!newEmail || !newName || !ecoleId || newRoles.length === 0) {
       toast.error("Remplissez tous les champs et sélectionnez au moins un rôle");
+      return;
+    }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Le mot de passe doit comporter au moins 8 caractères");
       return;
     }
     setCreating(true);
@@ -97,7 +101,7 @@ export default function UsersRoles() {
     setNewEmail("");
     setNewName("");
     setNewRoles(["enseignant"]);
-    setNewPassword("GSP2025!");
+    setNewPassword("");
     setCreating(false);
     setDialogOpen(false);
     toast.success(`Utilisateur ${newName} créé avec ${newRoles.length} rôle(s)`);
