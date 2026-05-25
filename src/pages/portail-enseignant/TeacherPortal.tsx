@@ -183,7 +183,9 @@ export default function TeacherPortal() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base flex items-center gap-2"><Users className="h-4 w-4 text-primary" /> Mes classes</CardTitle>
-            <Button asChild variant="ghost" size="sm"><Link to="/examens/saisie-rapide">Saisir des notes <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
+            <Button variant="ghost" size="sm" onClick={() => { setNewEvalClasseId(undefined); setNewEvalOpen(true); }}>
+              <Plus className="h-3 w-3 mr-1" /> Saisir des notes
+            </Button>
           </CardHeader>
           <CardContent>
             {dataLoading ? <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" /> :
