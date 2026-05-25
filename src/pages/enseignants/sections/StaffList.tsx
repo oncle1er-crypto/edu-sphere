@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_PERSONNEL } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -132,6 +133,10 @@ export default function StaffList() {
       description="Recherchez et gérez tous les membres de l'établissement."
       hideSave
     >
+      <HelpBanner storageKey="staff-liste" title="Gérer le personnel">
+        Ajoutez enseignants et personnel administratif, consultez leur fiche complète (contrat, matières, planning) et gérez leur statut.
+      </HelpBanner>
+      <StatusLegend title="Statuts du personnel" items={STATUTS_PERSONNEL} />
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <div className="relative w-full lg:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

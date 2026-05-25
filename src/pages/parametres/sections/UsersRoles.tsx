@@ -1,5 +1,6 @@
 import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -134,6 +135,9 @@ export default function UsersRoles() {
       icon={<Users className="h-5 w-5" />}
       hideSave
     >
+      <HelpBanner storageKey="users-roles" title="Comprendre les rôles">
+        Chaque rôle donne accès à un périmètre précis : <strong>Admin</strong> (tout), <strong>Directeur</strong> (gestion pédagogique et financière), <strong>Comptable</strong> (finances uniquement), <strong>Secrétaire</strong> (élèves et inscriptions), <strong>Enseignant</strong> (ses classes et notes), <strong>Bibliothécaire</strong> (bibliothèque). Un utilisateur peut avoir plusieurs rôles.
+      </HelpBanner>
       <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
         <Input
           placeholder="Rechercher un utilisateur…"

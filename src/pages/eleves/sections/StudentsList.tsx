@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_ELEVE } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -161,6 +162,10 @@ export default function StudentsList() {
         description="Recherchez, filtrez et consultez la fiche d'un élève."
         hideSave
       >
+        <HelpBanner storageKey="eleves-liste" title="Comment utiliser cette page ?">
+          Recherchez un élève par nom ou matricule, filtrez par classe ou cycle, puis cliquez sur l'icône <strong>œil</strong> pour ouvrir sa fiche complète (parents, paiements, documents).
+        </HelpBanner>
+        <StatusLegend title="Que veulent dire les statuts d'un élève ?" items={STATUTS_ELEVE} />
         <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
           <div className="relative w-full lg:max-w-xs">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

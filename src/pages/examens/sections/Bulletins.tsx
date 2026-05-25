@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_BULLETIN } from "@/components/help";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -230,6 +231,10 @@ export default function Bulletins() {
       title="Bulletins scolaires"
       description="Visualisez les moyennes et classements par classe."
     >
+      <HelpBanner storageKey="exams-bulletins" title="Générer les bulletins">
+        Sélectionnez une classe et une période pour visualiser les moyennes, classements et mentions. Téléchargez le bulletin PDF individuel ou la liasse complète de la classe.
+      </HelpBanner>
+      <StatusLegend title="Statuts d'un bulletin" items={STATUTS_BULLETIN} />
       <div className="mb-4 flex flex-wrap items-end gap-4">
         <div className="max-w-xs flex-1">
           <Label className="text-xs">Classe</Label>

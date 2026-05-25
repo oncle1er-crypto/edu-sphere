@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
+import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -183,6 +184,9 @@ export default function StudentsRegistration() {
       description="Enregistrez un nouvel élève ou importez une liste depuis un fichier CSV."
       onSave={handleSubmit}
     >
+      <HelpBanner storageKey="eleves-registration" title="Inscrire un nouvel élève">
+        Remplissez les informations de l'élève et de ses parents. L'élève passe en statut <strong>« Pré-inscrit »</strong> ; il deviendra <strong>« Inscrit »</strong> automatiquement quand les <strong>documents obligatoires</strong> seront déposés et qu'un <strong>premier paiement</strong> sera reçu.
+      </HelpBanner>
       <div className="flex justify-end mb-2">
         <Button variant="outline" size="sm" onClick={() => setShowImport(true)}>
           <Upload className="h-4 w-4" /> Import CSV

@@ -16,6 +16,7 @@ import {
   ShieldCheck, Lock, Play, History, FileText, AlertTriangle,
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { HelpBanner, StatusLegend, STATUTS_DECISION_FIN_ANNEE } from "@/components/help";
 
 interface Eleve { id: string; nom: string; prenom: string; matricule: string; classe_id: string; }
 interface Classe { id: string; nom: string; annee_id: string; }
@@ -229,6 +230,11 @@ export default function FinAnnee() {
 
   return (
     <div className="space-y-6">
+      <HelpBanner storageKey="exams-fin-annee" title="Comment fonctionnent les décisions de fin d'année ?">
+        Pour chaque élève, choisissez une décision : <strong>Passage</strong> (classe supérieure), <strong>Redoublement</strong> (même classe), <strong>Transfert</strong> ou <strong>Exclusion</strong>.
+        Cycle de vie d'une classe : <strong>Brouillon</strong> → <strong>Validé</strong> → <strong>Verrouillé</strong> → <strong>Appliqué</strong>. Une fois <em>appliqué</em>, les élèves changent automatiquement de classe et le parcours est archivé.
+      </HelpBanner>
+      <StatusLegend title="Types de décisions" items={STATUTS_DECISION_FIN_ANNEE} defaultOpen={false} />
       <Tabs defaultValue="decisions" className="space-y-4">
         <TabsList>
           <TabsTrigger value="decisions" className="gap-2"><Users className="h-4 w-4" /> Décisions</TabsTrigger>

@@ -1,4 +1,5 @@
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
+import { HelpBanner } from "@/components/help";
 import { Smartphone, Send, Loader2 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,9 @@ export default function SmsCampaigns() {
       icon={<Smartphone className="h-5 w-5" />}
       hideSave
     >
+      <HelpBanner storageKey="sms-campaigns" title="Envoyer une campagne SMS">
+        1. Choisissez les <strong>destinataires</strong> (classe, liste, tous les parents). 2. Rédigez le message (160 caractères = 1 SMS). 3. Envoyez immédiatement ou planifiez l'envoi. Le coût est déduit de votre crédit YellikaSMS.
+      </HelpBanner>
       <FieldRow label="Destinataires">
         <Select defaultValue="parents">
           <SelectTrigger><SelectValue /></SelectTrigger>

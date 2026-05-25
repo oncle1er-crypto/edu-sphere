@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner } from "@/components/help";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { Badge } from "@/components/ui/badge";
@@ -108,6 +109,9 @@ export default function Payments() {
         icon={<CreditCard className="h-5 w-5" />}
         hideSave
       >
+        <HelpBanner storageKey="finances-payments" title="Encaisser un paiement">
+          Sélectionnez la tranche concernée, saisissez le montant et le mode (espèces, Wave, virement, Mobile Money…). Un <strong>reçu PDF</strong> est généré automatiquement et envoyable au parent par SMS ou e-mail.
+        </HelpBanner>
         <div className="flex flex-wrap gap-2">
           <div className="relative flex-1 min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

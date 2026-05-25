@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { HelpBanner, StatusLegend, STATUTS_EMPRUNT } from "@/components/help";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -19,6 +20,10 @@ export default function LibraryLoans() {
       icon={<Repeat className="h-5 w-5" />}
       hideSave
     >
+      <HelpBanner storageKey="biblio-emprunts" title="Gérer les emprunts">
+        Suivez les livres prêtés et leur date de retour. Un emprunt passe en <strong>retard</strong> dès que la date d'échéance est dépassée — pensez à relancer l'élève.
+      </HelpBanner>
+      <StatusLegend items={STATUTS_EMPRUNT} />
       <div className="border rounded-lg overflow-x-auto">
         <Table>
           <TableHeader>

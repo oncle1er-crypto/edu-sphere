@@ -17,6 +17,7 @@ import { Link } from "react-router-dom";
 import { SchoolCard } from "@/pages/cartes/components/SchoolCard";
 import type { CardType } from "@/pages/cartes/components/SchoolCard";
 import { toast } from "sonner";
+import { HelpBanner, StatusLegend, STATUTS_CARTE } from "@/components/help";
 
 const TYPE_LABELS: Record<CardType, string> = {
   eleve: "Élève", personnel: "Personnel", cantine: "Cantine",
@@ -66,6 +67,10 @@ export default function CardsList() {
 
   return (
     <div className="space-y-4">
+      <HelpBanner storageKey="cartes-liste" title="Gérer les cartes & badges">
+        Émettez des cartes à l'unité ou par lot, déclarez une perte ou révoquez une carte. Le QR-code permet l'identification rapide à l'entrée, à la cantine et à la bibliothèque.
+      </HelpBanner>
+      <StatusLegend title="Statuts des cartes" items={STATUTS_CARTE} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold">Cartes émises</h2>
