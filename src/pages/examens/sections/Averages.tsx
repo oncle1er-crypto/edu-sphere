@@ -19,6 +19,7 @@ interface EleveAvg {
   eleve_id: string;
   nom: string;
   prenom: string;
+  matricule: string;
   classe_nom: string;
   moyenne: number;
   rang: number;
