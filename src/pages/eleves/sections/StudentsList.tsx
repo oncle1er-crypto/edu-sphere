@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -30,9 +31,21 @@ export default function StudentsList() {
   const { classes } = useClasses();
   const { cycles } = useCycles();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Debounce search input (180ms) to avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, viewMode]);
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
@@ -51,16 +64,26 @@ export default function StudentsList() {
     }
   }, [eleves, viewEleve]);
 
-  const filtered = eleves.filter((s) => {
-    const matchSearch =
-      s.nom.toLowerCase().includes(search.toLowerCase()) ||
-      s.prenom.toLowerCase().includes(search.toLowerCase()) ||
-      s.matricule.toLowerCase().includes(search.toLowerCase()) ||
-      (s.classe_nom ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchCycle = cycle === "all" || s.cycle_nom === cycle;
-    const matchStatut = statut === "all" || s.statut === statut;
-    return matchSearch && matchCycle && matchStatut;
-  });
+  const filtered = useMemo(() => {
+    const q = debouncedSearch;
+    return eleves.filter((s) => {
+      const matchSearch = !q ||
+        s.nom.toLowerCase().includes(q) ||
+        s.prenom.toLowerCase().includes(q) ||
+        s.matricule.toLowerCase().includes(q) ||
+        (s.classe_nom ?? "").toLowerCase().includes(q);
+      const matchCycle = cycle === "all" || s.cycle_nom === cycle;
+      const matchStatut = statut === "all" || s.statut === statut;
+      return matchSearch && matchCycle && matchStatut;
+    });
+  }, [eleves, debouncedSearch, cycle, statut]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
 
   const handleTransfer = async () => {
     if (!transferEleve || !transferClasseId) return;
@@ -208,7 +231,7 @@ export default function StudentsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((s) => (
+                {paginated.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setViewEleve(s)}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                     <TableCell>
@@ -243,7 +266,7 @@ export default function StudentsList() {
         {/* GRID / CARD VIEW */}
         {viewMode === "grid" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {filtered.map((s) => (
+            {paginated.map((s) => (
               <Card
                 key={s.id}
                 className="relative group p-3 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow cursor-pointer"
@@ -273,7 +296,26 @@ export default function StudentsList() {
             )}
           </div>
         )}
+
+        {/* Pagination footer */}
+        {filtered.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between gap-2 pt-2 text-sm">
+            <p className="text-muted-foreground text-xs">
+              {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} sur {filtered.length}
+            </p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={currentPage === 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-xs text-muted-foreground tabular-nums">Page {currentPage} / {totalPages}</span>
+              <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </SettingsSection>
+
 
       {/* Student detail drawer */}
       <StudentDetailDrawer
