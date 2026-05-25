@@ -47,6 +47,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // --- Verify caller belongs to the requested school ---
+    const { data: membership, error: memErr } = await supabase
+      .from("user_roles")
+      .select("id, role")
+      .eq("user_id", user.id)
+      .eq("ecole_id", ecole_id)
+      .in("role", ["admin", "directeur", "comptable", "surveillant"] as any)
+      .maybeSingle();
+    if (memErr || !membership) {
+      return new Response(JSON.stringify({ error: "Accès refusé pour cette école." }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // --- Cap abuse vectors ---
+    if (destinataires.length > 500) {
+      return new Response(JSON.stringify({ error: "Trop de destinataires (max 500)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (message.length > 1000) {
+      return new Response(JSON.stringify({ error: "Message trop long (max 1000 caractères)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Get SMS config for this school
     const { data: config, error: configError } = await supabase
       .from("sms_config")
