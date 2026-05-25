@@ -48,12 +48,19 @@ export function AIAssistant() {
     setLoading(true);
 
     try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) {
+        toast.error("Session expirée, reconnectez-vous.");
+        setLoading(false);
+        return;
+      }
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-assistant`;
       const resp = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           messages: next.filter((m) => m !== WELCOME).map((m) => ({ role: m.role, content: m.content })),
