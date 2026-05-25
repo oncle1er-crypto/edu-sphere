@@ -266,7 +266,7 @@ export default function StudentsList() {
         {/* GRID / CARD VIEW */}
         {viewMode === "grid" && (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-            {filtered.map((s) => (
+            {paginated.map((s) => (
               <Card
                 key={s.id}
                 className="relative group p-3 flex flex-col items-center text-center gap-2 hover:shadow-md transition-shadow cursor-pointer"
