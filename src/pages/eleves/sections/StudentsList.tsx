@@ -273,7 +273,7 @@ export default function StudentsList() {
                     </TableCell>
                     <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
-                    <TableCell>{statusBadge(s)}</TableCell>
+                    <TableCell><div className="flex items-center gap-1.5 flex-wrap">{statusBadge(s)}{finalizeButton(s)}</div></TableCell>
                     <TableCell>{studentActions(s)}</TableCell>
                   </TableRow>
                 ))}
