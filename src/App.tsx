@@ -269,6 +269,7 @@ const App = () => (
               <Route path="sante" element={<StudentsHealth />} />
               <Route path="discipline" element={<StudentsDiscipline />} />
               <Route path="documents" element={<StudentsDocuments />} />
+              <Route path="attestations" element={<StudentsAttestations />} />
               <Route path="anciens" element={<StudentsAlumni />} />
               <Route path="configuration" element={<StudentsConfig />} />
             </Route>
