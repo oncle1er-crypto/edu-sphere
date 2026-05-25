@@ -45,6 +45,9 @@ export default function SubjectsClassesAssignment() {
 
   const isLoading = lm || lc || loading;
 
+  const filteredClasses = cycleFilter === "all" ? classes : classes.filter((c) => c.cycle_nom === cycleFilter);
+  const filteredMatieres = cycleFilter === "all" ? matieres : matieres.filter((m) => (m.cycles ?? []).includes(cycleFilter));
+
   return (
     <SettingsSection
       icon={<BookOpen className="h-5 w-5" />}
@@ -52,23 +55,32 @@ export default function SubjectsClassesAssignment() {
       description="Cochez les matières enseignées dans chaque classe (sauvegarde automatique)."
       hideSave
     >
+      <div className="flex justify-end">
+        <Select value={cycleFilter} onValueChange={setCycleFilter}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous cycles</SelectItem>
+            {CYCLES_FILTER.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
       {isLoading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
-      ) : matieres.length === 0 || classes.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">Créez d'abord des classes et des matières.</p>
+      ) : filteredMatieres.length === 0 || filteredClasses.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">Aucune matière ou classe pour ce cycle.</p>
       ) : (
         <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="sticky left-0 bg-card">Matière</TableHead>
-                {classes.map((c) => (
+                {filteredClasses.map((c) => (
                   <TableHead key={c.id} className="text-center text-xs whitespace-nowrap">{c.nom}</TableHead>
                 ))}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {matieres.map((m) => (
+              {filteredMatieres.map((m) => (
                 <TableRow key={m.id}>
                   <TableCell className="sticky left-0 bg-card font-medium whitespace-nowrap">
                     <div className="flex items-center gap-2">
@@ -76,7 +88,7 @@ export default function SubjectsClassesAssignment() {
                       {m.nom}
                     </div>
                   </TableCell>
-                  {classes.map((c) => {
+                  {filteredClasses.map((c) => {
                     const key = `${c.id}|${m.id}`;
                     return (
                       <TableCell key={c.id} className="text-center">
