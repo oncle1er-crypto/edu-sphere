@@ -207,7 +207,7 @@ export default function StudentSummary() {
                       </div>
                       <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                         <div><p className="text-muted-foreground">Dû</p><p className="font-bold">{fcfa(t.montant)}</p></div>
-                        <div><p className="text-muted-foreground">Payé</p><p className="font-bold text-accent">{fcfa(t.paye)}</p></div>
+                        <div><p className="text-muted-foreground">Payé</p><p className="font-bold text-success">{fcfa(t.paye)}</p></div>
                         <div><p className="text-muted-foreground">Reste</p><p className="font-bold text-destructive">{fcfa(t.montant - t.paye)}</p></div>
                       </div>
                       <div className="mt-2">
