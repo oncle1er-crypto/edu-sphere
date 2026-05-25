@@ -27,6 +27,7 @@ const REQUIRED_DOCS = [
 
 export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpenDrawer, onUpdated }: Props) {
   const { classes } = useClasses();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
