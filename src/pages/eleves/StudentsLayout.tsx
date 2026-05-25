@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, UserPlus, FileText, GraduationCap,
-  CalendarCheck, Heart, Award, Files, Archive, Settings2,
+  CalendarCheck, Heart, Award, Files, FileBadge, Archive, Settings2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -19,6 +19,7 @@ const sections = [
   { to: "discipline", label: "Discipline & sanctions", icon: Award, group: "Suivi" },
 
   { to: "documents", label: "Documents & dossiers", icon: Files, group: "Archives" },
+  { to: "attestations", label: "Attestations & certificats", icon: FileBadge, group: "Archives" },
   { to: "anciens", label: "Anciens élèves", icon: Archive, group: "Archives" },
 
   { to: "configuration", label: "Configuration", icon: Settings2, group: "Système" },

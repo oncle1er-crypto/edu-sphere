@@ -18,6 +18,7 @@ import StudentsAttendance from "@/pages/eleves/sections/StudentsAttendance";
 import StudentsHealth from "@/pages/eleves/sections/StudentsHealth";
 import StudentsDiscipline from "@/pages/eleves/sections/StudentsDiscipline";
 import StudentsDocuments from "@/pages/eleves/sections/StudentsDocuments";
+import StudentsAttestations from "@/pages/eleves/sections/StudentsAttestations";
 import StudentsAlumni from "@/pages/eleves/sections/StudentsAlumni";
 import StudentsConfig from "@/pages/eleves/sections/StudentsConfig";
 import StaffLayout from "@/pages/enseignants/StaffLayout";
@@ -268,6 +269,7 @@ const App = () => (
               <Route path="sante" element={<StudentsHealth />} />
               <Route path="discipline" element={<StudentsDiscipline />} />
               <Route path="documents" element={<StudentsDocuments />} />
+              <Route path="attestations" element={<StudentsAttestations />} />
               <Route path="anciens" element={<StudentsAlumni />} />
               <Route path="configuration" element={<StudentsConfig />} />
             </Route>
