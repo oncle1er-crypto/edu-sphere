@@ -3332,6 +3332,14 @@ export type Database = {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
       }
+      generer_tranches_eleve: {
+        Args: { _eleve_id: string }
+        Returns: undefined
+      }
+      generer_tranches_pour_frais: {
+        Args: { _frais_id: string }
+        Returns: number
+      }
     }
     Enums: {
       annee_statut: "active" | "preparation" | "verrouillee" | "archivee"
