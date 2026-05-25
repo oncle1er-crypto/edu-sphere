@@ -52,7 +52,7 @@ export default function UsersRoles() {
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
   const [newRoles, setNewRoles] = useState<string[]>(["enseignant"]);
-  const [newPassword, setNewPassword] = useState("GSP2025!");
+  const [newPassword, setNewPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
