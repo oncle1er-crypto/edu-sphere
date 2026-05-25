@@ -146,8 +146,8 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
 
                 {/* Synthèse */}
                 <div className="grid grid-cols-3 gap-2">
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-sm font-bold text-primary">{fcfa(eleve.fraisAnnuel)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Payé</p><p className="text-sm font-bold text-accent">{fcfa(eleve.totalPaye)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-sm font-bold text-foreground">{fcfa(eleve.fraisAnnuel)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Payé</p><p className="text-sm font-bold text-success">{fcfa(eleve.totalPaye)}</p></CardContent></Card>
                   <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p></CardContent></Card>
                 </div>
 
