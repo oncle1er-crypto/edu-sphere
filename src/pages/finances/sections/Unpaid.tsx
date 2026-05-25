@@ -51,10 +51,25 @@ export default function Unpaid() {
   );
   const setSelectedEleve = (e: EleveScolarite | null) => setSelectedEleveId(e?.id ?? null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
-  const [paymentEleve, setPaymentEleve] = useState<EleveScolarite | null>(null);
+  const [paymentEleveId, setPaymentEleveId] = useState<string | null>(null);
+  const paymentEleve = useMemo(
+    () => (paymentEleveId ? ELEVES_SCOLARITE.find((e) => e.id === paymentEleveId) ?? null : null),
+    [paymentEleveId, ELEVES_SCOLARITE],
+  );
+  const setPaymentEleve = (e: EleveScolarite | null) => setPaymentEleveId(e?.id ?? null);
   const [paymentTranche, setPaymentTranche] = useState<number | undefined>(undefined);
-  const [smsEleve, setSmsEleve] = useState<EleveScolarite | null>(null);
-  const [statusEleve, setStatusEleve] = useState<EleveScolarite | null>(null);
+  const [smsEleveId, setSmsEleveId] = useState<string | null>(null);
+  const smsEleve = useMemo(
+    () => (smsEleveId ? ELEVES_SCOLARITE.find((e) => e.id === smsEleveId) ?? null : null),
+    [smsEleveId, ELEVES_SCOLARITE],
+  );
+  const setSmsEleve = (e: EleveScolarite | null) => setSmsEleveId(e?.id ?? null);
+  const [statusEleveId, setStatusEleveId] = useState<string | null>(null);
+  const statusEleve = useMemo(
+    () => (statusEleveId ? ELEVES_SCOLARITE.find((e) => e.id === statusEleveId) ?? null : null),
+    [statusEleveId, ELEVES_SCOLARITE],
+  );
+  const setStatusEleve = (e: EleveScolarite | null) => setStatusEleveId(e?.id ?? null);
 
   useEffect(() => { fetchRelances(); }, [fetchRelances]);
 
