@@ -287,6 +287,72 @@ export default function SmsSettings() {
           </p>
         )}
       </SettingsSection>
+
+      <SettingsSection
+        title="Configuration WhatsApp (YellikaSMS)"
+        description="Envoyez des messages WhatsApp via le même compte YellikaSMS. La clé API et le Sender ID configurés ci-dessus sont réutilisés."
+        icon={<MessageCircle className="h-5 w-5" />}
+        hideSave
+      >
+        <div className="flex items-center justify-between p-3 bg-muted/40 rounded-lg mb-4">
+          <div className="flex items-center gap-3">
+            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+            <span className="font-semibold text-sm">Service WhatsApp</span>
+            {waEnabled ? (
+              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200">Actif</Badge>
+            ) : (
+              <Badge variant="secondary">Inactif</Badge>
+            )}
+          </div>
+          <Switch checked={waEnabled} onCheckedChange={setWaEnabled} />
+        </div>
+
+        <FieldRow label="URL de l'API WhatsApp">
+          <Input value={waUrl} onChange={(e) => setWaUrl(e.target.value)} />
+        </FieldRow>
+
+        <FieldRow label="Coût unitaire WhatsApp (FCFA)">
+          <Input
+            type="number"
+            min={0}
+            max={1000}
+            value={waCout}
+            onChange={(e) => setWaCout(Number(e.target.value))}
+            className="w-32"
+          />
+        </FieldRow>
+
+        <div className="flex gap-3 border-t pt-4">
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            Enregistrer
+          </Button>
+        </div>
+
+        <div className="border-t pt-4 mt-4 space-y-3">
+          <FieldRow label="Numéro WhatsApp de test" hint="Format : +225XXXXXXXXXX">
+            <Input
+              placeholder="+2250700000000"
+              value={waTestPhone}
+              onChange={(e) => setWaTestPhone(e.target.value)}
+            />
+          </FieldRow>
+          <Button
+            onClick={handleTestWhatsApp}
+            disabled={waTesting || !waTestPhone || !waEnabled || !hasExistingToken}
+            variant="outline"
+            className="gap-2"
+          >
+            {waTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageCircle className="h-4 w-4" />}
+            Envoyer WhatsApp de test
+          </Button>
+          {(!waEnabled || !hasExistingToken) && (
+            <p className="text-xs text-muted-foreground">
+              ⚠️ Activez WhatsApp et configurez la clé API YellikaSMS avant de tester.
+            </p>
+          )}
+        </div>
+      </SettingsSection>
     </div>
   );
 }
