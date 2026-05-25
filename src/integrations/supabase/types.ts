@@ -2316,6 +2316,13 @@ export type Database = {
             referencedRelation: "tranches"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "paiements_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "v_paiements_incoherents"
+            referencedColumns: ["tranche_id"]
+          },
         ]
       }
       parametres_classes: {
@@ -3304,7 +3311,33 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_paiements_incoherents: {
+        Row: {
+          ecole_id: string | null
+          eleve_id: string | null
+          montant: number | null
+          numero: number | null
+          paye_tranche: number | null
+          somme_paiements: number | null
+          tranche_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tranches_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tranches_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       appliquer_decisions_fin_annee: {
@@ -3330,6 +3363,18 @@ export type Database = {
       }
       decrypt_sms_api_token: {
         Args: { _config_id: string; _passphrase: string }
+        Returns: string
+      }
+      enregistrer_paiement: {
+        Args: {
+          _ecole_id: string
+          _eleve_id: string
+          _mode: string
+          _montant: number
+          _recu_par?: string
+          _reference?: string
+          _tranche_id: string
+        }
         Returns: string
       }
       generer_tranches_eleve: {
