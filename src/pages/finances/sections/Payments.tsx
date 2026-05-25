@@ -38,7 +38,12 @@ export default function Payments() {
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [classe, setClasse] = useState<string>("all");
   const [statut, setStatut] = useState<"all" | "ajour" | "partiel" | "retard">("all");
-  const [selected, setSelected] = useState<EleveScolarite | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selected = useMemo(
+    () => (selectedId ? ELEVES_SCOLARITE.find((e) => e.id === selectedId) ?? null : null),
+    [selectedId, ELEVES_SCOLARITE],
+  );
+  const setSelected = (e: EleveScolarite | null) => setSelectedId(e?.id ?? null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
 
   const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
