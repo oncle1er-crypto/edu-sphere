@@ -231,7 +231,7 @@ export default function StudentsList() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((s) => (
+                {paginated.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setViewEleve(s)}>
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                     <TableCell>
