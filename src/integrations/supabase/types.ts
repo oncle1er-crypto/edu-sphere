@@ -405,6 +405,66 @@ export type Database = {
           },
         ]
       }
+      chauffeurs: {
+        Row: {
+          created_at: string
+          date_embauche: string | null
+          date_expiration_permis: string | null
+          ecole_id: string
+          id: string
+          nom: string
+          numero_permis: string | null
+          prenom: string
+          statut: string
+          telephone: string | null
+          updated_at: string
+          vehicule_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date_embauche?: string | null
+          date_expiration_permis?: string | null
+          ecole_id: string
+          id?: string
+          nom: string
+          numero_permis?: string | null
+          prenom: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date_embauche?: string | null
+          date_expiration_permis?: string | null
+          ecole_id?: string
+          id?: string
+          nom?: string
+          numero_permis?: string | null
+          prenom?: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chauffeurs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chauffeurs_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classe_matieres: {
         Row: {
           classe_id: string
@@ -1356,6 +1416,7 @@ export type Database = {
       factures: {
         Row: {
           annee_id: string
+          categorie: string
           created_at: string
           date_echeance: string
           date_emission: string
@@ -1372,6 +1433,7 @@ export type Database = {
         }
         Insert: {
           annee_id: string
+          categorie?: string
           created_at?: string
           date_echeance: string
           date_emission?: string
@@ -1388,6 +1450,7 @@ export type Database = {
         }
         Update: {
           annee_id?: string
+          categorie?: string
           created_at?: string
           date_echeance?: string
           date_emission?: string
