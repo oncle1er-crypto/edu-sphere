@@ -44,6 +44,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [incidents, setIncidents] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [parentDialogOpen, setParentDialogOpen] = useState(false);
   const [editingParent, setEditingParent] = useState<any | null>(null);
