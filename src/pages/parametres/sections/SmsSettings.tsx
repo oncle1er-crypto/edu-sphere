@@ -119,6 +119,16 @@ export default function SmsSettings() {
     setTesting(false);
   };
 
+  const handleTestWhatsApp = async () => {
+    if (!PHONE_REGEX.test(waTestPhone)) {
+      toast.error("Format requis : +225 suivi de 10 chiffres.");
+      return;
+    }
+    setWaTesting(true);
+    try { await testWhatsApp(waTestPhone); } catch { /* toast handled in hook */ }
+    setWaTesting(false);
+  };
+
   /** Display value for the API token field */
   const displayToken = (() => {
     if (apiTokenTouched) return apiToken; // user is editing — show raw
