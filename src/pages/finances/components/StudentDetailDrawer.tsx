@@ -45,6 +45,8 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>(undefined);
   const [payOpen, setPayOpen] = useState(false);
+  const [discountTrancheNum, setDiscountTrancheNum] = useState<number | undefined>(undefined);
+  const [discountOpen, setDiscountOpen] = useState(false);
 
   useEffect(() => {
     if (eleve) fetchRelances();
