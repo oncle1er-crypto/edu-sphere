@@ -641,6 +641,17 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       </SheetContent>
     </Sheet>
 
+    {eleve && (
+      <ParentEditDialog
+        open={parentDialogOpen}
+        onOpenChange={setParentDialogOpen}
+        link={editingParent}
+        eleveId={eleve.id}
+        ecoleId={eleve.ecole_id}
+        onSaved={reloadParents}
+      />
+    )}
+
     <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
       <AlertDialogContent>
         <AlertDialogHeader>
