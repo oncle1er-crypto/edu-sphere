@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Smartphone, Send, TestTube2, Loader2, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Smartphone, Send, TestTube2, Loader2, Eye, EyeOff, ShieldCheck, MessageCircle } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
