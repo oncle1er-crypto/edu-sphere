@@ -383,6 +383,28 @@ export default function AcademicSettings() {
         <FieldRow label="Classement automatique" hint="Calcul du rang par classe">
           <Switch defaultChecked />
         </FieldRow>
+        <FieldRow
+          label="Seuil tableau d'honneur"
+          hint="Moyenne minimale (sur 20) requise pour imprimer un tableau d'honneur depuis la section Moyennes."
+        >
+          <Input
+            type="number"
+            min={0}
+            max={20}
+            step={0.5}
+            defaultValue={getHonorRollThreshold()}
+            className="w-32"
+            onBlur={(e) => {
+              const v = Number(e.target.value);
+              if (!Number.isFinite(v) || v <= 0 || v > 20) {
+                toast.error("Valeur invalide (entre 0 et 20)");
+                return;
+              }
+              setHonorRollThreshold(v);
+              toast.success("Seuil mis à jour");
+            }}
+          />
+        </FieldRow>
       </SettingsSection>
     </div>
   );
