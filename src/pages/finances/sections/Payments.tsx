@@ -236,20 +236,27 @@ export default function Payments() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {e.tranches.map((t) => (
-                          <button
-                            key={t.num}
-                            onClick={(ev) => { ev.stopPropagation(); openFiche(e, t.num); }}
-                            title={`${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance} · cliquer pour voir le détail`}
-                            className={
-                              "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition hover:scale-110 hover:shadow cursor-pointer " +
-                              (t.statut === "payee" ? "bg-accent/20 text-primary border-accent/40 hover:bg-accent/30" :
-                               t.statut === "partielle" ? "bg-orange-500/20 text-orange-600 border-orange-500/40 hover:bg-orange-500/30" :
-                               t.statut === "retard" ? "bg-destructive/20 text-destructive border-destructive/40 hover:bg-destructive/30" :
-                               "bg-muted text-muted-foreground border-border hover:bg-muted/80")
-                            }
-                          >T{t.num}</button>
-                        ))}
+                        {e.tranches.map((t) => {
+                          const prevUnpaid = e.tranches.some((p) => p.num < t.num && p.statut !== "payee");
+                          const locked = t.statut !== "payee" && prevUnpaid;
+                          return (
+                            <button
+                              key={t.num}
+                              onClick={(ev) => { ev.stopPropagation(); if (!locked) openFiche(e, t.num); }}
+                              disabled={locked}
+                              title={locked
+                                ? `Soldez d'abord la tranche précédente avant d'encaisser T${t.num}.`
+                                : `${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance}`}
+                              className={
+                                "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition " +
+                                (locked ? "opacity-50 cursor-not-allowed " : "hover:scale-110 hover:shadow cursor-pointer ") +
+                                (t.statut === "payee" ? "bg-green-500/20 text-green-700 border-green-500/40 hover:bg-green-500/30" :
+                                 t.statut === "partielle" ? "bg-yellow-400/25 text-yellow-700 border-yellow-500/40 hover:bg-yellow-400/35" :
+                                 "bg-destructive/20 text-destructive border-destructive/40 hover:bg-destructive/30")
+                              }
+                            >T{t.num}</button>
+                          );
+                        })}
                       </div>
                     </TableCell>
                     <TableCell className="text-right cursor-pointer" onClick={() => openFiche(e)}>
