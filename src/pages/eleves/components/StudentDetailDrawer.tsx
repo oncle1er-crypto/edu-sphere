@@ -43,6 +43,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [documents, setDocuments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [parentDialogOpen, setParentDialogOpen] = useState(false);
+  const [editingParent, setEditingParent] = useState<any | null>(null);
+
+  const reloadParents = useCallback(async () => {
+    if (!eleve) return;
+    const { data } = await supabase
+      .from("eleve_parents")
+      .select("*, parents:parent_id(nom, prenom, telephone, email)")
+      .eq("eleve_id", eleve.id);
+    setParents((data as any[]) ?? []);
+  }, [eleve]);
+
+  const handleDetachParent = async (linkId: string) => {
+    const { error } = await supabase.from("eleve_parents").delete().eq("id", linkId);
+    if (error) return toast.error(error.message);
+    toast.success("Parent détaché de l'élève");
+    reloadParents();
+  };
 
   // Edit mode
   const [editing, setEditing] = useState(false);
