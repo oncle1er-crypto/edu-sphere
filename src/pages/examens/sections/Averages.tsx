@@ -206,10 +206,10 @@ export default function Averages() {
     <SettingsSection icon={<Award className='h-5 w-5' />} title="Moyennes & classements" description="Classements automatiques basés sur les notes enregistrées.">
       <div className="mb-4 max-w-xs">
         <Label className="text-xs">Filtrer par classe</Label>
-        <Select value={selectedClasse} onValueChange={setSelectedClasse}>
+        <Select value={selectedClasse || "all"} onValueChange={(v) => setSelectedClasse(v === "all" ? "" : v)}>
           <SelectTrigger><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Toutes les classes</SelectItem>
+            <SelectItem value="all">Toutes les classes</SelectItem>
             {classes.map((c) => (
               <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
             ))}
