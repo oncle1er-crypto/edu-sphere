@@ -254,30 +254,54 @@ export default function Averages() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Top students */}
             <Card className="border">
-              <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center gap-2">
-                <Medal className="h-4 w-4 text-primary" />
-                <h4 className="font-bold font-display text-primary">Classement des élèves</h4>
+              <div className="px-6 py-4 border-b bg-muted/30 rounded-t-lg flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Medal className="h-4 w-4 text-primary" />
+                  <h4 className="font-bold font-display text-primary">Classement des élèves</h4>
+                </div>
+                <span className="text-[11px] text-muted-foreground">
+                  Tableau d'honneur ≥ {threshold.toFixed(2)}
+                </span>
               </div>
               <CardContent className="p-0 max-h-[500px] overflow-y-auto">
                 <ul className="divide-y">
-                  {topEleves.map((t) => (
-                    <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
-                      }`}>
-                        {t.rang}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm truncate">{t.nom} {t.prenom}</p>
-                        <p className="text-xs text-muted-foreground">{t.classe_nom}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{t.moyenne.toFixed(2)}</p>
-                        <Badge className={`text-[10px] ${mentionColor[t.mention] || ""}`} variant="secondary">
-                          {t.mention}
-                        </Badge>
-                      </div>
-                    </li>
+                  {topEleves.map((t) => {
+                    const eligible = t.moyenne >= threshold;
+                    return (
+                      <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                          t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
+                        }`}>
+                          {t.rang}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm truncate">{t.nom} {t.prenom}</p>
+                          <p className="text-xs text-muted-foreground">{t.classe_nom}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-primary">{t.moyenne.toFixed(2)}</p>
+                          <Badge className={`text-[10px] ${mentionColor[t.mention] || ""}`} variant="secondary">
+                            {t.mention}
+                          </Badge>
+                        </div>
+                        {eligible && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="gap-1.5 shrink-0"
+                            onClick={() => printHonneur(t)}
+                            disabled={printingId === t.eleve_id}
+                            title="Imprimer le tableau d'honneur"
+                          >
+                            {printingId === t.eleve_id
+                              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              : <Printer className="h-3.5 w-3.5" />}
+                            <span className="hidden sm:inline">Honneur</span>
+                          </Button>
+                        )}
+                      </li>
+                    );
+                  })}
                   ))}
                 </ul>
               </CardContent>
