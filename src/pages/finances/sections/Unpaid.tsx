@@ -242,35 +242,47 @@ export default function Unpaid() {
                     <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche complète" onClick={() => openFiche(e)}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button
+                    <ConfirmButton
                       size="icon" variant="outline" className="h-8 w-8"
                       title="Enregistrer un encaissement"
-                      onClick={() => { setPaymentEleve(e); setPaymentTranche(undefined); }}
+                      confirmTitle="Ouvrir l'encaissement ?"
+                      confirmDescription={`Saisir un nouveau paiement pour ${e.prenom} ${e.nom} ?`}
+                      confirmLabel="Continuer"
+                      onConfirm={() => { setPaymentEleve(e); setPaymentTranche(undefined); }}
                     >
                       <Wallet className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </ConfirmButton>
+                    <ConfirmButton
                       size="icon" variant="outline" className="h-8 w-8"
                       title="Mettre à jour le statut"
-                      onClick={() => setStatusEleve(e)}
+                      confirmTitle="Modifier le statut ?"
+                      confirmDescription={`Mettre à jour le statut de scolarité de ${e.prenom} ${e.nom} ?`}
+                      confirmLabel="Continuer"
+                      onConfirm={() => setStatusEleve(e)}
                     >
                       <Tag className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </ConfirmButton>
+                    <ConfirmButton
                       size="icon" variant="outline" className="h-8 w-8"
                       title="SMS avec aperçu (modèle T1/T2/T3)"
-                      onClick={() => setSmsEleve(e)}
+                      confirmTitle="Préparer le SMS de relance ?"
+                      confirmDescription={`Ouvrir l'aperçu du SMS de relance pour ${e.parent} ?`}
+                      confirmLabel="Ouvrir l'aperçu"
+                      onConfirm={() => setSmsEleve(e)}
                     >
                       <MessageSquare className="h-4 w-4" />
-                    </Button>
-                    <Button
+                    </ConfirmButton>
+                    <ConfirmButton
                       size="sm"
                       className="bg-primary hover:bg-primary/90"
-                      onClick={() => handleSendSms(e)}
                       title="Envoyer SMS de relance en 1 clic"
+                      confirmTitle="Envoyer la relance ?"
+                      confirmDescription={`Un SMS de relance sera immédiatement envoyé à ${e.parent} (${e.telephone}).`}
+                      confirmLabel="Envoyer"
+                      onConfirm={() => handleSendSms(e)}
                     >
                       Relancer
-                    </Button>
+                    </ConfirmButton>
                   </div>
                 </TableCell>
               </TableRow>
