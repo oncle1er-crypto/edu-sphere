@@ -199,7 +199,7 @@ export const STATUT_LABEL: Record<"ajour" | "partiel" | "retard", string> = {
 };
 
 export const STATUT_CLASS: Record<"ajour" | "partiel" | "retard", string> = {
-  ajour: "bg-accent/15 text-accent border-accent/30",
+  ajour: "bg-accent/15 text-primary border-accent/30",
   partiel: "bg-orange-500/15 text-orange-600 border-orange-500/30",
   retard: "bg-destructive/15 text-destructive border-destructive/30",
 };

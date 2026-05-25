@@ -20,9 +20,9 @@ export default function TransportStats() {
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <KpiCard label="Véhicules" value="38" icon={Bus} />
-                <KpiCard label="Lignes actives" value="22" icon={Bus} color="text-accent" />
+                <KpiCard label="Lignes actives" value="22" icon={Bus} color="text-primary" />
                 <KpiCard label="Élèves transportés" value="1 124" icon={Bus} />
-                <KpiCard label="Taux de remplissage" value="74%" icon={Bus} color="text-accent" />
+                <KpiCard label="Taux de remplissage" value="74%" icon={Bus} color="text-primary" />
               </div>
               <BarChart
                 title="Élèves transportés par école"

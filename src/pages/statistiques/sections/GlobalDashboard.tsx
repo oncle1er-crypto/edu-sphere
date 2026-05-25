@@ -57,10 +57,10 @@ export default function GlobalDashboard() {
     <SettingsSection title="Vue d'ensemble" description="Indicateurs clés de l'établissement." icon={<LayoutDashboard className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <KpiCard label="Élèves inscrits" value={stats.eleves.toLocaleString("fr-FR")} icon={GraduationCap} />
-        <KpiCard label="Enseignants actifs" value={stats.enseignants.toLocaleString("fr-FR")} icon={Users} color="text-accent" />
+        <KpiCard label="Enseignants actifs" value={stats.enseignants.toLocaleString("fr-FR")} icon={Users} color="text-primary" />
         <KpiCard label="Classes" value={stats.classes} icon={BookOpen} />
         <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} />
-        <KpiCard label="Ratio élèves/prof" value={ratio} icon={TrendingUp} color="text-accent" />
+        <KpiCard label="Ratio élèves/prof" value={ratio} icon={TrendingUp} color="text-primary" />
         <KpiCard label="Garçons / Filles" value={`${stats.garcons} / ${stats.filles}`} icon={GraduationCap} />
       </div>
 

@@ -25,7 +25,7 @@ export default function AttendanceReports() {
               <div>
                 <p className="font-semibold">{r.title}</p>
                 <p className="text-xs text-muted-foreground mt-1">{r.desc}</p>
-                <p className="text-[10px] uppercase tracking-widest text-accent font-bold mt-2">{r.format}</p>
+                <p className="text-[10px] uppercase tracking-widest text-primary font-bold mt-2">{r.format}</p>
               </div>
               <Button size="sm" variant="outline"><FileDown className="h-4 w-4" /> Exporter</Button>
             </CardContent>

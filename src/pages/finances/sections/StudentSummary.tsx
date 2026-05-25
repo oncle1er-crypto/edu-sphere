@@ -154,7 +154,7 @@ export default function StudentSummary() {
               </CardContent></Card>
               <Card className="border"><CardContent className="p-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Retard</p>
-                <p className={"text-lg font-bold font-display mt-1 " + (eleve.joursRetard > 0 ? "text-destructive" : "text-accent")}>
+                <p className={"text-lg font-bold font-display mt-1 " + (eleve.joursRetard > 0 ? "text-destructive" : "text-primary")}>
                   {eleve.joursRetard > 0 ? `${eleve.joursRetard}j` : "—"}
                 </p>
                 <p className="text-[10px] text-muted-foreground">{eleve.derniereRelance ? `Relance: ${eleve.derniereRelance}` : "Aucune relance"}</p>
@@ -190,7 +190,7 @@ export default function StudentSummary() {
                     t.statut === "retard" ? "bg-destructive/10 border-destructive/30" :
                     "bg-muted/30 border-border";
                   const badgeCls =
-                    t.statut === "payee" ? "bg-accent/15 text-accent border-accent/30" :
+                    t.statut === "payee" ? "bg-accent/15 text-primary border-accent/30" :
                     t.statut === "partielle" ? "bg-orange-500/15 text-orange-600 border-orange-500/30" :
                     t.statut === "retard" ? "bg-destructive/15 text-destructive border-destructive/30" :
                     "bg-muted text-muted-foreground";

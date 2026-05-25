@@ -146,7 +146,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
             <Card className="border bg-muted/30">
               <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
                 <div><p className="text-[10px] text-muted-foreground uppercase">Tranche</p><p className="text-xs font-bold">{fcfa(tranche.montant)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground uppercase">Déjà versé</p><p className="text-xs font-bold text-accent">{fcfa(tranche.paye)}</p></div>
+                <div><p className="text-[10px] text-muted-foreground uppercase">Déjà versé</p><p className="text-xs font-bold text-primary">{fcfa(tranche.paye)}</p></div>
                 <div><p className="text-[10px] text-muted-foreground uppercase">Restant</p><p className="text-xs font-bold text-destructive">{fcfa(restantTranche)}</p></div>
               </CardContent>
             </Card>
@@ -177,7 +177,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
           </div>
 
           {tranche && montantNum > 0 && montantNum <= restantTranche && (
-            <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30">
+            <Badge variant="outline" className="bg-accent/10 text-primary border-accent/30">
               Statut après paiement : {montantNum >= restantTranche ? "✓ Payée" : "◐ Partielle"}
             </Badge>
           )}

@@ -128,7 +128,7 @@ export default function Expenses() {
                   <TableCell>
                     <Badge
                       variant="outline"
-                      className={e.statut === "validee" ? "bg-accent/15 text-accent border-accent/30 cursor-default" : "bg-orange-500/15 text-orange-600 border-orange-500/30 cursor-pointer"}
+                      className={e.statut === "validee" ? "bg-accent/15 text-primary border-accent/30 cursor-default" : "bg-orange-500/15 text-orange-600 border-orange-500/30 cursor-pointer"}
                       onClick={() => e.statut !== "validee" && updateStatut(e.id, "validee")}
                     >
                       {e.statut === "validee" ? "Validée" : e.statut === "rejetee" ? "Rejetée" : "En attente"}

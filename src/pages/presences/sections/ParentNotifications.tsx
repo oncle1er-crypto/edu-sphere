@@ -16,7 +16,7 @@ export default function ParentNotifications() {
 
   const canalBadge = (canal: string) => {
     if (canal === "sms") return <Badge className="bg-primary/15 text-primary hover:bg-primary/15">SMS</Badge>;
-    if (canal === "email") return <Badge className="bg-accent/15 text-accent hover:bg-accent/15">Email</Badge>;
+    if (canal === "email") return <Badge className="bg-accent/15 text-primary hover:bg-accent/15">Email</Badge>;
     return <Badge variant="outline">{canal}</Badge>;
   };
 

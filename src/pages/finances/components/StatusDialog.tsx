@@ -29,7 +29,7 @@ const OPTIONS: { value: Statut; label: string; cls: string }[] = [
   { value: "echeancier", label: "Échéancier négocié", cls: "bg-orange-500/15 text-orange-600 border-orange-500/30" },
   { value: "litige", label: "Litige / contestation", cls: "bg-destructive/15 text-destructive border-destructive/30" },
   { value: "transmis-direction", label: "Transmis à la Direction", cls: "bg-primary/15 text-primary border-primary/30" },
-  { value: "regle", label: "Réglé", cls: "bg-accent/15 text-accent border-accent/30" },
+  { value: "regle", label: "Réglé", cls: "bg-accent/15 text-primary border-accent/30" },
 ];
 
 export function StatusDialog({ eleve, open, onOpenChange }: Props) {

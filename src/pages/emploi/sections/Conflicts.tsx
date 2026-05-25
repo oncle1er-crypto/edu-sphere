@@ -21,7 +21,7 @@ export default function Conflicts() {
       <div className="space-y-3">
         {conflicts.map((c, i) => (
           <div key={i} className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30">
-            <AlertTriangle className={`h-5 w-5 mt-0.5 ${c.severity === "Critique" ? "text-destructive" : "text-accent"}`} />
+            <AlertTriangle className={`h-5 w-5 mt-0.5 ${c.severity === "Critique" ? "text-destructive" : "text-primary"}`} />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="font-semibold text-sm">{c.type}</span>

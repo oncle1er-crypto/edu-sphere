@@ -24,7 +24,7 @@ export default function SupportSettings() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {helpItems.map((h) => (
             <Card key={h.title} className="p-4 flex items-start gap-3 hover:border-accent/40 transition-colors cursor-pointer">
-              <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+              <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center shrink-0">
                 <h.icon className="h-5 w-5" />
               </div>
               <div className="flex-1">

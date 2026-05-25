@@ -26,7 +26,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 const STATUT_BADGE: Record<Tranche["statut"], string> = {
-  payee: "bg-accent/15 text-accent border-accent/30",
+  payee: "bg-accent/15 text-primary border-accent/30",
   partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
   retard: "bg-destructive/15 text-destructive border-destructive/30",
   due: "bg-muted text-muted-foreground border-border",
@@ -220,7 +220,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             <div className={cn(
                               "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
                               canal === "SMS" ? "bg-primary/15 text-primary" :
-                              canal === "Email" ? "bg-accent/15 text-accent" :
+                              canal === "Email" ? "bg-accent/15 text-primary" :
                               "bg-orange-500/15 text-orange-600"
                             )}>
                               {canal === "SMS" ? <MessageSquare className="h-4 w-4" /> :

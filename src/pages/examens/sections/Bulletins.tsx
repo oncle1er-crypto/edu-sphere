@@ -32,7 +32,7 @@ function getMention(m: number): string {
 }
 
 const mentionTone: Record<string, string> = {
-  "Très bien": "bg-accent/15 text-accent",
+  "Très bien": "bg-accent/15 text-primary",
   "Bien": "bg-primary/15 text-primary",
   "Assez bien": "bg-blue-500/15 text-blue-600",
   "Passable": "bg-orange-500/15 text-orange-600",

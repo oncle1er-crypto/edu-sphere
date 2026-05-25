@@ -20,10 +20,10 @@ export function AppFooter() {
         {items.map((item) => (
           <div key={item.title} className="flex items-center gap-4">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-accent">
-              <item.icon className="h-5 w-5 text-accent" />
+              <item.icon className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-bold tracking-widest text-accent">
+              <p className="text-xs font-bold tracking-widest text-primary">
                 {item.title}
               </p>
               <p className="text-sm text-primary-foreground/80 mt-0.5">

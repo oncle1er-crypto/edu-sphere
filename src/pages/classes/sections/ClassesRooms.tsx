@@ -44,7 +44,7 @@ export default function ClassesRooms() {
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <div className="h-9 w-9 rounded-lg bg-accent/15 text-accent flex items-center justify-center">
+                    <div className="h-9 w-9 rounded-lg bg-accent/15 text-primary flex items-center justify-center">
                       <BookOpen className="h-4 w-4" />
                     </div>
                     <div>

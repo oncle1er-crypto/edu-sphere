@@ -8,7 +8,7 @@ import { useMemo } from "react";
 
 const toneMap: Record<string, string> = {
   primary: "bg-primary/15 text-primary",
-  success: "bg-accent/15 text-accent",
+  success: "bg-accent/15 text-primary",
 };
 
 export default function ExamsDashboard() {

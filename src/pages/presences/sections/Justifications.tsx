@@ -32,7 +32,7 @@ export default function Justifications() {
   };
 
   const statutBadge = (s: string) => {
-    if (s === "acceptee") return <Badge className="bg-accent/15 text-accent border-accent/30 hover:bg-accent/15">Accepté</Badge>;
+    if (s === "acceptee") return <Badge className="bg-accent/15 text-primary border-accent/30 hover:bg-accent/15">Accepté</Badge>;
     if (s === "refusee") return <Badge className="bg-destructive/15 text-destructive border-destructive/30 hover:bg-destructive/15">Refusé</Badge>;
     return <Badge className="bg-orange-500/15 text-orange-600 border-orange-500/30 hover:bg-orange-500/15">En attente</Badge>;
   };
@@ -89,7 +89,7 @@ export default function Justifications() {
             </div>
             {j.statut === "en_attente" && (
               <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="text-accent" onClick={() => updateStatut(j.id, "acceptee")}>
+                <Button size="sm" variant="outline" className="text-primary" onClick={() => updateStatut(j.id, "acceptee")}>
                   <Check className="h-4 w-4" />Accepter
                 </Button>
                 <Button size="sm" variant="outline" className="text-destructive" onClick={() => updateStatut(j.id, "refusee")}>

@@ -26,7 +26,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE" }: TopNa
                 cn(
                   "relative flex items-center gap-2 px-3 md:px-5 py-3.5 text-xs md:text-sm font-semibold uppercase tracking-wide whitespace-nowrap transition-colors duration-200",
                   isActive
-                    ? "text-accent"
+                    ? "text-primary"
                     : "text-primary-foreground/80 hover:text-primary-foreground"
                 )
               }

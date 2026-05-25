@@ -64,7 +64,7 @@ export default function SchoolsCompare() {
                   <td className="px-4 py-3">{(e.revenu_mensuel / 1_000_000).toFixed(1)}M FCFA</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className={
-                      e.status === "active" ? "bg-accent/15 text-accent border-accent/30" :
+                      e.status === "active" ? "bg-accent/15 text-primary border-accent/30" :
                       e.status === "suspendue" ? "bg-destructive/15 text-destructive border-destructive/30" :
                       "bg-muted text-muted-foreground"
                     }>{e.status}</Badge>

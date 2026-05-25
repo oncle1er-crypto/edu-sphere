@@ -30,11 +30,11 @@ export default function FinanceStats() {
         <KpiCard label="Frais attendus" value={`${fcfa(totalAttendu)} F`} icon={DollarSign} />
         <KpiCard label="Encaissé" value={`${fcfa(totalPaye)} F`} icon={DollarSign} color="text-success" />
         <KpiCard label="Impayés" value={`${fcfa(totalDu)} F`} icon={DollarSign} color="text-destructive" />
-        <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} color="text-accent" />
+        <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} color="text-primary" />
       </div>
       <div className="grid grid-cols-2 gap-4">
         <KpiCard label="Familles en retard" value={retards} icon={DollarSign} color="text-destructive" />
-        <KpiCard label="Familles à jour" value={ELEVES.length - retards} icon={DollarSign} color="text-accent" />
+        <KpiCard label="Familles à jour" value={ELEVES.length - retards} icon={DollarSign} color="text-primary" />
       </div>
       {parCycle.length > 0 && <BarChart title="Encaissements par cycle (FCFA)" data={parCycle} format={(v) => fcfa(v)} />}
     </SettingsSection>

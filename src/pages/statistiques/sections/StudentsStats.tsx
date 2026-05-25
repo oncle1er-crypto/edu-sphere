@@ -44,8 +44,8 @@ export default function StudentsStats() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Total élèves" value={data.total.toLocaleString("fr-FR")} icon={GraduationCap} />
         <KpiCard label="Garçons" value={data.garcons.toLocaleString("fr-FR")} icon={GraduationCap} />
-        <KpiCard label="Filles" value={data.filles.toLocaleString("fr-FR")} icon={GraduationCap} color="text-accent" />
-        <KpiCard label="Taux filles" value={data.total > 0 ? `${Math.round((data.filles / data.total) * 100)}%` : "—"} icon={GraduationCap} color="text-accent" />
+        <KpiCard label="Filles" value={data.filles.toLocaleString("fr-FR")} icon={GraduationCap} color="text-primary" />
+        <KpiCard label="Taux filles" value={data.total > 0 ? `${Math.round((data.filles / data.total) * 100)}%` : "—"} icon={GraduationCap} color="text-primary" />
       </div>
       {data.parCycle.length > 0 && <BarChart title="Effectifs par cycle" data={data.parCycle} />}
       {data.parClasse.length > 0 && <BarChart title="Effectifs par classe" data={data.parClasse.slice(0, 15)} />}

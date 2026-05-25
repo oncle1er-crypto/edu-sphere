@@ -37,7 +37,7 @@ function getMention(m: number): string {
 }
 
 const mentionColor: Record<string, string> = {
-  "Très bien": "bg-accent/15 text-accent",
+  "Très bien": "bg-accent/15 text-primary",
   "Bien": "bg-primary/15 text-primary",
   "Assez bien": "bg-blue-500/15 text-blue-600",
   "Passable": "bg-orange-500/15 text-orange-600",
@@ -207,7 +207,7 @@ export default function Averages() {
                   {topEleves.map((t) => (
                     <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
                       <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                        t.rang <= 3 ? "bg-accent/20 text-accent" : "bg-primary/10 text-primary"
+                        t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
                       }`}>
                         {t.rang}
                       </div>

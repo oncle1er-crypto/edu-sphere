@@ -43,9 +43,9 @@ export default function ExamsStats() {
     <SettingsSection title="Statistiques — Examens & notes" description="Moyennes, évaluations et résultats." icon={<ClipboardList className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Évaluations" value={stats.evaluations} icon={ClipboardList} />
-        <KpiCard label="Notes saisies" value={stats.notes.toLocaleString("fr-FR")} icon={ClipboardList} color="text-accent" />
+        <KpiCard label="Notes saisies" value={stats.notes.toLocaleString("fr-FR")} icon={ClipboardList} color="text-primary" />
         <KpiCard label="Moyenne générale" value={`${stats.moyenne} / 20`} icon={ClipboardList} />
-        <KpiCard label="Réussite (≥10)" value={stats.notes > 0 ? "—" : "—"} icon={ClipboardList} color="text-accent" />
+        <KpiCard label="Réussite (≥10)" value={stats.notes > 0 ? "—" : "—"} icon={ClipboardList} color="text-primary" />
       </div>
       {stats.parMatiere.length > 0 && <BarChart title="Moyenne par matière (/20)" data={stats.parMatiere.slice(0, 10)} unit=" / 20" />}
     </SettingsSection>

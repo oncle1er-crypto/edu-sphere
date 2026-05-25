@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const kpis = [
   { label: "Emails envoyés (mois)", value: "12 480", icon: Mail, color: "text-primary" },
-  { label: "SMS envoyés (mois)", value: "8 320", icon: Smartphone, color: "text-accent" },
+  { label: "SMS envoyés (mois)", value: "8 320", icon: Smartphone, color: "text-primary" },
   { label: "Notifications push", value: "5 240", icon: Bell, color: "text-primary" },
-  { label: "Messages échangés", value: "1 870", icon: MessageSquare, color: "text-accent" },
+  { label: "Messages échangés", value: "1 870", icon: MessageSquare, color: "text-primary" },
 ];
 
 export default function CommunicationDashboard() {

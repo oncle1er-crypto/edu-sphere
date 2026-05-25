@@ -20,7 +20,7 @@ const TYPES = ["devoir", "interrogation", "composition"] as const;
 
 const tone: Record<string, string> = {
   devoir: "bg-primary/15 text-primary",
-  composition: "bg-accent/15 text-accent",
+  composition: "bg-accent/15 text-primary",
   interrogation: "bg-orange-500/15 text-orange-600",
 };
 
