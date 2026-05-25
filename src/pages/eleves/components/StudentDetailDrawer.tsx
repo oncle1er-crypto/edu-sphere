@@ -695,6 +695,20 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       />
     )}
 
+    {eleve && (
+      <ParentSmsDialog
+        open={smsDialogOpen}
+        onOpenChange={setSmsDialogOpen}
+        recipients={parents
+          .filter((p) => selectedParentIds.has(p.id))
+          .map((p: any) => ({
+            nom: `${p.parents?.prenom ?? ""} ${p.parents?.nom ?? ""}`.trim(),
+            telephone: p.parents?.telephone ?? "",
+          }))}
+        eleveLabel={`${eleve.prenom} ${eleve.nom}`}
+      />
+    )}
+
     <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
       <AlertDialogContent>
         <AlertDialogHeader>
