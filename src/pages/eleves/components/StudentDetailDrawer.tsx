@@ -55,9 +55,9 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
     setParents((data as any[]) ?? []);
   }, [eleve]);
 
-  const handleDetachParent = async (linkId: string) => {
+  const handleDetachParent = async (linkId: string): Promise<void> => {
     const { error } = await supabase.from("eleve_parents").delete().eq("id", linkId);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     toast.success("Parent détaché de l'élève");
     reloadParents();
   };
