@@ -34,11 +34,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onUpdated?: () => void;
+  initialTab?: string;
 }
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
 
-export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }: Props) {
+export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, initialTab }: Props) {
+
   const [presences, setPresences] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
   const [incidents, setIncidents] = useState<any[]>([]);
@@ -356,7 +358,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                 </div>
               );
             })()}
-            <Tabs defaultValue="identite" className="mt-2">
+            <Tabs key={initialTab ?? "identite"} defaultValue={initialTab ?? "identite"} className="mt-2">
             <TabsList className="flex-wrap h-auto">
               <TabsTrigger value="identite" className="text-xs"><User className="h-3.5 w-3.5 mr-1" />Identité</TabsTrigger>
               <TabsTrigger value="presences" className="text-xs"><CalendarCheck className="h-3.5 w-3.5 mr-1" />Présences</TabsTrigger>

@@ -53,7 +53,9 @@ export default function StudentsList() {
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
+  const [viewEleveTab, setViewEleveTab] = useState<string | undefined>(undefined);
   const [workflowEleve, setWorkflowEleve] = useState<typeof eleves[0] | null>(null);
+
   const [transferEleve, setTransferEleve] = useState<typeof eleves[0] | null>(null);
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
@@ -391,8 +393,9 @@ export default function StudentsList() {
       <StudentDetailDrawer
         eleve={viewEleve}
         open={!!viewEleve}
-        onClose={() => setViewEleve(null)}
+        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); }}
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
+        initialTab={viewEleveTab}
       />
 
       {/* Inscription workflow */}
@@ -400,9 +403,10 @@ export default function StudentsList() {
         eleve={workflowEleve}
         open={!!workflowEleve}
         onClose={() => setWorkflowEleve(null)}
-        onOpenDrawer={() => setViewEleve(workflowEleve)}
+        onOpenDrawer={(tab) => { setViewEleveTab(tab); setViewEleve(workflowEleve); }}
         onUpdated={() => fetchEleves()}
       />
+
 
       {/* Bulk finalization */}
       <BulkInscriptionDialog
