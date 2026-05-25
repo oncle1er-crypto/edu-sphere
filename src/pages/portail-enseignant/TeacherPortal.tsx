@@ -24,10 +24,14 @@ interface EvalRow { id: string; titre: string; type: string; date_eval: string; 
 export default function TeacherPortal() {
   const { enseignant, loading } = useMyEnseignant();
   const { signOut, user } = useAuth();
+  const navigate = useNavigate();
   const [classes, setClasses] = useState<ClasseRow[]>([]);
   const [creneaux, setCreneaux] = useState<CreneauRow[]>([]);
   const [evaluations, setEvaluations] = useState<EvalRow[]>([]);
   const [dataLoading, setDataLoading] = useState(true);
+  const [newEvalOpen, setNewEvalOpen] = useState(false);
+  const [newEvalClasseId, setNewEvalClasseId] = useState<string | undefined>(undefined);
+
 
   useEffect(() => {
     if (!enseignant) return;
