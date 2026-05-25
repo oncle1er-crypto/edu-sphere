@@ -137,10 +137,10 @@ export default function Evaluations() {
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end sm:justify-between mb-4">
         <div className="max-w-xs">
           <Label className="text-xs">Filtrer par classe</Label>
-          <Select value={filterClasse} onValueChange={setFilterClasse}>
+          <Select value={filterClasse || "all"} onValueChange={(v) => setFilterClasse(v === "all" ? "" : v)}>
             <SelectTrigger><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Toutes les classes</SelectItem>
+              <SelectItem value="all">Toutes les classes</SelectItem>
               {classes.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
               ))}
