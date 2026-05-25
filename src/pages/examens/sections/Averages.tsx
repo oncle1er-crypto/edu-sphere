@@ -53,11 +53,59 @@ const mentionColor: Record<string, string> = {
 export default function Averages() {
   const { ecoleId } = useEcoleId();
   const { classes } = useClasses();
+  const { currentEcole } = useEcoles();
   const [selectedClasse, setSelectedClasse] = useState("");
   const [topEleves, setTopEleves] = useState<EleveAvg[]>([]);
   const [matiereAvgs, setMatiereAvgs] = useState<MatiereAvg[]>([]);
   const [loading, setLoading] = useState(false);
   const [globalStats, setGlobalStats] = useState({ moyenne: 0, admis: 0, total: 0 });
+  const [threshold, setThreshold] = useState<number>(DEFAULT_HONOR_ROLL_THRESHOLD);
+  const [printingId, setPrintingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setThreshold(getHonorRollThreshold());
+    const onChange = () => setThreshold(getHonorRollThreshold());
+    window.addEventListener("honor-roll-threshold-changed", onChange);
+    return () => window.removeEventListener("honor-roll-threshold-changed", onChange);
+  }, []);
+
+  const printHonneur = async (t: EleveAvg) => {
+    setPrintingId(t.eleve_id);
+    try {
+      const doc = await generateTableauHonneurPDF({
+        ecole: {
+          nom: currentEcole?.nom ?? "Groupe Scolaire La Providence",
+          devise: "Foi, Savoir, Excellence",
+          adresse: currentEcole?.adresse ?? "Abidjan, Côte d'Ivoire",
+          telephone: currentEcole?.telephone ?? "+225",
+          directeur: currentEcole?.directeur ?? "",
+          logoUrl: (currentEcole as any)?.logo_url ?? null,
+        },
+        eleve: { nom: t.nom, prenom: t.prenom, matricule: t.matricule },
+        classe: t.classe_nom || "—",
+        annee: (() => {
+          const now = new Date();
+          const y = now.getFullYear();
+          return now.getMonth() >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+        })(),
+        moyenne: t.moyenne,
+        rang: t.rang,
+        effectif: topEleves.length,
+        mention: t.mention,
+        seuil: threshold,
+      });
+      doc.autoPrint();
+      const url = doc.output("bloburl");
+      const w = window.open(url as unknown as string, "_blank");
+      if (!w) toast.error("Pop-up bloquée — autorisez les fenêtres.");
+      else toast.success("Tableau d'honneur prêt à imprimer");
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur de génération");
+    } finally {
+      setPrintingId(null);
+    }
+  };
+
 
   useEffect(() => {
     if (!ecoleId) return;
