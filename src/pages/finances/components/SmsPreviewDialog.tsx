@@ -13,6 +13,8 @@ import {
   useSmsTemplates, pickTrancheCible, renderTemplate, updateTemplate,
   TEMPLATE_VARIABLES, type TrancheKey,
 } from "../sms-templates-store";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 
 interface Props {
@@ -25,9 +27,11 @@ interface Props {
 export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }: Props) {
   const templates = useSmsTemplates();
   const { addRelance } = useRelances();
+  const { ecoleId } = useEcoleId();
   const [templateKey, setTemplateKey] = useState<TrancheKey>("GENERIC");
   const [editedMessage, setEditedMessage] = useState("");
   const [editTemplate, setEditTemplate] = useState(false);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     if (!open || !eleve) return;
@@ -54,14 +58,42 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
   if (!eleve) return null;
 
   const handleSend = async () => {
-    await addRelance({
-      eleveId: eleve.id,
-      canal: "SMS",
-      message: editedMessage,
-      destinataire: eleve.telephone,
-    });
-    toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
-    onOpenChange(false);
+    if (!ecoleId) { toast.error("École introuvable"); return; }
+    if (!eleve.telephone || eleve.telephone === "—") {
+      toast.error("Aucun numéro de téléphone parent renseigné");
+      return;
+    }
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-sms", {
+        body: {
+          ecole_id: ecoleId,
+          destinataires: [eleve.telephone],
+          message: editedMessage,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      await addRelance({
+        eleveId: eleve.id,
+        canal: "SMS",
+        message: editedMessage,
+        destinataire: eleve.telephone,
+      });
+      const sent = data?.sent ?? 0;
+      const failed = data?.failed ?? 0;
+      if (failed > 0 && sent === 0) {
+        toast.error("Échec de l'envoi du SMS", { description: "Vérifiez la configuration YellikaSMS." });
+      } else {
+        toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
+        onOpenChange(false);
+      }
+    } catch (err: any) {
+      toast.error("Erreur d'envoi SMS", { description: err.message ?? String(err) });
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleSaveTemplate = () => {
@@ -152,9 +184,9 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={handleSend}>
-            <Send className="h-4 w-4" />Envoyer le SMS
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Annuler</Button>
+          <Button onClick={handleSend} disabled={sending}>
+            <Send className="h-4 w-4" />{sending ? "Envoi…" : "Envoyer le SMS"}
           </Button>
         </DialogFooter>
       </DialogContent>
