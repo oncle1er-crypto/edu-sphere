@@ -2297,6 +2297,54 @@ export type Database = {
           },
         ]
       }
+      parametres_classes: {
+        Row: {
+          alerte_classe_pleine: boolean
+          capacite_defaut: number
+          cours_samedi: boolean
+          created_at: string
+          detection_conflits: boolean
+          duree_cours_min: number
+          ecole_id: string
+          effectif_min_alerte: number
+          format_code_classe: string
+          heure_debut_cours: string
+          heure_fin_cours: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          alerte_classe_pleine?: boolean
+          capacite_defaut?: number
+          cours_samedi?: boolean
+          created_at?: string
+          detection_conflits?: boolean
+          duree_cours_min?: number
+          ecole_id: string
+          effectif_min_alerte?: number
+          format_code_classe?: string
+          heure_debut_cours?: string
+          heure_fin_cours?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          alerte_classe_pleine?: boolean
+          capacite_defaut?: number
+          cours_samedi?: boolean
+          created_at?: string
+          detection_conflits?: boolean
+          duree_cours_min?: number
+          ecole_id?: string
+          effectif_min_alerte?: number
+          format_code_classe?: string
+          heure_debut_cours?: string
+          heure_fin_cours?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parametres_documents: {
         Row: {
           created_at: string
