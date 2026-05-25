@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyEnseignant } from "@/hooks/useMyEnseignant";
 import { useAuth } from "@/context/AuthContext";
@@ -11,8 +11,9 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  BookOpen, Calendar, ClipboardList, Loader2, GraduationCap, LogOut, Users, ArrowRight,
+  BookOpen, Calendar, ClipboardList, Loader2, GraduationCap, LogOut, Users, ArrowRight, Plus, Pencil,
 } from "lucide-react";
+import { NewEvaluationDialog } from "./NewEvaluationDialog";
 
 const JOURS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
