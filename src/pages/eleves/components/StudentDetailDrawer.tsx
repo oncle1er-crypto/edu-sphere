@@ -18,14 +18,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
 import { ParentEditDialog } from "./ParentEditDialog";
+import { ParentSmsDialog } from "./ParentMessageDialog";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   eleve: any | null;
@@ -45,6 +47,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [loading, setLoading] = useState(false);
   const [parentDialogOpen, setParentDialogOpen] = useState(false);
   const [editingParent, setEditingParent] = useState<any | null>(null);
+  const [selectedParentIds, setSelectedParentIds] = useState<Set<string>>(new Set());
+  const [smsDialogOpen, setSmsDialogOpen] = useState(false);
 
   const reloadParents = useCallback(async () => {
     if (!eleve) return;
@@ -443,26 +447,64 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                   </div>
 
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
                       <h4 className="font-semibold text-sm flex items-center gap-2">
                         <User className="h-4 w-4" /> Parent(s) / Tuteur(s)
                       </h4>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-7"
-                        onClick={() => { setEditingParent(null); setParentDialogOpen(true); }}
-                      >
-                        <Plus className="h-3.5 w-3.5" /> Ajouter
-                      </Button>
+                      <div className="flex gap-1.5 flex-wrap">
+                        <Button
+                          size="sm" variant="outline" className="h-7 gap-1"
+                          disabled={selectedParentIds.size === 0}
+                          onClick={() => setSmsDialogOpen(true)}
+                        >
+                          <MessageSquare className="h-3.5 w-3.5" /> SMS
+                          {selectedParentIds.size > 0 && ` (${selectedParentIds.size})`}
+                        </Button>
+                        <Button
+                          size="sm" variant="outline" className="h-7 gap-1"
+                          disabled={selectedParentIds.size === 0}
+                          onClick={() => {
+                            const emails = parents
+                              .filter((p) => selectedParentIds.has(p.id))
+                              .map((p: any) => p.parents?.email)
+                              .filter((e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+                            if (emails.length === 0) { toast.error("Aucun email valide sélectionné"); return; }
+                            const subject = encodeURIComponent(`GSP — ${eleve.prenom} ${eleve.nom}`);
+                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.prenom} ${eleve.nom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
+                            window.location.href = `mailto:?bcc=${emails.join(",")}&subject=${subject}&body=${body}`;
+                          }}
+                        >
+                          <Mail className="h-3.5 w-3.5" /> Email
+                          {selectedParentIds.size > 0 && ` (${selectedParentIds.size})`}
+                        </Button>
+                        <Button
+                          size="sm" variant="outline" className="h-7 gap-1"
+                          onClick={() => { setEditingParent(null); setParentDialogOpen(true); }}
+                        >
+                          <Plus className="h-3.5 w-3.5" /> Ajouter
+                        </Button>
+                      </div>
                     </div>
                     {parents.length === 0 && (
                       <p className="text-xs text-muted-foreground italic">Aucun parent rattaché.</p>
                     )}
-                    {parents.map((p, i) => (
+                    {parents.map((p, i) => {
+                      const checked = selectedParentIds.has(p.id);
+                      return (
                       <Card key={i} className="border">
-                        <CardContent className="p-3 text-sm flex items-start justify-between gap-2">
-                          <div className="min-w-0">
+                        <CardContent className="p-3 text-sm flex items-start gap-2">
+                          <Checkbox
+                            className="mt-1"
+                            checked={checked}
+                            onCheckedChange={(v) => {
+                              setSelectedParentIds((prev) => {
+                                const next = new Set(prev);
+                                if (v) next.add(p.id); else next.delete(p.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <div className="min-w-0 flex-1">
                             <p className="font-medium">
                               {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
                             </p>
@@ -495,7 +537,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -649,6 +692,20 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
         eleveId={eleve.id}
         ecoleId={eleve.ecole_id}
         onSaved={reloadParents}
+      />
+    )}
+
+    {eleve && (
+      <ParentSmsDialog
+        open={smsDialogOpen}
+        onOpenChange={setSmsDialogOpen}
+        recipients={parents
+          .filter((p) => selectedParentIds.has(p.id))
+          .map((p: any) => ({
+            nom: `${p.parents?.prenom ?? ""} ${p.parents?.nom ?? ""}`.trim(),
+            telephone: p.parents?.telephone ?? "",
+          }))}
+        eleveLabel={`${eleve.prenom} ${eleve.nom}`}
       />
     )}
 
