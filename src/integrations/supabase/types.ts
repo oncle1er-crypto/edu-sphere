@@ -1960,28 +1960,49 @@ export type Database = {
       }
       matieres: {
         Row: {
+          active: boolean
           categorie: string | null
           code: string | null
+          coefficient: number
+          couleur: string
           created_at: string
+          cycles: string[]
           ecole_id: string
           id: string
           nom: string
+          note_passage: number
+          note_sur: number
+          updated_at: string
         }
         Insert: {
+          active?: boolean
           categorie?: string | null
           code?: string | null
+          coefficient?: number
+          couleur?: string
           created_at?: string
+          cycles?: string[]
           ecole_id: string
           id?: string
           nom: string
+          note_passage?: number
+          note_sur?: number
+          updated_at?: string
         }
         Update: {
+          active?: boolean
           categorie?: string | null
           code?: string | null
+          coefficient?: number
+          couleur?: string
           created_at?: string
+          cycles?: string[]
           ecole_id?: string
           id?: string
           nom?: string
+          note_passage?: number
+          note_sur?: number
+          updated_at?: string
         }
         Relationships: [
           {
@@ -2429,6 +2450,48 @@ export type Database = {
         }
         Relationships: []
       }
+      parametres_matieres: {
+        Row: {
+          afficher_code_bulletin: boolean
+          coefficient_defaut: number
+          created_at: string
+          echelle_defaut: number
+          ecole_id: string
+          education_religieuse: boolean
+          id: string
+          matieres_optionnelles: boolean
+          note_passage_defaut: number
+          updated_at: string
+          verrouiller_coefficients: boolean
+        }
+        Insert: {
+          afficher_code_bulletin?: boolean
+          coefficient_defaut?: number
+          created_at?: string
+          echelle_defaut?: number
+          ecole_id: string
+          education_religieuse?: boolean
+          id?: string
+          matieres_optionnelles?: boolean
+          note_passage_defaut?: number
+          updated_at?: string
+          verrouiller_coefficients?: boolean
+        }
+        Update: {
+          afficher_code_bulletin?: boolean
+          coefficient_defaut?: number
+          created_at?: string
+          echelle_defaut?: number
+          ecole_id?: string
+          education_religieuse?: boolean
+          id?: string
+          matieres_optionnelles?: boolean
+          note_passage_defaut?: number
+          updated_at?: string
+          verrouiller_coefficients?: boolean
+        }
+        Relationships: []
+      }
       parametres_notifications: {
         Row: {
           canaux: Json
@@ -2730,6 +2793,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      progressions_matiere: {
+        Row: {
+          chapitres_faits: number
+          chapitres_total: number
+          classe_id: string | null
+          created_at: string
+          ecole_id: string
+          id: string
+          matiere_id: string
+          notes: string | null
+          periode: string
+          updated_at: string
+        }
+        Insert: {
+          chapitres_faits?: number
+          chapitres_total?: number
+          classe_id?: string | null
+          created_at?: string
+          ecole_id: string
+          id?: string
+          matiere_id: string
+          notes?: string | null
+          periode?: string
+          updated_at?: string
+        }
+        Update: {
+          chapitres_faits?: number
+          chapitres_total?: number
+          classe_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          matiere_id?: string
+          notes?: string | null
+          periode?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       relances: {
         Row: {
