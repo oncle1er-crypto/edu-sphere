@@ -221,7 +221,7 @@ const queryClient = new QueryClient();
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><span className="text-muted-foreground">Chargement…</span></div>;
+  if (loading) return <AppLoader label="Vérification de votre session…" />;
   if (!session) return <Navigate to="/connexion" replace />;
   return <>{children}</>;
 }
@@ -232,6 +232,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <NavigationProgress />
         <AuthProvider>
         <EcoleProvider>
         <AcademicPeriodProvider>
