@@ -222,6 +222,16 @@ export default function StudentsList() {
                 <SelectItem value="sorti">Sorti</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+              onClick={() => setBulkOpen(true)}
+              title="Finaliser plusieurs pré-inscriptions à la fois"
+            >
+              <Sparkles className="h-4 w-4" />
+              Finaliser en lot {selectedIds.size > 0 && `(${selectedIds.size})`}
+            </Button>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button
