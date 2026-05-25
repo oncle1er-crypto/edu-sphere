@@ -20,7 +20,7 @@ interface FormErrors {
 }
 
 export default function SmsSettings() {
-  const { config, loading, save, testSms } = useSmsConfig();
+  const { config, loading, save, testSms, testWhatsApp } = useSmsConfig();
 
   const [apiToken, setApiToken] = useState("");
   const [apiTokenTouched, setApiTokenTouched] = useState(false);
@@ -34,6 +34,13 @@ export default function SmsSettings() {
   const [testing, setTesting] = useState(false);
   const [errors, setErrors] = useState<FormErrors>({});
 
+  // WhatsApp state
+  const [waUrl, setWaUrl] = useState("https://panel.yellikasms.com/api/v3/whatsapp/send");
+  const [waEnabled, setWaEnabled] = useState(false);
+  const [waCout, setWaCout] = useState(50);
+  const [waTestPhone, setWaTestPhone] = useState("");
+  const [waTesting, setWaTesting] = useState(false);
+
   useEffect(() => {
     if (config) {
       setApiToken(config.api_token || "");
@@ -42,6 +49,9 @@ export default function SmsSettings() {
       setBaseUrl(config.base_url || "https://panel.yellikasms.com/api/v3/sms/send");
       setIsActive(config.is_active);
       setCoutUnitaire(config.cout_unitaire);
+      setWaUrl(config.whatsapp_url || "https://panel.yellikasms.com/api/v3/whatsapp/send");
+      setWaEnabled(config.whatsapp_enabled || false);
+      setWaCout(config.whatsapp_cout_unitaire ?? 50);
     }
   }, [config]);
 
