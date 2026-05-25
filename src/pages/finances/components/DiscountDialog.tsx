@@ -8,9 +8,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tag, Loader2 } from "lucide-react";
-import { fcfa, type EleveScolarite } from "../scolarite-data";
+import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { downloadReceiptFor } from "@/lib/downloadReceipt";
 import { toast } from "sonner";
 
 interface Props {
