@@ -47,7 +47,7 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             </Button>
           )}
           <div className="flex h-11 w-11 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-card)]">
-            <GraduationCap className="h-6 w-6 md:h-8 md:w-8 text-primary" />
+            <GraduationCap className="h-6 w-6 md:h-8 md:w-8 text-primary-foreground" />
           </div>
           <div className="flex flex-col">
             <h1 className="font-display font-extrabold text-base md:text-2xl text-primary leading-tight tracking-tight">
