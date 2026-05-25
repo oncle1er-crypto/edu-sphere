@@ -235,6 +235,7 @@ const App = () => (
         <AcademicPeriodProvider>
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/portail-enseignant" element={<RequireAuth><TeacherPortal /></RequireAuth>} />
             <Route path="/*" element={
               <RequireAuth>
                 <AppLayout>
