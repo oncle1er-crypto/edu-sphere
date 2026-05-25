@@ -33,7 +33,7 @@ export default function AttendanceStats() {
     <SettingsSection title="Statistiques — Présences" description="Taux de présence et absences." icon={<BookOpen className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Enregistrements" value={stats.total.toLocaleString("fr-FR")} icon={BookOpen} />
-        <KpiCard label="Taux présence" value={`${tauxPresence}%`} icon={BookOpen} color="text-accent" />
+        <KpiCard label="Taux présence" value={`${tauxPresence}%`} icon={BookOpen} color="text-primary" />
         <KpiCard label="Absences" value={stats.absents} icon={BookOpen} color="text-destructive" />
         <KpiCard label="Retards" value={stats.retards} icon={BookOpen} color="text-orange-600" />
       </div>

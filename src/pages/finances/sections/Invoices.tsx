@@ -22,7 +22,7 @@ const STATUT_LABEL: Record<string, string> = {
 };
 
 const STATUT_CLASS: Record<string, string> = {
-  payee: "bg-accent/15 text-accent border-accent/30",
+  payee: "bg-accent/15 text-primary border-accent/30",
   partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
   en_retard: "bg-destructive/15 text-destructive border-destructive/30",
   brouillon: "bg-muted text-muted-foreground border-border",

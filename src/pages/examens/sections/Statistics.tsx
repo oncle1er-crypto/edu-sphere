@@ -19,7 +19,7 @@ const distribution = [
 ];
 
 const tone: Record<string, string> = {
-  success: "bg-accent/15 text-accent",
+  success: "bg-accent/15 text-primary",
   danger: "bg-destructive/15 text-destructive",
   primary: "bg-primary/15 text-primary",
 };

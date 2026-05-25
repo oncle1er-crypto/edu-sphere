@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 const kpis = [
   { label: "Classes planifiées", value: "42 / 45", icon: CalendarDays, color: "text-primary" },
-  { label: "Enseignants assignés", value: "78", icon: Users, color: "text-accent" },
+  { label: "Enseignants assignés", value: "78", icon: Users, color: "text-primary" },
   { label: "Salles occupées", value: "31 / 38", icon: DoorOpen, color: "text-primary" },
   { label: "Conflits détectés", value: "3", icon: AlertTriangle, color: "text-destructive" },
 ];
@@ -56,8 +56,8 @@ export default function TimetableDashboard() {
               <h3 className="font-bold mb-3">Alertes récentes</h3>
               <ul className="space-y-2 text-sm">
                 <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 text-destructive mt-0.5" /> Salle 12 double-réservée mardi 10h.</li>
-                <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 text-accent mt-0.5" /> M. Diop dépasse 22h/semaine.</li>
-                <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 text-accent mt-0.5" /> 6ème B sans cours d'EPS planifié.</li>
+                <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 text-primary mt-0.5" /> M. Diop dépasse 22h/semaine.</li>
+                <li className="flex items-start gap-2"><AlertTriangle className="h-4 w-4 text-primary mt-0.5" /> 6ème B sans cours d'EPS planifié.</li>
               </ul>
             </CardContent>
           </Card>

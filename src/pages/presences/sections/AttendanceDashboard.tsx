@@ -71,7 +71,7 @@ export default function AttendanceDashboard() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{k.label}</p>
                   <p className="text-2xl font-extrabold font-display text-primary mt-2">{k.value}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center">
+                <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center">
                   <k.icon className="h-5 w-5" />
                 </div>
               </div>

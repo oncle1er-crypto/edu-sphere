@@ -20,9 +20,9 @@ export default function CanteenStats() {
             <>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <KpiCard label="Repas servis (mois)" value="18 240" icon={UtensilsCrossed} />
-                <KpiCard label="Abonnés actifs" value="942" icon={UtensilsCrossed} color="text-accent" />
+                <KpiCard label="Abonnés actifs" value="942" icon={UtensilsCrossed} color="text-primary" />
                 <KpiCard label="Coût moyen / repas" value="850 FCFA" icon={UtensilsCrossed} />
-                <KpiCard label="Taux de fréquentation" value="68%" icon={UtensilsCrossed} color="text-accent" />
+                <KpiCard label="Taux de fréquentation" value="68%" icon={UtensilsCrossed} color="text-primary" />
               </div>
               <BarChart
                 title="Abonnés cantine par école"

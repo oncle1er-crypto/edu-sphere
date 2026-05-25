@@ -172,7 +172,7 @@ export default function EvaluationGradesPage() {
             </Button>
             <div className="min-w-0">
               <h1 className="font-bold text-sm leading-tight truncate flex items-center gap-2">
-                <ClipboardList className="h-4 w-4 text-accent" /> {info.titre}
+                <ClipboardList className="h-4 w-4 text-primary" /> {info.titre}
               </h1>
               <p className="text-xs opacity-80 truncate">{info.classe} • {info.matiere} • {new Date(info.date_eval).toLocaleDateString("fr-FR")}</p>
             </div>

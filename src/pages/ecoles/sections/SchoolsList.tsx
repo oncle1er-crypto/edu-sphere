@@ -9,7 +9,7 @@ import { useEcoles, type EcoleStatus } from "@/context/EcoleContext";
 import { toast } from "sonner";
 
 const statusConfig: Record<EcoleStatus, { label: string; cls: string }> = {
-  active: { label: "Active", cls: "bg-accent/15 text-accent border-accent/30" },
+  active: { label: "Active", cls: "bg-accent/15 text-primary border-accent/30" },
   suspendue: { label: "Suspendue", cls: "bg-destructive/15 text-destructive border-destructive/30" },
   archivee: { label: "Archivée", cls: "bg-muted text-muted-foreground border-border" },
 };

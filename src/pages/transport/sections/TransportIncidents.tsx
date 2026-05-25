@@ -23,7 +23,7 @@ export default function TransportIncidents() {
       <div className="space-y-3">
         {incidents.map((inc, i) => (
           <div key={i} className="flex items-start gap-3 p-4 border rounded-lg bg-muted/30">
-            <ShieldAlert className={`h-5 w-5 mt-0.5 ${inc.gravite === "Élevée" ? "text-destructive" : "text-accent"}`} />
+            <ShieldAlert className={`h-5 w-5 mt-0.5 ${inc.gravite === "Élevée" ? "text-destructive" : "text-primary"}`} />
             <div className="flex-1">
               <div className="flex flex-wrap items-center gap-2 mb-1">
                 <span className="font-semibold text-sm">{inc.type}</span>

@@ -26,7 +26,7 @@ export default function GlobalReports() {
           <Card key={r.title} className="border shadow-[var(--shadow-card)]">
             <CardContent className="p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center shrink-0">
                   <r.icon className="h-5 w-5" />
                 </div>
                 <div className="min-w-0">

@@ -201,7 +201,7 @@ export default function GradingScales() {
           <TabsContent value="matieres" className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2 text-sm">
-                <Calculator className="h-4 w-4 text-accent" />
+                <Calculator className="h-4 w-4 text-primary" />
                 <span className="text-muted-foreground">Total coefficients :</span>
                 <Badge variant="secondary" className="font-bold">{totalCoef}</Badge>
                 <span className="text-muted-foreground ml-3">Matières :</span>

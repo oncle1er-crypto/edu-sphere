@@ -92,12 +92,12 @@ export default function ClassSummary() {
   }, [rows]);
 
   const tauxClass = (t: number) =>
-    t >= 90 ? "bg-accent/15 text-accent border-accent/30"
+    t >= 90 ? "bg-accent/15 text-primary border-accent/30"
     : t >= 70 ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
     : "bg-destructive/15 text-destructive border-destructive/30";
 
   const retardClass = (t: number) =>
-    t === 0 ? "bg-accent/15 text-accent border-accent/30"
+    t === 0 ? "bg-accent/15 text-primary border-accent/30"
     : t <= 15 ? "bg-yellow-500/15 text-yellow-700 border-yellow-500/30"
     : t <= 30 ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
     : "bg-destructive/15 text-destructive border-destructive/30";
@@ -193,13 +193,13 @@ export default function ClassSummary() {
                       <TableCell className="text-center">
                         <span className="text-sm font-bold">{r.effectif}</span>
                         <div className="flex items-center justify-center gap-1 mt-0.5 text-[10px]">
-                          <span className="text-accent">●{r.ajour}</span>
+                          <span className="text-primary">●{r.ajour}</span>
                           <span className="text-orange-600">●{r.partielle}</span>
                           <span className="text-destructive">●{r.enRetard}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-right text-sm">{fcfa(r.totalDu)}</TableCell>
-                      <TableCell className="text-right text-sm font-semibold text-accent">{fcfa(r.paye)}</TableCell>
+                      <TableCell className="text-right text-sm font-semibold text-primary">{fcfa(r.paye)}</TableCell>
                       <TableCell className="text-right text-sm font-bold text-destructive">{fcfa(r.reste)}</TableCell>
                       <TableCell>
                         <div className="flex flex-col items-center gap-1">
@@ -249,7 +249,7 @@ export default function ClassSummary() {
                                           <p className="text-[10px] text-muted-foreground">{e.telephone}</p>
                                         </TableCell>
                                         <TableCell className="text-right text-xs">
-                                          <span className="text-accent font-semibold">{fcfa(e.totalPaye)}</span>
+                                          <span className="text-primary font-semibold">{fcfa(e.totalPaye)}</span>
                                           <span className="text-muted-foreground"> / {fcfa(e.fraisAnnuel)}</span>
                                         </TableCell>
                                         <TableCell className="text-right text-sm font-bold text-destructive">{fcfa(e.resteDu)}</TableCell>

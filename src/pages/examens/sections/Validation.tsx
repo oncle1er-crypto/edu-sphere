@@ -38,7 +38,7 @@ export default function Validation() {
           <Card key={i} className="border">
             <CardContent className="p-4 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${p.verrouille ? "bg-accent/15 text-accent" : "bg-muted text-muted-foreground"}`}>
+                <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${p.verrouille ? "bg-accent/15 text-primary" : "bg-muted text-muted-foreground"}`}>
                   <Lock className="h-4 w-4" />
                 </div>
                 <div>

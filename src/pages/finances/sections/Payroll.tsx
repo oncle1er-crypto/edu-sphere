@@ -85,7 +85,7 @@ export default function Payroll() {
                 <TableCell>
                   <Badge
                     variant="outline"
-                    className={p.statut === "paye" ? "bg-accent/15 text-accent border-accent/30 cursor-default" : "bg-orange-500/15 text-orange-600 border-orange-500/30 cursor-pointer"}
+                    className={p.statut === "paye" ? "bg-accent/15 text-primary border-accent/30 cursor-default" : "bg-orange-500/15 text-orange-600 border-orange-500/30 cursor-pointer"}
                     onClick={() => p.statut !== "paye" && payBulletin(p.id)}
                   >
                     {p.statut === "paye" ? "Payé" : "En attente"}

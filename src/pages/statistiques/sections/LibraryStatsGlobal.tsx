@@ -21,7 +21,7 @@ export default function LibraryStats() {
     <SettingsSection title="Statistiques — Bibliothèque" description="Fonds documentaire, emprunts et retards." icon={<Library className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Ouvrages" value={totalLivres.toLocaleString("fr-FR")} icon={Library} />
-        <KpiCard label="Emprunts en cours" value={enCours} icon={Library} color="text-accent" />
+        <KpiCard label="Emprunts en cours" value={enCours} icon={Library} color="text-primary" />
         <KpiCard label="Titres" value={livres.length} icon={Library} />
         <KpiCard label="Retards" value={retards} icon={Library} color="text-destructive" />
       </div>

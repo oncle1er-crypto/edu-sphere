@@ -74,7 +74,7 @@ export default function Tax() {
                   <TableCell className="text-muted-foreground">{d.due}</TableCell>
                   <TableCell>
                     <span className={
-                      d.status === "Déclarée" ? "text-accent text-xs font-semibold"
+                      d.status === "Déclarée" ? "text-primary text-xs font-semibold"
                         : d.status === "À payer" ? "text-destructive text-xs font-semibold"
                         : "text-orange-600 text-xs font-semibold"
                     }>● {d.status}</span>

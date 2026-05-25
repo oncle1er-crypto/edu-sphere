@@ -113,7 +113,7 @@ export default function Treasury() {
                   <TableCell className="text-muted-foreground text-xs">{new Date(m.date_mouvement).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell className="font-medium">{m.libelle}</TableCell>
                   <TableCell className="text-muted-foreground">{m.compte_nom ?? "—"}</TableCell>
-                  <TableCell className="text-right font-semibold text-accent">
+                  <TableCell className="text-right font-semibold text-primary">
                     {m.type === "entree" && <span className="inline-flex items-center gap-1"><ArrowDownLeft className="h-3 w-3" />{m.montant.toLocaleString("fr-FR")}</span>}
                   </TableCell>
                   <TableCell className="text-right font-semibold text-destructive">

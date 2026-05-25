@@ -13,7 +13,7 @@ const sessions = [
 
 const tone: Record<string, string> = {
   "En cours": "bg-orange-500/15 text-orange-600",
-  "Clôturée": "bg-accent/15 text-accent",
+  "Clôturée": "bg-accent/15 text-primary",
 };
 
 export default function Compositions() {

@@ -61,7 +61,7 @@ export default function Suppliers() {
                 <TableCell className={`text-right font-semibold ${s.solde_du > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                   {s.solde_du > 0 ? `${s.solde_du.toLocaleString("fr-FR")} FCFA` : "—"}
                 </TableCell>
-                <TableCell><span className="text-accent text-xs font-semibold">● {s.statut === "actif" ? "Actif" : s.statut}</span></TableCell>
+                <TableCell><span className="text-primary text-xs font-semibold">● {s.statut === "actif" ? "Actif" : s.statut}</span></TableCell>
               </TableRow>
             ))}
             {fournisseurs.length === 0 && (

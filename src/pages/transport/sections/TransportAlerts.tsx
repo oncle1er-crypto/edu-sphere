@@ -11,7 +11,7 @@ const alerts = [
 ];
 
 const colors: Record<string, string> = {
-  warning: "text-accent",
+  warning: "text-primary",
   info: "text-primary",
   danger: "text-destructive",
   success: "text-primary",

@@ -196,7 +196,7 @@ export default function StudentsDocuments() {
                           className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${
                             isUploaded
                               ? "bg-emerald-100 text-emerald-600"
-                              : "bg-accent/15 text-accent"
+                              : "bg-accent/15 text-primary"
                           }`}
                         >
                           {isUploaded ? (

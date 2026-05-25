@@ -168,7 +168,7 @@ export default function Unpaid() {
                         title={`${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance} · cliquer pour détails`}
                         className={
                           "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition hover:scale-110 hover:shadow cursor-pointer " +
-                          (t.statut === "payee" ? "bg-accent/20 text-accent border-accent/40 hover:bg-accent/30" :
+                          (t.statut === "payee" ? "bg-accent/20 text-primary border-accent/40 hover:bg-accent/30" :
                            t.statut === "partielle" ? "bg-orange-500/20 text-orange-600 border-orange-500/40 hover:bg-orange-500/30" :
                            t.statut === "retard" ? "bg-destructive/20 text-destructive border-destructive/40 hover:bg-destructive/30" :
                            "bg-muted text-muted-foreground border-border hover:bg-muted/80")
@@ -179,7 +179,7 @@ export default function Unpaid() {
                 </TableCell>
                 <TableCell>
                   {dernPayee > 0 ? (
-                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30">T{dernPayee}</Badge>
+                    <Badge variant="outline" className="bg-accent/10 text-primary border-accent/30">T{dernPayee}</Badge>
                   ) : (
                     <span className="text-xs text-muted-foreground">Aucune</span>
                   )}
@@ -310,7 +310,7 @@ export default function Unpaid() {
                     <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Tranche {e.num}</p>
                     <p className="font-bold text-sm">{e.label}</p>
                   </div>
-                  <Badge variant="outline" className={e.taux >= 90 ? "bg-accent/15 text-accent border-accent/30" : e.taux >= 70 ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : "bg-destructive/15 text-destructive border-destructive/30"}>{e.taux}%</Badge>
+                  <Badge variant="outline" className={e.taux >= 90 ? "bg-accent/15 text-primary border-accent/30" : e.taux >= 70 ? "bg-orange-500/15 text-orange-600 border-orange-500/30" : "bg-destructive/15 text-destructive border-destructive/30"}>{e.taux}%</Badge>
                 </div>
                 <p className="text-[11px] text-muted-foreground mb-3">Tranche {e.num}</p>
                 <Progress value={e.taux} className="h-2" />

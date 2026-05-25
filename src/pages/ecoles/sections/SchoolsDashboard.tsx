@@ -13,10 +13,10 @@ export default function SchoolsDashboard() {
 
   const kpis = [
     { label: "Écoles totales", value: ecoles.length.toString(), icon: School, color: "text-primary" },
-    { label: "Actives", value: actives.length.toString(), icon: CheckCircle2, color: "text-accent" },
+    { label: "Actives", value: actives.length.toString(), icon: CheckCircle2, color: "text-primary" },
     { label: "Suspendues", value: suspendues.length.toString(), icon: PauseCircle, color: "text-destructive" },
     { label: "Élèves (réseau)", value: totalEleves.toLocaleString("fr-FR"), icon: GraduationCap, color: "text-primary" },
-    { label: "Enseignants", value: totalEns.toLocaleString("fr-FR"), icon: Users, color: "text-accent" },
+    { label: "Enseignants", value: totalEns.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
     { label: "Revenu mensuel", value: `${(revenu / 1_000_000).toFixed(1)}M FCFA`, icon: DollarSign, color: "text-primary" },
   ];
 

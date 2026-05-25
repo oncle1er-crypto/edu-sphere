@@ -136,7 +136,7 @@ export default function TeacherPortal() {
       <header className="bg-primary text-primary-foreground shadow-md">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <GraduationCap className="h-6 w-6 text-accent" />
+            <GraduationCap className="h-6 w-6 text-primary" />
             <div>
               <h1 className="font-bold leading-tight">Portail enseignant</h1>
               <p className="text-xs opacity-80">Complexe Scolaire La Providence</p>

@@ -238,7 +238,7 @@ export default function Payments() {
                             title={`${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance} · cliquer pour voir le détail`}
                             className={
                               "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition hover:scale-110 hover:shadow cursor-pointer " +
-                              (t.statut === "payee" ? "bg-accent/20 text-accent border-accent/40 hover:bg-accent/30" :
+                              (t.statut === "payee" ? "bg-accent/20 text-primary border-accent/40 hover:bg-accent/30" :
                                t.statut === "partielle" ? "bg-orange-500/20 text-orange-600 border-orange-500/40 hover:bg-orange-500/30" :
                                t.statut === "retard" ? "bg-destructive/20 text-destructive border-destructive/40 hover:bg-destructive/30" :
                                "bg-muted text-muted-foreground border-border hover:bg-muted/80")

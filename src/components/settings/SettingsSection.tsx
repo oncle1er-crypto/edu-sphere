@@ -23,7 +23,7 @@ export function SettingsSection({ title, description, icon, children, onSave, hi
       <div className="px-6 py-5 border-b bg-muted/30 rounded-t-lg flex items-start justify-between gap-4">
         <div className="flex items-start gap-3">
           {icon && (
-            <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center shrink-0">
               {icon}
             </div>
           )}

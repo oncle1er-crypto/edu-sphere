@@ -123,7 +123,7 @@ export default function ExigencesTemplatesPanel({ docTypes }: Props) {
     <>
       <Card className="border-dashed">
         <CardContent className="p-4 flex items-center gap-3 flex-wrap">
-          <div className="h-10 w-10 rounded-lg bg-accent/15 text-accent flex items-center justify-center">
+          <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center">
             <LayoutTemplate className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-[200px]">
@@ -142,7 +142,7 @@ export default function ExigencesTemplatesPanel({ docTypes }: Props) {
               >
                 <Send className="h-3.5 w-3.5" />
                 {m.nom}
-                {m.est_defaut && <Star className="h-3 w-3 fill-current text-accent" />}
+                {m.est_defaut && <Star className="h-3 w-3 fill-current text-primary" />}
               </Button>
             ))}
             <Button size="sm" onClick={() => setManageOpen(true)}>

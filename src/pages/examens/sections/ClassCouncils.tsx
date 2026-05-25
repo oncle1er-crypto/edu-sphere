@@ -13,7 +13,7 @@ const councils = [
 
 const tone: Record<string, string> = {
   "Planifié": "bg-primary/15 text-primary",
-  "Tenu": "bg-accent/15 text-accent",
+  "Tenu": "bg-accent/15 text-primary",
 };
 
 export default function ClassCouncils() {

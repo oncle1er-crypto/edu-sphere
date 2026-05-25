@@ -91,7 +91,7 @@ export default function Budget() {
 
         {lignes.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucune ligne budgétaire. Cliquez sur « Nouvelle ligne » pour commencer.</p>}
 
-        {renderSection("Recettes", recettes, "text-accent")}
+        {renderSection("Recettes", recettes, "text-primary")}
         {renderSection("Dépenses", depensesLignes, "text-destructive")}
       </SettingsSection>
     </div>

@@ -26,17 +26,17 @@ interface ModuleItem {
 }
 
 const modules: ModuleItem[] = [
-  { title: "ÉLÈVES", description: "Gérer les élèves", icon: GraduationCap, to: "/eleves", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "ÉLÈVES", description: "Gérer les élèves", icon: GraduationCap, to: "/eleves", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "ENSEIGNANTS", description: "Gérer les enseignants", icon: Users, to: "/enseignants", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { title: "CLASSES", description: "Gérer les classes", icon: BookOpen, to: "/classes", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "CLASSES", description: "Gérer les classes", icon: BookOpen, to: "/classes", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "MATIÈRES", description: "Gérer les matières", icon: Library, to: "/matieres", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { title: "NOTES", description: "Saisir et consulter les notes", icon: ClipboardList, to: "/examens", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "NOTES", description: "Saisir et consulter les notes", icon: ClipboardList, to: "/examens", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "BULLETINS", description: "Générer les bulletins", icon: FileText, to: "/examens", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps", icon: Calendar, to: "/emploi-du-temps", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps", icon: Calendar, to: "/emploi-du-temps", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "PAIEMENTS", description: "Gérer les paiements", icon: DollarSign, to: "/finances", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { title: "CANTINE", description: "Menus et abonnés", icon: UtensilsCrossed, to: "/cantine", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "CANTINE", description: "Menus et abonnés", icon: UtensilsCrossed, to: "/cantine", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "TRANSPORT", description: "Lignes et passagers", icon: Bus, to: "/transport", iconBg: "bg-primary/10", iconColor: "text-primary" },
-  { title: "COMMUNICATION", description: "Messages et notifications", icon: MessageSquare, to: "/communication", iconBg: "bg-accent/15", iconColor: "text-accent" },
+  { title: "COMMUNICATION", description: "Messages et notifications", icon: MessageSquare, to: "/communication", iconBg: "bg-accent/15", iconColor: "text-primary" },
   { title: "PARAMÈTRES", description: "Configuration système", icon: Settings, to: "/parametres", iconBg: "bg-primary/10", iconColor: "text-primary" },
 ];
 

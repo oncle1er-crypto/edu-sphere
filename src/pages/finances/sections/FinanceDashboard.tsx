@@ -85,7 +85,7 @@ export default function FinanceDashboard() {
     .slice(0, 5);
 
   const STATUT_CLASS: Record<string, string> = {
-    payee: "bg-accent/15 text-accent border-accent/30",
+    payee: "bg-accent/15 text-primary border-accent/30",
     partielle: "bg-orange-500/15 text-orange-600 border-orange-500/30",
     en_retard: "bg-destructive/15 text-destructive border-destructive/30",
     brouillon: "bg-muted text-muted-foreground border-border",
@@ -147,7 +147,7 @@ export default function FinanceDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Landmark className="h-3.5 w-3.5" /> Solde trésorerie</div>
-          <p className={`text-xl md:text-2xl font-bold font-display mt-2 ${soldeTresorerie >= 0 ? "text-accent" : "text-destructive"}`}>{fcfa(soldeTresorerie)}</p>
+          <p className={`text-xl md:text-2xl font-bold font-display mt-2 ${soldeTresorerie >= 0 ? "text-primary" : "text-destructive"}`}>{fcfa(soldeTresorerie)}</p>
           <p className="text-[11px] text-muted-foreground mt-1">FCFA · {comptes.length} compte{comptes.length > 1 ? "s" : ""}</p>
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
@@ -228,7 +228,7 @@ export default function FinanceDashboard() {
               <div key={c.cycle}>
                 <div className="flex justify-between text-sm mb-1.5">
                   <span className="font-medium">{c.cycle} <span className="text-xs text-muted-foreground">({c.eleves})</span></span>
-                  <span className={c.taux >= 90 ? "text-accent font-bold" : c.taux >= 70 ? "text-orange-600 font-bold" : "text-destructive font-bold"}>{c.taux}%</span>
+                  <span className={c.taux >= 90 ? "text-primary font-bold" : c.taux >= 70 ? "text-orange-600 font-bold" : "text-destructive font-bold"}>{c.taux}%</span>
                 </div>
                 <Progress value={c.taux} className="h-2" />
                 <p className="text-[11px] text-muted-foreground mt-1">Reste : {fcfa(c.du)} FCFA</p>
