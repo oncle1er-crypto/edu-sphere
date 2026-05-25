@@ -162,6 +162,8 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                   <div className="space-y-3">
                     {eleve.tranches.map((t) => {
                       const isHighlighted = openTrancheNum === t.num;
+                      const prevUnpaid = eleve.tranches.some((p) => p.num < t.num && p.statut !== "payee");
+                      const locked = t.statut !== "payee" && prevUnpaid;
                       return (
                         <div key={t.num} ref={(el) => { trancheRefs.current[t.num] = el; }}>
                           <Card className={cn("border transition-all", isHighlighted && "border-primary ring-2 ring-primary/30 shadow-lg")}>
@@ -169,7 +171,15 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                               <div className="flex items-start justify-between gap-2">
                                 <div>
                                   <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="font-mono">T{t.num}</Badge>
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        "font-mono",
+                                        t.statut === "payee" && "bg-green-500/15 text-green-700 border-green-500/40",
+                                        t.statut === "partielle" && "bg-yellow-400/20 text-yellow-700 border-yellow-500/40",
+                                        (t.statut === "retard" || t.statut === "due") && "bg-destructive/15 text-destructive border-destructive/40",
+                                      )}
+                                    >T{t.num}</Badge>
                                     <p className="font-semibold text-sm">{t.label}</p>
                                   </div>
                                   <p className="text-[11px] text-muted-foreground mt-1">📅 Échéance : {t.echeance}</p>
@@ -184,13 +194,29 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                                 <Progress value={(t.paye / t.montant) * 100} className="h-2" />
                               </div>
                               {t.statut !== "payee" && (
-                                <Button
-                                  size="sm"
-                                  className="mt-3 w-full"
-                                  onClick={() => { setPayTrancheNum(t.num); setPayOpen(true); }}
-                                >
-                                  <Plus className="h-4 w-4" />Encaisser cette tranche
-                                </Button>
+                                <>
+                                  {locked ? (
+                                    <p className="mt-3 text-[11px] text-muted-foreground italic text-center bg-muted/40 border rounded p-2">
+                                      🔒 Soldez d'abord la tranche précédente pour pouvoir encaisser T{t.num}.
+                                    </p>
+                                  ) : (
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => { setPayTrancheNum(t.num); setPayOpen(true); }}
+                                      >
+                                        <Plus className="h-4 w-4" />Encaisser
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => { setDiscountTrancheNum(t.num); setDiscountOpen(true); }}
+                                      >
+                                        <Tag className="h-4 w-4" />Remise / bourse
+                                      </Button>
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </CardContent>
                           </Card>
