@@ -213,6 +213,7 @@ import SubjectsPrograms from "@/pages/matieres/sections/SubjectsPrograms";
 import SubjectsReports from "@/pages/matieres/sections/SubjectsReports";
 import SubjectsConfig from "@/pages/matieres/sections/SubjectsConfig";
 import NotFound from "./pages/NotFound";
+import TeacherPortal from "@/pages/portail-enseignant/TeacherPortal";
 
 const queryClient = new QueryClient();
 
