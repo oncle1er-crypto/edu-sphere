@@ -4,9 +4,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
+import { downloadReceiptFor } from "@/lib/downloadReceipt";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
@@ -148,11 +149,68 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                 </Card>
 
                 {/* Synthèse */}
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
                   <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-sm font-bold text-foreground">{fcfa(eleve.fraisAnnuel)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Payé</p><p className="text-sm font-bold text-success">{fcfa(eleve.totalPaye)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Couvert</p><p className="text-sm font-bold text-success">{fcfa(eleve.totalPaye)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">dont Encaissé</p><p className="text-sm font-bold text-primary">{fcfa(eleve.totalEncaisse ?? 0)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">dont Remises</p><p className="text-sm font-bold text-orange-600">{fcfa(eleve.totalRemises ?? 0)}</p></CardContent></Card>
                   <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p></CardContent></Card>
                 </div>
+
+                {/* Historique des paiements & remises */}
+                {eleve.paiements && eleve.paiements.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
+                      <Receipt className="h-4 w-4 text-primary" />
+                      Paiements & remises
+                      <Badge variant="secondary" className="ml-1">{eleve.paiements.length}</Badge>
+                    </h4>
+                    <div className="border rounded-lg divide-y">
+                      {eleve.paiements.map((p) => (
+                        <div key={p.id} className="p-3 flex items-start gap-3">
+                          <div className={cn(
+                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                            p.kind === "remise" ? "bg-orange-500/15 text-orange-600" : "bg-green-500/15 text-green-700",
+                          )}>
+                            {p.kind === "remise" ? <Tag className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="text-xs font-bold">
+                                {p.modeLabel}
+                                {p.trancheNum && <span className="text-muted-foreground font-normal"> · T{p.trancheNum}</span>}
+                              </p>
+                              <p className={cn("text-sm font-bold", p.kind === "remise" ? "text-orange-600" : "text-green-700")}>
+                                {fcfa(p.montant)} FCFA
+                              </p>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                              {new Date(p.date).toLocaleDateString("fr-FR")} {p.reference && `· réf. ${p.reference}`}
+                            </p>
+                            {p.motif && (
+                              <p className="text-[11px] text-foreground italic mt-1 line-clamp-2">« {p.motif} »</p>
+                            )}
+                          </div>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 shrink-0"
+                            title="Télécharger le reçu PDF"
+                            onClick={() => ecoleId && downloadReceiptFor({
+                              ecoleId, eleveId: eleve.id, paiementId: p.id,
+                              type: (p.kind === "remise"
+                                ? (p.mode === "bourse" ? "bourse" : p.mode === "prise_en_charge" ? "prise_en_charge" : "remise")
+                                : "encaissement"),
+                            })}
+                          >
+                            <Download className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
 
                 {/* Détail tranches */}
                 <div>

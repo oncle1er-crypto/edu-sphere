@@ -18,6 +18,10 @@ export interface RecuData {
   total_du?: number;
   total_paye?: number;
   recu_par?: string;
+  /** Type d'opération — détermine le titre du document et l'affichage du motif. */
+  type?: "encaissement" | "remise" | "bourse" | "prise_en_charge";
+  /** Motif obligatoire pour remise/bourse/prise en charge. */
+  motif?: string | null;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
@@ -97,19 +101,28 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFontSize(7.5);
     doc.text(`${data.ecole.adresse} • Tél : ${data.ecole.telephone}${data.ecole.email ? " • " + data.ecole.email : ""}`, tx, y + 15);
 
-    // Copy label (top right)
+    // Copy label (top right) + Titre dynamique selon le type d'opération
+    const TYPE_LABEL: Record<string, { title: string; subtitle: string }> = {
+      encaissement:     { title: "REÇU DE PAIEMENT",      subtitle: "Encaissement" },
+      remise:           { title: "ATTESTATION DE REMISE", subtitle: "Remise commerciale" },
+      bourse:           { title: "ATTESTATION DE BOURSE", subtitle: "Bourse d'études" },
+      prise_en_charge:  { title: "ATTESTATION DE PRISE EN CHARGE", subtitle: "Prise en charge tiers" },
+    };
+    const typeInfo = TYPE_LABEL[data.type ?? "encaissement"] ?? TYPE_LABEL.encaissement;
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
-    doc.text(label.toUpperCase(), W - M, y + 2, { align: "right" });
+    doc.text(`${label.toUpperCase()} • ${typeInfo.subtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
     doc.setFont("times", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...ink);
-    doc.text("REÇU DE PAIEMENT", W - M, y + 9, { align: "right" });
+    doc.text(typeInfo.title, W - M, y + 9, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
     doc.text(`N° ${data.reference}`, W - M, y + 14, { align: "right" });
+
 
     // Thin separator
     y += 22;
@@ -145,10 +158,12 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     drawField("Matricule", data.eleve.matricule || "—", M, y + 12);
     drawField("Classe", data.eleve.classe || "—", M + colW, y + 12);
     // Row 3
-    drawField("Mode de règlement", data.mode.replace(/_/g, " ").toUpperCase(), M, y + 24);
-    drawField("Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
+    const isRemise = data.type === "remise" || data.type === "bourse" || data.type === "prise_en_charge";
+    drawField(isRemise ? "Type d'opération" : "Mode de règlement",
+      (data.mode || "").replace(/_/g, " ").toUpperCase(), M, y + 24);
+    drawField(isRemise ? "Accordée par" : "Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
 
-    // ── Amount line (no filled box, just typography) ──
+    // ── Amount line ──
     y += 36;
     doc.setDrawColor(...line);
     doc.setLineWidth(0.3);
@@ -158,14 +173,27 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
-    doc.text("MONTANT REÇU", M, y);
+    doc.text(isRemise ? "MONTANT ACCORDÉ" : "MONTANT REÇU", M, y);
     doc.setFont("times", "bold");
     doc.setFontSize(20);
     doc.setTextColor(...primary);
     doc.text(formatFCFA(data.montant), W - M, y + 2, { align: "right" });
 
+    // ── Motif (obligatoire pour remises) ──
+    if (data.motif) {
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text("MOTIF", M, y);
+      doc.setFont("times", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...ink);
+      doc.text(data.motif, M, y + 4, { maxWidth: W - 2 * M });
+    }
+
     // ── Status / Solde ──
-    y += 10;
+    y += data.motif ? 12 : 10;
     if (totalDu > 0) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
@@ -185,6 +213,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.roundedRect(M, y, tw, 7, 1.5, 1.5, "S");
     doc.setTextColor(...badgeColor);
     doc.text(badgeText, M + 4, y + 4.8);
+
 
     // ── Footer / signature ──
     const footY = offsetY + halfH - 16;

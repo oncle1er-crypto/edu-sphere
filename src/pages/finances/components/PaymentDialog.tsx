@@ -7,9 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Wallet, Loader2 } from "lucide-react";
-import { fcfa, type EleveScolarite } from "../scolarite-data";
+import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { downloadReceiptFor } from "@/lib/downloadReceipt";
 import { toast } from "sonner";
 
 interface Props {
@@ -79,7 +80,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       const trancheId = (tranche as any).id;
       if (!trancheId) throw new Error("Tranche sans identifiant en base");
 
-      const { data, error } = await supabase.rpc("enregistrer_paiement", {
+      const { data: paiementId, error } = await supabase.rpc("enregistrer_paiement", {
         _ecole_id: ecoleId,
         _eleve_id: eleve.id,
         _tranche_id: trancheId,
@@ -95,22 +96,23 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
         description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
       });
 
+      // Génère + télécharge automatiquement le reçu PDF
+      if (paiementId && typeof paiementId === "string") {
+        downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type: "encaissement" });
+      }
+
       onOpenChange(false);
       onPaymentRecorded?.();
     } catch (err: any) {
       console.error("Payment error:", err);
-      const msg = err?.message ?? "Erreur inconnue";
-      const friendly = msg.includes("Surpaiement")
-        ? "Cette tranche est déjà soldée. Les données ont été rafraîchies."
-        : msg;
-      toast.error("Encaissement refusé", { description: friendly });
-      // Refetch dans tous les cas pour resynchroniser
+      toast.error("Encaissement refusé", { description: friendlyRpcError(err) });
       onPaymentRecorded?.();
     } finally {
       submittingRef.current = false;
       setSaving(false);
     }
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
