@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,7 @@ const MOYENS: { label: string; value: string }[] = [
 export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
+  const submittingRef = useRef(false);
 
   const tranchesPayables = useMemo(
     () => (eleve ? eleve.tranches.filter((t) => t.statut !== "payee") : []),
@@ -47,6 +48,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
 
   useEffect(() => {
     if (!open || !eleve) return;
+    submittingRef.current = false;
     const target =
       tranchesPayables.find((t) => t.num === defaultTrancheNum) ?? tranchesPayables[0];
     if (target) {
@@ -66,36 +68,25 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
 
   const handleSubmit = async () => {
     if (!valid || !tranche || !ecoleId) return;
+    if (submittingRef.current) return; // anti double-clic infaillible
+    submittingRef.current = true;
     setSaving(true);
 
     try {
-      // 1. Insert paiement record
-      const { error: payErr } = await supabase.from("paiements").insert({
-        ecole_id: ecoleId,
-        eleve_id: eleve.id,
-        tranche_id: (tranche as any).id ?? null,
-        montant: montantNum,
-        mode: moyen as any,
-        reference: reference || null,
-        recu_par: user?.id ?? null,
+      const trancheId = (tranche as any).id;
+      if (!trancheId) throw new Error("Tranche sans identifiant en base");
+
+      const { data, error } = await supabase.rpc("enregistrer_paiement", {
+        _ecole_id: ecoleId,
+        _eleve_id: eleve.id,
+        _tranche_id: trancheId,
+        _montant: montantNum,
+        _mode: moyen,
+        _reference: reference || null,
+        _recu_par: user?.id ?? null,
       });
 
-      if (payErr) throw payErr;
-
-      // 2. Update tranche: paye += montantNum, statut changes
-      const newPaye = tranche.paye + montantNum;
-      const newStatut = newPaye >= tranche.montant ? "payee" : "partielle";
-
-      // We need the tranche DB id — it's stored on the tranche object if useFinanceData mapped it
-      const trancheId = (tranche as any).id;
-      if (trancheId) {
-        const { error: trErr } = await supabase
-          .from("tranches")
-          .update({ paye: newPaye, statut: newStatut })
-          .eq("id", trancheId);
-
-        if (trErr) throw trErr;
-      }
+      if (error) throw error;
 
       toast.success("Encaissement enregistré", {
         description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
@@ -105,8 +96,15 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       onPaymentRecorded?.();
     } catch (err: any) {
       console.error("Payment error:", err);
-      toast.error("Erreur lors de l'enregistrement", { description: err.message });
+      const msg = err?.message ?? "Erreur inconnue";
+      const friendly = msg.includes("Surpaiement")
+        ? "Cette tranche est déjà soldée. Les données ont été rafraîchies."
+        : msg;
+      toast.error("Encaissement refusé", { description: friendly });
+      // Refetch dans tous les cas pour resynchroniser
+      onPaymentRecorded?.();
     } finally {
+      submittingRef.current = false;
       setSaving(false);
     }
   };
