@@ -88,8 +88,8 @@ export default function Payments() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Élèves filtrés</p><p className="text-xl font-bold font-display text-primary mt-1">{stats.count}</p></CardContent></Card>
-        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Attendu</p><p className="text-xl font-bold font-display text-primary mt-1">{fcfa(stats.att)}</p></CardContent></Card>
-        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Encaissé</p><p className="text-xl font-bold font-display text-accent mt-1">{fcfa(stats.pay)}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Attendu</p><p className="text-xl font-bold font-display text-foreground mt-1">{fcfa(stats.att)}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Encaissé</p><p className="text-xl font-bold font-display text-success mt-1">{fcfa(stats.pay)}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reste dû</p><p className="text-xl font-bold font-display text-destructive mt-1">{fcfa(stats.du)}</p></CardContent></Card>
       </div>
 

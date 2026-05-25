@@ -28,7 +28,7 @@ export default function FinanceStats() {
     <SettingsSection title="Statistiques — Finances" description="Revenus, impayés et recouvrement." icon={<DollarSign className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Frais attendus" value={`${fcfa(totalAttendu)} F`} icon={DollarSign} />
-        <KpiCard label="Encaissé" value={`${fcfa(totalPaye)} F`} icon={DollarSign} color="text-accent" />
+        <KpiCard label="Encaissé" value={`${fcfa(totalPaye)} F`} icon={DollarSign} color="text-success" />
         <KpiCard label="Impayés" value={`${fcfa(totalDu)} F`} icon={DollarSign} color="text-destructive" />
         <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} color="text-accent" />
       </div>

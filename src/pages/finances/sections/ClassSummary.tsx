@@ -112,15 +112,15 @@ export default function ClassSummary() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="border shadow-[var(--shadow-card)]">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="h-3.5 w-3.5 text-primary" />Total dû</div>
-            <p className="text-xl font-bold font-display text-primary mt-2">{fcfa(kpis.totalDu)}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="h-3.5 w-3.5 text-foreground" />Total dû</div>
+            <p className="text-xl font-bold font-display text-foreground mt-2">{fcfa(kpis.totalDu)}</p>
             <p className="text-[11px] text-muted-foreground mt-1">FCFA · {kpis.effectif} élèves · {kpis.classes} classes</p>
           </CardContent>
         </Card>
         <Card className="border shadow-[var(--shadow-card)]">
           <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5 text-accent" />Encaissé</div>
-            <p className="text-xl font-bold font-display text-accent mt-2">{fcfa(kpis.paye)}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5 text-success" />Encaissé</div>
+            <p className="text-xl font-bold font-display text-success mt-2">{fcfa(kpis.paye)}</p>
             <p className="text-[11px] text-muted-foreground mt-1">Recouvrement {kpis.tauxRecouvrement}%</p>
           </CardContent>
         </Card>

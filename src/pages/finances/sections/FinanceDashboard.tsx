@@ -123,12 +123,12 @@ export default function FinanceDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><GraduationCap className="h-3.5 w-3.5" /> Frais attendus</div>
-          <p className="text-xl md:text-2xl font-bold font-display text-primary mt-2">{fcfa(totalAttendu)}</p>
+          <p className="text-xl md:text-2xl font-bold font-display text-foreground mt-2">{fcfa(totalAttendu)}</p>
           <p className="text-[11px] text-muted-foreground mt-1">FCFA · {ELEVES.length} élèves</p>
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-accent" /> Encaissé</div>
-          <p className="text-xl md:text-2xl font-bold font-display text-accent mt-2">{fcfa(totalPaye)}</p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-success" /> Encaissé</div>
+          <p className="text-xl md:text-2xl font-bold font-display text-success mt-2">{fcfa(totalPaye)}</p>
           <p className="text-[11px] text-muted-foreground mt-1">FCFA · {tauxRecouvrement}%</p>
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">

@@ -139,12 +139,12 @@ export default function StudentSummary() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border"><CardContent className="p-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Frais annuels</p>
-                <p className="text-lg font-bold font-display text-primary mt-1">{fcfa(eleve.fraisAnnuel)}</p>
+                <p className="text-lg font-bold font-display text-foreground mt-1">{fcfa(eleve.fraisAnnuel)}</p>
                 <p className="text-[10px] text-muted-foreground">FCFA</p>
               </CardContent></Card>
               <Card className="border"><CardContent className="p-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total payé</p>
-                <p className="text-lg font-bold font-display text-accent mt-1">{fcfa(eleve.totalPaye)}</p>
+                <p className="text-lg font-bold font-display text-success mt-1">{fcfa(eleve.totalPaye)}</p>
                 <p className="text-[10px] text-muted-foreground">FCFA · {pct}%</p>
               </CardContent></Card>
               <Card className="border"><CardContent className="p-4">
@@ -207,7 +207,7 @@ export default function StudentSummary() {
                       </div>
                       <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
                         <div><p className="text-muted-foreground">Dû</p><p className="font-bold">{fcfa(t.montant)}</p></div>
-                        <div><p className="text-muted-foreground">Payé</p><p className="font-bold text-accent">{fcfa(t.paye)}</p></div>
+                        <div><p className="text-muted-foreground">Payé</p><p className="font-bold text-success">{fcfa(t.paye)}</p></div>
                         <div><p className="text-muted-foreground">Reste</p><p className="font-bold text-destructive">{fcfa(t.montant - t.paye)}</p></div>
                       </div>
                       <div className="mt-2">
