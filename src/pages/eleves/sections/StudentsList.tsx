@@ -64,16 +64,26 @@ export default function StudentsList() {
     }
   }, [eleves, viewEleve]);
 
-  const filtered = eleves.filter((s) => {
-    const matchSearch =
-      s.nom.toLowerCase().includes(search.toLowerCase()) ||
-      s.prenom.toLowerCase().includes(search.toLowerCase()) ||
-      s.matricule.toLowerCase().includes(search.toLowerCase()) ||
-      (s.classe_nom ?? "").toLowerCase().includes(search.toLowerCase());
-    const matchCycle = cycle === "all" || s.cycle_nom === cycle;
-    const matchStatut = statut === "all" || s.statut === statut;
-    return matchSearch && matchCycle && matchStatut;
-  });
+  const filtered = useMemo(() => {
+    const q = debouncedSearch;
+    return eleves.filter((s) => {
+      const matchSearch = !q ||
+        s.nom.toLowerCase().includes(q) ||
+        s.prenom.toLowerCase().includes(q) ||
+        s.matricule.toLowerCase().includes(q) ||
+        (s.classe_nom ?? "").toLowerCase().includes(q);
+      const matchCycle = cycle === "all" || s.cycle_nom === cycle;
+      const matchStatut = statut === "all" || s.statut === statut;
+      return matchSearch && matchCycle && matchStatut;
+    });
+  }, [eleves, debouncedSearch, cycle, statut]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
 
   const handleTransfer = async () => {
     if (!transferEleve || !transferClasseId) return;
