@@ -68,6 +68,58 @@ export type Tranche = {
   statut: TrancheStatut;
 };
 
+export type PaiementKind = "encaissement" | "remise";
+
+export interface PaiementHistorique {
+  id: string;
+  date: string;
+  montant: number;
+  mode: string;
+  modeLabel: string;
+  kind: PaiementKind;
+  trancheNum?: number;
+  reference?: string | null;
+  motif?: string | null;
+}
+
+export const PAIEMENT_MODE_META: Record<string, { label: string; kind: PaiementKind }> = {
+  especes:         { label: "Espèces",            kind: "encaissement" },
+  wave:            { label: "Wave",               kind: "encaissement" },
+  orange_money:    { label: "Orange Money",       kind: "encaissement" },
+  mtn_money:       { label: "MTN MoMo",           kind: "encaissement" },
+  moov_money:      { label: "Moov Money",         kind: "encaissement" },
+  virement:        { label: "Virement",           kind: "encaissement" },
+  cheque:          { label: "Chèque",             kind: "encaissement" },
+  remise:          { label: "Remise commerciale", kind: "remise" },
+  bourse:          { label: "Bourse",             kind: "remise" },
+  prise_en_charge: { label: "Prise en charge",    kind: "remise" },
+};
+
+export function modeMeta(mode: string): { label: string; kind: PaiementKind } {
+  return PAIEMENT_MODE_META[mode] ?? { label: (mode ?? "—").replace(/_/g, " "), kind: "encaissement" };
+}
+
+/** Convertit une erreur RPC PostgREST en message clair pour l'utilisateur. */
+export function friendlyRpcError(err: any): string {
+  const raw = (err?.message ?? err?.details ?? "").toString();
+  if (!raw) return "Erreur inconnue. Réessayez ou contactez l'administrateur.";
+  if (/Tranche \d+ non soldée/i.test(raw))
+    return "Tranche précédente non soldée : soldez d'abord la tranche antérieure avant d'encaisser celle-ci.";
+  if (/Surpaiement/i.test(raw))
+    return "Surpaiement interdit : le montant saisi dépasse le reste dû de la tranche.";
+  if (/Remise refusée/i.test(raw))
+    return "Remise refusée : le montant accordé dépasse le reste dû de la tranche.";
+  if (/motif est obligatoire/i.test(raw) || /motif.*minimum/i.test(raw))
+    return "Le motif est obligatoire (3 caractères minimum).";
+  if (/strictement positif/i.test(raw))
+    return "Le montant doit être strictement positif.";
+  if (/Accès refusé/i.test(raw) || /Authentification requise/i.test(raw))
+    return "Accès refusé : votre rôle ne permet pas d'effectuer cette opération.";
+  if (/Tranche introuvable/i.test(raw))
+    return "Tranche introuvable : rafraîchissez la page puis réessayez.";
+  return raw;
+}
+
 export interface EleveScolarite {
   id: string;
   matricule: string;
@@ -83,7 +135,11 @@ export interface EleveScolarite {
   tranches: Tranche[];
   derniereRelance?: string;
   joursRetard: number;
+  totalEncaisse?: number;
+  totalRemises?: number;
+  paiements?: PaiementHistorique[];
 }
+
 
 // Mapping classe → tarif
 function tarifForClasse(classe: string): TarifNiveau {
