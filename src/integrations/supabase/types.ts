@@ -3006,6 +3006,9 @@ export type Database = {
           provider: string
           sender_id: string
           updated_at: string
+          whatsapp_cout_unitaire: number
+          whatsapp_enabled: boolean
+          whatsapp_url: string
         }
         Insert: {
           api_token?: string
@@ -3018,6 +3021,9 @@ export type Database = {
           provider?: string
           sender_id?: string
           updated_at?: string
+          whatsapp_cout_unitaire?: number
+          whatsapp_enabled?: boolean
+          whatsapp_url?: string
         }
         Update: {
           api_token?: string
@@ -3030,6 +3036,9 @@ export type Database = {
           provider?: string
           sender_id?: string
           updated_at?: string
+          whatsapp_cout_unitaire?: number
+          whatsapp_enabled?: boolean
+          whatsapp_url?: string
         }
         Relationships: [
           {
@@ -3043,6 +3052,7 @@ export type Database = {
       }
       sms_logs: {
         Row: {
+          canal: string
           cout: number
           created_at: string
           destinataire: string
@@ -3055,6 +3065,7 @@ export type Database = {
           statut: string
         }
         Insert: {
+          canal?: string
           cout?: number
           created_at?: string
           destinataire: string
@@ -3067,6 +3078,7 @@ export type Database = {
           statut?: string
         }
         Update: {
+          canal?: string
           cout?: number
           created_at?: string
           destinataire?: string
