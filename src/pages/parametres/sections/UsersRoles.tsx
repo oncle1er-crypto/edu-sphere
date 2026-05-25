@@ -101,7 +101,7 @@ export default function UsersRoles() {
     setNewEmail("");
     setNewName("");
     setNewRoles(["enseignant"]);
-    setNewPassword("GSP2025!");
+    setNewPassword("");
     setCreating(false);
     setDialogOpen(false);
     toast.success(`Utilisateur ${newName} créé avec ${newRoles.length} rôle(s)`);
