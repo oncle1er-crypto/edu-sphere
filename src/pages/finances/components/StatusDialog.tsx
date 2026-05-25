@@ -52,7 +52,7 @@ export function StatusDialog({ eleve, open, onOpenChange }: Props) {
             <Tag className="h-5 w-5" />Mettre à jour le statut
           </DialogTitle>
           <DialogDescription>
-            {eleve.prenom} {eleve.nom} — {eleve.classe}
+            {eleve.nom} {eleve.prenom} — {eleve.classe}
           </DialogDescription>
         </DialogHeader>
 

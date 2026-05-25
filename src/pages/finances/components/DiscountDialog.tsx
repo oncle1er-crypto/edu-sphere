@@ -115,7 +115,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
             <Tag className="h-5 w-5" />Appliquer une remise / bourse
           </DialogTitle>
           <DialogDescription>
-            {eleve.prenom} {eleve.nom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
+            {eleve.nom} {eleve.prenom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
           </DialogDescription>
         </DialogHeader>
 

@@ -191,7 +191,7 @@ export default function CardsList() {
             <AlertDialogDescription>
               {toReissue && (
                 <>
-                  Une nouvelle carte sera générée pour <strong>{toReissue.prenom} {toReissue.nom}</strong>{" "}
+                  Une nouvelle carte sera générée pour <strong>{toReissue.nom} {toReissue.prenom}</strong>{" "}
                   (matricule <span className="font-mono">{toReissue.matricule}</span>).
                   L'ancienne carte reste dans l'historique. Cette action est définitive.
                 </>

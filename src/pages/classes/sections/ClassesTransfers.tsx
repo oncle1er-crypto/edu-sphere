@@ -138,7 +138,7 @@ export default function ClassesTransfers() {
                 <SelectTrigger><SelectValue placeholder="Choisir un élève" /></SelectTrigger>
                 <SelectContent>
                   {eleves.map((e) => (
-                    <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} — {classes.find((c) => c.id === e.classe_id)?.nom ?? "Sans classe"}</SelectItem>
+                    <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom} — {classes.find((c) => c.id === e.classe_id)?.nom ?? "Sans classe"}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

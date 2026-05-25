@@ -273,7 +273,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
             </div>
             <div className="flex-1 min-w-0">
               <SheetTitle className="text-xl">
-                {eleve.prenom} {eleve.nom}
+                {eleve.nom} {eleve.prenom}
               </SheetTitle>
               <p className="text-sm text-muted-foreground font-mono">{eleve.matricule}</p>
               <div className="flex gap-2 mt-1 flex-wrap">
@@ -512,7 +512,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                           />
                           <div className="min-w-0 flex-1">
                             <p className="font-medium">
-                              {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
+                              {(p as any).parents?.nom} {(p as any).parents?.prenom} ({p.lien})
                             </p>
                             <p className="text-muted-foreground truncate">
                               {(p as any).parents?.telephone ?? "—"} • {(p as any).parents?.email ?? "—"}

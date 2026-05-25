@@ -69,7 +69,7 @@ export default function Sanctions() {
                   <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                   <SelectContent>
                     {eleves.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>
+                      <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

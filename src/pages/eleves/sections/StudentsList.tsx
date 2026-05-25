@@ -309,7 +309,7 @@ export default function StudentsList() {
                       <div className="flex items-center gap-3">
                         {studentAvatar(s)}
                         <div>
-                          <p className="font-medium leading-tight">{s.prenom} {s.nom}</p>
+                          <p className="font-medium leading-tight">{s.nom} {s.prenom}</p>
                           <p className="text-[11px] text-muted-foreground">
                             {s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"} • {s.cycle_nom ?? "—"}
                           </p>
@@ -348,7 +348,7 @@ export default function StudentsList() {
                 </div>
                 {studentAvatar(s, "h-16 w-16", "text-xl")}
                 <div className="min-w-0 w-full">
-                  <p className="font-semibold text-sm leading-tight truncate">{s.prenom} {s.nom}</p>
+                  <p className="font-semibold text-sm leading-tight truncate">{s.nom} {s.prenom}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{s.matricule}</p>
                 </div>
                 <Badge variant="secondary" className="text-[10px]">{s.classe_nom ?? "Non affecté"}</Badge>
@@ -426,7 +426,7 @@ export default function StudentsList() {
           <DialogHeader><DialogTitle>Transférer de classe</DialogTitle></DialogHeader>
           {transferEleve && (
             <div className="space-y-4">
-              <p className="text-sm">Transférer <strong>{transferEleve.prenom} {transferEleve.nom}</strong> vers :</p>
+              <p className="text-sm">Transférer <strong>{transferEleve.nom} {transferEleve.prenom}</strong> vers :</p>
               <Select value={transferClasseId} onValueChange={setTransferClasseId}>
                 <SelectTrigger><SelectValue placeholder="Nouvelle classe" /></SelectTrigger>
                 <SelectContent>
@@ -452,7 +452,7 @@ export default function StudentsList() {
           <DialogHeader><DialogTitle>Désinscrire un élève</DialogTitle></DialogHeader>
           {deleteTarget && (
             <p className="text-sm">
-              Êtes-vous sûr de vouloir désinscrire <strong>{deleteTarget.prenom} {deleteTarget.nom}</strong> ({deleteTarget.matricule}) ?
+              Êtes-vous sûr de vouloir désinscrire <strong>{deleteTarget.nom} {deleteTarget.prenom}</strong> ({deleteTarget.matricule}) ?
               L'élève sera marqué comme « sorti ».
             </p>
           )}

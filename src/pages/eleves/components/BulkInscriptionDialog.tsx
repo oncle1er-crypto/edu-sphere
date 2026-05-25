@@ -188,7 +188,7 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
                     />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className="font-medium text-sm">{r.eleve.prenom} {r.eleve.nom}</p>
+                        <p className="font-medium text-sm">{r.eleve.nom} {r.eleve.prenom}</p>
                         <Badge variant="outline" className="text-[10px] font-mono">{r.eleve.matricule}</Badge>
                         {ready ? (
                           <Badge className="text-[10px] bg-green-100 text-green-800 border-green-300">Prêt</Badge>

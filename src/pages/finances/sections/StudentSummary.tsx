@@ -84,7 +84,7 @@ export default function StudentSummary() {
                         }
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{e.prenom} {e.nom}</p>
+                          <p className="text-sm font-semibold truncate">{e.nom} {e.prenom}</p>
                           <p className="text-[11px] text-muted-foreground truncate">{e.classe} · {e.cycle}</p>
                         </div>
                         <div className={
@@ -110,7 +110,7 @@ export default function StudentSummary() {
                 <div className="flex items-start justify-between flex-wrap gap-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-bold font-display text-primary">{eleve.prenom} {eleve.nom}</h2>
+                      <h2 className="text-xl font-bold font-display text-primary">{eleve.nom} {eleve.prenom}</h2>
                       <Badge variant="outline" className={STATUT_CLASS[st]}>
                         {st === "ajour" && <CheckCircle2 className="h-3 w-3" />}
                         {st === "partiel" && <Clock className="h-3 w-3" />}

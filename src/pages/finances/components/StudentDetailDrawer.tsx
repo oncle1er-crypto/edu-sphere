@@ -112,7 +112,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
           {eleve && (
             <>
               <SheetHeader>
-                <SheetTitle className="text-primary">{eleve.prenom} {eleve.nom}</SheetTitle>
+                <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
                 <SheetDescription>
                   {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                 </SheetDescription>

@@ -122,7 +122,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
             <Wallet className="h-5 w-5" />Enregistrer un encaissement
           </DialogTitle>
           <DialogDescription>
-            {eleve.prenom} {eleve.nom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
+            {eleve.nom} {eleve.prenom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
           </DialogDescription>
         </DialogHeader>
 

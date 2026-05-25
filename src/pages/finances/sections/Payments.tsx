@@ -232,7 +232,7 @@ export default function Payments() {
                   <TableRow key={e.id} className="hover:bg-muted/30">
                     <TableCell className="cursor-pointer" onClick={() => openFiche(e)}>
                       <div>
-                        <p className="font-semibold">{e.prenom} {e.nom}</p>
+                        <p className="font-semibold">{e.nom} {e.prenom}</p>
                         <p className="text-[11px] text-muted-foreground font-mono">{e.matricule}</p>
                       </div>
                     </TableCell>

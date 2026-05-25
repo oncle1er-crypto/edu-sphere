@@ -174,7 +174,7 @@ export default function Unpaid() {
             return (
               <TableRow key={e.id} className="hover:bg-muted/30">
                 <TableCell>
-                  <p className="font-semibold">{e.prenom} {e.nom}</p>
+                  <p className="font-semibold">{e.nom} {e.prenom}</p>
                   <p className="text-[11px] text-muted-foreground">{e.parent} · {e.telephone}</p>
                 </TableCell>
                 <TableCell>

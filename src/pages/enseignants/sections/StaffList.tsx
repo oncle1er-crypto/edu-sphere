@@ -215,7 +215,7 @@ export default function StaffList() {
                 <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">{initials(s.nom, s.prenom)}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 w-full">
-                <p className="font-semibold text-sm truncate">{s.prenom} {s.nom}</p>
+                <p className="font-semibold text-sm truncate">{s.nom} {s.prenom}</p>
                 <p className="text-[11px] text-muted-foreground font-mono">{s.matricule ?? "—"}</p>
               </div>
               <p className="text-xs text-muted-foreground truncate w-full">{s.specialite ?? "—"}</p>
@@ -252,7 +252,7 @@ export default function StaffList() {
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{initials(s.nom, s.prenom)}</AvatarFallback>
                       </Avatar>
-                      <p className="font-medium">{s.prenom} {s.nom}</p>
+                      <p className="font-medium">{s.nom} {s.prenom}</p>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{s.specialite ?? "—"}</TableCell>
@@ -297,7 +297,7 @@ export default function StaffList() {
               <Avatar className="h-20 w-20">
                 <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">{initials(viewEnseignant.nom, viewEnseignant.prenom)}</AvatarFallback>
               </Avatar>
-              <h3 className="text-lg font-semibold">{viewEnseignant.prenom} {viewEnseignant.nom}</h3>
+              <h3 className="text-lg font-semibold">{viewEnseignant.nom} {viewEnseignant.prenom}</h3>
               <div className="w-full space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Matricule</span><span className="font-mono">{viewEnseignant.matricule ?? "—"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Sexe</span><span>{viewEnseignant.sexe === "F" ? "Féminin" : viewEnseignant.sexe === "M" ? "Masculin" : "—"}</span></div>

@@ -105,7 +105,7 @@ export default function StudentsReregistration() {
                   />
                 </TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">{d.matricule}</TableCell>
-                <TableCell className="font-medium">{d.prenom} {d.nom}</TableCell>
+                <TableCell className="font-medium">{d.nom} {d.prenom}</TableCell>
                 <TableCell><Badge variant="secondary">{d.classe_nom ?? "Non affecté"}</Badge></TableCell>
                 <TableCell>
                   <Badge variant={d.statut === "inscrit" || d.statut === "actif" ? "default" : "secondary"}>

@@ -168,7 +168,7 @@ export default function ClassesGroups() {
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— Aucun —</SelectItem>
-                  {enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                  {enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -190,7 +190,7 @@ export default function ClassesGroups() {
             {eleves.map((e) => (
               <label key={e.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted cursor-pointer">
                 <Checkbox checked={membreIds.has(e.id)} onCheckedChange={() => toggleMembre(e.id)} />
-                <span className="text-sm">{e.prenom} {e.nom}</span>
+                <span className="text-sm">{e.nom} {e.prenom}</span>
                 <span className="text-xs text-muted-foreground ml-auto">{e.matricule}</span>
               </label>
             ))}

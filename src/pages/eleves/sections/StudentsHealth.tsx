@@ -64,7 +64,7 @@ export default function StudentsHealth() {
               <Select value={form.eleve_id} onValueChange={(v) => set("eleve_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
                 <SelectContent>
-                  {eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
+                  {eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={form.classe_id} onValueChange={(v) => set("classe_id", v)}>

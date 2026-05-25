@@ -256,7 +256,7 @@ export default function FinanceDashboard() {
                 <li key={f.id} className="flex items-center justify-between gap-3 px-6 py-3">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold truncate">
-                      {f.eleve_prenom} {f.eleve_nom}
+                      {f.eleve_nom} {f.eleve_prenom}
                       <span className="text-xs text-muted-foreground font-normal ml-2">{f.numero}</span>
                     </p>
                     <p className="text-xs text-muted-foreground">{f.libelle} · Échéance {new Date(f.date_echeance).toLocaleDateString("fr-FR")}</p>
@@ -289,7 +289,7 @@ export default function FinanceDashboard() {
               {topRetards.map((e) => (
                 <li key={e.id} className="flex items-center justify-between gap-3 px-6 py-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold truncate">{e.prenom} {e.nom} <span className="text-xs text-muted-foreground font-normal">· {e.classe}</span></p>
+                    <p className="text-sm font-semibold truncate">{e.nom} {e.prenom} <span className="text-xs text-muted-foreground font-normal">· {e.classe}</span></p>
                     <p className="text-xs text-muted-foreground">{e.parent} · {e.telephone}</p>
                   </div>
                   <div className="text-right shrink-0">

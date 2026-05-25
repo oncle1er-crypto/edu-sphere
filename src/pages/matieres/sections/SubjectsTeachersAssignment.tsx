@@ -126,7 +126,7 @@ export default function SubjectsTeachersAssignment() {
             </Select>
             <Select value={form.enseignant_id} onValueChange={(v) => setForm({ ...form, enseignant_id: v })}>
               <SelectTrigger><SelectValue placeholder="Enseignant" /></SelectTrigger>
-              <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}</SelectContent>
+              <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
             </Select>
             <Select value={form.classe_id} onValueChange={(v) => setForm({ ...form, classe_id: v })}>
               <SelectTrigger><SelectValue placeholder="Classe (optionnel)" /></SelectTrigger>
