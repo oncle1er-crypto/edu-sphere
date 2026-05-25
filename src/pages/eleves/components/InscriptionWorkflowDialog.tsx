@@ -8,6 +8,8 @@ import { Loader2, Check, AlertCircle, Files, Wallet, GraduationCap, ArrowRight, 
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { toast } from "sonner";
+import { finalizeInscription } from "@/lib/finalizeInscription";
+import { useAuth } from "@/context/AuthContext";
 
 interface Props {
   eleve: any | null;
@@ -25,6 +27,7 @@ const REQUIRED_DOCS = [
 
 export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpenDrawer, onUpdated }: Props) {
   const { classes } = useClasses();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [paiements, setPaiements] = useState<any[]>([]);
@@ -74,17 +77,26 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
 
   const handleFinalize = async () => {
     setFinalizing(true);
-    // Trigger backend auto-promotion check
-    const { error } = await supabase.rpc("check_and_promote_eleve" as any, { _eleve_id: eleve.id });
-    if (error) {
-      // fallback: direct update if RPC fails but all conditions are met
-      const { error: e2 } = await supabase.from("eleves").update({ statut: "inscrit" }).eq("id", eleve.id);
-      setFinalizing(false);
-      if (e2) { toast.error(e2.message); return; }
-    } else {
-      setFinalizing(false);
+    const operatorLabel = (user?.user_metadata as any)?.full_name || user?.email || null;
+    const res = await finalizeInscription({
+      eleve,
+      operatorLabel,
+      operatorId: user?.id ?? null,
+    });
+    setFinalizing(false);
+    if (!res.ok) {
+      toast.error(res.error ?? "Finalisation impossible");
+      return;
     }
-    toast.success(`${eleve.prenom} ${eleve.nom} est désormais inscrit(e) définitivement 🎓`);
+    if (res.warnings.length > 0) {
+      toast.warning(`Inscription validée — ${res.warnings.length} avertissement(s)`, {
+        description: res.warnings.join(" • "),
+      });
+    } else {
+      toast.success(`${eleve.prenom} ${eleve.nom} inscrit(e) définitivement 🎓`, {
+        description: `Notifications : ${res.notifications_sent} • PDF généré`,
+      });
+    }
     onUpdated?.();
     onClose();
   };

@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail, History,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
@@ -44,6 +44,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [incidents, setIncidents] = useState<any[]>([]);
   const [documents, setDocuments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [parentDialogOpen, setParentDialogOpen] = useState(false);
   const [editingParent, setEditingParent] = useState<any | null>(null);
@@ -95,12 +96,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       supabase.from("incidents_discipline").select("*").eq("eleve_id", id).order("date_incident", { ascending: false }).limit(20),
       supabase.from("documents_eleves").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId),
       supabase.from("eleve_parents").select("*, parents:parent_id(nom, prenom, telephone, email)").eq("eleve_id", id),
-    ]).then(([presR, paiR, incR, docR, parR]) => {
+      supabase.from("audit_logs").select("*").eq("cible", id).eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(50),
+    ]).then(([presR, paiR, incR, docR, parR, audR]) => {
       setPresences((presR.data as any[]) ?? []);
       setPaiements((paiR.data as any[]) ?? []);
       setIncidents((incR.data as any[]) ?? []);
       setDocuments((docR.data as any[]) ?? []);
       setParents((parR.data as any[]) ?? []);
+      setAuditLogs((audR.data as any[]) ?? []);
       setLoading(false);
     });
   }, [eleve, open]);
@@ -360,6 +363,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
               <TabsTrigger value="finances" className="text-xs"><Wallet className="h-3.5 w-3.5 mr-1" />Finances</TabsTrigger>
               <TabsTrigger value="discipline" className="text-xs"><Award className="h-3.5 w-3.5 mr-1" />Discipline</TabsTrigger>
               <TabsTrigger value="documents" className="text-xs"><Files className="h-3.5 w-3.5 mr-1" />Documents</TabsTrigger>
+              <TabsTrigger value="historique" className="text-xs"><History className="h-3.5 w-3.5 mr-1" />Historique</TabsTrigger>
             </TabsList>
 
             {/* IDENTITÉ */}
@@ -676,6 +680,56 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                 </div>
               ) : (
                 <Empty text="Aucun document téléversé" />
+              )}
+            </TabsContent>
+
+            {/* HISTORIQUE / AUDIT */}
+            <TabsContent value="historique" className="space-y-2 mt-3">
+              <p className="text-[11px] text-muted-foreground">
+                Traces des actions importantes sur cet élève (finalisation d'inscription, modifications de statut…).
+              </p>
+              {auditLogs.length === 0 ? (
+                <Empty text="Aucune trace pour cet élève" />
+              ) : (
+                <div className="space-y-2">
+                  {auditLogs.map((log) => {
+                    const d = log.details ?? {};
+                    const isInscr = log.action === "inscription.finalisation";
+                    return (
+                      <Card key={log.id} className="border">
+                        <CardContent className="p-3 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge
+                              className="text-[10px]"
+                              variant={isInscr ? "default" : "secondary"}
+                            >
+                              {isInscr ? "🎓 Inscription finalisée" : log.action}
+                            </Badge>
+                            <span className="text-[11px] text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString("fr-FR")}
+                            </span>
+                          </div>
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Par : </span>
+                            <span className="font-medium">{log.user_label ?? "Système"}</span>
+                          </p>
+                          {isInscr && (
+                            <div className="text-[11px] text-muted-foreground space-y-0.5 pl-2 border-l-2 border-primary/30">
+                              {d.classe && <p>Classe : <span className="text-foreground">{d.classe}</span></p>}
+                              {typeof d.total_paye === "number" && (
+                                <p>Versé : <span className="text-foreground">{Number(d.total_paye).toLocaleString("fr-FR")} FCFA</span> / {Number(d.total_du ?? 0).toLocaleString("fr-FR")} FCFA</p>
+                              )}
+                              {d.reference && <p>Réf. : <span className="font-mono text-foreground">{d.reference}</span></p>}
+                              {Array.isArray(d.etapes) && d.etapes.length > 0 && (
+                                <p>Étapes : <span className="text-foreground">{d.etapes.join(" • ")}</span></p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               )}
             </TabsContent>
           </Tabs>

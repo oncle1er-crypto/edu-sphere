@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
@@ -18,6 +19,7 @@ import { useCycles } from "@/hooks/useCycles";
 import { toast } from "sonner";
 import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
+import BulkInscriptionDialog from "@/pages/eleves/components/BulkInscriptionDialog";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -56,6 +58,8 @@ export default function StudentsList() {
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Keep drawer eleve in sync with realtime-refreshed list
   useEffect(() => {
@@ -218,6 +222,16 @@ export default function StudentsList() {
                 <SelectItem value="sorti">Sorti</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1 border-amber-300 bg-amber-50 hover:bg-amber-100 text-amber-900"
+              onClick={() => setBulkOpen(true)}
+              title="Finaliser plusieurs pré-inscriptions à la fois"
+            >
+              <Sparkles className="h-4 w-4" />
+              Finaliser en lot {selectedIds.size > 0 && `(${selectedIds.size})`}
+            </Button>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button
@@ -248,6 +262,22 @@ export default function StudentsList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8">
+                    <Checkbox
+                      checked={
+                        paginated.filter((s) => s.statut === "pre_inscrit").length > 0 &&
+                        paginated.filter((s) => s.statut === "pre_inscrit").every((s) => selectedIds.has(s.id))
+                      }
+                      onCheckedChange={(c) => {
+                        const next = new Set(selectedIds);
+                        paginated.filter((s) => s.statut === "pre_inscrit").forEach((s) => {
+                          if (c) next.add(s.id); else next.delete(s.id);
+                        });
+                        setSelectedIds(next);
+                      }}
+                      aria-label="Tout sélectionner"
+                    />
+                  </TableHead>
                   <TableHead>Matricule</TableHead>
                   <TableHead>Élève</TableHead>
                   <TableHead>Classe</TableHead>
@@ -259,6 +289,19 @@ export default function StudentsList() {
               <TableBody>
                 {paginated.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setViewEleve(s)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {s.statut === "pre_inscrit" ? (
+                        <Checkbox
+                          checked={selectedIds.has(s.id)}
+                          onCheckedChange={(c) => {
+                            const next = new Set(selectedIds);
+                            if (c) next.add(s.id); else next.delete(s.id);
+                            setSelectedIds(next);
+                          }}
+                          aria-label="Sélectionner"
+                        />
+                      ) : null}
+                    </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -279,7 +322,7 @@ export default function StudentsList() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                       Aucun élève trouvé.
                     </TableCell>
                   </TableRow>
@@ -359,6 +402,18 @@ export default function StudentsList() {
         onClose={() => setWorkflowEleve(null)}
         onOpenDrawer={() => setViewEleve(workflowEleve)}
         onUpdated={() => fetchEleves()}
+      />
+
+      {/* Bulk finalization */}
+      <BulkInscriptionDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        eleves={
+          selectedIds.size > 0
+            ? eleves.filter((e) => selectedIds.has(e.id) && e.statut === "pre_inscrit")
+            : eleves.filter((e) => e.statut === "pre_inscrit")
+        }
+        onDone={() => { fetchEleves(); setSelectedIds(new Set()); }}
       />
 
       {/* Transfer dialog */}
