@@ -13,6 +13,8 @@ import {
   useSmsTemplates, pickTrancheCible, renderTemplate, updateTemplate,
   TEMPLATE_VARIABLES, type TrancheKey,
 } from "../sms-templates-store";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 
 interface Props {
