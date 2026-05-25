@@ -75,21 +75,8 @@ export default function LoginPage() {
     navigate("/");
   };
 
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: "admin@csp.ci",
-        password: "admin123",
-      });
-      if (error) throw error;
-      navigate("/");
-    } catch (err: any) {
-      toast.error("Erreur", { description: err.message });
-    } finally {
-      setLoading(false);
-    }
-  };
+
+
 
   return (
     <div
