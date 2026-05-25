@@ -18,6 +18,10 @@ export interface RecuData {
   total_du?: number;
   total_paye?: number;
   recu_par?: string;
+  /** Type d'opération — détermine le titre du document et l'affichage du motif. */
+  type?: "encaissement" | "remise" | "bourse" | "prise_en_charge";
+  /** Motif obligatoire pour remise/bourse/prise en charge. */
+  motif?: string | null;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
