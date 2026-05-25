@@ -8,14 +8,14 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import type {
-  EleveScolarite, Tranche, TrancheStatut, Cycle,
+  EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique,
 } from "./scolarite-data";
-import { ELEVES_SCOLARITE, fcfa } from "./scolarite-data";
+import { ELEVES_SCOLARITE, fcfa, modeMeta } from "./scolarite-data";
 
 export { fcfa };
 
-// Re-export types so consumers can import from here
-export type { EleveScolarite, Tranche, TrancheStatut, Cycle };
+export type { EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique };
+
 
 function computeJoursRetard(tranches: Tranche[]): number {
   const today = new Date();
