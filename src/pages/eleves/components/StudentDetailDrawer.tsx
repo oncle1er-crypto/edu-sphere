@@ -682,6 +682,56 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                 <Empty text="Aucun document téléversé" />
               )}
             </TabsContent>
+
+            {/* HISTORIQUE / AUDIT */}
+            <TabsContent value="historique" className="space-y-2 mt-3">
+              <p className="text-[11px] text-muted-foreground">
+                Traces des actions importantes sur cet élève (finalisation d'inscription, modifications de statut…).
+              </p>
+              {auditLogs.length === 0 ? (
+                <Empty text="Aucune trace pour cet élève" />
+              ) : (
+                <div className="space-y-2">
+                  {auditLogs.map((log) => {
+                    const d = log.details ?? {};
+                    const isInscr = log.action === "inscription.finalisation";
+                    return (
+                      <Card key={log.id} className="border">
+                        <CardContent className="p-3 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Badge
+                              className="text-[10px]"
+                              variant={isInscr ? "default" : "secondary"}
+                            >
+                              {isInscr ? "🎓 Inscription finalisée" : log.action}
+                            </Badge>
+                            <span className="text-[11px] text-muted-foreground">
+                              {new Date(log.created_at).toLocaleString("fr-FR")}
+                            </span>
+                          </div>
+                          <p className="text-xs">
+                            <span className="text-muted-foreground">Par : </span>
+                            <span className="font-medium">{log.user_label ?? "Système"}</span>
+                          </p>
+                          {isInscr && (
+                            <div className="text-[11px] text-muted-foreground space-y-0.5 pl-2 border-l-2 border-primary/30">
+                              {d.classe && <p>Classe : <span className="text-foreground">{d.classe}</span></p>}
+                              {typeof d.total_paye === "number" && (
+                                <p>Versé : <span className="text-foreground">{Number(d.total_paye).toLocaleString("fr-FR")} FCFA</span> / {Number(d.total_du ?? 0).toLocaleString("fr-FR")} FCFA</p>
+                              )}
+                              {d.reference && <p>Réf. : <span className="font-mono text-foreground">{d.reference}</span></p>}
+                              {Array.isArray(d.etapes) && d.etapes.length > 0 && (
+                                <p>Étapes : <span className="text-foreground">{d.etapes.join(" • ")}</span></p>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </TabsContent>
           </Tabs>
           </>
         )}
