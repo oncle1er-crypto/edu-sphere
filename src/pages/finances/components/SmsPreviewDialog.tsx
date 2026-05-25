@@ -184,9 +184,9 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button onClick={handleSend}>
-            <Send className="h-4 w-4" />Envoyer le SMS
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>Annuler</Button>
+          <Button onClick={handleSend} disabled={sending}>
+            <Send className="h-4 w-4" />{sending ? "Envoi…" : "Envoyer le SMS"}
           </Button>
         </DialogFooter>
       </DialogContent>
