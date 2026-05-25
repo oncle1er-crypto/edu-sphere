@@ -18,6 +18,7 @@ import { SmsPreviewDialog } from "../components/SmsPreviewDialog";
 import { StatusDialog } from "../components/StatusDialog";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { toast } from "sonner";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
