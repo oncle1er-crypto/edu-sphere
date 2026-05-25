@@ -2263,6 +2263,7 @@ export type Database = {
           id: string
           mode: Database["public"]["Enums"]["paiement_mode"]
           montant: number
+          motif: string | null
           notes: string | null
           recu_par: string | null
           reference: string | null
@@ -2276,6 +2277,7 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["paiement_mode"]
           montant: number
+          motif?: string | null
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
@@ -2289,6 +2291,7 @@ export type Database = {
           id?: string
           mode?: Database["public"]["Enums"]["paiement_mode"]
           montant?: number
+          motif?: string | null
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
@@ -3344,6 +3347,18 @@ export type Database = {
         Args: { _annee_id: string; _ecole_id: string; _user_id: string }
         Returns: Json
       }
+      appliquer_remise: {
+        Args: {
+          _accorde_par?: string
+          _ecole_id: string
+          _eleve_id: string
+          _montant: number
+          _motif: string
+          _tranche_id: string
+          _type_remise: string
+        }
+        Returns: string
+      }
       check_and_promote_eleve: {
         Args: { _eleve_id: string }
         Returns: undefined
@@ -3407,6 +3422,9 @@ export type Database = {
         | "moov_money"
         | "virement"
         | "cheque"
+        | "remise"
+        | "bourse"
+        | "prise_en_charge"
       periode_statut: "a_venir" | "en_cours" | "verrouillee"
       presence_statut: "present" | "absent" | "retard" | "excuse"
       relance_type: "sms" | "email" | "appel" | "courrier"
@@ -3560,6 +3578,9 @@ export const Constants = {
         "moov_money",
         "virement",
         "cheque",
+        "remise",
+        "bourse",
+        "prise_en_charge",
       ],
       periode_statut: ["a_venir", "en_cours", "verrouillee"],
       presence_statut: ["present", "absent", "retard", "excuse"],
