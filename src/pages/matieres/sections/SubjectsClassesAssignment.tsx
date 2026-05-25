@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen, Loader2 } from "lucide-react";
 import { useMatieres } from "@/hooks/useMatieres";
 import { useClasses } from "@/hooks/useClasses";
@@ -9,7 +10,10 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const CYCLES_FILTER = ["Maternelle", "Primaire", "Collège", "Lycée"] as const;
+
 export default function SubjectsClassesAssignment() {
+  const [cycleFilter, setCycleFilter] = useState<string>("all");
   const { matieres, loading: lm } = useMatieres();
   const { classes, loading: lc } = useClasses();
   const { ecoleId } = useEcoleId();
