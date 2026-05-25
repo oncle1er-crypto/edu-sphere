@@ -101,19 +101,28 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFontSize(7.5);
     doc.text(`${data.ecole.adresse} • Tél : ${data.ecole.telephone}${data.ecole.email ? " • " + data.ecole.email : ""}`, tx, y + 15);
 
-    // Copy label (top right)
+    // Copy label (top right) + Titre dynamique selon le type d'opération
+    const TYPE_LABEL: Record<string, { title: string; subtitle: string }> = {
+      encaissement:     { title: "REÇU DE PAIEMENT",      subtitle: "Encaissement" },
+      remise:           { title: "ATTESTATION DE REMISE", subtitle: "Remise commerciale" },
+      bourse:           { title: "ATTESTATION DE BOURSE", subtitle: "Bourse d'études" },
+      prise_en_charge:  { title: "ATTESTATION DE PRISE EN CHARGE", subtitle: "Prise en charge tiers" },
+    };
+    const typeInfo = TYPE_LABEL[data.type ?? "encaissement"] ?? TYPE_LABEL.encaissement;
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
-    doc.text(label.toUpperCase(), W - M, y + 2, { align: "right" });
+    doc.text(`${label.toUpperCase()} • ${typeInfo.subtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
     doc.setFont("times", "bold");
     doc.setFontSize(13);
     doc.setTextColor(...ink);
-    doc.text("REÇU DE PAIEMENT", W - M, y + 9, { align: "right" });
+    doc.text(typeInfo.title, W - M, y + 9, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
     doc.text(`N° ${data.reference}`, W - M, y + 14, { align: "right" });
+
 
     // Thin separator
     y += 22;
