@@ -85,7 +85,7 @@ export default function Unpaid() {
       .filter((e) => statutEleve(e) !== "ajour")
       .filter((e) => cycle === "all" || e.cycle === cycle)
       .filter((e) => classe === "all" || e.classe === classe)
-      .filter((e) => !search || `${e.prenom} ${e.nom} ${e.classe} ${e.parent} ${e.telephone}`.toLowerCase().includes(search.toLowerCase()));
+      .filter((e) => !search || `${e.nom} ${e.prenom} ${e.classe} ${e.parent} ${e.telephone}`.toLowerCase().includes(search.toLowerCase()));
 
     const dir = sortDir === "asc" ? 1 : -1;
     list.sort((a, b) => {
@@ -247,7 +247,7 @@ export default function Unpaid() {
                       size="icon" variant="outline" className="h-8 w-8"
                       title="Enregistrer un encaissement"
                       confirmTitle="Ouvrir l'encaissement ?"
-                      confirmDescription={`Saisir un nouveau paiement pour ${e.prenom} ${e.nom} ?`}
+                      confirmDescription={`Saisir un nouveau paiement pour ${e.nom} ${e.prenom} ?`}
                       confirmLabel="Continuer"
                       onConfirm={() => { setPaymentEleve(e); setPaymentTranche(undefined); }}
                     >
@@ -257,7 +257,7 @@ export default function Unpaid() {
                       size="icon" variant="outline" className="h-8 w-8"
                       title="Mettre à jour le statut"
                       confirmTitle="Modifier le statut ?"
-                      confirmDescription={`Mettre à jour le statut de scolarité de ${e.prenom} ${e.nom} ?`}
+                      confirmDescription={`Mettre à jour le statut de scolarité de ${e.nom} ${e.prenom} ?`}
                       confirmLabel="Continuer"
                       onConfirm={() => setStatusEleve(e)}
                     >

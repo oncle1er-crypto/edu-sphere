@@ -249,7 +249,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
           <div className="flex items-center gap-4">
             <div className="relative group">
               <Avatar className="h-16 w-16">
-                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.prenom} ${eleve.nom}`} /> : null}
+                {eleve.photo_url ? <AvatarImage src={eleve.photo_url} alt={`${eleve.nom} ${eleve.prenom}`} /> : null}
                 <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
                   {init}
                 </AvatarFallback>
@@ -475,8 +475,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                               .map((p: any) => p.parents?.email)
                               .filter((e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
                             if (emails.length === 0) { toast.error("Aucun email valide sélectionné"); return; }
-                            const subject = encodeURIComponent(`GSP — ${eleve.prenom} ${eleve.nom}`);
-                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.prenom} ${eleve.nom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
+                            const subject = encodeURIComponent(`GSP — ${eleve.nom} ${eleve.prenom}`);
+                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.nom} ${eleve.prenom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
                             window.location.href = `mailto:?bcc=${emails.join(",")}&subject=${subject}&body=${body}`;
                           }}
                         >
@@ -761,7 +761,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
             nom: `${p.parents?.prenom ?? ""} ${p.parents?.nom ?? ""}`.trim(),
             telephone: p.parents?.telephone ?? "",
           }))}
-        eleveLabel={`${eleve.prenom} ${eleve.nom}`}
+        eleveLabel={`${eleve.nom} ${eleve.prenom}`}
       />
     )}
 

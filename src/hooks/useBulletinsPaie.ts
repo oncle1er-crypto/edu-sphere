@@ -42,7 +42,7 @@ export function useBulletinsPaie(mois?: number, annee?: number) {
         salaire_brut: Number(b.salaire_brut),
         retenues: Number(b.retenues),
         net_a_payer: Number(b.net_a_payer),
-        enseignant_nom: b.enseignants ? `${b.enseignants.prenom} ${b.enseignants.nom}` : "—",
+        enseignant_nom: b.enseignants ? `${b.enseignants.nom} ${b.enseignants.prenom}` : "—",
         enseignant_fonction: b.enseignants?.specialite ?? "Enseignant",
       })));
     }

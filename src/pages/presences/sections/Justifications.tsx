@@ -22,7 +22,7 @@ export default function Justifications() {
 
   const getEleveName = (id: string) => {
     const e = eleves.find((el) => el.id === id);
-    return e ? `${e.prenom} ${e.nom}` : id.slice(0, 8);
+    return e ? `${e.nom} ${e.prenom}` : id.slice(0, 8);
   };
 
   const handleAdd = async () => {

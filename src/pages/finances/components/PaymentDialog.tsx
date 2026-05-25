@@ -93,7 +93,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       if (error) throw error;
 
       toast.success("Encaissement enregistré", {
-        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
+        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom} (T${tranche.num})`,
       });
 
       // Génère + télécharge automatiquement le reçu PDF

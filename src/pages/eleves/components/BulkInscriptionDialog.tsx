@@ -121,14 +121,14 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
         });
         out.push({
           id: r.eleve.id,
-          full_name: `${r.eleve.prenom} ${r.eleve.nom}`,
+          full_name: `${r.eleve.nom} ${r.eleve.prenom}`,
           status: res.ok ? (res.warnings.length ? "warning" : "success") : "error",
           detail: res.ok ? res.steps.join(" • ") : (res.error ?? "Erreur"),
         });
       } catch (e: any) {
         out.push({
           id: r.eleve.id,
-          full_name: `${r.eleve.prenom} ${r.eleve.nom}`,
+          full_name: `${r.eleve.nom} ${r.eleve.prenom}`,
           status: "error",
           detail: e?.message ?? "Erreur",
         });

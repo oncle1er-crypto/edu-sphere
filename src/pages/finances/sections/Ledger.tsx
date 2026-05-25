@@ -28,7 +28,7 @@ export default function Ledger() {
       const entries: EcritureComptable[] = [];
 
       (pRes.data ?? []).forEach((p: any) => {
-        const nom = p.eleves ? `${p.eleves.prenom} ${p.eleves.nom}` : "Scolarité";
+        const nom = p.eleves ? `${p.eleves.nom} ${p.eleves.prenom}` : "Scolarité";
         entries.push({ date: p.date_paiement, account: "411 - Clients", label: nom, debit: Number(p.montant), credit: 0 });
         entries.push({ date: p.date_paiement, account: "706 - Prestations services", label: "Scolarité", debit: 0, credit: Number(p.montant) });
       });

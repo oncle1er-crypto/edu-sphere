@@ -77,7 +77,7 @@ export function useEmploiDuTemps() {
           ...c,
           matiere_nom: c.matieres?.nom ?? "",
           enseignant_nom: c.enseignants
-            ? `${c.enseignants.prenom} ${c.enseignants.nom}`
+            ? `${c.enseignants.nom} ${c.enseignants.prenom}`
             : "",
         }))
       );

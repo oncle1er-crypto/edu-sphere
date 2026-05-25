@@ -38,7 +38,7 @@ export default function StudentAbsences() {
       setRows((data ?? []).map((r: any) => ({
         id: r.id,
         date_presence: r.date_presence,
-        eleve_nom: r.eleves ? `${r.eleves.prenom} ${r.eleves.nom}` : "?",
+        eleve_nom: r.eleves ? `${r.eleves.nom} ${r.eleves.prenom}` : "?",
         classe_nom: r.classes?.nom ?? "?",
         motif_absence: r.motif_absence,
         justifie: r.justifie,

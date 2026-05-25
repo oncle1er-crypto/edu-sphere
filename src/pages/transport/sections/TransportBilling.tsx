@@ -31,7 +31,7 @@ export default function TransportBilling() {
     setRows(((data ?? []) as any[]).map((f) => ({
       id: f.id, numero: f.numero, libelle: f.libelle, montant: Number(f.montant), montant_paye: Number(f.montant_paye),
       statut: f.statut, date_echeance: f.date_echeance,
-      eleve_nom: f.eleves ? `${f.eleves.prenom} ${f.eleves.nom}` : "?",
+      eleve_nom: f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "?",
     })));
     setLoading(false);
   };

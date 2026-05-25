@@ -88,7 +88,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
       if (error) throw error;
 
       toast.success("Remise appliquée", {
-        description: `${fcfa(montantNum)} FCFA · ${TYPES.find(t => t.value === type)?.label} · ${eleve.prenom} ${eleve.nom} (T${tranche.num})`,
+        description: `${fcfa(montantNum)} FCFA · ${TYPES.find(t => t.value === type)?.label} · ${eleve.nom} ${eleve.prenom} (T${tranche.num})`,
       });
 
       if (paiementId && typeof paiementId === "string") {

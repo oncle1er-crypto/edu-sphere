@@ -37,7 +37,7 @@ export default function TransportSubscribers() {
     ]);
     setRows(((ab ?? []) as any[]).map((a) => ({
       id: a.id, statut: a.statut,
-      eleve_nom: a.eleves ? `${a.eleves.prenom} ${a.eleves.nom}` : "?",
+      eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
       classe_nom: a.eleves?.classes?.nom ?? "—",
       ligne_nom: a.lignes_transport?.nom ?? "—",
     })));

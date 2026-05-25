@@ -56,7 +56,7 @@ export default function ClassesGroups() {
     setGroupes((data ?? []).map((g: any) => ({
       ...g,
       membres_count: g.groupe_membres?.[0]?.count ?? 0,
-      enseignant_nom: g.enseignants ? `${g.enseignants.prenom} ${g.enseignants.nom}` : "",
+      enseignant_nom: g.enseignants ? `${g.enseignants.nom} ${g.enseignants.prenom}` : "",
     })));
     setLoading(false);
   };

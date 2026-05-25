@@ -82,7 +82,7 @@ export function StatusDialog({ eleve, open, onOpenChange }: Props) {
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button onClick={() => {
-            toast.success(`Statut mis à jour : ${opt.label}`, { description: `${eleve.prenom} ${eleve.nom}` });
+            toast.success(`Statut mis à jour : ${opt.label}`, { description: `${eleve.nom} ${eleve.prenom}` });
             onOpenChange(false);
           }}>Enregistrer</Button>
         </DialogFooter>

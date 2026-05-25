@@ -59,7 +59,7 @@ export default function Payments() {
     return ELEVES_SCOLARITE.filter((e) => {
       // recherche globale
       const s = norm(search);
-      const matchSearch = !s || `${e.prenom} ${e.nom} ${e.matricule} ${e.classe} ${e.parent} ${e.telephone}`.toLowerCase().includes(s);
+      const matchSearch = !s || `${e.nom} ${e.prenom} ${e.matricule} ${e.classe} ${e.parent} ${e.telephone}`.toLowerCase().includes(s);
       // recherche avancée par champ
       const matchNom = !adv.nom || norm(e.nom).includes(norm(adv.nom));
       const matchPrenom = !adv.prenom || norm(e.prenom).includes(norm(adv.prenom));

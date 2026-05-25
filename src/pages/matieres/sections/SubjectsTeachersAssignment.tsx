@@ -101,7 +101,7 @@ export default function SubjectsTeachersAssignment() {
                         const cl = classes.find((c) => c.id === a.classe_id);
                         return (
                           <Badge key={a.id} variant="outline" className="gap-1">
-                            {ens ? `${ens.prenom} ${ens.nom}` : "—"}{cl ? ` · ${cl.nom}` : ""}
+                            {ens ? `${ens.nom} ${ens.prenom}` : "—"}{cl ? ` · ${cl.nom}` : ""}
                             <button onClick={() => remove(a.id)} className="ml-1 hover:text-destructive"><Trash2 className="h-3 w-3" /></button>
                           </Badge>
                         );

@@ -122,7 +122,7 @@ export default function EvaluationGradesPage() {
       if (!r.absent && r.note !== "") {
         const n = Number(r.note);
         if (isNaN(n) || n < 0 || n > info.bareme) {
-          toast.error(`Note invalide pour ${r.prenom} ${r.nom} (0–${info.bareme})`);
+          toast.error(`Note invalide pour ${r.nom} ${r.prenom} (0–${info.bareme})`);
           setSaving(false); return;
         }
       }

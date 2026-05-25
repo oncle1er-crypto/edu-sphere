@@ -76,7 +76,7 @@ export function useFinanceData() {
     (parentsData ?? []).forEach((ep: any) => {
       if (ep.parents) {
         parentMap[ep.eleve_id] = {
-          nom: `${ep.parents.prenom} ${ep.parents.nom}`,
+          nom: `${ep.parents.nom} ${ep.parents.prenom}`,
           telephone: ep.parents.telephone ?? "",
         };
       }

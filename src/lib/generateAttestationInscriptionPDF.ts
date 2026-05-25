@@ -106,7 +106,7 @@ export async function generateAttestationInscriptionPDF(data: AttestationData): 
   doc.text("ÉLÈVE", 20, y + 8);
   doc.setTextColor(...ink);
   doc.setFontSize(13);
-  doc.text(`${data.eleve.prenom} ${data.eleve.nom}`, 20, y + 16);
+  doc.text(`${data.eleve.nom} ${data.eleve.prenom}`, 20, y + 16);
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(...muted);

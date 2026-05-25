@@ -41,7 +41,7 @@ export default function Invoices() {
 
   const filtered = factures.filter((f) => {
     const matchQ = !q || f.numero.toLowerCase().includes(q.toLowerCase()) ||
-      `${f.eleve_prenom} ${f.eleve_nom}`.toLowerCase().includes(q.toLowerCase());
+      `${f.eleve_nom} ${f.eleve_prenom}`.toLowerCase().includes(q.toLowerCase());
     const matchStatus = statusFilter === "all" || f.statut === statusFilter;
     return matchQ && matchStatus;
   });

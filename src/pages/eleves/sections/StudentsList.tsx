@@ -98,7 +98,7 @@ export default function StudentsList() {
     if (!transferEleve || !transferClasseId) return;
     setActionLoading(true);
     const ok = await updateEleve(transferEleve.id, { classe_id: transferClasseId });
-    if (ok) toast.success(`${transferEleve.prenom} ${transferEleve.nom} transféré(e)`);
+    if (ok) toast.success(`${transferEleve.nom} ${transferEleve.prenom} transféré(e)`);
     setTransferEleve(null);
     setTransferClasseId("");
     setActionLoading(false);
@@ -108,7 +108,7 @@ export default function StudentsList() {
     if (!deleteTarget) return;
     setActionLoading(true);
     const ok = await updateEleve(deleteTarget.id, { statut: "sorti" });
-    if (ok) toast.success(`${deleteTarget.prenom} ${deleteTarget.nom} désinscrit(e)`);
+    if (ok) toast.success(`${deleteTarget.nom} ${deleteTarget.prenom} désinscrit(e)`);
     setDeleteTarget(null);
     setActionLoading(false);
   };
@@ -148,7 +148,7 @@ export default function StudentsList() {
 
   const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
     <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
-      {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.prenom} ${s.nom}`} /> : null}
+      {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.nom} ${s.prenom}`} /> : null}
       <AvatarFallback className={`${textSize} bg-accent/20 text-accent-foreground font-semibold`}>
         {initials(s.nom, s.prenom)}
       </AvatarFallback>

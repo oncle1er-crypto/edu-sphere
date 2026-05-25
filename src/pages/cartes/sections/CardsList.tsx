@@ -52,7 +52,7 @@ export default function CardsList() {
       emiseLe: today,
       validJusqu: valid,
     }]);
-    toast.success(`Carte réémise pour ${c.prenom} ${c.nom}`);
+    toast.success(`Carte réémise pour ${c.nom} ${c.prenom}`);
   };
 
   const filtered = cards.filter((c) => {

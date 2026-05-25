@@ -192,7 +192,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         description: res.warnings.join(" • "),
       });
     } else {
-      toast.success(`${eleve.prenom} ${eleve.nom} inscrit(e) définitivement 🎓`, {
+      toast.success(`${eleve.nom} ${eleve.prenom} inscrit(e) définitivement 🎓`, {
         description: `Notifications : ${res.notifications_sent} • PDF généré`,
       });
     }

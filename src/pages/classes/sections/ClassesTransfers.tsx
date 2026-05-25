@@ -68,11 +68,11 @@ export default function ClassesTransfers() {
       user_id: user.id,
       user_label: user.email ?? "Utilisateur",
       action: "transfert_classe",
-      cible: `${eleve.prenom} ${eleve.nom}`,
+      cible: `${eleve.nom} ${eleve.prenom}`,
       niveau: "info",
       details: {
         eleve_id: eleveId,
-        eleve_nom: `${eleve.prenom} ${eleve.nom}`,
+        eleve_nom: `${eleve.nom} ${eleve.prenom}`,
         de: origine?.nom ?? "—",
         vers: dest.nom,
         motif: motif || null,

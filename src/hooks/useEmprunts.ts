@@ -31,8 +31,8 @@ export function useEmprunts() {
       setEmprunts((data ?? []).map((e: any) => ({
         ...e,
         livre_titre: e.livres?.titre ?? "",
-        eleve_nom: e.eleves ? `${e.eleves.prenom} ${e.eleves.nom}` : "",
-        enseignant_nom: e.enseignants ? `${e.enseignants.prenom} ${e.enseignants.nom}` : "",
+        eleve_nom: e.eleves ? `${e.eleves.nom} ${e.eleves.prenom}` : "",
+        enseignant_nom: e.enseignants ? `${e.enseignants.nom} ${e.enseignants.prenom}` : "",
       })));
     }
     setLoading(false);

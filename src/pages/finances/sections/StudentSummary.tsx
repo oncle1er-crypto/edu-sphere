@@ -25,7 +25,7 @@ export default function StudentSummary() {
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
       const s = search.toLowerCase().trim();
-      const matchSearch = !s || `${e.prenom} ${e.nom} ${e.matricule} ${e.classe} ${e.parent}`.toLowerCase().includes(s);
+      const matchSearch = !s || `${e.nom} ${e.prenom} ${e.matricule} ${e.classe} ${e.parent}`.toLowerCase().includes(s);
       const matchCycle = cycle === "all" || e.cycle === cycle;
       return matchSearch && matchCycle;
     });

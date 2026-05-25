@@ -39,7 +39,7 @@ export function useClasses() {
         ...c,
         cycle_nom: c.cycles?.nom ?? "",
         effectif: c.eleves?.[0]?.count ?? 0,
-        prof_nom: c.enseignants ? `${c.enseignants.prenom} ${c.enseignants.nom}` : "",
+        prof_nom: c.enseignants ? `${c.enseignants.nom} ${c.enseignants.prenom}` : "",
       }))
     );
     setLoading(false);

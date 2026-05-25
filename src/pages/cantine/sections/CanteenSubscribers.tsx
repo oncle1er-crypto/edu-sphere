@@ -47,7 +47,7 @@ export default function CanteenSubscribers() {
     if (error) { console.error(error); } else {
       setAbonnements((data ?? []).map((a: any) => ({
         id: a.id,
-        eleve_nom: a.eleves ? `${a.eleves.prenom} ${a.eleves.nom}` : "?",
+        eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
         classe_nom: a.eleves?.classes?.nom ?? "—",
         regime: a.regime,
         montant_mensuel: a.montant_mensuel,

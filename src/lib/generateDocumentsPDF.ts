@@ -152,7 +152,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     }
 
     // Row 1
-    drawField("Élève", `${data.eleve.prenom} ${data.eleve.nom}`, M, y);
+    drawField("Élève", `${data.eleve.nom} ${data.eleve.prenom}`, M, y);
     drawField("Date du paiement", formatDateLong(data.date_paiement), M + colW, y);
     // Row 2
     drawField("Matricule", data.eleve.matricule || "—", M, y + 12);
@@ -326,10 +326,10 @@ export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF
   doc.setFont("helvetica", "normal");
 
   const body = data.type === "scolarite"
-    ? `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.prenom} ${data.eleve.nom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est régulièrement inscrit(e) en classe de ${data.classe} pour l'année scolaire ${data.annee}.`
+    ? `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est régulièrement inscrit(e) en classe de ${data.classe} pour l'année scolaire ${data.annee}.`
     : data.type === "inscription"
-    ? `Le Directeur du ${data.ecole.nom} atteste que l'élève ${data.eleve.prenom} ${data.eleve.nom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est inscrit(e) en classe de ${data.classe} au titre de l'année scolaire ${data.annee}.`
-    : `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.prenom} ${data.eleve.nom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, fréquente régulièrement l'établissement en classe de ${data.classe} pour l'année scolaire ${data.annee}.`;
+    ? `Le Directeur du ${data.ecole.nom} atteste que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est inscrit(e) en classe de ${data.classe} au titre de l'année scolaire ${data.annee}.`
+    : `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, fréquente régulièrement l'établissement en classe de ${data.classe} pour l'année scolaire ${data.annee}.`;
 
   const lines = doc.splitTextToSize(body, w - 2 * m);
   doc.text(lines, m, y);
@@ -432,7 +432,7 @@ export async function generateTableauHonneurPDF(data: TableauHonneurData): Promi
   doc.setFont("times", "bold");
   doc.setFontSize(24);
   doc.setTextColor(...ink);
-  doc.text(`${data.eleve.prenom} ${data.eleve.nom}`.toUpperCase(), W / 2, y, { align: "center" });
+  doc.text(`${data.eleve.nom} ${data.eleve.prenom}`.toUpperCase(), W / 2, y, { align: "center" });
 
   y += 7;
   doc.setFont("helvetica", "normal");
