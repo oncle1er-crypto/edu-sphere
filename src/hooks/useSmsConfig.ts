@@ -12,6 +12,9 @@ export interface SmsConfig {
   base_url: string;
   is_active: boolean;
   cout_unitaire: number;
+  whatsapp_url: string;
+  whatsapp_enabled: boolean;
+  whatsapp_cout_unitaire: number;
 }
 
 /** Mask an API token, showing only the last 4 characters */
@@ -59,25 +62,24 @@ export function useSmsConfig() {
         .insert(payload);
       if (error) { toast.error("Erreur de création"); return; }
     }
-    toast.success("Configuration SMS enregistrée");
+    toast.success("Configuration enregistrée");
     await fetchConfig();
   };
 
-  const sendSms = async (destinataires: string[], message: string) => {
-    if (!ecoleId) throw new Error("Pas d'école");
+  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+
+  const invoke = async (fn: "send-sms" | "send-whatsapp", body: Record<string, unknown>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Non connecté");
-
-    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
     const res = await window.fetch(
-      `https://${projectId}.supabase.co/functions/v1/send-sms`,
+      `https://${projectId}.supabase.co/functions/v1/${fn}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ ecole_id: ecoleId, destinataires, message }),
+        body: JSON.stringify(body),
       }
     );
     const json = await res.json();
@@ -85,9 +87,22 @@ export function useSmsConfig() {
     return json as { sent: number; failed: number; total: number };
   };
 
+  const sendSms = async (destinataires: string[], message: string) => {
+    if (!ecoleId) throw new Error("Pas d'école");
+    return invoke("send-sms", { ecole_id: ecoleId, destinataires, message });
+  };
+
+  const sendWhatsApp = async (
+    destinataires: string[],
+    opts: { message?: string; template_name?: string; variables?: Record<string, string> | string[] }
+  ) => {
+    if (!ecoleId) throw new Error("Pas d'école");
+    return invoke("send-whatsapp", { ecole_id: ecoleId, destinataires, ...opts });
+  };
+
   const testSms = async (phone: string) => {
     try {
-      const result = await sendSms([phone], "Test SMS CS La Providence - Configuration reussie. Merci.");
+      const result = await sendSms([phone], "Test SMS GSP - Configuration reussie. Merci.");
       if (result.sent > 0) toast.success("SMS de test envoyé !");
       else toast.error("Échec de l'envoi du SMS de test");
       return result;
@@ -98,5 +113,20 @@ export function useSmsConfig() {
     }
   };
 
-  return { config, loading, save, sendSms, testSms, refetch: fetchConfig };
+  const testWhatsApp = async (phone: string) => {
+    try {
+      const result = await sendWhatsApp([phone], {
+        message: "Test WhatsApp GSP - Configuration YellikaSMS réussie. Merci.",
+      });
+      if (result.sent > 0) toast.success("Message WhatsApp de test envoyé !");
+      else toast.error("Échec de l'envoi WhatsApp de test");
+      return result;
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "Erreur inconnue";
+      toast.error(msg);
+      throw e;
+    }
+  };
+
+  return { config, loading, save, sendSms, sendWhatsApp, testSms, testWhatsApp, refetch: fetchConfig };
 }
