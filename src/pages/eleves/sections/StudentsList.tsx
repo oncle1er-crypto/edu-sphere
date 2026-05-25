@@ -31,9 +31,21 @@ export default function StudentsList() {
   const { classes } = useClasses();
   const { cycles } = useCycles();
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 50;
+
+  // Debounce search input (180ms) to avoid filtering on every keystroke
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim().toLowerCase()), 180);
+    return () => clearTimeout(t);
+  }, [search]);
+
+  // Reset to page 1 whenever filters change
+  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, viewMode]);
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
