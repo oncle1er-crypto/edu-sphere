@@ -18,12 +18,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
 import { compressImage } from "@/lib/imageCompression";
 import { toast } from "sonner";
+import { ParentEditDialog } from "./ParentEditDialog";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 interface Props {
   eleve: any | null;
@@ -41,6 +43,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
   const [documents, setDocuments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [parentDialogOpen, setParentDialogOpen] = useState(false);
+  const [editingParent, setEditingParent] = useState<any | null>(null);
+
+  const reloadParents = useCallback(async () => {
+    if (!eleve) return;
+    const { data } = await supabase
+      .from("eleve_parents")
+      .select("*, parents:parent_id(nom, prenom, telephone, email)")
+      .eq("eleve_id", eleve.id);
+    setParents((data as any[]) ?? []);
+  }, [eleve]);
+
+  const handleDetachParent = async (linkId: string): Promise<void> => {
+    const { error } = await supabase.from("eleve_parents").delete().eq("id", linkId);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Parent détaché de l'élève");
+    reloadParents();
+  };
 
   // Edit mode
   const [editing, setEditing] = useState(false);
@@ -422,25 +442,61 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
                     {eleve.adresse && <Info label="Adresse" value={eleve.adresse} span2 />}
                   </div>
 
-                  {parents.length > 0 && (
-                    <div className="space-y-2">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
                       <h4 className="font-semibold text-sm flex items-center gap-2">
                         <User className="h-4 w-4" /> Parent(s) / Tuteur(s)
                       </h4>
-                      {parents.map((p, i) => (
-                        <Card key={i} className="border">
-                          <CardContent className="p-3 text-sm">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7"
+                        onClick={() => { setEditingParent(null); setParentDialogOpen(true); }}
+                      >
+                        <Plus className="h-3.5 w-3.5" /> Ajouter
+                      </Button>
+                    </div>
+                    {parents.length === 0 && (
+                      <p className="text-xs text-muted-foreground italic">Aucun parent rattaché.</p>
+                    )}
+                    {parents.map((p, i) => (
+                      <Card key={i} className="border">
+                        <CardContent className="p-3 text-sm flex items-start justify-between gap-2">
+                          <div className="min-w-0">
                             <p className="font-medium">
                               {(p as any).parents?.prenom} {(p as any).parents?.nom} ({p.lien})
                             </p>
-                            <p className="text-muted-foreground">
+                            <p className="text-muted-foreground truncate">
                               {(p as any).parents?.telephone ?? "—"} • {(p as any).parents?.email ?? "—"}
                             </p>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7"
+                              title="Modifier"
+                              onClick={() => { setEditingParent(p); setParentDialogOpen(true); }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <ConfirmButton
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              tone="danger"
+                              confirmTitle="Détacher ce parent ?"
+                              confirmDescription={`Retirer ${(p as any).parents?.prenom ?? ""} ${(p as any).parents?.nom ?? ""} de la fiche de cet élève ? La fiche parent reste conservée.`}
+                              confirmLabel="Détacher"
+                              onConfirm={() => handleDetachParent(p.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </ConfirmButton>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 </>
               )}
             </TabsContent>
@@ -584,6 +640,17 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
         )}
       </SheetContent>
     </Sheet>
+
+    {eleve && (
+      <ParentEditDialog
+        open={parentDialogOpen}
+        onOpenChange={setParentDialogOpen}
+        link={editingParent}
+        eleveId={eleve.id}
+        ecoleId={eleve.ecole_id}
+        onSaved={reloadParents}
+      />
+    )}
 
     <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
       <AlertDialogContent>
