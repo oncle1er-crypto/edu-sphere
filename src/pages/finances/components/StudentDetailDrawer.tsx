@@ -12,6 +12,7 @@ import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
 import { toast } from "sonner";
+import { ConfirmButton } from "@/components/ConfirmButton";
 
 interface Props {
   eleve: EleveScolarite | null;
