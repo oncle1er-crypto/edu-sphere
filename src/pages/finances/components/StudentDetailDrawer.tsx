@@ -125,20 +125,37 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                     <p className="font-semibold">{eleve.parent}</p>
                     <p className="text-sm text-muted-foreground">{eleve.telephone}</p>
                     <div className="grid grid-cols-3 gap-2 mt-3">
-                      <Button size="sm" variant="outline" onClick={handleLogCall}>
+                      <ConfirmButton
+                        size="sm"
+                        variant="outline"
+                        confirmTitle="Enregistrer l'appel ?"
+                        confirmDescription={`Consigner un appel de relance vers ${eleve.parent} (${eleve.telephone}) dans l'historique ?`}
+                        confirmLabel="Enregistrer"
+                        onConfirm={handleLogCall}
+                      >
                         <Phone className="h-4 w-4" />Appeler
-                      </Button>
-                      <Button
+                      </ConfirmButton>
+                      <ConfirmButton
                         size="sm"
                         className={enRetard ? "bg-primary hover:bg-primary/90" : ""}
                         variant={enRetard ? "default" : "outline"}
-                        onClick={handleSendSms}
+                        confirmTitle="Envoyer le SMS de relance ?"
+                        confirmDescription={`Un SMS pré-rédigé sera envoyé à ${eleve.parent} (${eleve.telephone}).`}
+                        confirmLabel="Envoyer"
+                        onConfirm={handleSendSms}
                       >
                         <MessageSquare className="h-4 w-4" />SMS
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={handleSendEmail}>
+                      </ConfirmButton>
+                      <ConfirmButton
+                        size="sm"
+                        variant="outline"
+                        confirmTitle="Envoyer l'email de relance ?"
+                        confirmDescription={`Un email de relance sera envoyé à ${eleve.parent}.`}
+                        confirmLabel="Envoyer"
+                        onConfirm={handleSendEmail}
+                      >
                         <Mail className="h-4 w-4" />Email
-                      </Button>
+                      </ConfirmButton>
                     </div>
                     {enRetard && (
                       <p className="text-[11px] text-muted-foreground mt-2 italic">
