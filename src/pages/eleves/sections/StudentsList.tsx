@@ -262,6 +262,22 @@ export default function StudentsList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-8">
+                    <Checkbox
+                      checked={
+                        paginated.filter((s) => s.statut === "pre_inscrit").length > 0 &&
+                        paginated.filter((s) => s.statut === "pre_inscrit").every((s) => selectedIds.has(s.id))
+                      }
+                      onCheckedChange={(c) => {
+                        const next = new Set(selectedIds);
+                        paginated.filter((s) => s.statut === "pre_inscrit").forEach((s) => {
+                          if (c) next.add(s.id); else next.delete(s.id);
+                        });
+                        setSelectedIds(next);
+                      }}
+                      aria-label="Tout sélectionner"
+                    />
+                  </TableHead>
                   <TableHead>Matricule</TableHead>
                   <TableHead>Élève</TableHead>
                   <TableHead>Classe</TableHead>
@@ -273,6 +289,19 @@ export default function StudentsList() {
               <TableBody>
                 {paginated.map((s) => (
                   <TableRow key={s.id} className="hover:bg-muted/50 cursor-pointer" onClick={() => setViewEleve(s)}>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      {s.statut === "pre_inscrit" ? (
+                        <Checkbox
+                          checked={selectedIds.has(s.id)}
+                          onCheckedChange={(c) => {
+                            const next = new Set(selectedIds);
+                            if (c) next.add(s.id); else next.delete(s.id);
+                            setSelectedIds(next);
+                          }}
+                          aria-label="Sélectionner"
+                        />
+                      ) : null}
+                    </TableCell>
                     <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -293,7 +322,7 @@ export default function StudentsList() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
                       Aucun élève trouvé.
                     </TableCell>
                   </TableRow>
