@@ -404,6 +404,18 @@ export default function StudentsList() {
         onUpdated={() => fetchEleves()}
       />
 
+      {/* Bulk finalization */}
+      <BulkInscriptionDialog
+        open={bulkOpen}
+        onClose={() => setBulkOpen(false)}
+        eleves={
+          selectedIds.size > 0
+            ? eleves.filter((e) => selectedIds.has(e.id) && e.statut === "pre_inscrit")
+            : eleves.filter((e) => e.statut === "pre_inscrit")
+        }
+        onDone={() => { fetchEleves(); setSelectedIds(new Set()); }}
+      />
+
       {/* Transfer dialog */}
       <Dialog open={!!transferEleve} onOpenChange={() => setTransferEleve(null)}>
         <DialogContent>
