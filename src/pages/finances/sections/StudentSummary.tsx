@@ -139,12 +139,12 @@ export default function StudentSummary() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <Card className="border"><CardContent className="p-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Frais annuels</p>
-                <p className="text-lg font-bold font-display text-primary mt-1">{fcfa(eleve.fraisAnnuel)}</p>
+                <p className="text-lg font-bold font-display text-foreground mt-1">{fcfa(eleve.fraisAnnuel)}</p>
                 <p className="text-[10px] text-muted-foreground">FCFA</p>
               </CardContent></Card>
               <Card className="border"><CardContent className="p-4">
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Total payé</p>
-                <p className="text-lg font-bold font-display text-accent mt-1">{fcfa(eleve.totalPaye)}</p>
+                <p className="text-lg font-bold font-display text-success mt-1">{fcfa(eleve.totalPaye)}</p>
                 <p className="text-[10px] text-muted-foreground">FCFA · {pct}%</p>
               </CardContent></Card>
               <Card className="border"><CardContent className="p-4">
