@@ -313,6 +313,7 @@ export default function StudentsList() {
                   <span>{formatDate(s.date_naissance)}</span>
                 </div>
                 {statusBadge(s)}
+                {finalizeButton(s)}
               </Card>
             ))}
             {filtered.length === 0 && (
