@@ -248,7 +248,9 @@ export default function TeacherPortal() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-base flex items-center gap-2"><ClipboardList className="h-4 w-4 text-primary" /> Mes évaluations récentes</CardTitle>
-            <Button asChild variant="ghost" size="sm"><Link to="/examens/evaluations">Toutes <ArrowRight className="h-3 w-3 ml-1" /></Link></Button>
+            <Button variant="ghost" size="sm" onClick={() => { setNewEvalClasseId(undefined); setNewEvalOpen(true); }}>
+              <Plus className="h-3 w-3 mr-1" /> Nouvelle
+            </Button>
           </CardHeader>
           <CardContent>
             {dataLoading ? <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto" /> :
@@ -257,17 +259,24 @@ export default function TeacherPortal() {
                 <Table>
                   <TableHeader><TableRow>
                     <TableHead>Date</TableHead><TableHead>Titre</TableHead><TableHead>Type</TableHead>
-                    <TableHead>Classe</TableHead><TableHead>Matière</TableHead><TableHead className="text-right">Notes</TableHead>
+                    <TableHead>Classe</TableHead><TableHead>Matière</TableHead>
+                    <TableHead className="text-right">Notes</TableHead>
+                    <TableHead className="w-[60px]"></TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {evaluations.map((e) => (
-                      <TableRow key={e.id}>
+                      <TableRow
+                        key={e.id}
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/portail-enseignant/evaluations/${e.id}`)}
+                      >
                         <TableCell className="text-xs text-muted-foreground">{new Date(e.date_eval).toLocaleDateString("fr-FR")}</TableCell>
                         <TableCell className="font-medium">{e.titre}</TableCell>
                         <TableCell><Badge variant="outline" className="text-[10px] capitalize">{e.type}</Badge></TableCell>
                         <TableCell>{e.classe}</TableCell>
                         <TableCell>{e.matiere}</TableCell>
                         <TableCell className="text-right tabular-nums">{e.notes_count}/{e.bareme}</TableCell>
+                        <TableCell className="text-right"><Pencil className="h-3.5 w-3.5 text-muted-foreground inline" /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -277,6 +286,15 @@ export default function TeacherPortal() {
           </CardContent>
         </Card>
       </main>
+
+      {enseignant && (
+        <NewEvaluationDialog
+          open={newEvalOpen}
+          onOpenChange={setNewEvalOpen}
+          enseignant={enseignant}
+          defaultClasseId={newEvalClasseId}
+        />
+      )}
     </div>
   );
 }
