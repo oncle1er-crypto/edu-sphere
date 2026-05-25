@@ -96,12 +96,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated }:
       supabase.from("incidents_discipline").select("*").eq("eleve_id", id).order("date_incident", { ascending: false }).limit(20),
       supabase.from("documents_eleves").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId),
       supabase.from("eleve_parents").select("*, parents:parent_id(nom, prenom, telephone, email)").eq("eleve_id", id),
-    ]).then(([presR, paiR, incR, docR, parR]) => {
+      supabase.from("audit_logs").select("*").eq("cible", id).eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(50),
+    ]).then(([presR, paiR, incR, docR, parR, audR]) => {
       setPresences((presR.data as any[]) ?? []);
       setPaiements((paiR.data as any[]) ?? []);
       setIncidents((incR.data as any[]) ?? []);
       setDocuments((docR.data as any[]) ?? []);
       setParents((parR.data as any[]) ?? []);
+      setAuditLogs((audR.data as any[]) ?? []);
       setLoading(false);
     });
   }, [eleve, open]);
