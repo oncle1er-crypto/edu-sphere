@@ -51,6 +51,7 @@ export default function StudentsList() {
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
+  const [workflowEleve, setWorkflowEleve] = useState<typeof eleves[0] | null>(null);
   const [transferEleve, setTransferEleve] = useState<typeof eleves[0] | null>(null);
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
