@@ -198,7 +198,7 @@ export default function TeacherPortal() {
                   </TableRow></TableHeader>
                   <TableBody>
                     {classes.map((c) => (
-                      <TableRow key={c.id}>
+                      <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50" onClick={() => { setNewEvalClasseId(c.id); setNewEvalOpen(true); }}>
                         <TableCell className="font-medium">{c.nom}</TableCell>
                         <TableCell>{c.role === "principal" ? <Badge>Pr. principal</Badge> : <Badge variant="secondary">Intervenant</Badge>}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{c.matieres.join(", ") || "—"}</TableCell>
