@@ -315,7 +315,7 @@ export default function Unpaid() {
                 <p className="text-[11px] text-muted-foreground mb-3">Tranche {e.num}</p>
                 <Progress value={e.taux} className="h-2" />
                 <div className="grid grid-cols-2 gap-2 mt-3">
-                  <div><p className="text-[10px] text-muted-foreground uppercase">Encaissé</p><p className="text-sm font-bold text-accent">{fcfa(e.paye)}</p></div>
+                  <div><p className="text-[10px] text-muted-foreground uppercase">Encaissé</p><p className="text-sm font-bold text-success">{fcfa(e.paye)}</p></div>
                   <div><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(e.reste)}</p></div>
                 </div>
                 {(e.enRetard > 0 || e.partielle > 0) && (
