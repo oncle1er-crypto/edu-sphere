@@ -44,7 +44,12 @@ export default function Unpaid() {
   const [classe, setClasse] = useState<string>("all");
   const [sortKey, setSortKey] = useState<SortKey>("retard");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [selectedEleve, setSelectedEleve] = useState<EleveScolarite | null>(null);
+  const [selectedEleveId, setSelectedEleveId] = useState<string | null>(null);
+  const selectedEleve = useMemo(
+    () => (selectedEleveId ? ELEVES_SCOLARITE.find((e) => e.id === selectedEleveId) ?? null : null),
+    [selectedEleveId, ELEVES_SCOLARITE],
+  );
+  const setSelectedEleve = (e: EleveScolarite | null) => setSelectedEleveId(e?.id ?? null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
   const [paymentEleve, setPaymentEleve] = useState<EleveScolarite | null>(null);
   const [paymentTranche, setPaymentTranche] = useState<number | undefined>(undefined);
