@@ -73,6 +73,10 @@ export default function UsersRoles() {
       toast.error("Remplissez tous les champs et sélectionnez au moins un rôle");
       return;
     }
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Le mot de passe doit comporter au moins 8 caractères");
+      return;
+    }
     setCreating(true);
 
     const { data: authData, error: authErr } = await supabase.auth.signUp({
