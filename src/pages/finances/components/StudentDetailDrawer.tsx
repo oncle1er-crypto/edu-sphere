@@ -283,6 +283,15 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
         ecoleId={ecoleId}
         onPaymentRecorded={onPaymentRecorded}
       />
+
+      <DiscountDialog
+        eleve={eleve}
+        defaultTrancheNum={discountTrancheNum}
+        open={discountOpen}
+        onOpenChange={(o) => { if (!o) { setDiscountOpen(false); setDiscountTrancheNum(undefined); } }}
+        ecoleId={ecoleId}
+        onApplied={onPaymentRecorded}
+      />
     </>
   );
 }
