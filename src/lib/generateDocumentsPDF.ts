@@ -158,10 +158,12 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     drawField("Matricule", data.eleve.matricule || "—", M, y + 12);
     drawField("Classe", data.eleve.classe || "—", M + colW, y + 12);
     // Row 3
-    drawField("Mode de règlement", data.mode.replace(/_/g, " ").toUpperCase(), M, y + 24);
-    drawField("Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
+    const isRemise = data.type === "remise" || data.type === "bourse" || data.type === "prise_en_charge";
+    drawField(isRemise ? "Type d'opération" : "Mode de règlement",
+      (data.mode || "").replace(/_/g, " ").toUpperCase(), M, y + 24);
+    drawField(isRemise ? "Accordée par" : "Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
 
-    // ── Amount line (no filled box, just typography) ──
+    // ── Amount line ──
     y += 36;
     doc.setDrawColor(...line);
     doc.setLineWidth(0.3);
@@ -171,14 +173,27 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
-    doc.text("MONTANT REÇU", M, y);
+    doc.text(isRemise ? "MONTANT ACCORDÉ" : "MONTANT REÇU", M, y);
     doc.setFont("times", "bold");
     doc.setFontSize(20);
     doc.setTextColor(...primary);
     doc.text(formatFCFA(data.montant), W - M, y + 2, { align: "right" });
 
+    // ── Motif (obligatoire pour remises) ──
+    if (data.motif) {
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(...muted);
+      doc.text("MOTIF", M, y);
+      doc.setFont("times", "italic");
+      doc.setFontSize(9);
+      doc.setTextColor(...ink);
+      doc.text(data.motif, M, y + 4, { maxWidth: W - 2 * M });
+    }
+
     // ── Status / Solde ──
-    y += 10;
+    y += data.motif ? 12 : 10;
     if (totalDu > 0) {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
@@ -198,6 +213,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.roundedRect(M, y, tw, 7, 1.5, 1.5, "S");
     doc.setTextColor(...badgeColor);
     doc.text(badgeText, M + 4, y + 4.8);
+
 
     // ── Footer / signature ──
     const footY = offsetY + halfH - 16;
