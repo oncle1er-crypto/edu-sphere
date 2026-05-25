@@ -1657,6 +1657,74 @@ export type Database = {
           },
         ]
       }
+      groupe_membres: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          groupe_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          groupe_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          groupe_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groupe_membres_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes_pedagogiques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groupes_pedagogiques: {
+        Row: {
+          annee_id: string | null
+          created_at: string
+          description: string | null
+          ecole_id: string
+          enseignant_id: string | null
+          id: string
+          nom: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          created_at?: string
+          description?: string | null
+          ecole_id: string
+          enseignant_id?: string | null
+          id?: string
+          nom: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          created_at?: string
+          description?: string | null
+          ecole_id?: string
+          enseignant_id?: string | null
+          id?: string
+          nom?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       incidents_discipline: {
         Row: {
           annee_id: string | null
