@@ -476,7 +476,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                               .filter((e) => e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
                             if (emails.length === 0) { toast.error("Aucun email valide sélectionné"); return; }
                             const subject = encodeURIComponent(`GSP — ${eleve.nom} ${eleve.prenom}`);
-                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.nom} ${eleve.prenom}.\n\nCordialement,\nGroupe Scolaire La Providence`);
+                            const body = encodeURIComponent(`Bonjour,\n\nMessage de l'école concernant ${eleve.nom} ${eleve.prenom}.\n\nCordialement,\nComplexe Scolaire La Providence de Don Orione`);
                             window.location.href = `mailto:?bcc=${emails.join(",")}&subject=${subject}&body=${body}`;
                           }}
                         >

@@ -12,7 +12,7 @@ interface TopNavProps {
   schoolName?: string;
 }
 
-export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE" }: TopNavProps) {
+export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" }: TopNavProps) {
   return (
     <nav className="bg-primary border-t border-accent/30 shadow-md">
       <div className="flex items-center justify-between px-4 md:px-6 overflow-x-auto">

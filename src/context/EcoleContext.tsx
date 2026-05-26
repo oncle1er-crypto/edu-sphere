@@ -39,7 +39,7 @@ const CURRENT_KEY = "lovable.ecoles.current";
 const seed: Ecole[] = [
   {
     ecole_id: "ec_001",
-    nom: "Groupe Scolaire Les Lauriers",
+    nom: "Complexe Scolaire La Providence de Don Orione",
     code: "GSL-001",
     ville: "Dakar",
     pays: "Sénégal",

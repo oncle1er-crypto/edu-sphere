@@ -27,7 +27,7 @@ const POOL_ELEVES = [
 
 const ECOLE = {
   ecoleId: "ec_001",
-  ecoleNom: "Groupe Scolaire Les Lauriers",
+  ecoleNom: "Complexe Scolaire La Providence de Don Orione",
   ecoleVille: "Dakar",
 };
 

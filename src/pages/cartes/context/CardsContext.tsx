@@ -31,28 +31,28 @@ const validJusqu = "2026-07-31";
 const seed: IssuedCard[] = [
   {
     id: "card_1", type: "eleve",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "MBALLA", prenom: "Junior", matricule: "EL-2451", classe: "3ème A",
     anneeScolaire: seedAnnee, validJusqu,
     emiseLe: "2025-09-15", statut: "active",
   },
   {
     id: "card_2", type: "eleve",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "NGUEMO", prenom: "Sarah", matricule: "EL-2452", classe: "3ème A",
     anneeScolaire: seedAnnee, validJusqu,
     emiseLe: "2025-09-15", statut: "active",
   },
   {
     id: "card_3", type: "personnel",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "DIALLO", prenom: "Aïssatou", matricule: "ENS-042", fonction: "Professeure de Mathématiques",
     anneeScolaire: seedAnnee, validJusqu,
     emiseLe: "2025-09-01", statut: "active",
   },
   {
     id: "card_4", type: "cantine",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "TCHOUMI", prenom: "Paul", matricule: "EL-2453", classe: "5ème B",
     formule: "Demi-pensionnaire",
     anneeScolaire: seedAnnee, validJusqu,
@@ -60,7 +60,7 @@ const seed: IssuedCard[] = [
   },
   {
     id: "card_5", type: "transport",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "ATANGANA", prenom: "Léa", matricule: "EL-2454", ligne: "Ligne 3 — Yoff",
     arret: "Arrêt École Primaire",
     anneeScolaire: seedAnnee, validJusqu,
@@ -68,14 +68,14 @@ const seed: IssuedCard[] = [
   },
   {
     id: "card_6", type: "bibliotheque",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "KAMGA", prenom: "Yves", matricule: "EL-2455", numLecteur: "LEC-128",
     anneeScolaire: seedAnnee, validJusqu,
     emiseLe: "2025-10-05", statut: "active",
   },
   {
     id: "card_7", type: "visiteur",
-    ecoleId: "ec_001", ecoleNom: "Groupe Scolaire Les Lauriers", ecoleVille: "Dakar",
+    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
     nom: "BAKARY", prenom: "Ousmane", matricule: "VIS-0421", motif: "Réunion parents",
     hote: "Mme Diop (Direction)",
     anneeScolaire: seedAnnee, validJusqu: new Date().toISOString().slice(0, 10),

@@ -20,7 +20,7 @@ export default function CommunicationConfig() {
         <Input type="email" defaultValue="contact@laprovidence.ci" />
       </FieldRow>
       <FieldRow label="Nom expéditeur">
-        <Input defaultValue="Complexe Scolaire La Providence" />
+        <Input defaultValue="Complexe Scolaire La Providence de Don Orione" />
       </FieldRow>
       <FieldRow label="Fournisseur SMS">
         <div className="flex items-center gap-2">

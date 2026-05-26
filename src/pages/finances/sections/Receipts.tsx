@@ -38,7 +38,7 @@ export default function Receipts() {
   const [recus, setRecus] = useState<PaiementRecu[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
-    nom: "Complexe Scolaire La Providence",
+    nom: "Complexe Scolaire La Providence de Don Orione",
     sigle: "CSP",
     devise: "Foi, Savoir, Excellence",
     adresse: "Abidjan, Côte d'Ivoire",
@@ -60,7 +60,7 @@ export default function Receipts() {
       .then(({ data }) => {
         if (data) {
           setEcole({
-            nom: data.nom || "Complexe Scolaire La Providence",
+            nom: data.nom || "Complexe Scolaire La Providence de Don Orione",
             sigle: data.sigle || "",
             devise: data.devise || "Foi, Savoir, Excellence",
             adresse: data.adresse || "Abidjan, Côte d'Ivoire",

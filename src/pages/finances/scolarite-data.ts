@@ -1,4 +1,4 @@
-// Données réelles scolarité CSP — Complexe Scolaire La Providence (FCFA)
+// Données réelles scolarité CSP — Complexe Scolaire La Providence de Don Orione (FCFA)
 // Paiements en 3 échéances : Octobre, Novembre, Janvier
 
 export type NiveauScolarite =

@@ -48,7 +48,7 @@ export default function SchoolsCreate() {
       <form onSubmit={submit} className="grid md:grid-cols-2 gap-4">
         <div>
           <Label>Nom de l'école *</Label>
-          <Input value={form.nom} onChange={(e) => update("nom", e.target.value)} placeholder="Ex. Groupe scolaire Les Lauriers" />
+          <Input value={form.nom} onChange={(e) => update("nom", e.target.value)} placeholder="Ex. Complexe scolaire La Providence de Don Orione" />
         </div>
         <div>
           <Label>Code unique *</Label>
