@@ -167,7 +167,7 @@ export default function Bulletins() {
 
     const doc = await generateBulletinPDF({
       ecole: {
-        nom: ecole?.nom ?? "COMPLEXE SCOLAIRE LA PROVIDENCE",
+        nom: ecole?.nom ?? "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE",
         devise: ecole?.devise ?? "Foi, Savoir, Excellence",
         adresse: ecole?.adresse ?? "Abidjan, Côte d'Ivoire",
         telephone: ecole?.telephone ?? "",

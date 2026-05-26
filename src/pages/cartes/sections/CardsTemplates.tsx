@@ -20,7 +20,7 @@ export default function CardsTemplates() {
   const sample: CardData = {
     type,
     ecoleId: "ec_001",
-    ecoleNom: "Groupe Scolaire Les Lauriers",
+    ecoleNom: "Complexe Scolaire La Providence de Don Orione",
     ecoleVille: "Dakar",
     ecoleLogo: logo || undefined,
     nom: "DUPONT", prenom: "Marie", matricule: "EL-2451",

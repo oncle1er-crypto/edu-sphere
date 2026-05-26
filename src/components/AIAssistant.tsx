@@ -20,7 +20,7 @@ const SUGGESTIONS = [
 const WELCOME: Msg = {
   role: "assistant",
   content:
-    "👋 Bonjour ! Je suis **Providence Assistant**, votre guide pour le logiciel de gestion du COMPLEXE SCOLAIRE LA PROVIDENCE.\n\nJe peux vous expliquer **pas à pas** chaque module, vous indiquer le chemin exact dans l'application et vous accompagner dans toutes les configurations.\n\n👉 Posez-moi votre question, ou choisissez un sujet ci-dessous.",
+    "👋 Bonjour ! Je suis **Providence Assistant**, votre guide pour le logiciel de gestion du COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE.\n\nJe peux vous expliquer **pas à pas** chaque module, vous indiquer le chemin exact dans l'application et vous accompagner dans toutes les configurations.\n\n👉 Posez-moi votre question, ou choisissez un sujet ci-dessous.",
 };
 
 export function AIAssistant() {

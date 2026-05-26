@@ -20,8 +20,8 @@ const TEMPLATE_LIST = [
 ];
 
 const DEFAULTS = {
-  entete: "République de Côte d'Ivoire\nMinistère de l'Éducation Nationale et de l'Alphabétisation\nDirection Diocésaine de l'Enseignement Catholique — Abidjan\nComplexe Scolaire La Providence",
-  pied_page: "Complexe Scolaire La Providence • Abidjan • +225 ... • contact@laprovidence.ci",
+  entete: "République de Côte d'Ivoire\nMinistère de l'Éducation Nationale et de l'Alphabétisation\nDirection Diocésaine de l'Enseignement Catholique — Abidjan\nComplexe Scolaire La Providence de Don Orione",
+  pied_page: "Complexe Scolaire La Providence de Don Orione • Abidjan • +225 ... • contact@laprovidence.ci",
   show_logo: true,
   show_cachet: true,
   signature_url: "" as string | null,

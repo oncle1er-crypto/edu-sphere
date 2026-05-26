@@ -72,7 +72,7 @@ export default function StudentsAttestations() {
     if (!eleve) return null;
     return {
       ecole: {
-        nom: currentEcole?.nom ?? "Groupe Scolaire La Providence",
+        nom: currentEcole?.nom ?? "Complexe Scolaire La Providence de Don Orione",
         devise: "Foi, Savoir, Excellence",
         adresse: currentEcole?.adresse ?? "Abidjan, Côte d'Ivoire",
         telephone: currentEcole?.telephone ?? "+225",

@@ -139,7 +139,7 @@ export default function TeacherPortal() {
             <GraduationCap className="h-6 w-6 text-primary" />
             <div>
               <h1 className="font-bold leading-tight">Portail enseignant</h1>
-              <p className="text-xs opacity-80">Complexe Scolaire La Providence</p>
+              <p className="text-xs opacity-80">Complexe Scolaire La Providence de Don Orione</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
