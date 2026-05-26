@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { normalizeSmsText } from "@/lib/smsText";
 
 export interface Relance {
   id: string;
@@ -54,6 +55,27 @@ export function useRelances(eleveId?: string) {
       if (!ecoleId || !user) return null;
 
       const typeMap: Record<string, string> = { SMS: "sms", Email: "email", Appel: "appel" };
+      const message = params.canal === "SMS" ? normalizeSmsText(params.message) : params.message;
+
+      if (params.canal === "SMS" && (!params.destinataire || params.destinataire === "—")) {
+        toast.error("Aucun numéro de téléphone parent renseigné");
+        return null;
+      }
+
+      if (params.canal === "SMS") {
+        const { data: smsData, error: smsError } = await supabase.functions.invoke("send-sms", {
+          body: {
+            ecole_id: ecoleId,
+            destinataires: [params.destinataire],
+            message,
+          },
+        });
+
+        if (smsError || smsData?.error || (smsData?.failed ?? 0) > 0) {
+          toast.error("SMS non envoyé", { description: smsError?.message ?? smsData?.error ?? "Vérifiez la configuration SMS." });
+          return null;
+        }
+      }
 
       const { data, error } = await supabase
         .from("relances")
@@ -61,7 +83,7 @@ export function useRelances(eleveId?: string) {
           ecole_id: ecoleId,
           eleve_id: params.eleveId,
           type: typeMap[params.canal] as any,
-          message: params.message,
+          message,
           envoye_par: user.id,
           date_envoi: new Date().toISOString(),
         } as any)
