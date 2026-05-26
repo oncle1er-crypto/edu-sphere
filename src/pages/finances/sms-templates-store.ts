@@ -1,10 +1,11 @@
 import { useSyncExternalStore } from "react";
 import type { EleveScolarite, Tranche } from "./scolarite-data";
 import { fcfa } from "./scolarite-data";
+import { buildWaveLink } from "@/lib/wavePayment";
 
 // Modèles SMS personnalisables par tranche
 // Variables disponibles : {parent}, {prenom}, {nom}, {classe}, {cycle},
-// {tranche}, {echeance}, {montant_du}, {reste_total}, {jours_retard}
+// {tranche}, {echeance}, {montant_du}, {reste_total}, {jours_retard}, {lien_wave}
 
 export type TrancheKey = "T1" | "T2" | "T3" | "GENERIC";
 
@@ -14,32 +15,33 @@ export interface SmsTemplate {
   message: string;
 }
 
-const KEY = "gsp-sms-templates";
+// v2 : ajout du lien Wave aux modèles par défaut
+const KEY = "gsp-sms-templates-v2";
 
 const DEFAULTS: Record<TrancheKey, SmsTemplate> = {
   T1: {
     key: "T1",
     label: "1ère tranche — Rentrée",
     message:
-      "CS - Bonjour {parent}, la 1ère tranche de scolarité de {nom} {prenom} ({classe}) est échue depuis le {echeance}. Montant dû : {montant_du} FCFA. Merci de régulariser. Foi, Savoir, Excellence.",
+      "CS - Bonjour {parent}, la 1ère tranche de scolarité de {nom} {prenom} ({classe}) est échue depuis le {echeance}. Montant dû : {montant_du} FCFA. Payez en 1 clic via Wave : {lien_wave} puis envoyez la capture. Foi, Savoir, Excellence.",
   },
   T2: {
     key: "T2",
     label: "2ème tranche — Janvier",
     message:
-      "CS - Bonjour {parent}, rappel : la 2ème tranche de scolarité de {nom} {prenom} ({classe}) était attendue le {echeance}. Montant dû : {montant_du} FCFA ({jours_retard}j de retard). Merci de régulariser.",
+      "CS - Bonjour {parent}, rappel : la 2ème tranche de scolarité de {nom} {prenom} ({classe}) était attendue le {echeance}. Montant dû : {montant_du} FCFA ({jours_retard}j de retard). Payez via Wave : {lien_wave} puis envoyez la capture.",
   },
   T3: {
     key: "T3",
     label: "3ème tranche — Avril",
     message:
-      "CS - Bonjour {parent}, la 3ème tranche de scolarité de {nom} {prenom} ({classe}) est en retard depuis le {echeance}. Reste à payer : {montant_du} FCFA. Merci de régulariser rapidement.",
+      "CS - Bonjour {parent}, la 3ème tranche de scolarité de {nom} {prenom} ({classe}) est en retard depuis le {echeance}. Reste à payer : {montant_du} FCFA. Payez via Wave : {lien_wave} puis envoyez la capture.",
   },
   GENERIC: {
     key: "GENERIC",
     label: "Relance générique",
     message:
-      "CS - Bonjour {parent}, rappel : {reste_total} FCFA dus pour la scolarité de {nom} {prenom} ({classe}). Merci de régulariser.",
+      "CS - Bonjour {parent}, rappel : {reste_total} FCFA dus pour la scolarité de {nom} {prenom} ({classe}). Payez via Wave : {lien_wave} puis envoyez la capture.",
   },
 };
 
@@ -93,6 +95,8 @@ export function pickTrancheCible(e: EleveScolarite): { key: TrancheKey; tranche?
 
 export function renderTemplate(template: string, e: EleveScolarite, tranche?: Tranche): string {
   const montantDu = tranche ? Math.max(0, tranche.montant - tranche.paye) : e.resteDu;
+  // Le lien Wave est pré-rempli avec le montant exact dû par le parent
+  const waveAmount = montantDu > 0 ? montantDu : e.resteDu;
   const vars: Record<string, string> = {
     parent: e.parent,
     prenom: e.prenom,
@@ -104,6 +108,7 @@ export function renderTemplate(template: string, e: EleveScolarite, tranche?: Tr
     montant_du: fcfa(montantDu),
     reste_total: fcfa(e.resteDu),
     jours_retard: String(e.joursRetard),
+    lien_wave: buildWaveLink(waveAmount),
   };
   return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
 }
@@ -119,4 +124,5 @@ export const TEMPLATE_VARIABLES: { key: string; desc: string }[] = [
   { key: "{montant_du}", desc: "Montant dû sur la tranche" },
   { key: "{reste_total}", desc: "Reste annuel total" },
   { key: "{jours_retard}", desc: "Jours de retard" },
+  { key: "{lien_wave}", desc: "Lien Wave pré-rempli au bon montant" },
 ];

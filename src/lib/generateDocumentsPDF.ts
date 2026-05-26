@@ -22,6 +22,8 @@ export interface RecuData {
   type?: "encaissement" | "remise" | "bourse" | "prise_en_charge";
   /** Motif obligatoire pour remise/bourse/prise en charge. */
   motif?: string | null;
+  /** Inclure la souche école (par défaut: true). Mettre à false pour un reçu "famille seule" (WhatsApp). */
+  souche?: boolean;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
@@ -234,23 +236,25 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
   };
 
   // Top half — Exemplaire client
-  drawCopy(0, "Exemplaire — Famille");
+  drawCopy(0, data.souche === false ? "Reçu — Famille" : "Exemplaire — Famille");
 
-  // Dotted separator (scissor cut line)
-  const sepY = halfH;
-  doc.setDrawColor(160, 160, 165);
-  doc.setLineWidth(0.25);
-  doc.setLineDashPattern([1.5, 1.5], 0);
-  doc.line(8, sepY, W - 8, sepY);
-  doc.setLineDashPattern([], 0);
-  // little scissor hint
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7);
-  doc.setTextColor(160, 160, 165);
-  doc.text("✂  -  -  -  -  Découper le long des pointillés  -  -  -  -", W / 2, sepY - 1, { align: "center" });
+  if (data.souche !== false) {
+    // Dotted separator (scissor cut line)
+    const sepY = halfH;
+    doc.setDrawColor(160, 160, 165);
+    doc.setLineWidth(0.25);
+    doc.setLineDashPattern([1.5, 1.5], 0);
+    doc.line(8, sepY, W - 8, sepY);
+    doc.setLineDashPattern([], 0);
+    // little scissor hint
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(160, 160, 165);
+    doc.text("✂  -  -  -  -  Découper le long des pointillés  -  -  -  -", W / 2, sepY - 1, { align: "center" });
 
-  // Bottom half — Souche école
-  drawCopy(halfH, "Souche — École");
+    // Bottom half — Souche école
+    drawCopy(halfH, "Souche — École");
+  }
 
   return doc;
 }
