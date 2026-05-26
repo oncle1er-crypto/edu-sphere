@@ -775,6 +775,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
       />
     )}
 
+    {eleve && cardPreviewOpen && (
+      <StudentCardPreview
+        open={cardPreviewOpen}
+        onClose={() => setCardPreviewOpen(false)}
+        data={buildStudentCardData(eleve, currentEcole)}
+      />
+    )}
+
     <AlertDialog open={showUnsavedAlert} onOpenChange={setShowUnsavedAlert}>
       <AlertDialogContent>
         <AlertDialogHeader>
