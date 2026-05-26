@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
-  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail, History,
+  Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail, History, IdCard,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
@@ -28,6 +28,9 @@ import { ParentEditDialog } from "./ParentEditDialog";
 import { ParentSmsDialog } from "./ParentMessageDialog";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { Checkbox } from "@/components/ui/checkbox";
+import { StudentCardPreview } from "@/pages/cartes/components/StudentCardPreview";
+import { buildStudentCardData } from "@/pages/cartes/lib/buildStudentCardData";
+import { useEcoles } from "@/context/EcoleContext";
 
 interface Props {
   eleve: any | null;
@@ -52,6 +55,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
   const [editingParent, setEditingParent] = useState<any | null>(null);
   const [selectedParentIds, setSelectedParentIds] = useState<Set<string>>(new Set());
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+  const [cardPreviewOpen, setCardPreviewOpen] = useState(false);
+  const { currentEcole } = useEcoles();
 
   const reloadParents = useCallback(async () => {
     if (!eleve) return;
@@ -284,9 +289,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
               </div>
             </div>
             {!editing && !loading && (
-              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={startEditing}>
-                <Pencil className="h-3.5 w-3.5" /> Modifier
-              </Button>
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
+                  <Pencil className="h-3.5 w-3.5" /> Modifier
+                </Button>
+                <Button variant="default" size="sm" className="gap-1.5 bg-[#6E1A2C] hover:bg-[#561220] text-white" onClick={() => setCardPreviewOpen(true)}>
+                  <IdCard className="h-3.5 w-3.5" /> Carte scolaire
+                </Button>
+              </div>
             )}
           </div>
         </SheetHeader>
@@ -762,6 +772,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
             telephone: p.parents?.telephone ?? "",
           }))}
         eleveLabel={`${eleve.nom} ${eleve.prenom}`}
+      />
+    )}
+
+    {eleve && cardPreviewOpen && (
+      <StudentCardPreview
+        open={cardPreviewOpen}
+        onClose={() => setCardPreviewOpen(false)}
+        data={buildStudentCardData(eleve, currentEcole)}
       />
     )}
 
