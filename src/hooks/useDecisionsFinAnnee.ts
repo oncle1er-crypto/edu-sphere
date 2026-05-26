@@ -183,7 +183,6 @@ export function useDecisionsFinAnnee() {
       const { data, error } = await supabase.rpc("appliquer_decisions_fin_annee" as any, {
         _ecole_id: ecoleId,
         _annee_id: anneeId,
-        _user_id: user.id,
       });
       if (error) {
         toast.error("Erreur application des décisions");
