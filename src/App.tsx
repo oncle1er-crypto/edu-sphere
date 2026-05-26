@@ -190,6 +190,7 @@ import CardsRenewal from "@/pages/cartes/sections/CardsRenewal";
 import CardsLost from "@/pages/cartes/sections/CardsLost";
 import CardsTemplates from "@/pages/cartes/sections/CardsTemplates";
 import CardsConfig from "@/pages/cartes/sections/CardsConfig";
+import StudentCardVerificationPage from "@/pages/cartes/StudentCardVerificationPage";
 import StatsLayout from "@/pages/statistiques/StatsLayout";
 import GlobalDashboard from "@/pages/statistiques/sections/GlobalDashboard";
 import SchoolsCompare from "@/pages/statistiques/sections/SchoolsCompare";
