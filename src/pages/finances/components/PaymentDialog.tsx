@@ -10,7 +10,8 @@ import { Plus, Wallet, Loader2 } from "lucide-react";
 import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { downloadReceiptFor } from "@/lib/downloadReceipt";
+import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
+import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
 import { toast } from "sonner";
 
 interface Props {
@@ -96,9 +97,46 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
         description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom} (T${tranche.num})`,
       });
 
-      // Génère + télécharge automatiquement le reçu PDF
+      // Génère + télécharge automatiquement le reçu PDF (avec souche)
       if (paiementId && typeof paiementId === "string") {
         downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type: "encaissement" });
+      }
+
+      // 1) SMS de confirmation au parent (best-effort)
+      const nouveauReste = Math.max(0, eleve.resteDu - montantNum);
+      sendPaymentConfirmationSms({
+        ecoleId,
+        telephone: eleve.telephone,
+        parent: eleve.parent,
+        nomEleve: eleve.nom,
+        prenomEleve: eleve.prenom,
+        classe: eleve.classe,
+        module: "scolarite",
+        montant: montantNum,
+        resteDu: nouveauReste,
+        reference: reference || null,
+      }).then((ok) => {
+        if (ok) toast.success("SMS de confirmation envoyé au parent");
+      });
+
+      // 2) Proposer l'envoi WhatsApp du reçu (sans souche)
+      if (paiementId && typeof paiementId === "string") {
+        toast("Envoyer le reçu par WhatsApp ?", {
+          description: `${eleve.parent} — ${eleve.telephone || "numéro non renseigné"}`,
+          duration: 10000,
+          action: {
+            label: "WhatsApp",
+            onClick: () => {
+              shareReceiptWhatsApp({
+                ecoleId,
+                eleveId: eleve.id,
+                paiementId,
+                type: "encaissement",
+                telephone: eleve.telephone,
+              });
+            },
+          },
+        });
       }
 
       onOpenChange(false);
