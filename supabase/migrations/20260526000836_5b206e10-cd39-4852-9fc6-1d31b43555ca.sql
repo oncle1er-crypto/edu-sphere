@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.generer_tranches_eleve(uuid) TO authenticated;
