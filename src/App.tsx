@@ -185,6 +185,7 @@ import CardsLayout from "@/pages/cartes/CardsLayout";
 import CardsDashboard from "@/pages/cartes/sections/CardsDashboard";
 import CardsList from "@/pages/cartes/sections/CardsList";
 import CardsIssue from "@/pages/cartes/sections/CardsIssue";
+import CardsBatchByClass from "@/pages/cartes/sections/CardsBatchByClass";
 import CardsPrintQueue from "@/pages/cartes/sections/CardsPrintQueue";
 import CardsRenewal from "@/pages/cartes/sections/CardsRenewal";
 import CardsLost from "@/pages/cartes/sections/CardsLost";
@@ -432,6 +433,7 @@ const App = () => (
               <Route path="tableau" element={<CardsDashboard />} />
               <Route path="liste" element={<CardsList />} />
               <Route path="emission" element={<CardsIssue />} />
+              <Route path="par-classe" element={<CardsBatchByClass />} />
               <Route path="impression" element={<CardsPrintQueue />} />
               <Route path="renouvellement" element={<CardsRenewal />} />
               <Route path="perdues" element={<CardsLost />} />
