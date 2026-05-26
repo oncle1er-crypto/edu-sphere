@@ -117,17 +117,13 @@ export default function StudentsReregistration() {
       const el = inscrits.find((e) => e.id === id);
       if (!el) continue;
       const dec = decisions[id] ?? "passage";
-      const updates: Record<string, any> = { annee_id: anneeCible.id };
+      let updates: Database["public"]["Tables"]["eleves"]["Update"];
       if (dec === "passage") {
-        updates.classe_id = destinations[id];
-        updates.statut = "inscrit";
+        updates = { annee_id: anneeCible.id, classe_id: destinations[id], statut: "inscrit" };
       } else if (dec === "redoublement") {
-        // garde la même classe
-        updates.classe_id = el.classe_id;
-        updates.statut = "inscrit";
-      } else if (dec === "exclusion") {
-        updates.statut = "exclu";
-        updates.annee_id = el.annee_id; // pas de réinscription
+        updates = { annee_id: anneeCible.id, classe_id: el.classe_id, statut: "inscrit" };
+      } else {
+        updates = { statut: "exclu" };
       }
       const { error } = await supabase.from("eleves").update(updates).eq("id", id);
       if (error) { errs++; console.error(error); } else { ok++; }
