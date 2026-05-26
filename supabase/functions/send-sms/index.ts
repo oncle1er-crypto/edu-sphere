@@ -7,6 +7,21 @@ interface SmsRequest {
   message: string;
 }
 
+function normalizeSmsMessage(message: string): string {
+  return message
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[œŒ]/g, "oe")
+    .replace(/[æÆ]/g, "ae")
+    .replace(/[’‘`´]/g, "'")
+    .replace(/[“”«»]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/\u00A0/g, " ")
+    .replace(/[^\x0A\x0D\x20-\x7E]/g, "")
+    .replace(/[ \t]+/g, " ")
+    .trim();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -71,6 +86,14 @@ Deno.serve(async (req) => {
     }
     if (message.length > 1000) {
       return new Response(JSON.stringify({ error: "Message trop long (max 1000 caractères)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const normalizedMessage = normalizeSmsMessage(message);
+    if (!normalizedMessage) {
+      return new Response(JSON.stringify({ error: "Message SMS invalide après normalisation." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -141,7 +164,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             recipient: destinataire,
             sender_id: config.sender_id,
-            message,
+            message: normalizedMessage,
           }),
         });
 
@@ -152,11 +175,11 @@ Deno.serve(async (req) => {
         await supabase.from("sms_logs").insert({
           ecole_id,
           destinataire,
-          message,
+          message: normalizedMessage,
           sender_id: config.sender_id,
           statut: success ? "envoye" : "echoue",
           provider_response: data,
-          cout: config.cout_unitaire * Math.ceil(message.length / 160),
+          cout: config.cout_unitaire * Math.ceil(normalizedMessage.length / 160),
           envoye_par: user.id,
         });
 
@@ -165,7 +188,7 @@ Deno.serve(async (req) => {
         await supabase.from("sms_logs").insert({
           ecole_id,
           destinataire,
-          message,
+          message: normalizedMessage,
           sender_id: config.sender_id,
           statut: "echoue",
           provider_response: { error: String(err) },
