@@ -219,13 +219,13 @@ export function StudentIdCardFront({ data, scale = 1, className }: SideProps) {
           }}
         >
           {data.ecoleLogo ? (
-            <img src={data.ecoleLogo} alt="" className="w-full h-full object-cover" />
+            <img src={data.ecoleLogo} alt="" className="w-full h-full object-contain p-0.5" crossOrigin="anonymous" />
           ) : (
             <div
-              className="text-[6px] font-bold text-center px-1 leading-tight"
+              className="text-[5.5px] font-bold text-center px-1 leading-tight"
               style={{ color: BORDEAUX }}
             >
-              COMPLEXE<br />SCOLAIRE
+              LA<br />PROVIDENCE
             </div>
           )}
         </div>
