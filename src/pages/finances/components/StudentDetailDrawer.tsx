@@ -13,6 +13,7 @@ import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 
 interface Props {
   eleve: EleveScolarite | null;
@@ -23,9 +24,8 @@ interface Props {
 }
 
 function buildSmsRelance(e: EleveScolarite): string {
-  const trancheRetard = e.tranches.find((t) => t.statut === "retard");
-  const lib = trancheRetard ? `${trancheRetard.label} (échue le ${trancheRetard.echeance})` : "scolarité";
-  return `CSP - Bonjour ${e.parent}, rappel : ${fcfa(e.resteDu)} FCFA dus pour ${e.nom} ${e.prenom} (${e.classe}) au titre de ${lib}. Merci de régulariser. Foi, Savoir, Excellence.`;
+  const { key, tranche } = pickTrancheCible(e);
+  return renderTemplate(getTemplate(key).message, e, tranche);
 }
 
 const STATUT_BADGE: Record<Tranche["statut"], string> = {
@@ -66,13 +66,13 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
 
   const handleSendSms = async () => {
     if (!eleve) return;
-    await addRelance({
+    const result = await addRelance({
       eleveId: eleve.id,
       canal: "SMS",
       message: buildSmsRelance(eleve),
       destinataire: eleve.telephone,
     });
-    toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
+    if (result) toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
   };
 
   const handleSendEmail = async () => {

@@ -16,7 +16,8 @@ function normalizeSmsMessage(message: string): string {
     .replace(/[’‘`´]/g, "'")
     .replace(/[“”«»]/g, '"')
     .replace(/[–—]/g, "-")
-    .replace(/\u00A0/g, " ")
+    .replace(/[✓]/g, "OK")
+    .replace(/[\u00A0\u202F]/g, " ")
     .replace(/[^\x0A\x0D\x20-\x7E]/g, "")
     .replace(/[ \t]+/g, " ")
     .trim();
@@ -84,16 +85,16 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (message.length > 1000) {
-      return new Response(JSON.stringify({ error: "Message trop long (max 1000 caractères)." }), {
+    const normalizedMessage = normalizeSmsMessage(message);
+    if (!normalizedMessage) {
+      return new Response(JSON.stringify({ error: "Message SMS invalide après normalisation." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const normalizedMessage = normalizeSmsMessage(message);
-    if (!normalizedMessage) {
-      return new Response(JSON.stringify({ error: "Message SMS invalide après normalisation." }), {
+    if (normalizedMessage.length > 1000) {
+      return new Response(JSON.stringify({ error: "Message trop long (max 1000 caractères)." }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

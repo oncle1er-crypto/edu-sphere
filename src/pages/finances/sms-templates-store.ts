@@ -2,6 +2,7 @@ import { useSyncExternalStore } from "react";
 import type { EleveScolarite, Tranche } from "./scolarite-data";
 import { fcfa } from "./scolarite-data";
 import { buildWaveLink } from "@/lib/wavePayment";
+import { normalizeSmsText } from "@/lib/smsText";
 
 // Modèles SMS personnalisables par tranche
 // Variables disponibles : {parent}, {prenom}, {nom}, {classe}, {cycle},
@@ -48,7 +49,12 @@ const DEFAULTS: Record<TrancheKey, SmsTemplate> = {
 function load(): Record<TrancheKey, SmsTemplate> {
   try {
     const raw = localStorage.getItem(KEY);
-    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<Record<TrancheKey, SmsTemplate>>;
+      return Object.fromEntries(
+        (Object.keys(DEFAULTS) as TrancheKey[]).map((key) => [key, parsed[key] ?? DEFAULTS[key]]),
+      ) as Record<TrancheKey, SmsTemplate>;
+    }
   } catch {}
   return { ...DEFAULTS };
 }
@@ -62,7 +68,7 @@ function persist() {
 }
 
 export function updateTemplate(key: TrancheKey, message: string) {
-  state = { ...state, [key]: { ...state[key], message } };
+  state = { ...state, [key]: { ...state[key], message: normalizeSmsText(message) } };
   persist();
 }
 
@@ -110,7 +116,7 @@ export function renderTemplate(template: string, e: EleveScolarite, tranche?: Tr
     jours_retard: String(e.joursRetard),
     lien_wave: buildWaveLink(waveAmount),
   };
-  return template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`);
+  return normalizeSmsText(template.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? `{${k}}`));
 }
 
 export const TEMPLATE_VARIABLES: { key: string; desc: string }[] = [

@@ -136,14 +136,14 @@ export default function Unpaid() {
     </button>
   );
 
-  const handleSendSms = (e: EleveScolarite) => {
-    addRelance({
+  const handleSendSms = async (e: EleveScolarite) => {
+    const result = await addRelance({
       eleveId: e.id,
       canal: "SMS",
       message: buildSmsRelance(e),
       destinataire: e.telephone,
     });
-    toast.success(`SMS envoyé à ${e.parent}`, { description: e.telephone });
+    if (result) toast.success(`SMS envoyé à ${e.parent}`, { description: e.telephone });
   };
 
   const openFiche = (e: EleveScolarite, trancheNum?: number) => {
@@ -413,9 +413,10 @@ export default function Unpaid() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><MessageSquare className="h-4 w-4" />Email groupé</Button>
-          <Button size="sm" onClick={() => {
-            enRetard.forEach((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone }));
-            toast.success(`${enRetard.length} SMS de relance envoyés`);
+          <Button size="sm" onClick={async () => {
+            const results = await Promise.all(enRetard.map((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone })));
+            const sent = results.filter(Boolean).length;
+            if (sent > 0) toast.success(`${sent} SMS de relance envoyé${sent > 1 ? "s" : ""}`);
           }}><MessageSquare className="h-4 w-4" />SMS groupé</Button>
         </div>
 
