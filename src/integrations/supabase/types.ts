@@ -3356,7 +3356,7 @@ export type Database = {
     }
     Functions: {
       appliquer_decisions_fin_annee: {
-        Args: { _annee_id: string; _ecole_id: string; _user_id: string }
+        Args: { _annee_id: string; _ecole_id: string }
         Returns: Json
       }
       appliquer_remise: {
