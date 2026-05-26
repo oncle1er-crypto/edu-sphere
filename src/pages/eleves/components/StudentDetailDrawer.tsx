@@ -55,6 +55,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
   const [editingParent, setEditingParent] = useState<any | null>(null);
   const [selectedParentIds, setSelectedParentIds] = useState<Set<string>>(new Set());
   const [smsDialogOpen, setSmsDialogOpen] = useState(false);
+  const [cardPreviewOpen, setCardPreviewOpen] = useState(false);
+  const { currentEcole } = useEcoles();
 
   const reloadParents = useCallback(async () => {
     if (!eleve) return;
