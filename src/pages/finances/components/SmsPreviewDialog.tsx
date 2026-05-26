@@ -13,8 +13,6 @@ import {
   useSmsTemplates, pickTrancheCible, renderTemplate, updateTemplate,
   TEMPLATE_VARIABLES, type TrancheKey,
 } from "../sms-templates-store";
-import { supabase } from "@/integrations/supabase/client";
-import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 
 interface Props {
@@ -27,7 +25,6 @@ interface Props {
 export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }: Props) {
   const templates = useSmsTemplates();
   const { addRelance } = useRelances();
-  const { ecoleId } = useEcoleId();
   const [templateKey, setTemplateKey] = useState<TrancheKey>("GENERIC");
   const [editedMessage, setEditedMessage] = useState("");
   const [editTemplate, setEditTemplate] = useState(false);
@@ -58,34 +55,19 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
   if (!eleve) return null;
 
   const handleSend = async () => {
-    if (!ecoleId) { toast.error("École introuvable"); return; }
     if (!eleve.telephone || eleve.telephone === "—") {
       toast.error("Aucun numéro de téléphone parent renseigné");
       return;
     }
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-sms", {
-        body: {
-          ecole_id: ecoleId,
-          destinataires: [eleve.telephone],
-          message: editedMessage,
-        },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
-      await addRelance({
+      const result = await addRelance({
         eleveId: eleve.id,
         canal: "SMS",
         message: editedMessage,
         destinataire: eleve.telephone,
       });
-      const sent = data?.sent ?? 0;
-      const failed = data?.failed ?? 0;
-      if (failed > 0 && sent === 0) {
-        toast.error("Échec de l'envoi du SMS", { description: "Vérifiez la configuration YellikaSMS." });
-      } else {
+      if (result) {
         toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
         onOpenChange(false);
       }
