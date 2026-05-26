@@ -256,100 +256,300 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
 }
 
 export interface CertificatData {
-  ecole: { nom: string; devise: string; adresse: string; telephone: string; directeur: string };
+  ecole: { nom: string; devise: string; adresse: string; telephone: string; directeur: string; logoUrl?: string | null };
   eleve: { nom: string; prenom: string; matricule: string; date_naissance: string; lieu_naissance: string; photo_url?: string | null };
   classe: string;
   annee: string;
   type: "scolarite" | "inscription" | "frequentation";
+  /** Ville d'émission (par défaut Abidjan) */
+  ville?: string;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+ * Helper — rendu d'un paragraphe avec segments gras / normaux,
+ * word-wrap automatique en typographie serif.
+ * ────────────────────────────────────────────────────────────────────────── */
+type RichSeg = { text: string; bold?: boolean };
+function drawRichParagraph(
+  doc: jsPDF,
+  segs: RichSeg[],
+  x: number,
+  y: number,
+  maxW: number,
+  lineH: number,
+  font = "times",
+  size = 12,
+  color: [number, number, number] = [40, 40, 45],
+): number {
+  doc.setFontSize(size);
+  doc.setTextColor(...color);
+
+  type Tok = { t: string; b: boolean; sp: boolean };
+  const tokens: Tok[] = [];
+  segs.forEach((s) => {
+    const parts = s.text.split(/(\s+)/);
+    parts.forEach((p) => {
+      if (!p) return;
+      tokens.push({ t: p, b: !!s.bold, sp: /^\s+$/.test(p) });
+    });
+  });
+
+  const measure = (tok: Tok) => {
+    doc.setFont(font, tok.b ? "bold" : "normal");
+    return doc.getTextWidth(tok.t);
+  };
+
+  let line: Tok[] = [];
+  let lineW = 0;
+  let curY = y;
+  const flush = () => {
+    let cx = x;
+    line.forEach((tok) => {
+      doc.setFont(font, tok.b ? "bold" : "normal");
+      doc.text(tok.t, cx, curY);
+      cx += measure(tok);
+    });
+    curY += lineH;
+    line = [];
+    lineW = 0;
+  };
+
+  tokens.forEach((tok) => {
+    const w = measure(tok);
+    if (lineW + w > maxW && line.length > 0) {
+      while (line.length && line[line.length - 1].sp) {
+        lineW -= measure(line.pop()!);
+      }
+      flush();
+      if (tok.sp) return;
+    }
+    if (line.length === 0 && tok.sp) return;
+    line.push(tok);
+    lineW += w;
+  });
+  if (line.length) flush();
+  return curY;
 }
 
 export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const w = doc.internal.pageSize.getWidth();
-  const m = 20;
-  let y = m;
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
 
-  const primary: [number, number, number] = [110, 26, 44];
-  const accent: [number, number, number] = [252, 227, 77];
+  const bordeaux: [number, number, number] = [110, 26, 44];
+  const bordeauxLight: [number, number, number] = [150, 60, 80];
+  const gold: [number, number, number] = [184, 134, 11];
+  const goldLight: [number, number, number] = [212, 175, 55];
+  const ink: [number, number, number] = [40, 30, 35];
+  const muted: [number, number, number] = [120, 110, 115];
 
-  // Header
-  doc.setFillColor(...primary);
-  doc.rect(0, 0, w, 35, "F");
-  doc.setFontSize(16);
-  doc.setTextColor(255, 255, 255);
-  doc.setFont("helvetica", "bold");
-  doc.text(data.ecole.nom, w / 2, 14, { align: "center" });
-  doc.setFontSize(9);
+  const logoUrl = data.ecole.logoUrl ?? "/logo-gsp.png";
+  const logo = await loadImageAsDataURL(logoUrl);
+
+  /* ── Bordure décorative double ── */
+  const o1 = 8;
+  const o2 = 11;
+  doc.setDrawColor(...bordeaux);
+  doc.setLineWidth(1.2);
+  doc.rect(o1, o1, W - 2 * o1, H - 2 * o1);
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.45);
+  doc.rect(o2, o2, W - 2 * o2, H - 2 * o2);
+
+  // Ornements de coin (losanges dorés)
+  const cornerOrn = (cx: number, cy: number) => {
+    doc.setFillColor(...goldLight);
+    doc.setDrawColor(...gold);
+    doc.setLineWidth(0.3);
+    const s = 2.2;
+    doc.lines([[s, -s], [s, s], [-s, s], [-s, -s]], cx - s, cy, [1, 1], "FD", true);
+    doc.setFillColor(...bordeaux);
+    doc.circle(cx, cy, 0.4, "F");
+  };
+  cornerOrn(o2 + 4, o2 + 4);
+  cornerOrn(W - o2 - 4, o2 + 4);
+  cornerOrn(o2 + 4, H - o2 - 4);
+  cornerOrn(W - o2 - 4, H - o2 - 4);
+
+  /* ── Filigrane logo (centre, très léger) ── */
+  if (logo) {
+    try {
+      const GState = (doc as any).GState;
+      if (GState) doc.setGState(new GState({ opacity: 0.06 }));
+      const wmH = 130;
+      const wmW = (logo.w / logo.h) * wmH;
+      doc.addImage(logo.data, "PNG", (W - wmW) / 2, (H - wmH) / 2, wmW, wmH);
+      if (GState) doc.setGState(new GState({ opacity: 1 }));
+    } catch {
+      /* ignore */
+    }
+  }
+
+  /* ── EN-TÊTE ── */
+  let y = 18;
+  if (logo) {
+    const lh = 26;
+    const lw = (logo.w / logo.h) * lh;
+    doc.addImage(logo.data, "PNG", (W - lw) / 2, y, lw, lh);
+    y += lh + 4;
+  } else {
+    y += 4;
+  }
+
+  doc.setFont("times", "bold");
+  doc.setFontSize(17);
+  doc.setTextColor(...bordeaux);
+  const nomLines = doc.splitTextToSize(data.ecole.nom.toUpperCase(), W - 50);
+  nomLines.forEach((ln: string, i: number) =>
+    doc.text(ln, W / 2, y + i * 7, { align: "center" }),
+  );
+  y += nomLines.length * 7 + 1;
+
+  // Devise dorée italique
+  doc.setFont("times", "italic");
+  doc.setFontSize(11);
+  doc.setTextColor(...gold);
+  const devise = data.ecole.devise || "Foi, Savoir, Excellence";
+  const devW = doc.getTextWidth(devise);
+  const devY = y + 4;
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.3);
+  doc.line(W / 2 - devW / 2 - 28, devY - 1.5, W / 2 - devW / 2 - 4, devY - 1.5);
+  doc.line(W / 2 + devW / 2 + 4, devY - 1.5, W / 2 + devW / 2 + 28, devY - 1.5);
+  doc.text(devise, W / 2, devY, { align: "center" });
+  y = devY + 5;
+
   doc.setFont("helvetica", "normal");
-  doc.text(data.ecole.devise, w / 2, 21, { align: "center" });
-  doc.text(`${data.ecole.adresse} • Tél: ${data.ecole.telephone}`, w / 2, 28, { align: "center" });
+  doc.setFontSize(9);
+  doc.setTextColor(...muted);
+  doc.text("Établissement privé confessionnel catholique", W / 2, y, { align: "center" });
+  y += 6;
 
-  y = 45;
+  // Séparateur avec ornement central
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.3);
+  doc.line(28, y, W / 2 - 4, y);
+  doc.line(W / 2 + 4, y, W - 28, y);
+  doc.setFillColor(...gold);
+  doc.circle(W / 2, y, 0.9, "F");
+  y += 10;
 
-  // Title
+  /* ── TITRE PRINCIPAL ── */
   const titles: Record<string, string> = {
     scolarite: "CERTIFICAT DE SCOLARITÉ",
     inscription: "ATTESTATION D'INSCRIPTION",
     frequentation: "CERTIFICAT DE FRÉQUENTATION",
   };
-  doc.setFillColor(...accent);
-  doc.rect(m, y, w - 2 * m, 10, "F");
-  doc.setTextColor(0, 0, 0);
-  doc.setFontSize(13);
+  doc.setFont("times", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(...bordeaux);
+  doc.text(titles[data.type], W / 2, y + 2, { align: "center" });
+  y += 10;
+
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.4);
+  doc.line(35, y, W / 2 - 6, y);
+  doc.line(W / 2 + 6, y, W - 35, y);
+  doc.setFillColor(...gold);
+  const ds = 1.6;
+  doc.lines([[ds, -ds], [ds, ds], [-ds, ds], [-ds, -ds]], W / 2 - ds, y, [1, 1], "F", true);
+  y += 12;
+
+  /* ── RÉFÉRENCE & DATE ── */
+  const M = 24;
   doc.setFont("helvetica", "bold");
-  doc.text(titles[data.type], w / 2, y + 7, { align: "center" });
-
-  y += 20;
-
-  // Reference
-  doc.setFontSize(9);
+  doc.setFontSize(9.5);
+  doc.setTextColor(...ink);
+  doc.text("Réf. :", M, y);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(100, 100, 100);
-  doc.text(`Réf. : CSP/${data.annee.replace("-", "")}/${data.eleve.matricule}`, m, y);
-  doc.text(`Abidjan, le ${new Date().toLocaleDateString("fr-FR")}`, w - m, y, { align: "right" });
+  doc.setTextColor(...muted);
+  doc.text(`CSP/${data.annee}/${data.eleve.matricule}`, M + 9, y);
 
-  // Photo de l'élève (sous le titre, à droite)
-  if (data.eleve.photo_url) {
-    const photo = await loadImageAsDataURL(data.eleve.photo_url);
-    if (photo) {
-      try {
-        doc.addImage(photo.data, "JPEG", w - m - 30, y + 6, 28, 32);
-      } catch { /* ignore */ }
-    }
-  }
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...ink);
+  const ville = data.ville ?? "Abidjan";
+  const today = new Date().toLocaleDateString("fr-FR");
+  doc.text(`${ville}, le ${today}`, W - M, y, { align: "right" });
 
-  y += 15;
+  y += 14;
 
-  // Body
+  /* ── CORPS ── */
+  const nomComplet = `${data.eleve.nom} ${data.eleve.prenom}`.trim();
+  const actionVerb =
+    data.type === "scolarite"
+      ? "est régulièrement inscrit(e) en classe de"
+      : data.type === "inscription"
+      ? "est inscrit(e) au sein de l'établissement en classe de"
+      : "fréquente régulièrement l'établissement en classe de";
+
+  const segs: RichSeg[] = [
+    { text: `Le Directeur du ${data.ecole.nom} certifie que l'élève ` },
+    { text: nomComplet, bold: true },
+    { text: `, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ` },
+    { text: data.eleve.matricule, bold: true },
+    { text: `, ${actionVerb} ` },
+    { text: data.classe, bold: true },
+    { text: ` pour l'année scolaire ` },
+    { text: data.annee, bold: true },
+    { text: `.` },
+  ];
+  y = drawRichParagraph(doc, segs, M, y, W - 2 * M, 6.8, "times", 12, ink);
+
+  y += 6;
+  doc.setFont("times", "normal");
+  doc.setFontSize(12);
+  doc.setTextColor(...ink);
+  const closing = doc.splitTextToSize(
+    "En foi de quoi, le présent certificat est délivré pour servir et valoir ce que de droit.",
+    W - 2 * M,
+  );
+  doc.text(closing, M, y);
+
+  /* ── SIGNATURE (bas droite) ── */
+  const sigY = H - 70;
+  const sigX = W - M - 70;
+  const sigW = 70;
+
+  doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.setTextColor(30, 30, 30);
-  doc.setFont("helvetica", "normal");
+  doc.setTextColor(...bordeaux);
+  doc.text("Le Directeur", sigX + sigW / 2, sigY, { align: "center" });
 
-  const body = data.type === "scolarite"
-    ? `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est régulièrement inscrit(e) en classe de ${data.classe} pour l'année scolaire ${data.annee}.`
-    : data.type === "inscription"
-    ? `Le Directeur du ${data.ecole.nom} atteste que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, est inscrit(e) en classe de ${data.classe} au titre de l'année scolaire ${data.annee}.`
-    : `Le Directeur du ${data.ecole.nom} certifie que l'élève ${data.eleve.nom} ${data.eleve.prenom}, né(e) le ${data.eleve.date_naissance} à ${data.eleve.lieu_naissance}, matricule ${data.eleve.matricule}, fréquente régulièrement l'établissement en classe de ${data.classe} pour l'année scolaire ${data.annee}.`;
+  doc.setFont("times", "italic");
+  doc.setFontSize(9);
+  doc.setTextColor(...muted);
+  doc.text("Signature et cachet", sigX + sigW / 2, sigY + 5, { align: "center" });
 
-  const lines = doc.splitTextToSize(body, w - 2 * m);
-  doc.text(lines, m, y);
-  y += lines.length * 6 + 10;
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.4);
+  doc.line(sigX + 8, sigY + 26, sigX + sigW - 8, sigY + 26);
 
-  doc.text("En foi de quoi, le présent certificat est délivré pour servir et valoir ce que de droit.", m, y);
+  doc.setFont("times", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(...ink);
+  const dirNom = data.ecole.directeur && data.ecole.directeur.trim() ? data.ecole.directeur : "Diop";
+  const dirLabel = /^M\.|^Mme|^Mlle/i.test(dirNom) ? dirNom : `M. ${dirNom}`;
+  doc.text(dirLabel, sigX + sigW / 2, sigY + 31, { align: "center" });
 
-  // Signature
-  y += 30;
-  doc.setFont("helvetica", "bold");
-  doc.text("Le Directeur", w - m - 40, y);
-  doc.setFont("helvetica", "normal");
-  y += 20;
-  doc.text(data.ecole.directeur || "____________________", w - m - 40, y);
+  /* ── PIED DE PAGE ── */
+  const footY = H - o2 - 10;
+  doc.setDrawColor(...goldLight);
+  doc.setLineWidth(0.25);
+  doc.line(o2 + 16, footY - 5, W / 2 - 4, footY - 5);
+  doc.line(W / 2 + 4, footY - 5, W - o2 - 16, footY - 5);
+  doc.setFillColor(...gold);
+  const fs = 1.2;
+  doc.lines([[fs, -fs], [fs, fs], [-fs, fs], [-fs, -fs]], W / 2 - fs, footY - 5, [1, 1], "F", true);
 
-  // Footer
-  const bottom = doc.internal.pageSize.getHeight() - 15;
-  doc.setFontSize(7);
-  doc.setTextColor(150, 150, 150);
-  doc.text(`${data.ecole.nom} — Établissement privé confessionnel catholique — Archidiocèse d'Abidjan`, w / 2, bottom, { align: "center" });
+  doc.setFont("times", "italic");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...bordeauxLight);
+  doc.text(
+    `${data.ecole.nom} — Établissement privé confessionnel catholique`,
+    W / 2,
+    footY,
+    { align: "center" },
+  );
 
   return doc;
 }
