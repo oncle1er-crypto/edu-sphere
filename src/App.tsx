@@ -239,6 +239,8 @@ const App = () => (
         <AcademicPeriodProvider>
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/carte-scolaire/verification/:token" element={<StudentCardVerificationPage />} />
+            <Route path="/verify-student-card/:token" element={<StudentCardVerificationPage />} />
             <Route path="/portail-enseignant" element={<RequireAuth><TeacherPortal /></RequireAuth>} />
             <Route path="/portail-enseignant/evaluations/:id" element={<RequireAuth><EvaluationGradesPage /></RequireAuth>} />
             <Route path="/*" element={
