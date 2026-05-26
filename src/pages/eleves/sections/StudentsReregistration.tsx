@@ -14,6 +14,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { StatusLegend, type LegendItem } from "@/components/help/StatusLegend";
+import type { Database } from "@/integrations/supabase/types";
 
 type Decision = "passage" | "redoublement" | "exclusion";
 
