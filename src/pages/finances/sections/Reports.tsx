@@ -136,15 +136,51 @@ export default function Reports() {
   });
 
   // ── PDF generation ──
-  const handleDownload = (id: ReportId) => {
+  const handleDownload = async (id: ReportId) => {
     try {
+      // Best-effort lookup of the current school for logo + branding on the PDF
+      const { supabase } = await import("@/integrations/supabase/client");
+      let meta: any = { nom: ECOLE_NOM, devise: "Foi, Savoir, Excellence" };
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (uid) {
+          const { data: roleRow } = await supabase
+            .from("user_roles")
+            .select("ecole_id")
+            .eq("user_id", uid)
+            .limit(1)
+            .maybeSingle();
+          const eid = (roleRow as any)?.ecole_id;
+          if (eid) {
+            const { data: ecole } = await supabase
+              .from("ecoles")
+              .select("nom, devise, logo_url, adresse, telephone, email")
+              .eq("id", eid)
+              .maybeSingle();
+            if (ecole) {
+              meta = {
+                nom: (ecole as any).nom || ECOLE_NOM,
+                devise: (ecole as any).devise || "Foi, Savoir, Excellence",
+                logoUrl: (ecole as any).logo_url,
+                adresse: (ecole as any).adresse,
+                telephone: (ecole as any).telephone,
+                email: (ecole as any).email,
+              };
+            }
+          }
+        }
+      } catch {
+        // fall back to default meta
+      }
+
       switch (id) {
-        case "compte_resultat": generateCompteResultat(ECOLE_NOM, periode, getCompteResultat()); break;
-        case "flux_tresorerie": generateFluxTresorerie(ECOLE_NOM, periode, getFluxTresorerie()); break;
-        case "recouvrement": generateRecouvrement(ECOLE_NOM, periode, buildRecouvrementData(financeData)); break;
-        case "impayes": generateAnalyseImpayes(ECOLE_NOM, getImpayes()); break;
-        case "masse_salariale": generateMasseSalariale(ECOLE_NOM, periode, getMasseSalariale()); break;
-        case "budget_execution": generateBudgetExecution(ECOLE_NOM, periode, getBudgetExecution()); break;
+        case "compte_resultat": await generateCompteResultat(meta, periode, getCompteResultat()); break;
+        case "flux_tresorerie": await generateFluxTresorerie(meta, periode, getFluxTresorerie()); break;
+        case "recouvrement": await generateRecouvrement(meta, periode, buildRecouvrementData(financeData)); break;
+        case "impayes": await generateAnalyseImpayes(meta, getImpayes()); break;
+        case "masse_salariale": await generateMasseSalariale(meta, periode, getMasseSalariale()); break;
+        case "budget_execution": await generateBudgetExecution(meta, periode, getBudgetExecution()); break;
       }
       toast.success("PDF généré avec succès");
     } catch (e) {

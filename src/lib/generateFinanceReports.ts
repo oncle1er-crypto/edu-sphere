@@ -1,47 +1,144 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const FCFA = (n: number) => n.toLocaleString("fr-FR") + " FCFA";
+// IMPORTANT: jsPDF's built-in helvetica renders U+202F (narrow no-break space)
+// — emitted by Intl fr-FR locale — as "/". We replace it with a regular space.
+const FCFA = (n: number) =>
+  `${Math.round(n).toLocaleString("fr-FR").replace(/\u202f/g, " ").replace(/\u00a0/g, " ")} FCFA`;
+
+export interface EcoleMeta {
+  nom: string;
+  devise?: string;
+  logoUrl?: string | null;
+  adresse?: string | null;
+  telephone?: string | null;
+  email?: string | null;
+}
 
 interface ReportHeader {
-  ecole: string;
+  ecole: EcoleMeta;
   titre: string;
   periode: string;
   date: string;
+  logoData?: string | null;
 }
 
-function addHeader(doc: jsPDF, h: ReportHeader) {
+// Convert an image URL to a base64 data URL usable by jsPDF
+async function fetchLogo(url?: string | null): Promise<string | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onloadend = () => resolve(fr.result as string);
+      fr.onerror = reject;
+      fr.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+}
+
+function detectFormat(dataUrl: string): "PNG" | "JPEG" {
+  return dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")
+    ? "JPEG"
+    : "PNG";
+}
+
+function addHeader(doc: jsPDF, h: ReportHeader): number {
   const w = doc.internal.pageSize.getWidth();
-  doc.setFontSize(14);
+  const M = 15;
+
+  // Background band (subtle)
+  doc.setFillColor(250, 246, 247);
+  doc.rect(0, 0, w, 32, "F");
+
+  // Logo
+  if (h.logoData) {
+    try {
+      doc.addImage(h.logoData, detectFormat(h.logoData), M, 6, 22, 22);
+    } catch {
+      // ignore unsupported images
+    }
+  }
+
+  // School name + devise
+  const textX = h.logoData ? M + 26 : M;
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(h.ecole, w / 2, 18, { align: "center" });
-  doc.setFontSize(9);
+  doc.setTextColor(110, 26, 44);
+  doc.text(h.ecole.nom.toUpperCase(), textX, 13);
+
+  doc.setFontSize(8.5);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(90);
+  doc.text(h.ecole.devise || "Foi, Savoir, Excellence", textX, 18);
+
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
-  doc.text("Foi, Savoir, Excellence", w / 2, 24, { align: "center" });
+  doc.setTextColor(120);
+  const contact = [h.ecole.adresse, h.ecole.telephone, h.ecole.email]
+    .filter(Boolean)
+    .join("  •  ");
+  if (contact) doc.text(contact, textX, 23);
+
+  // Brand line
   doc.setDrawColor(110, 26, 44);
-  doc.setLineWidth(0.5);
-  doc.line(15, 28, w - 15, 28);
-  doc.setFontSize(12);
+  doc.setLineWidth(0.8);
+  doc.line(M, 32, w - M, 32);
+  doc.setDrawColor(252, 227, 77); // accent
+  doc.setLineWidth(0.4);
+  doc.line(M, 33.2, w - M, 33.2);
+
+  // Title block
+  doc.setFontSize(13);
   doc.setFont("helvetica", "bold");
-  doc.text(h.titre, w / 2, 36, { align: "center" });
+  doc.setTextColor(30);
+  doc.text(h.titre, w / 2, 41, { align: "center" });
+
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
-  doc.text(`Période : ${h.periode}`, 15, 43);
-  doc.text(`Édité le : ${h.date}`, w - 15, 43, { align: "right" });
+  doc.setTextColor(60);
+  doc.text(`Période : ${h.periode}`, M, 48);
+  doc.text(`Édité le : ${h.date}`, w - M, 48, { align: "right" });
+
+  doc.setTextColor(0);
+  return 54; // y position where content can start
 }
 
-function addFooter(doc: jsPDF) {
+function addFooter(doc: jsPDF, ecoleNom: string) {
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     const h = doc.internal.pageSize.getHeight();
     const w = doc.internal.pageSize.getWidth();
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.2);
+    doc.line(15, h - 12, w - 15, h - 12);
     doc.setFontSize(7);
     doc.setTextColor(130);
-    doc.text(`Complexe Scolaire La Providence de Don Orione — Rapport confidentiel`, 15, h - 8);
-    doc.text(`Page ${i}/${pages}`, w - 15, h - 8, { align: "right" });
+    doc.text(`${ecoleNom} — Document confidentiel`, 15, h - 7);
+    doc.text(`Page ${i} / ${pages}`, w - 15, h - 7, { align: "right" });
     doc.setTextColor(0);
   }
+}
+
+const TABLE_STYLES = {
+  theme: "grid" as const,
+  headStyles: {
+    fillColor: [110, 26, 44] as [number, number, number],
+    textColor: 255,
+    fontStyle: "bold" as const,
+    halign: "left" as const,
+  },
+  styles: { fontSize: 8.5, cellPadding: 2.5, textColor: 40 },
+  alternateRowStyles: { fillColor: [250, 246, 247] as [number, number, number] },
+};
+
+function toMeta(ecole: string | EcoleMeta): EcoleMeta {
+  return typeof ecole === "string" ? { nom: ecole } : ecole;
 }
 
 // ── Compte de résultat ──
@@ -50,24 +147,38 @@ export interface CompteResultatData {
   depenses: { libelle: string; montant: number }[];
 }
 
-export function generateCompteResultat(ecole: string, periode: string, data: CompteResultatData) {
+export async function generateCompteResultat(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: CompteResultatData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: "Compte de résultat", periode, date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Compte de résultat",
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const totalRecettes = data.recettes.reduce((s, r) => s + r.montant, 0);
   const totalDepenses = data.depenses.reduce((s, d) => s + d.montant, 0);
   const resultat = totalRecettes - totalDepenses;
 
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["RECETTES", "Montant"]],
     body: [
       ...data.recettes.map((r) => [r.libelle, FCFA(r.montant)]),
-      [{ content: "Total recettes", styles: { fontStyle: "bold" } }, { content: FCFA(totalRecettes), styles: { fontStyle: "bold" } }],
+      [
+        { content: "Total recettes", styles: { fontStyle: "bold" } },
+        { content: FCFA(totalRecettes), styles: { fontStyle: "bold" } },
+      ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    ...TABLE_STYLES,
   });
 
   const y1 = (doc as any).lastAutoTable?.finalY ?? 100;
@@ -77,22 +188,26 @@ export function generateCompteResultat(ecole: string, periode: string, data: Com
     head: [["DÉPENSES", "Montant"]],
     body: [
       ...data.depenses.map((d) => [d.libelle, FCFA(d.montant)]),
-      [{ content: "Total dépenses", styles: { fontStyle: "bold" } }, { content: FCFA(totalDepenses), styles: { fontStyle: "bold" } }],
+      [
+        { content: "Total dépenses", styles: { fontStyle: "bold" } },
+        { content: FCFA(totalDepenses), styles: { fontStyle: "bold" } },
+      ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    ...TABLE_STYLES,
   });
 
   const y2 = (doc as any).lastAutoTable?.finalY ?? 160;
+  doc.setFillColor(resultat >= 0 ? 235 : 250, resultat >= 0 ? 247 : 235, resultat >= 0 ? 238 : 235);
+  doc.rect(15, y2 + 6, doc.internal.pageSize.getWidth() - 30, 12, "F");
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  const color = resultat >= 0 ? [0, 128, 0] : [200, 0, 0];
+  const color = resultat >= 0 ? [0, 110, 50] : [180, 0, 0];
   doc.setTextColor(color[0], color[1], color[2]);
-  doc.text(`Résultat net : ${FCFA(resultat)}`, 15, y2 + 12);
+  doc.text(`Résultat net : ${FCFA(resultat)}`, 20, y2 + 14);
   doc.setTextColor(0);
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Compte_resultat_${periode.replace(/\s/g, "_")}.pdf`);
 }
 
@@ -102,21 +217,35 @@ export interface FluxTresorerieData {
   mouvements: { date: string; libelle: string; type: string; montant: number; compte: string }[];
 }
 
-export function generateFluxTresorerie(ecole: string, periode: string, data: FluxTresorerieData) {
+export async function generateFluxTresorerie(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: FluxTresorerieData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: "Flux de trésorerie", periode, date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Flux de trésorerie",
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const totalSolde = data.comptes.reduce((s, c) => s + c.solde, 0);
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["Compte", "Solde"]],
     body: [
       ...data.comptes.map((c) => [c.nom, FCFA(c.solde)]),
-      [{ content: "Total", styles: { fontStyle: "bold" } }, { content: FCFA(totalSolde), styles: { fontStyle: "bold" } }],
+      [
+        { content: "Total", styles: { fontStyle: "bold" } },
+        { content: FCFA(totalSolde), styles: { fontStyle: "bold" } },
+      ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 9 },
+    columnStyles: { 1: { halign: "right" } },
+    ...TABLE_STYLES,
   });
 
   const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
@@ -143,12 +272,12 @@ export function generateFluxTresorerie(ecole: string, periode: string, data: Flu
         { content: FCFA(totalSorties), styles: { fontStyle: "bold" } },
       ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: { 3: { halign: "right" }, 4: { halign: "right" } },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Flux_tresorerie_${periode.replace(/\s/g, "_")}.pdf`);
 }
 
@@ -157,16 +286,28 @@ export interface RecouvrementData {
   lignes: { classe: string; effectif: number; montant_du: number; montant_paye: number }[];
 }
 
-export function generateRecouvrement(ecole: string, periode: string, data: RecouvrementData) {
+export async function generateRecouvrement(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: RecouvrementData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: "Rapport de recouvrement scolarité", periode, date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Rapport de recouvrement scolarité",
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const totalDu = data.lignes.reduce((s, l) => s + l.montant_du, 0);
   const totalPaye = data.lignes.reduce((s, l) => s + l.montant_paye, 0);
   const totalEffectif = data.lignes.reduce((s, l) => s + l.effectif, 0);
 
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["Classe", "Effectif", "Montant dû", "Montant payé", "Reste", "Taux"]],
     body: [
       ...data.lignes.map((l) => {
@@ -183,12 +324,18 @@ export function generateRecouvrement(ecole: string, periode: string, data: Recou
         { content: totalDu > 0 ? ((totalPaye / totalDu) * 100).toFixed(1) + "%" : "—", styles: { fontStyle: "bold" } },
       ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: {
+      1: { halign: "center" },
+      2: { halign: "right" },
+      3: { halign: "right" },
+      4: { halign: "right" },
+      5: { halign: "right" },
+    },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Recouvrement_scolarite_${periode.replace(/\s/g, "_")}.pdf`);
 }
 
@@ -198,16 +345,28 @@ export interface MasseSalarialeData {
   mois: string;
 }
 
-export function generateMasseSalariale(ecole: string, periode: string, data: MasseSalarialeData) {
+export async function generateMasseSalariale(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: MasseSalarialeData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: `Masse salariale — ${data.mois}`, periode, date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: `Masse salariale — ${data.mois}`,
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const totalBrut = data.lignes.reduce((s, l) => s + l.brut, 0);
   const totalRetenues = data.lignes.reduce((s, l) => s + l.retenues, 0);
   const totalNet = data.lignes.reduce((s, l) => s + l.net, 0);
 
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["Enseignant", "Fonction", "Brut", "Retenues", "Net"]],
     body: [
       ...data.lignes.map((l) => [l.nom, l.fonction, FCFA(l.brut), FCFA(l.retenues), FCFA(l.net)]),
@@ -218,12 +377,12 @@ export function generateMasseSalariale(ecole: string, periode: string, data: Mas
         { content: FCFA(totalNet), styles: { fontStyle: "bold" } },
       ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: { 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Masse_salariale_${data.mois.replace(/\s/g, "_")}.pdf`);
 }
 
@@ -232,15 +391,23 @@ export interface AnalyseImpayesData {
   lignes: { nom: string; prenom: string; classe: string; montant_du: number; paye: number; jours_retard: number }[];
 }
 
-export function generateAnalyseImpayes(ecole: string, data: AnalyseImpayesData) {
+export async function generateAnalyseImpayes(ecole: string | EcoleMeta, data: AnalyseImpayesData) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: "Analyse des impayés (vieillissement)", periode: "À ce jour", date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Analyse des impayés (vieillissement)",
+    periode: "À ce jour",
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const sorted = [...data.lignes].sort((a, b) => b.jours_retard - a.jours_retard);
   const totalReste = sorted.reduce((s, l) => s + (l.montant_du - l.paye), 0);
 
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["Élève", "Classe", "Montant dû", "Payé", "Reste", "Retard (j)"]],
     body: [
       ...sorted.map((l) => [
@@ -259,12 +426,17 @@ export function generateAnalyseImpayes(ecole: string, data: AnalyseImpayesData) 
         { content: "", styles: { fontStyle: "bold" } },
       ],
     ],
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: {
+      2: { halign: "right" },
+      3: { halign: "right" },
+      4: { halign: "right" },
+      5: { halign: "center" },
+    },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Analyse_impayes_${new Date().toISOString().slice(0, 10)}.pdf`);
 }
 
@@ -274,9 +446,21 @@ export interface BudgetExecutionData {
   depenses: { libelle: string; prevu: number; realise: number }[];
 }
 
-export function generateBudgetExecution(ecole: string, periode: string, data: BudgetExecutionData) {
+export async function generateBudgetExecution(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: BudgetExecutionData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  addHeader(doc, { ecole, titre: "Exécution budgétaire", periode, date: new Date().toLocaleDateString("fr-FR") });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Exécution budgétaire",
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
 
   const makeRows = (items: { libelle: string; prevu: number; realise: number }[]) =>
     items.map((i) => {
@@ -285,12 +469,12 @@ export function generateBudgetExecution(ecole: string, periode: string, data: Bu
     });
 
   autoTable(doc, {
-    startY: 50,
+    startY,
     head: [["RECETTES", "Prévu", "Réalisé", "Écart", "Taux"]],
     body: makeRows(data.recettes),
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
   const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
@@ -299,11 +483,11 @@ export function generateBudgetExecution(ecole: string, periode: string, data: Bu
     startY: y1 + 8,
     head: [["DÉPENSES", "Prévu", "Réalisé", "Écart", "Taux"]],
     body: makeRows(data.depenses),
-    theme: "grid",
-    headStyles: { fillColor: [110, 26, 44] },
-    styles: { fontSize: 8 },
+    columnStyles: { 1: { halign: "right" }, 2: { halign: "right" }, 3: { halign: "right" }, 4: { halign: "right" } },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  addFooter(doc);
+  addFooter(doc, meta.nom);
   doc.save(`Budget_execution_${periode.replace(/\s/g, "_")}.pdf`);
 }
