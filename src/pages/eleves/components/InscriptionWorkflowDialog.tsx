@@ -370,12 +370,35 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 </div>
               ) : (
                 <div className="space-y-2">
-                  <p className="text-xs text-amber-900">
-                    Aucune tranche disponible. Affectez d'abord une classe pour générer l'échéancier.
+                  <p className="text-[11px] text-amber-900">
+                    Aucune tranche n'est encore générée. Saisissez le montant du 1er paiement : l'échéancier sera créé automatiquement.
                   </p>
-                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { onClose(); onOpenDrawer?.("finances"); }}>
-                    Ouvrir la fiche finances
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Montant (FCFA)</Label>
+                      <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} placeholder="Ex. 50000" />
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Moyen</Label>
+                      <Select value={payMode} onValueChange={setPayMode}>
+                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">Référence (optionnel)</Label>
+                    <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+                  </div>
+                  <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading || !cClasse}>
+                    {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
+                    Effectuer le 1er paiement
                   </Button>
+                  {!cClasse && (
+                    <p className="text-[10px] text-muted-foreground">Affectez d'abord une classe (étape 3) pour générer l'échéancier.</p>
+                  )}
                 </div>
               )}
             </div>
