@@ -106,30 +106,77 @@ export default function StudentsReregistration() {
   const anneeCible = annees.find((a) => a.id === anneeCibleId) ?? null;
   const nouvelleAnneeExiste = !!(anneeActive && anneeCible && anneeCible.id !== anneeActive.id);
 
-  // Liste ordonnée des classes de l'année cible (pour calculer la suivante)
+  // ----- Ordre officiel des niveaux du système éducatif ivoirien -----
+  // Préscolaire → Primaire → Collège (6e..3e, décroissant) → Lycée (2nde, 1ère, Tle)
+  const NIVEAUX_IVOIRE: { keys: string[]; rank: number }[] = [
+    { keys: ["petite section", "ps"], rank: 1 },
+    { keys: ["moyenne section", "ms"], rank: 2 },
+    { keys: ["grande section", "gs"], rank: 3 },
+    { keys: ["cp1"], rank: 10 },
+    { keys: ["cp2"], rank: 11 },
+    { keys: ["ce1"], rank: 12 },
+    { keys: ["ce2"], rank: 13 },
+    { keys: ["cm1"], rank: 14 },
+    { keys: ["cm2"], rank: 15 },
+    { keys: ["6eme", "6e", "sixieme"], rank: 20 },
+    { keys: ["5eme", "5e", "cinquieme"], rank: 21 },
+    { keys: ["4eme", "4e", "quatrieme"], rank: 22 },
+    { keys: ["3eme", "3e", "troisieme"], rank: 23 },
+    { keys: ["2nde", "2de", "seconde"], rank: 30 },
+    { keys: ["1ere", "1re", "premiere"], rank: 31 },
+    { keys: ["tle", "terminale", "term"], rank: 32 },
+  ];
+
+  const normalize = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+  // Renvoie { rank, section } à partir du nom d'une classe (ex: "4ème B" → {22,"B"})
+  const parseNiveau = (nom: string | null | undefined): { rank: number | null; section: string } => {
+    if (!nom) return { rank: null, section: "" };
+    const s = normalize(nom);
+    for (const r of NIVEAUX_IVOIRE) {
+      for (const k of r.keys) {
+        if (s === k || s.startsWith(k + " ") || s.startsWith(k)) {
+          const reste = s.substring(k.length).trim();
+          return { rank: r.rank, section: reste.toUpperCase() };
+        }
+      }
+    }
+    return { rank: null, section: "" };
+  };
+
+  // Liste ordonnée des classes de l'année cible (par rang officiel, puis par nom)
   const classesCible = useMemo(() => {
     const list = classes.filter((c) => c.annee_id === (anneeCibleId ?? anneeActiveId));
     return [...list].sort((a, b) => {
-      const oa = cyclesOrdre[a.cycle_id] ?? 0;
-      const ob = cyclesOrdre[b.cycle_id] ?? 0;
-      if (oa !== ob) return oa - ob;
+      const ra = parseNiveau(a.nom).rank ?? 999;
+      const rb = parseNiveau(b.nom).rank ?? 999;
+      if (ra !== rb) return ra - rb;
       return (a.nom ?? "").localeCompare(b.nom ?? "", "fr");
     });
-  }, [classes, anneeCibleId, anneeActiveId, cyclesOrdre]);
+  }, [classes, anneeCibleId, anneeActiveId]);
 
-  // Pour une classe d'origine, trouver la classe suivante disponible
+  // Pour une classe d'origine, trouver la classe suivante selon le système ivoirien
   const getClasseSuivante = (classeOrigineId: string | null | undefined): string | null => {
     if (!classeOrigineId) return null;
     const origine = classes.find((c) => c.id === classeOrigineId);
     if (!origine) return null;
-    // Chercher dans classesCible une classe de même cycle dont le nom est > origine.nom
-    const memeCycle = classesCible.filter((c) => c.cycle_id === origine.cycle_id);
-    const suivante = memeCycle.find((c) => (c.nom ?? "").localeCompare(origine.nom ?? "", "fr") > 0);
-    if (suivante) return suivante.id;
-    // Sinon, première classe du cycle suivant
-    const ordreOrigine = cyclesOrdre[origine.cycle_id] ?? 0;
-    const next = classesCible.find((c) => (cyclesOrdre[c.cycle_id] ?? 0) > ordreOrigine);
-    return next?.id ?? null;
+    const { rank: rankOrigine, section: sectionOrigine } = parseNiveau(origine.nom);
+    if (rankOrigine === null) return null;
+
+    // Toutes les classes du niveau immédiatement supérieur (rang minimal > rankOrigine)
+    const ranksDispo = classesCible
+      .map((c) => parseNiveau(c.nom).rank)
+      .filter((r): r is number => r !== null && r > rankOrigine);
+    if (ranksDispo.length === 0) return null;
+    const rankSuivant = Math.min(...ranksDispo);
+    const candidates = classesCible.filter((c) => parseNiveau(c.nom).rank === rankSuivant);
+
+    // Priorité : même section (4ème B → 3ème B), sinon première dispo
+    const memeSection = candidates.find(
+      (c) => sectionOrigine && parseNiveau(c.nom).section === sectionOrigine
+    );
+    return (memeSection ?? candidates[0]).id;
   };
 
   // Élèves inscrits ET appartenant à une classe avec au moins une note
