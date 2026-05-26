@@ -31,14 +31,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StudentCardPreview } from "@/pages/cartes/components/StudentCardPreview";
 import { buildStudentCardData } from "@/pages/cartes/lib/buildStudentCardData";
 import { useEcoles } from "@/context/EcoleContext";
-import { supabase } from "@/integrations/supabase/client";
-import { useClasses } from "@/hooks/useClasses";
-import { compressImage } from "@/lib/imageCompression";
-import { toast } from "sonner";
-import { ParentEditDialog } from "./ParentEditDialog";
-import { ParentSmsDialog } from "./ParentMessageDialog";
-import { ConfirmButton } from "@/components/ConfirmButton";
-import { Checkbox } from "@/components/ui/checkbox";
 
 interface Props {
   eleve: any | null;
