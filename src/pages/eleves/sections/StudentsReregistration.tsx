@@ -20,6 +20,8 @@ type Decision = "passage" | "redoublement" | "exclusion";
 
 interface AnneeRow { id: string; libelle: string; statut: string; debut: string; fin: string; }
 
+const MOYENNE_PASSAGE = 10; // sur 20
+
 export default function StudentsReregistration() {
   const { ecoleId } = useEcoleId();
   const { eleves, loading } = useEleves();
@@ -28,11 +30,15 @@ export default function StudentsReregistration() {
   const [annees, setAnnees] = useState<AnneeRow[]>([]);
   const [anneeActiveId, setAnneeActiveId] = useState<string | null>(null);
   const [anneeCibleId, setAnneeCibleId] = useState<string | null>(null);
+  const [cyclesOrdre, setCyclesOrdre] = useState<Record<string, number>>({});
+  const [moyennes, setMoyennes] = useState<Record<string, number>>({}); // eleve_id -> /20
+  const [classesAvecNotes, setClassesAvecNotes] = useState<Set<string>>(new Set());
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const [destinations, setDestinations] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
 
   useEffect(() => {
     if (!ecoleId) return;
@@ -46,19 +52,118 @@ export default function StudentsReregistration() {
         setAnnees(rows);
         const active = rows.find((a) => a.statut === "active") ?? rows[0] ?? null;
         setAnneeActiveId(active?.id ?? null);
-        // Année cible = la suivante si elle existe, sinon l'active
         const next = active
           ? rows.find((a) => new Date(a.debut) > new Date(active.debut))
           : null;
         setAnneeCibleId(next?.id ?? active?.id ?? null);
       });
+
+    supabase
+      .from("cycles")
+      .select("id, ordre")
+      .eq("ecole_id", ecoleId)
+      .then(({ data }) => {
+        const map: Record<string, number> = {};
+        (data ?? []).forEach((c: any) => { map[c.id] = c.ordre ?? 0; });
+        setCyclesOrdre(map);
+      });
   }, [ecoleId]);
+
+  // Charger évaluations + notes pour calculer moyennes et classes éligibles
+  useEffect(() => {
+    if (!ecoleId || !anneeActiveId) return;
+    setDataLoading(true);
+    supabase
+      .from("evaluations")
+      .select("id, classe_id, bareme, coefficient, classes!inner(annee_id), notes(eleve_id, note)")
+      .eq("ecole_id", ecoleId)
+      .eq("classes.annee_id", anneeActiveId)
+      .then(({ data }) => {
+        const classesSet = new Set<string>();
+        // eleve_id -> { sumNotes, sumCoef }
+        const agg: Record<string, { s: number; c: number }> = {};
+        (data ?? []).forEach((ev: any) => {
+          const notes = ev.notes ?? [];
+          if (notes.length > 0) classesSet.add(ev.classe_id);
+          const bareme = Number(ev.bareme) || 20;
+          const coef = Number(ev.coefficient) || 1;
+          notes.forEach((n: any) => {
+            const note20 = (Number(n.note) / bareme) * 20;
+            if (!agg[n.eleve_id]) agg[n.eleve_id] = { s: 0, c: 0 };
+            agg[n.eleve_id].s += note20 * coef;
+            agg[n.eleve_id].c += coef;
+          });
+        });
+        const moy: Record<string, number> = {};
+        Object.entries(agg).forEach(([id, v]) => { moy[id] = v.c > 0 ? v.s / v.c : 0; });
+        setMoyennes(moy);
+        setClassesAvecNotes(classesSet);
+        setDataLoading(false);
+      });
+  }, [ecoleId, anneeActiveId]);
 
   const anneeActive = annees.find((a) => a.id === anneeActiveId) ?? null;
   const anneeCible = annees.find((a) => a.id === anneeCibleId) ?? null;
   const nouvelleAnneeExiste = !!(anneeActive && anneeCible && anneeCible.id !== anneeActive.id);
 
-  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif");
+  // Liste ordonnée des classes de l'année cible (pour calculer la suivante)
+  const classesCible = useMemo(() => {
+    const list = classes.filter((c) => c.annee_id === (anneeCibleId ?? anneeActiveId));
+    return [...list].sort((a, b) => {
+      const oa = cyclesOrdre[a.cycle_id] ?? 0;
+      const ob = cyclesOrdre[b.cycle_id] ?? 0;
+      if (oa !== ob) return oa - ob;
+      return (a.nom ?? "").localeCompare(b.nom ?? "", "fr");
+    });
+  }, [classes, anneeCibleId, anneeActiveId, cyclesOrdre]);
+
+  // Pour une classe d'origine, trouver la classe suivante disponible
+  const getClasseSuivante = (classeOrigineId: string | null | undefined): string | null => {
+    if (!classeOrigineId) return null;
+    const origine = classes.find((c) => c.id === classeOrigineId);
+    if (!origine) return null;
+    // Chercher dans classesCible une classe de même cycle dont le nom est > origine.nom
+    const memeCycle = classesCible.filter((c) => c.cycle_id === origine.cycle_id);
+    const suivante = memeCycle.find((c) => (c.nom ?? "").localeCompare(origine.nom ?? "", "fr") > 0);
+    if (suivante) return suivante.id;
+    // Sinon, première classe du cycle suivant
+    const ordreOrigine = cyclesOrdre[origine.cycle_id] ?? 0;
+    const next = classesCible.find((c) => (cyclesOrdre[c.cycle_id] ?? 0) > ordreOrigine);
+    return next?.id ?? null;
+  };
+
+  // Élèves inscrits ET appartenant à une classe avec au moins une note
+  const inscrits = useMemo(
+    () => eleves.filter(
+      (e) => (e.statut === "inscrit" || e.statut === "actif") && e.classe_id && classesAvecNotes.has(e.classe_id)
+    ),
+    [eleves, classesAvecNotes]
+  );
+
+  // Auto-initialiser décisions et destinations à partir des moyennes
+  useEffect(() => {
+    if (dataLoading || inscrits.length === 0) return;
+    setDecisions((prev) => {
+      const next = { ...prev };
+      inscrits.forEach((e) => {
+        if (next[e.id]) return; // ne pas écraser un choix manuel
+        const moy = moyennes[e.id];
+        next[e.id] = moy !== undefined && moy >= MOYENNE_PASSAGE ? "passage" : "redoublement";
+      });
+      return next;
+    });
+    setDestinations((prev) => {
+      const next = { ...prev };
+      inscrits.forEach((e) => {
+        if (next[e.id]) return;
+        const dest = getClasseSuivante(e.classe_id);
+        if (dest) next[e.id] = dest;
+      });
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataLoading, inscrits, moyennes, classesCible]);
+
   const filtered = inscrits.filter(
     (d) =>
       d.nom.toLowerCase().includes(q.toLowerCase()) ||
@@ -91,9 +196,10 @@ export default function StudentsReregistration() {
   };
 
   const legendItems: LegendItem[] = [
-    { label: "Passage", description: "L'élève monte de classe. Choisissez la classe de destination ; les frais de la nouvelle année sont générés automatiquement.", className: "bg-emerald-500/15 text-emerald-700 border-emerald-300" },
-    { label: "Redoublement", description: "L'élève reprend la même classe (moyenne insuffisante). Il reste dans sa classe actuelle pour la nouvelle année.", className: "bg-amber-500/15 text-amber-700 border-amber-300" },
-    { label: "Exclusion", description: "L'élève est exclu : statut passé à « exclu », plus de réinscription possible sans réactivation manuelle.", className: "bg-destructive/15 text-destructive border-destructive/40" },
+    { label: `Passage (≥ ${MOYENNE_PASSAGE}/20)`, description: "Par défaut si la moyenne annuelle est suffisante. L'élève monte automatiquement dans la classe suivante (même cycle, puis cycle supérieur). Les frais de la nouvelle année sont générés automatiquement.", className: "bg-emerald-500/15 text-emerald-700 border-emerald-300" },
+    { label: `Redoublement (< ${MOYENNE_PASSAGE}/20)`, description: "Par défaut si la moyenne est insuffisante. L'élève reprend la même classe pour la nouvelle année.", className: "bg-amber-500/15 text-amber-700 border-amber-300" },
+    { label: "Exclusion", description: "À choisir manuellement : statut passé à « exclu », plus de réinscription possible sans réactivation.", className: "bg-destructive/15 text-destructive border-destructive/40" },
+    { label: "Cas d'exception", description: "Vous pouvez toujours forcer manuellement la décision ou choisir une autre classe de destination si le conseil de classe en décide ainsi.", className: "bg-muted text-muted-foreground border-border" },
   ];
 
   const handleValidate = async () => {
@@ -101,7 +207,6 @@ export default function StudentsReregistration() {
     if (!anneeCible) { toast.error("Année cible introuvable"); return; }
     if (!ecoleId) return;
 
-    // Vérifier que chaque élève a une décision et, si passage, une classe destination
     const ids = Array.from(selected);
     for (const id of ids) {
       const dec = decisions[id] ?? "passage";
@@ -135,7 +240,7 @@ export default function StudentsReregistration() {
     setSaving(false);
   };
 
-  if (loading) {
+  if (loading || dataLoading) {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
   }
 
@@ -146,17 +251,14 @@ export default function StudentsReregistration() {
       description="Préparation du passage à l'année scolaire suivante : passage, redoublement ou exclusion."
       hideSave
     >
-      {/* Bandeau contextuel année académique */}
       {!nouvelleAnneeExiste ? (
         <Alert className="border-amber-300 bg-amber-50 text-amber-900">
           <AlertTriangle className="h-4 w-4 !text-amber-700" />
           <AlertTitle>Aucune année scolaire suivante n'a encore été créée</AlertTitle>
           <AlertDescription className="space-y-2">
             <p>
-              Année courante : <strong>{anneeActive?.libelle ?? "—"}</strong>. Vous pouvez préparer les décisions
-              dès maintenant, mais elles seront appliquées sur l'année <strong>en cours</strong> tant que la nouvelle
-              n'est pas enregistrée. <em>Créez d'abord la prochaine année scolaire</em> dans Paramètres → Années
-              scolaires pour réinscrire dans la bonne année.
+              Année courante : <strong>{anneeActive?.libelle ?? "—"}</strong>. Créez la prochaine année dans
+              Paramètres → Années scolaires pour réinscrire dans la bonne année.
             </p>
             <Button variant="outline" size="sm" asChild>
               <a href="/parametres/academique"><CalendarPlus className="h-4 w-4 mr-1" />Créer l'année suivante</a>
@@ -168,13 +270,13 @@ export default function StudentsReregistration() {
           <Info className="h-4 w-4 !text-emerald-700" />
           <AlertTitle>Nouvelle année prête : {anneeCible?.libelle}</AlertTitle>
           <AlertDescription>
-            Les élèves validés seront <strong>réinscrits sur l'année {anneeCible?.libelle}</strong> (passage ou redoublement).
-            Les exclusions restent rattachées à l'année courante {anneeActive?.libelle}.
+            Seules les classes ayant au moins une évaluation notée sont affichées. La décision et la classe de
+            destination sont pré-remplies automatiquement à partir de la moyenne annuelle (seuil de passage :
+            <strong> {MOYENNE_PASSAGE}/20</strong>).
           </AlertDescription>
         </Alert>
       )}
 
-      {/* Sélecteur d'année cible */}
       <div className="flex flex-wrap items-center gap-3 rounded-md border bg-muted/30 p-3">
         <span className="text-sm font-medium">Année cible de la réinscription :</span>
         <Select value={anneeCibleId ?? undefined} onValueChange={setAnneeCibleId}>
@@ -192,10 +294,8 @@ export default function StudentsReregistration() {
         )}
       </div>
 
-      {/* Légende */}
       <StatusLegend title="Comment fonctionnent les décisions ?" items={legendItems} defaultOpen />
 
-      {/* Barre d'actions */}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -227,6 +327,7 @@ export default function StudentsReregistration() {
               <TableHead>Matricule</TableHead>
               <TableHead>Élève</TableHead>
               <TableHead>Classe actuelle</TableHead>
+              <TableHead>Moyenne</TableHead>
               <TableHead>Décision</TableHead>
               <TableHead>Classe de destination</TableHead>
             </TableRow>
@@ -235,6 +336,7 @@ export default function StudentsReregistration() {
             {filtered.map((d) => {
               const dec = decisions[d.id] ?? "passage";
               const isSel = selected.has(d.id);
+              const moy = moyennes[d.id];
               return (
                 <TableRow key={d.id} className={isSel ? "bg-accent/10" : ""}>
                   <TableCell>
@@ -243,6 +345,15 @@ export default function StudentsReregistration() {
                   <TableCell className="font-mono text-xs text-muted-foreground">{d.matricule}</TableCell>
                   <TableCell className="font-medium">{d.nom} {d.prenom}</TableCell>
                   <TableCell><Badge variant="secondary">{d.classe_nom ?? "Non affecté"}</Badge></TableCell>
+                  <TableCell>
+                    {moy !== undefined ? (
+                      <Badge variant="outline" className={moy >= MOYENNE_PASSAGE ? "bg-emerald-500/10 text-emerald-700 border-emerald-300" : "bg-amber-500/10 text-amber-700 border-amber-300"}>
+                        {moy.toFixed(2)}/20
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Select value={dec} onValueChange={(v) => setDecision(d.id, v as Decision)}>
                       <SelectTrigger className="w-[150px] h-8"><SelectValue /></SelectTrigger>
@@ -259,11 +370,11 @@ export default function StudentsReregistration() {
                         value={destinations[d.id] ?? ""}
                         onValueChange={(v) => setDestination(d.id, v)}
                       >
-                        <SelectTrigger className="w-[180px] h-8">
+                        <SelectTrigger className="w-[200px] h-8">
                           <SelectValue placeholder="Choisir la classe..." />
                         </SelectTrigger>
                         <SelectContent>
-                          {classes.map((c) => (
+                          {classesCible.map((c) => (
                             <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
                           ))}
                         </SelectContent>
@@ -279,7 +390,9 @@ export default function StudentsReregistration() {
             })}
             {filtered.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Aucun élève trouvé.</TableCell>
+                <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                  Aucun élève à réinscrire : il faut d'abord des évaluations notées dans les classes de l'année courante.
+                </TableCell>
               </TableRow>
             )}
           </TableBody>
