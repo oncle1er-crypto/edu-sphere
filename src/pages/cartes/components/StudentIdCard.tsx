@@ -219,13 +219,13 @@ export function StudentIdCardFront({ data, scale = 1, className }: SideProps) {
           }}
         >
           {data.ecoleLogo ? (
-            <img src={data.ecoleLogo} alt="" className="w-full h-full object-cover" />
+            <img src={data.ecoleLogo} alt="" className="w-full h-full object-contain p-0.5" crossOrigin="anonymous" />
           ) : (
             <div
-              className="text-[6px] font-bold text-center px-1 leading-tight"
+              className="text-[5.5px] font-bold text-center px-1 leading-tight"
               style={{ color: BORDEAUX }}
             >
-              COMPLEXE<br />SCOLAIRE
+              LA<br />PROVIDENCE
             </div>
           )}
         </div>
@@ -397,11 +397,11 @@ export function StudentIdCardBack({ data, scale = 1, className }: SideProps) {
       </div>
 
       {/* Section INFORMATIONS */}
-      <div className="absolute left-3 right-3" style={{ top: 64 }}>
+      <div className="absolute left-3 right-3" style={{ top: 58 }}>
         <SectionTitle label="INFORMATIONS" />
-        <div className="mt-1 space-y-0.5">
-          <KV label="Date de naissance" value={fmtDate(data.dateNaissance)} />
-          <KV label="Lieu de naissance" value={data.lieuNaissance ?? "—"} />
+        <div className="mt-1.5 space-y-1">
+          <KV label="Né(e) le" value={fmtDate(data.dateNaissance)} />
+          <KV label="Né(e) à" value={data.lieuNaissance ?? "—"} />
           <KV label="Sexe" value={data.sexe ?? "—"} />
           <KV label="Adresse" value={data.adresse ?? "—"} />
         </div>
@@ -409,32 +409,32 @@ export function StudentIdCardBack({ data, scale = 1, className }: SideProps) {
 
       {/* Section RÈGLEMENT */}
       <div className="absolute left-3 right-3" style={{ top: 148 }}>
-        <SectionTitle label="RÈGLEMENT INTÉRIEUR" />
+        <SectionTitle label="RÈGLEMENT" />
         <p
           className="leading-snug mt-1"
-          style={{ color: "#222", fontSize: 7 }}
+          style={{ color: "#222", fontSize: 6.5 }}
         >
           Cette carte est strictement personnelle et incessible. Elle doit être
           présentée à toute demande et restituée en fin de scolarité.
         </p>
         <p
           className="leading-snug mt-1 font-semibold"
-          style={{ color: BORDEAUX, fontSize: 7 }}
+          style={{ color: BORDEAUX, fontSize: 6.5 }}
         >
-          En cas de perte, veuillez en informer immédiatement l'administration.
+          En cas de perte, prévenir l'administration immédiatement.
         </p>
       </div>
 
       {/* Séparateur ornement */}
       <div
         className="absolute left-0 right-0 flex justify-center"
-        style={{ top: 232 }}
+        style={{ top: 212 }}
       >
         <GoldOrnament width={80} />
       </div>
 
       {/* QR code + signature */}
-      <div className="absolute left-3 right-3 flex items-end justify-between" style={{ top: 240 }}>
+      <div className="absolute left-3 right-3 flex items-end justify-between" style={{ top: 220 }}>
         <div
           className="rounded"
           style={{
@@ -443,34 +443,35 @@ export function StudentIdCardBack({ data, scale = 1, className }: SideProps) {
             background: "#fff",
           }}
         >
-          <StudentCardQRCode value={qrUrl} size={48} />
+          <StudentCardQRCode value={qrUrl} size={44} />
         </div>
         <div className="text-right">
           {data.directeurSignature ? (
             <img
               src={data.directeurSignature}
               alt=""
-              style={{ height: 22, marginLeft: "auto" }}
+              style={{ height: 20, marginLeft: "auto" }}
+              crossOrigin="anonymous"
             />
           ) : (
             <div
-              style={{ height: 22, width: 60, marginLeft: "auto" }}
+              style={{ height: 20, width: 60, marginLeft: "auto" }}
               className="italic flex items-end justify-end"
             >
-              <span style={{ fontFamily: "'Brush Script MT', cursive", color: "#1d3a8a", fontSize: 14 }}>
+              <span style={{ fontFamily: "'Brush Script MT', cursive", color: "#1d3a8a", fontSize: 13 }}>
                 {data.directeurNom?.split(" ").pop() ?? "Direction"}
               </span>
             </div>
           )}
-          <p style={{ fontSize: 7, color: "#1a1a1a", fontFamily: "Georgia, serif" }}>Le Directeur</p>
-          <p style={{ fontSize: 8, fontWeight: 700, color: "#1a1a1a", fontFamily: "Georgia, serif" }}>
+          <p style={{ fontSize: 6.5, color: "#1a1a1a", fontFamily: "Georgia, serif" }}>Le Directeur</p>
+          <p style={{ fontSize: 7.5, fontWeight: 700, color: "#1a1a1a", fontFamily: "Georgia, serif" }}>
             {data.directeurNom ?? "—"}
           </p>
         </div>
       </div>
 
       {/* Bandeau coordonnées */}
-      <BottomBand height={50}>
+      <BottomBand height={48}>
         <div className="w-full space-y-0.5 leading-tight" style={{ color: CREAM }}>
           {data.ecoleAdresse && (
             <div className="flex items-center gap-1">
@@ -515,11 +516,11 @@ function SectionTitle({ label }: { label: string }) {
 
 function KV({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <p className="font-bold shrink-0" style={{ color: "#1a1a1a", fontSize: 7.5, width: 64 }}>
+    <div className="flex gap-1.5 items-baseline">
+      <p className="font-bold shrink-0" style={{ color: "#1a1a1a", fontSize: 7, width: 38 }}>
         {label} :
       </p>
-      <p className="truncate" style={{ color: "#1a1a1a", fontSize: 7.5, fontFamily: "Georgia, serif" }}>
+      <p className="truncate flex-1" style={{ color: "#1a1a1a", fontSize: 7.5, fontFamily: "Georgia, serif" }}>
         {value}
       </p>
     </div>

@@ -39,14 +39,17 @@ export function buildStudentCardData(
     adresse: eleve?.adresse ?? "",
 
     ecoleNom: ecole?.nom ?? "Complexe Scolaire La Providence de Don Orione",
-    ecoleLogo: (ecole as any)?.logo ?? (ecole as any)?.logo_url ?? undefined,
-    ecoleAdresse: ecole?.adresse,
-    ecoleTelephone: ecole?.telephone,
-    ecoleSite: (ecole as any)?.site_web ?? (ecole as any)?.email ?? undefined,
+    ecoleLogo:
+      (ecole as any)?.logo ??
+      (ecole as any)?.logo_url ??
+      "/logo-gsp.png",
+    ecoleAdresse: ecole?.adresse ?? "Anono, Cocody — Abidjan, Côte d'Ivoire",
+    ecoleTelephone: ecole?.telephone ?? "+225 27 22 00 00 00",
+    ecoleSite: (ecole as any)?.site_web ?? ecole?.email ?? "contact@providence-donorione.ci",
     devise: "Instruire l'esprit, former le cœur.",
     deviseLatin: "FOI • SAVOIR • EXCELLENCE",
 
-    directeurNom: ecole?.directeur ?? "M. Diop",
+    directeurNom: ecole?.directeur ?? "Le Directeur",
     directeurSignature: (ecole as any)?.signature_directeur ?? undefined,
 
     verificationToken: String(eleve?.id ?? matricule),

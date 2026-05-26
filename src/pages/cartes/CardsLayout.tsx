@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
-  LayoutDashboard, Plus, List, Printer, RefreshCw, ShieldAlert, Palette, Settings2,
+  LayoutDashboard, Plus, List, Printer, RefreshCw, ShieldAlert, Palette, Settings2, Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ const sections = [
   { to: "liste", label: "Toutes les cartes", icon: List, group: "Vue d'ensemble" },
 
   { to: "emission", label: "Émettre des cartes", icon: Plus, group: "Production" },
+  { to: "par-classe", label: "Générer par classe", icon: Users, group: "Production" },
   { to: "impression", label: "File d'impression", icon: Printer, group: "Production" },
   { to: "renouvellement", label: "Renouvellement", icon: RefreshCw, group: "Production" },
 
