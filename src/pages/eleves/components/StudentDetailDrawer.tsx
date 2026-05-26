@@ -287,9 +287,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
               </div>
             </div>
             {!editing && !loading && (
-              <Button variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={startEditing}>
-                <Pencil className="h-3.5 w-3.5" /> Modifier
-              </Button>
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={startEditing}>
+                  <Pencil className="h-3.5 w-3.5" /> Modifier
+                </Button>
+                <Button variant="default" size="sm" className="gap-1.5 bg-[#6E1A2C] hover:bg-[#561220] text-white" onClick={() => setCardPreviewOpen(true)}>
+                  <IdCard className="h-3.5 w-3.5" /> Carte scolaire
+                </Button>
+              </div>
             )}
           </div>
         </SheetHeader>
