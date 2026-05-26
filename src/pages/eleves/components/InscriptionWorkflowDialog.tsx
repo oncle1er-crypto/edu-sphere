@@ -145,30 +145,83 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     await fetchData();
   };
 
+  const notifyParentsPayment = async (montant: number) => {
+    try {
+      const { data: links } = await supabase
+        .from("eleve_parents")
+        .select("parents(telephone, telephone2)")
+        .eq("eleve_id", eleve.id);
+      const phones: string[] = [];
+      (links ?? []).forEach((l: any) => {
+        if (l.parents?.telephone) phones.push(l.parents.telephone);
+        if (l.parents?.telephone2) phones.push(l.parents.telephone2);
+      });
+      if (phones.length === 0 || !ecoleId) return;
+      const message = `Bonjour, nous accusons reception du 1er paiement de ${montant.toLocaleString("fr-FR")} FCFA pour ${eleve.nom} ${eleve.prenom} (mat. ${eleve.matricule}). Merci.`;
+      await supabase.functions.invoke("send-sms", {
+        body: { ecole_id: ecoleId, destinataires: phones, message },
+      });
+    } catch {/* silencieux */}
+  };
+
   const handlePayInline = async () => {
-    if (!nextTranche || !ecoleId) return;
+    if (!ecoleId) return;
     const montant = Number(payMontant) || 0;
-    const reste = Number(nextTranche.montant) - Number(nextTranche.paye);
-    if (montant <= 0 || montant > reste) {
+    if (montant <= 0) {
       toast.error("Montant invalide");
       return;
     }
+
     setPayLoading(true);
+
+    // 1) S'assurer qu'une tranche existe (sinon, générer l'échéancier)
+    let tranche = nextTranche;
+    if (!tranche) {
+      const { error: genErr } = await supabase.rpc("generer_tranches_eleve" as any, { _eleve_id: eleve.id });
+      if (genErr) {
+        setPayLoading(false);
+        toast.error("Génération de l'échéancier impossible", { description: genErr.message + " — vérifiez les frais de scolarité du cycle." });
+        return;
+      }
+      const { data: trs } = await supabase
+        .from("tranches")
+        .select("id,numero,label,montant,paye,echeance,statut")
+        .eq("eleve_id", eleve.id)
+        .order("numero");
+      const rows = (trs as any[]) ?? [];
+      setTranches(rows);
+      tranche = rows.find((t) => Number(t.paye) < Number(t.montant)) as any;
+      if (!tranche) {
+        setPayLoading(false);
+        toast.error("Aucune tranche disponible après génération. Configurez les frais de scolarité.");
+        return;
+      }
+    }
+
+    const reste = Number(tranche.montant) - Number(tranche.paye);
+    const montantFinal = Math.min(montant, reste);
+
+    // 2) Encaisser
     const { error } = await supabase.rpc("enregistrer_paiement", {
       _ecole_id: ecoleId,
       _eleve_id: eleve.id,
-      _tranche_id: nextTranche.id,
-      _montant: montant,
+      _tranche_id: tranche.id,
+      _montant: montantFinal,
       _mode: payMode,
       _reference: payRef || null,
       _recu_par: user?.id ?? null,
     });
-    setPayLoading(false);
     if (error) {
+      setPayLoading(false);
       toast.error("Encaissement refusé", { description: error.message });
       return;
     }
-    toast.success(`Encaissement enregistré (${montant.toLocaleString("fr-FR")} FCFA)`);
+
+    // 3) Notifier les parents
+    await notifyParentsPayment(montantFinal);
+
+    setPayLoading(false);
+    toast.success(`1er paiement enregistré (${montantFinal.toLocaleString("fr-FR")} FCFA) — SMS envoyé aux parents`);
     setPayRef("");
     onUpdated?.();
     fetchData();
