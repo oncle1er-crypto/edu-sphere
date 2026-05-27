@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { Progress } from "@/components/ui/progress";
 import { ClipboardCheck, UserX, CalendarClock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
