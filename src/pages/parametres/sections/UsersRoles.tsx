@@ -59,6 +59,34 @@ export default function UsersRoles() {
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [resetMfaUser, setResetMfaUser] = useState<{ id: string; name: string } | null>(null);
+  const [resetMotif, setResetMotif] = useState("");
+  const [resettingMfa, setResettingMfa] = useState(false);
+
+  const handleResetMfa = async () => {
+    if (!resetMfaUser || !ecoleId) return;
+    if (resetMotif.trim().length < 5) {
+      toast.error("Motif obligatoire (5 caractères min.)");
+      return;
+    }
+    setResettingMfa(true);
+    try {
+      const { error } = await supabase.rpc("admin_reset_user_mfa", {
+        _target_user_id: resetMfaUser.id,
+        _ecole_id: ecoleId,
+        _motif: resetMotif.trim(),
+      });
+      if (error) throw error;
+      toast.success(`MFA réinitialisé pour ${resetMfaUser.name}`);
+      setResetMfaUser(null);
+      setResetMotif("");
+    } catch (e: any) {
+      toast.error(e.message ?? "Échec de la réinitialisation");
+    } finally {
+      setResettingMfa(false);
+    }
+  };
+
 
   const filtered = users.filter((u) =>
     u.full_name.toLowerCase().includes(search.toLowerCase()) ||
