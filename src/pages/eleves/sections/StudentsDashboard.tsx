@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
@@ -124,16 +124,8 @@ export default function StudentsDashboard() {
         hideSave
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((k) => (
-            <Card key={k.label} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">{k.label}</span>
-                  <k.icon className={`h-4 w-4 ${k.color}`} />
-                </div>
-                <p className="text-2xl font-extrabold font-display">{k.value}</p>
-              </CardContent>
-            </Card>
+          {kpis.map((k, i) => (
+            <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
           ))}
         </div>
       </SettingsSection>
