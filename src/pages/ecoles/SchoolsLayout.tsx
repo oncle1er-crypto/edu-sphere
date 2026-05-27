@@ -31,7 +31,7 @@ export default function SchoolsLayout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <aside className="bg-card border rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
+        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
           {groups.map((group) => (
             <div key={group} className="mb-4 last:mb-0">
               <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -44,10 +44,10 @@ export default function SchoolsLayout() {
                     to={s.to}
                     className={({ isActive }) =>
                       cn(
-                        "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                        "menu-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-foreground hover:bg-muted",
+                          ? "is-active"
+                          : "text-foreground",
                       )
                     }
                   >
