@@ -1,4 +1,5 @@
-import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound } from "lucide-react";
+import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal } from "lucide-react";
+import { PermissionsMatrixDialog } from "@/components/security/PermissionsMatrixDialog";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,7 @@ export default function UsersRoles() {
   const [resetMfaUser, setResetMfaUser] = useState<{ id: string; name: string } | null>(null);
   const [resetMotif, setResetMotif] = useState("");
   const [resettingMfa, setResettingMfa] = useState(false);
+  const [permsUser, setPermsUser] = useState<{ id: string; name: string } | null>(null);
 
   const handleResetMfa = async () => {
     if (!resetMfaUser || !ecoleId) return;
@@ -322,7 +324,15 @@ export default function UsersRoles() {
                         })}
                       </div>
                     </div>
-                    <div className="pt-2 border-t flex justify-end">
+                    <div className="pt-2 border-t flex justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPermsUser({ id: u.user_id, name: u.full_name })}
+                      >
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        Permissions détaillées
+                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
@@ -383,6 +393,15 @@ export default function UsersRoles() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <PermissionsMatrixDialog
+        open={!!permsUser}
+        onOpenChange={(o) => !o && setPermsUser(null)}
+        userId={permsUser?.id ?? null}
+        userName={permsUser?.name}
+      />
+
+
 
 
 
