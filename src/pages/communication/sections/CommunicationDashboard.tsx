@@ -1,6 +1,7 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { LayoutDashboard, Mail, Smartphone, Bell, MessageSquare } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 
 const kpis = [
   { label: "Emails envoyés (mois)", value: "12 480", icon: Mail, color: "text-primary" },
