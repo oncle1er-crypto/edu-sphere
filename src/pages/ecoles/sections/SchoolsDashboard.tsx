@@ -29,7 +29,6 @@ export default function SchoolsDashboard() {
       hideSave
     >
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {kpis.map((k) => (
         {kpis.map((k, i) => (
           <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
         ))}
