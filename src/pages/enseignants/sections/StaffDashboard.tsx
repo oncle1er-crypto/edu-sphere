@@ -39,16 +39,22 @@ export default function StaffDashboard() {
         hideSave
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((k) => (
-            <Card key={k.label} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">{k.label}</span>
-                  <k.icon className={`h-4 w-4 ${k.color}`} />
-                </div>
-                <p className="text-2xl font-extrabold font-display">{k.value}</p>
-              </CardContent>
-            </Card>
+          {kpis.map((k, i) => (
+            <motion.div
+              key={k.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className={`stat-card ${k.variant} p-4`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">{k.label}</span>
+                <span className="stat-icon h-8 w-8">
+                  <k.icon className={`h-4 w-4 ${k.iconColor}`} />
+                </span>
+              </div>
+              <p className="text-2xl font-extrabold font-display text-card-foreground">{k.value}</p>
+            </motion.div>
           ))}
         </div>
       </SettingsSection>
