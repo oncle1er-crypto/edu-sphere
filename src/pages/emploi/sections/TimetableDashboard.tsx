@@ -1,6 +1,7 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { LayoutDashboard, CalendarDays, AlertTriangle, Users, DoorOpen } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 
 const kpis = [
   { label: "Classes planifiées", value: "42 / 45", icon: CalendarDays, color: "text-primary" },
