@@ -34,7 +34,7 @@ export default function CanteenLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-16 z-30 rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[var(--shadow-card)] px-4 py-3">
+      <div className="sticky top-[7.25rem] z-20 rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[var(--shadow-card)] px-4 py-3">
         <h1 className="text-2xl md:text-3xl font-extrabold font-display text-primary">
           Cantine
         </h1>
