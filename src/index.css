@@ -62,7 +62,14 @@
 
     --shadow-soft: 0 4px 16px -4px hsl(345 65% 28% / 0.10);
     --shadow-card: 0 2px 8px -2px hsl(345 65% 28% / 0.08);
+    --shadow-glow: 0 10px 30px -10px hsl(345 65% 28% / 0.35);
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --gradient-primary: linear-gradient(135deg, hsl(345 65% 28%) 0%, hsl(345 70% 38%) 100%);
+    --gradient-primary-soft: linear-gradient(135deg, hsl(345 65% 28% / 0.08) 0%, hsl(50 95% 60% / 0.12) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(50 95% 60%) 0%, hsl(38 95% 58%) 100%);
+    --gradient-surface: linear-gradient(135deg, hsl(40 35% 99%) 0%, hsl(45 50% 96%) 100%);
+    --gradient-hero: radial-gradient(1200px 400px at 0% 0%, hsl(345 65% 28% / 0.06), transparent 60%), radial-gradient(800px 300px at 100% 100%, hsl(50 95% 60% / 0.10), transparent 60%);
 
     --font-display: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Inter', sans-serif;
@@ -128,5 +135,61 @@
 @layer utilities {
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+  .bg-gradient-primary { background: var(--gradient-primary); }
+  .bg-gradient-primary-soft { background: var(--gradient-primary-soft); }
+  .bg-gradient-accent { background: var(--gradient-accent); }
+  .bg-gradient-surface { background: var(--gradient-surface); }
+  .bg-gradient-hero { background: var(--gradient-hero); }
+  .shadow-glow { box-shadow: var(--shadow-glow); }
+
+  /* Animated shimmering border for module cards (GPU-optimized) */
+  .module-card {
+    position: relative;
+    isolation: isolate;
+    will-change: transform;
+  }
+  .module-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(var(--accent) / 0) 0%, hsl(var(--accent) / 0.6) 50%, hsl(var(--primary) / 0) 100%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+  }
+  .module-card:hover::before { opacity: 1; }
+  .module-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: var(--gradient-primary-soft);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: -1;
+  }
+  .module-card:hover::after { opacity: 1; }
+
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+  }
+  .animate-float-slow { animation: float-slow 4s ease-in-out infinite; }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  .nav-active-glow {
+    background: var(--gradient-primary);
+    background-size: 200% 100%;
+    animation: shimmer 6s linear infinite;
   }
 }
