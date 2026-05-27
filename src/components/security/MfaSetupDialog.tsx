@@ -16,7 +16,8 @@ import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { toast } from "sonner";
 
 type Method = "choose" | "totp" | "sms";
-type Step = "enroll" | "verify" | "backup" | "done";
+type Step = "enroll" | "verify" | "activate" | "backup" | "done";
+
 
 interface Props {
   open: boolean;
