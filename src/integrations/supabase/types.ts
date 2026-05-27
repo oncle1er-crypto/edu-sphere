@@ -3431,6 +3431,113 @@ export type Database = {
           },
         ]
       }
+      remplacements: {
+        Row: {
+          absent_enseignant_id: string
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          creneau_id: string | null
+          date: string
+          ecole_id: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          matiere_id: string | null
+          motif: string | null
+          notes: string | null
+          remplacant_enseignant_id: string | null
+          statut: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at: string
+        }
+        Insert: {
+          absent_enseignant_id: string
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          date: string
+          ecole_id: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          motif?: string | null
+          notes?: string | null
+          remplacant_enseignant_id?: string | null
+          statut?: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at?: string
+        }
+        Update: {
+          absent_enseignant_id?: string
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          date?: string
+          ecole_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          motif?: string | null
+          notes?: string | null
+          remplacant_enseignant_id?: string | null
+          statut?: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remplacements_absent_enseignant_id_fkey"
+            columns: ["absent_enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_creneau_id_fkey"
+            columns: ["creneau_id"]
+            isOneToOne: false
+            referencedRelation: "creneaux_emploi_temps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_remplacant_enseignant_id_fkey"
+            columns: ["remplacant_enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       retards: {
         Row: {
           annee_id: string | null
@@ -4284,6 +4391,7 @@ export type Database = {
       periode_statut: "a_venir" | "en_cours" | "verrouillee"
       presence_statut: "present" | "absent" | "retard" | "excuse"
       relance_type: "sms" | "email" | "appel" | "courrier"
+      remplacement_statut: "a_pourvoir" | "en_attente" | "confirme" | "annule"
       sexe_type: "M" | "F"
       tranche_statut: "payee" | "partielle" | "due" | "retard"
     }
@@ -4442,6 +4550,7 @@ export const Constants = {
       periode_statut: ["a_venir", "en_cours", "verrouillee"],
       presence_statut: ["present", "absent", "retard", "excuse"],
       relance_type: ["sms", "email", "appel", "courrier"],
+      remplacement_statut: ["a_pourvoir", "en_attente", "confirme", "annule"],
       sexe_type: ["M", "F"],
       tranche_statut: ["payee", "partielle", "due", "retard"],
     },
