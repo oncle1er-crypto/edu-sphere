@@ -67,6 +67,44 @@ export default function Bulletins() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
 
+  // ---- Audit / overrides / verrouillage / envoi
+  type AuditRow = {
+    id: string; eleve_id: string; locked: boolean; version: number;
+    appreciation_generale: string | null; decision_conseil: string | null; decision_detail: string | null;
+    sent_at: string | null;
+  };
+  const [auditMap, setAuditMap] = useState<Record<string, AuditRow>>({});
+  const [overrideRow, setOverrideRow] = useState<BulletinRow | null>(null);
+  const [sendRow, setSendRow] = useState<BulletinRow | null>(null);
+  const [sendPdfBlob, setSendPdfBlob] = useState<Blob | null>(null);
+  const [lockingId, setLockingId] = useState<string | null>(null);
+
+  const eleveIds = useMemo(() => rows.map((r) => r.eleve_id), [rows]);
+  const { statusMap: scolariteStatus } = useBulletinScolariteStatus(ecoleId, eleveIds);
+
+  // Charge la dernière version d'audit par élève pour la période/classe
+  const refreshAudit = useCallback(async () => {
+    if (!ecoleId || !selectedClasse || !selectedPeriode || eleveIds.length === 0) {
+      setAuditMap({}); return;
+    }
+    const { data } = await supabase
+      .from("bulletins_audit")
+      .select("id, eleve_id, locked, version, appreciation_generale, decision_conseil, decision_detail, sent_at")
+      .eq("ecole_id", ecoleId)
+      .eq("periode_id", selectedPeriode)
+      .eq("classe_id", selectedClasse)
+      .in("eleve_id", eleveIds)
+      .order("version", { ascending: false });
+    const map: Record<string, AuditRow> = {};
+    for (const r of (data ?? []) as AuditRow[]) {
+      if (!map[r.eleve_id]) map[r.eleve_id] = r; // garde la plus récente version
+    }
+    setAuditMap(map);
+  }, [ecoleId, selectedClasse, selectedPeriode, eleveIds.join("|")]); // eslint-disable-line
+
+  useEffect(() => { refreshAudit(); }, [refreshAudit]);
+
+
   // Charger périodes de l'année active
   useEffect(() => {
     (async () => {
