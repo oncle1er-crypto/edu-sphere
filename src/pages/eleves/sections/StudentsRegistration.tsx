@@ -98,7 +98,9 @@ export default function StudentsRegistration() {
       annee_id: anneeId,
       ecole_id: ecoleId!,
       statut: "pre_inscrit",
-    });
+      matricule_national: form.matricule_national || null,
+      numero_inscription_en_ligne: form.numero_inscription_en_ligne || null,
+    } as any);
 
     // Créer le parent/tuteur si renseigné
     if (eleve && parent.nom && parent.telephone && ecoleId) {
