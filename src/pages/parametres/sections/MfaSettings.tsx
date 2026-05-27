@@ -1,0 +1,147 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { ShieldCheck, ShieldOff, Smartphone, KeyRound, RefreshCw, Trash2, Loader2 } from "lucide-react";
+import { SettingsSection } from "@/components/settings/SettingsSection";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useMfa } from "@/hooks/useMfa";
+import { useAuth } from "@/context/AuthContext";
+import MfaSetupDialog from "@/components/security/MfaSetupDialog";
+import { logSecurityEvent } from "@/hooks/useSecurityAudit";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
+export default function MfaSettings() {
+  const { user } = useAuth();
+  const { factors, isEnrolled, loading, unenroll, generateBackupCodes, refresh } = useMfa();
+  const [setupOpen, setSetupOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [newCodes, setNewCodes] = useState<string[] | null>(null);
+  const [unenrolling, setUnenrolling] = useState(false);
+
+  const verified = factors.find((f) => f.status === "verified");
+
+  const handleUnenroll = async () => {
+    if (!verified) return;
+    setUnenrolling(true);
+    try {
+      await unenroll(verified.id);
+      await supabase.from("mfa_backup_codes").delete().eq("user_id", user!.id);
+      await logSecurityEvent("mfa_disabled", "critical", { factor_id: verified.id });
+      toast.success("MFA désactivé");
+      await refresh();
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setUnenrolling(false);
+    }
+  };
+
+  const regenerate = async () => {
+    if (!user?.id) return;
+    setRegenerating(true);
+    try {
+      const codes = await generateBackupCodes(user.id);
+      setNewCodes(codes);
+      await logSecurityEvent("mfa_backup_regenerated", "warning");
+      toast.success("Nouveaux codes générés");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <SettingsSection
+        title="Authentification à deux facteurs (MFA)"
+        description="Ajoutez une couche de sécurité supplémentaire en exigeant un code à usage unique en plus de votre mot de passe."
+        icon={<ShieldCheck className="h-5 w-5" />}
+        hideSave
+      >
+        {loading ? (
+          <div className="flex items-center gap-2 text-muted-foreground text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
+          </div>
+        ) : isEnrolled && verified ? (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3">
+              <ShieldCheck className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">MFA activé</p>
+                  <Badge variant="secondary" className="text-xs">TOTP</Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Appareil : {verified.friendly_name || "Authenticator"} · activé le{" "}
+                  {new Date(verified.created_at).toLocaleDateString("fr-FR")}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={regenerate} disabled={regenerating}>
+                {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Régénérer les codes de secours
+              </Button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10">
+                    <ShieldOff className="h-4 w-4" /> Désactiver MFA
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Désactiver l'authentification à deux facteurs ?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Votre compte sera moins protégé. Si votre rôle exige le MFA, vous serez forcé de le réactiver à la prochaine connexion.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuler</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleUnenroll} disabled={unenrolling}>
+                      {unenrolling && <Loader2 className="h-4 w-4 animate-spin" />} Désactiver
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+
+            {newCodes && (
+              <div className="rounded-xl border-2 border-destructive/30 bg-destructive/5 p-4 space-y-3">
+                <p className="font-bold text-destructive">⚠️ Nouveaux codes — affichés une seule fois</p>
+                <div className="grid grid-cols-2 gap-2 font-mono text-sm">
+                  {newCodes.map((c) => <div key={c} className="text-center p-1 bg-background rounded">{c}</div>)}
+                </div>
+                <Button size="sm" variant="outline" onClick={() => setNewCodes(null)}>J'ai sauvegardé</Button>
+              </div>
+            )}
+          </motion.div>
+        ) : (
+          <div className="space-y-4">
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4 flex items-start gap-3">
+              <Smartphone className="h-5 w-5 text-amber-600 mt-0.5" />
+              <div className="flex-1 text-sm">
+                <p className="font-medium">MFA non activé</p>
+                <p className="text-muted-foreground mt-1">
+                  Recommandé pour tous les comptes administratifs (admin, directeur, comptable, superviseur).
+                </p>
+              </div>
+            </div>
+            <Button onClick={() => setSetupOpen(true)}>
+              <KeyRound className="h-4 w-4" /> Activer maintenant
+            </Button>
+          </div>
+        )}
+      </SettingsSection>
+
+      <MfaSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onSuccess={refresh} />
+    </div>
+  );
+}
