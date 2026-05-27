@@ -45,17 +45,8 @@ export default function SubjectsDashboard() {
     <div className="space-y-6">
       <SettingsSection icon={<LayoutDashboard className="h-5 w-5" />} title="Vue d'ensemble" description="Synthèse des matières enseignées." hideSave>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {kpis.map((k) => (
-            <Card key={k.label} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">{k.label}</span>
-                  <k.icon className={`h-4 w-4 ${k.color}`} />
-                </div>
-                <p className="text-2xl font-extrabold font-display">{k.value}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">{k.trend}</p>
-              </CardContent>
-            </Card>
+          {kpis.map((k, i) => (
+            <KpiCard key={k.label} label={k.label} value={k.value} sub={k.trend} icon={k.icon} index={i} />
           ))}
         </div>
       </SettingsSection>
