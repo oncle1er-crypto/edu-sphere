@@ -467,6 +467,14 @@ const App = () => (
               <Route path="configuration" element={<SubjectsConfig />} />
             </Route>
             
+            <Route path="/vie-scolaire" element={<VieScolaireLayout />}>
+              <Route path="tableau" element={<VieScolaireDashboard />} />
+              <Route path="billets" element={<VieScolaireBillets />} />
+              <Route path="certificats" element={<VieScolaireCertificats />} />
+              <Route path="presences" element={<VieScolairePresences />} />
+              <Route path="discipline" element={<VieScolaireDiscipline />} />
+              <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
+            </Route>
             <Route path="/utilisateurs" element={<UsersRoles />} />
             <Route path="/parametres" element={<SettingsLayout />}>
               <Route path="ecole" element={<SchoolProfile />} />
