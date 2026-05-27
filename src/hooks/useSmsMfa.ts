@@ -5,6 +5,9 @@ export type SmsFactor = {
   id: string;
   phone: string;
   verified: boolean;
+  is_active: boolean;
+  phone_verified_at: string | null;
+  activated_at: string | null;
   friendly_name: string | null;
   last_used_at: string | null;
   created_at: string;
@@ -47,10 +50,42 @@ export function useSmsMfa() {
     [refresh]
   );
 
+  /** Active le facteur SMS comme second facteur (numéro déjà vérifié). */
+  const activate = useCallback(async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("Non authentifié");
+    const { error } = await supabase
+      .from("mfa_sms_factors")
+      .update({ is_active: true, activated_at: new Date().toISOString() })
+      .eq("user_id", u.user.id)
+      .eq("verified", true);
+    if (error) throw error;
+    await refresh();
+  }, [refresh]);
+
+  /** Désactive le facteur SMS sans supprimer la vérification du numéro. */
+  const deactivate = useCallback(async () => {
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) throw new Error("Non authentifié");
+    const { error } = await supabase
+      .from("mfa_sms_factors")
+      .update({ is_active: false, activated_at: null })
+      .eq("user_id", u.user.id);
+    if (error) throw error;
+    await refresh();
+  }, [refresh]);
+
   const remove = useCallback(async () => {
     await supabase.from("mfa_sms_factors").delete().neq("id", "00000000-0000-0000-0000-000000000000");
     await refresh();
   }, [refresh]);
 
-  return { factor, loading, refresh, sendOtp, verifyOtp, remove, isEnrolled: !!factor?.verified };
+  return {
+    factor, loading, refresh,
+    sendOtp, verifyOtp,
+    activate, deactivate, remove,
+    isPhoneVerified: !!factor?.verified,
+    isEnrolled: !!factor?.verified && !!factor?.is_active,
+  };
 }
+
