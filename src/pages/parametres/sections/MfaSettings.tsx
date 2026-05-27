@@ -25,23 +25,46 @@ export default function MfaSettings() {
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
   const [unenrolling, setUnenrolling] = useState(false);
   const [removingSms, setRemovingSms] = useState(false);
+  const [activatingSms, setActivatingSms] = useState(false);
 
   const verified = factors.find((f) => f.status === "verified");
   const smsFactor = smsMfa.factor;
-  const anyEnrolled = isEnrolled || smsMfa.isEnrolled;
+  const anyEnrolled = isEnrolled || smsMfa.isEnrolled || smsMfa.isPhoneVerified;
+
+  const handleActivateSms = async () => {
+    setActivatingSms(true);
+    try {
+      await smsMfa.activate();
+      await logSecurityEvent("mfa_sms_enabled", "info");
+      toast.success("MFA SMS activé");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setActivatingSms(false); }
+  };
+
+  const handleDeactivateSms = async () => {
+    try {
+      await smsMfa.deactivate();
+      await logSecurityEvent("mfa_sms_disabled", "warning");
+      toast.success("MFA SMS désactivé (le numéro reste vérifié)");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
 
   const handleRemoveSms = async () => {
     setRemovingSms(true);
     try {
       await smsMfa.remove();
-      await logSecurityEvent("mfa_sms_disabled", "critical");
-      toast.success("Facteur SMS supprimé");
+      await logSecurityEvent("mfa_sms_removed", "critical");
+      toast.success("Numéro et facteur SMS supprimés");
     } catch (e: any) {
       toast.error(e.message);
     } finally { setRemovingSms(false); }
   };
 
   const maskPhone = (p: string) => p.length <= 4 ? p : p.slice(0, -4).replace(/./g, "*") + p.slice(-4);
+
 
   const handleUnenroll = async () => {
     if (!verified) return;
