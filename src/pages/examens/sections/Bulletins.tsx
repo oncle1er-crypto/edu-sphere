@@ -726,6 +726,47 @@ export default function Bulletins() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Override */}
+      {overrideRow && ecoleId && anneeId && (
+        <BulletinOverrideDialog
+          open={!!overrideRow}
+          onOpenChange={(o) => !o && setOverrideRow(null)}
+          ecoleId={ecoleId}
+          anneeId={anneeId}
+          periodeId={selectedPeriode}
+          classeId={selectedClasse}
+          eleveId={overrideRow.eleve_id}
+          eleveLabel={`${overrideRow.nom} ${overrideRow.prenom}`}
+          initial={{
+            moyenne: overrideRow.moyenne,
+            rang: overrideRow.rang,
+            mention: overrideRow.mention,
+            appreciation_generale: auditMap[overrideRow.eleve_id]?.appreciation_generale ?? appreciationGenerale(overrideRow.moyenne),
+            decision_conseil: auditMap[overrideRow.eleve_id]?.decision_conseil ?? decisionAuto(overrideRow.moyenne),
+            decision_detail: auditMap[overrideRow.eleve_id]?.decision_detail ?? "",
+          }}
+          onSaved={() => refreshAudit()}
+        />
+      )}
+
+      {/* Dialog Envoi */}
+      {sendRow && ecoleId && (
+        <BulletinSendDialog
+          open={!!sendRow}
+          onOpenChange={(o) => { if (!o) { setSendRow(null); setSendPdfBlob(null); } }}
+          ecoleId={ecoleId}
+          eleveId={sendRow.eleve_id}
+          eleveNom={sendRow.nom}
+          elevePrenom={sendRow.prenom}
+          classeNom={classes.find((c) => c.id === selectedClasse)?.nom ?? ""}
+          periodeNom={periodeNom}
+          pdfBlob={sendPdfBlob}
+          bulletinAuditId={auditMap[sendRow.eleve_id]?.id ?? null}
+          aJour={scolariteStatus[sendRow.eleve_id]?.aJour !== false}
+          onSent={() => refreshAudit()}
+        />
+      )}
     </SettingsSection>
   );
 }
