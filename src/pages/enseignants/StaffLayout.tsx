@@ -43,51 +43,40 @@ export default function StaffLayout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <aside className="relative bg-card/85 backdrop-blur-sm border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
-          <div className="pointer-events-none absolute inset-0 rounded-2xl bg-gradient-primary-soft opacity-50" />
-          <div className="relative">
-            {groups.map((group) => (
-              <div key={group} className="mb-4 last:mb-0">
-                <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                  {group}
-                </div>
-                <nav className="flex flex-col gap-0.5">
-                  {sections.filter((s) => s.group === group).map((s) => (
-                    <NavLink
-                      key={s.to}
-                      to={s.to}
-                      className={({ isActive }) =>
-                        cn(
-                          "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 will-change-transform overflow-hidden",
-                          isActive
-                            ? "nav-active-glow text-primary-foreground shadow-glow"
-                            : "text-foreground hover:bg-gradient-primary-soft hover:translate-x-0.5"
-                        )
-                      }
-                    >
-                      {({ isActive }) => (
-                        <>
-                          <span
-                            className={cn(
-                              "absolute left-0 top-1/2 -translate-y-1/2 h-5 w-1 rounded-r-full bg-accent transition-opacity duration-300",
-                              isActive ? "opacity-100" : "opacity-0 group-hover:opacity-70"
-                            )}
-                          />
-                          <s.icon
-                            className={cn(
-                              "h-4 w-4 shrink-0 transition-transform duration-200",
-                              !isActive && "group-hover:scale-110 group-hover:text-primary"
-                            )}
-                          />
-                          <span className="truncate">{s.label}</span>
-                        </>
-                      )}
-                    </NavLink>
-                  ))}
-                </nav>
+        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
+          {groups.map((group) => (
+            <div key={group} className="mb-4 last:mb-0">
+              <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                {group}
               </div>
-            ))}
-          </div>
+              <nav className="flex flex-col gap-0.5">
+                {sections.filter((s) => s.group === group).map((s) => (
+                  <NavLink
+                    key={s.to}
+                    to={s.to}
+                    className={({ isActive }) =>
+                      cn(
+                        "menu-link group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
+                        isActive ? "is-active" : ""
+                      )
+                    }
+                  >
+                    {({ isActive }) => (
+                      <>
+                        <s.icon
+                          className={cn(
+                            "h-4 w-4 shrink-0 transition-transform duration-200",
+                            !isActive && "group-hover:scale-110"
+                          )}
+                        />
+                        <span className="truncate">{s.label}</span>
+                      </>
+                    )}
+                  </NavLink>
+                ))}
+              </nav>
+            </div>
+          ))}
         </aside>
 
         <motion.div
