@@ -19,7 +19,7 @@ const variantMap: Record<StatCardProps["color"], string> = {
 
 const iconColorMap: Record<StatCardProps["color"], string> = {
   primary: "text-primary",
-  accent: "text-[hsl(38_90%_45%)]",
+  accent: "text-accent-foreground",
   warning: "text-warning",
   success: "text-success",
 };
