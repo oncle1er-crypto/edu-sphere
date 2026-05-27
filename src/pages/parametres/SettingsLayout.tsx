@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   Building2, User, GraduationCap, Users, ShieldCheck, Wallet, FileSignature,
   Bell, Globe, Palette, Database, Plug, ScrollText, LifeBuoy, Cog, Smartphone,
+  KeyRound, MonitorSmartphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -22,6 +23,9 @@ const sections = [
 
   { to: "profil", label: "Mon profil", icon: User, group: "Compte" },
   { to: "securite", label: "Sécurité & confidentialité", icon: ShieldCheck, group: "Compte" },
+  { to: "mfa", label: "Authentification 2FA", icon: KeyRound, group: "Compte" },
+  { to: "appareils", label: "Appareils approuvés", icon: MonitorSmartphone, group: "Compte" },
+  { to: "historique-securite", label: "Historique de sécurité", icon: ScrollText, group: "Compte" },
 
   { to: "integrations", label: "Intégrations & API", icon: Plug, group: "Système" },
   { to: "logs", label: "Journal d'activité", icon: ScrollText, group: "Système" },

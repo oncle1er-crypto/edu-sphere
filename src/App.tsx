@@ -102,6 +102,10 @@ import LocalizationSettings from "@/pages/parametres/sections/LocalizationSettin
 import BackupSettings from "@/pages/parametres/sections/BackupSettings";
 import UserProfile from "@/pages/parametres/sections/UserProfile";
 import SecuritySettings from "@/pages/parametres/sections/SecuritySettings";
+import MfaSettings from "@/pages/parametres/sections/MfaSettings";
+import SecurityHistory from "@/pages/parametres/sections/SecurityHistory";
+import TrustedDevices from "@/pages/parametres/sections/TrustedDevices";
+import MfaGuard from "@/components/security/MfaGuard";
 import IntegrationsSettings from "@/pages/parametres/sections/IntegrationsSettings";
 import ActivityLogs from "@/pages/parametres/sections/ActivityLogs";
 import SupportSettings from "@/pages/parametres/sections/SupportSettings";
