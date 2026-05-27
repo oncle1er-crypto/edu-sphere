@@ -2149,6 +2149,78 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_sms_factors: {
+        Row: {
+          created_at: string
+          ecole_id: string | null
+          friendly_name: string | null
+          id: string
+          last_used_at: string | null
+          phone: string
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          created_at?: string
+          ecole_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          last_used_at?: string | null
+          phone: string
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          last_used_at?: string | null
+          phone?: string
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      mfa_sms_otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          purpose?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          purpose?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       modeles_exigences_documents: {
         Row: {
           created_at: string
@@ -3540,6 +3612,10 @@ export type Database = {
         Returns: string
       }
       consume_backup_code: { Args: { _code_hash: string }; Returns: boolean }
+      consume_sms_otp: {
+        Args: { _code_hash: string; _purpose: string; _user_id: string }
+        Returns: boolean
+      }
       decrypt_sms_api_token: {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
