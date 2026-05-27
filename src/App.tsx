@@ -7,6 +7,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
 import LoginPage from "@/pages/auth/LoginPage";
+import AcceptInvitationPage from "@/pages/auth/AcceptInvitationPage";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import StudentsLayout from "@/pages/eleves/StudentsLayout";
@@ -246,6 +247,7 @@ const App = () => (
         <AcademicPeriodProvider>
           <Routes>
             <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/invitation" element={<AcceptInvitationPage />} />
             <Route path="/carte-scolaire/verification/:token" element={<StudentCardVerificationPage />} />
             <Route path="/verify-student-card/:token" element={<StudentCardVerificationPage />} />
             <Route path="/portail-enseignant" element={<RequireAuth><TeacherPortal /></RequireAuth>} />

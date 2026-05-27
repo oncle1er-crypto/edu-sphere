@@ -11,11 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FieldRow } from "@/components/settings/SettingsSection";
-import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -56,6 +58,8 @@ export default function StaffList() {
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
   });
+  const [createAccount, setCreateAccount] = useState(true);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -67,10 +71,14 @@ export default function StaffList() {
 
   const handleAdd = async () => {
     if (!form.nom || !form.prenom) { toast.error("Nom et prénom obligatoires"); return; }
+    if (createAccount && !form.email && !form.telephone) {
+      toast.error("Email ou téléphone requis pour créer un compte");
+      return;
+    }
     setSaving(true);
     const year = new Date().getFullYear().toString().slice(-2);
     const rand = Math.floor(1000 + Math.random() * 9000);
-    await addEnseignant({
+    const created = await addEnseignant({
       matricule: `ENS-${year}${rand}`,
       nom: form.nom,
       prenom: form.prenom,
@@ -82,9 +90,34 @@ export default function StaffList() {
       diplome: form.diplome || null,
       ecole_id: "",
     });
+    if (created && createAccount) {
+      const { data, error } = await supabase.functions.invoke("create-teacher-account", {
+        body: { enseignant_id: created.id, app_base_url: window.location.origin },
+      });
+      if (error || data?.error) {
+        toast.error(`Compte non créé : ${data?.error ?? error?.message ?? "erreur"}`);
+      } else {
+        const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
+        toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
+      }
+    }
     setForm({ nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "" });
     setOpen(false);
     setSaving(false);
+  };
+
+  const handleResendInvitation = async (enseignantId: string) => {
+    setInvitingId(enseignantId);
+    const { data, error } = await supabase.functions.invoke("create-teacher-account", {
+      body: { enseignant_id: enseignantId, app_base_url: window.location.origin },
+    });
+    setInvitingId(null);
+    if (error || data?.error) {
+      toast.error(data?.error ?? error?.message ?? "Erreur");
+    } else {
+      const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
+      toast.success(`Invitation renvoyée${channels ? ` par ${channels}` : ""}`);
+    }
   };
 
   const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
@@ -194,6 +227,18 @@ export default function StaffList() {
                     </SelectContent>
                   </Select>
                 </FieldRow>
+                <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <UserPlus className="h-4 w-4 text-primary mt-0.5" />
+                    <div>
+                      <Label className="cursor-pointer text-sm">Créer un compte utilisateur</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Un lien d'invitation sera envoyé par email + SMS pour qu'il définisse son mot de passe.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={createAccount} onCheckedChange={setCreateAccount} />
+                </div>
                 <Button className="w-full" onClick={handleAdd} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
                 </Button>
@@ -271,6 +316,10 @@ export default function StaffList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setViewEnseignant(s)}>Voir la fiche</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResendInvitation(s.id)} disabled={invitingId === s.id}>
+                          {invitingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (s as any).invitation_accepted_at ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Send className="h-3.5 w-3.5" />}
+                          {(s as any).user_id ? "Renvoyer l'invitation" : "Créer compte + inviter"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Modifier</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => deleteEnseignant(s.id)}>Supprimer</DropdownMenuItem>
                       </DropdownMenuContent>

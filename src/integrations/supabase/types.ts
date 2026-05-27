@@ -214,6 +214,30 @@ export type Database = {
         }
         Relationships: []
       }
+      app_modules: {
+        Row: {
+          created_at: string
+          icon: string | null
+          key: string
+          label: string
+          ordre: number
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          key: string
+          label: string
+          ordre?: number
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          key?: string
+          label?: string
+          ordre?: number
+        }
+        Relationships: []
+      }
       audit_decisions_fin_annee: {
         Row: {
           action: string
@@ -1239,6 +1263,8 @@ export type Database = {
           ecole_id: string
           email: string | null
           id: string
+          invitation_accepted_at: string | null
+          invitation_sent_at: string | null
           matricule: string | null
           nom: string
           photo_url: string | null
@@ -1258,6 +1284,8 @@ export type Database = {
           ecole_id: string
           email?: string | null
           id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           matricule?: string | null
           nom: string
           photo_url?: string | null
@@ -1277,6 +1305,8 @@ export type Database = {
           ecole_id?: string
           email?: string | null
           id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
           matricule?: string | null
           nom?: string
           photo_url?: string | null
@@ -3325,6 +3355,56 @@ export type Database = {
         }
         Relationships: []
       }
+      teacher_invitations: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          created_by: string | null
+          ecole_id: string
+          email: string | null
+          enseignant_id: string
+          expires_at: string
+          id: string
+          telephone: string | null
+          token_hash: string
+          user_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          ecole_id: string
+          email?: string | null
+          enseignant_id: string
+          expires_at?: string
+          id?: string
+          telephone?: string | null
+          token_hash: string
+          user_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          ecole_id?: string
+          email?: string | null
+          enseignant_id?: string
+          expires_at?: string
+          id?: string
+          telephone?: string | null
+          token_hash?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "teacher_invitations_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tranches: {
         Row: {
           created_at: string
@@ -3427,6 +3507,59 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_export: boolean
+          can_update: boolean
+          can_view: boolean
+          created_at: string
+          ecole_id: string
+          granted_by: string | null
+          id: string
+          module_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id: string
+          granted_by?: string | null
+          id?: string
+          module_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id?: string
+          granted_by?: string | null
+          id?: string
+          module_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "app_modules"
+            referencedColumns: ["key"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -3625,6 +3758,10 @@ export type Database = {
         Args: { _code_hash: string; _purpose: string; _user_id: string }
         Returns: boolean
       }
+      consume_teacher_invitation: {
+        Args: { _token_hash: string }
+        Returns: Json
+      }
       decrypt_sms_api_token: {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
@@ -3649,6 +3786,15 @@ export type Database = {
         Args: { _frais_id: string }
         Returns: number
       }
+      has_permission: {
+        Args: {
+          _action: string
+          _ecole_id: string
+          _module: string
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_mfa_locked: { Args: { _user_id?: string }; Returns: boolean }
       is_mfa_required_for_user: { Args: { _user_id: string }; Returns: boolean }
       log_security_event: {
@@ -3665,6 +3811,10 @@ export type Database = {
       }
       register_failed_mfa: { Args: never; Returns: Json }
       reset_failed_mfa: { Args: never; Returns: undefined }
+      set_user_permissions: {
+        Args: { _ecole_id: string; _permissions: Json; _target_user: string }
+        Returns: undefined
+      }
     }
     Enums: {
       annee_statut: "active" | "preparation" | "verrouillee" | "archivee"
