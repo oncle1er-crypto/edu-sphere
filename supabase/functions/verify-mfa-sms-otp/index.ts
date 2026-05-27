@@ -81,10 +81,11 @@ Deno.serve(async (req) => {
 
 
     await service.rpc("log_security_event", {
-      _event_type: purpose === "enroll" ? "mfa_sms_enabled" : "mfa_sms_challenge_passed",
+      _event_type: purpose === "enroll" ? "mfa_sms_phone_verified" : "mfa_sms_challenge_passed",
       _severity: "info", _ecole_id: null, _ip: null,
       _user_agent: req.headers.get("user-agent"), _device_fp: null, _metadata: {},
     });
+
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
