@@ -19,9 +19,9 @@ export default function StaffDashboard() {
   const vacataires = enseignants.filter((e) => e.type_contrat === "Vacataire").length;
 
   const kpis = [
-    { label: "Total personnel", value: total.toString(), icon: Users, color: "text-primary" },
-    { label: "Actifs", value: actifs.toString(), icon: GraduationCap, color: "text-emerald-600" },
-    { label: "CDI", value: cdi.toString(), icon: Briefcase, color: "text-blue-600" },
+    { label: "Total personnel", value: total.toString(), icon: Users, variant: "stat-card--primary", iconColor: "text-primary" },
+    { label: "Actifs", value: actifs.toString(), icon: GraduationCap, variant: "stat-card--success", iconColor: "text-[hsl(152_60%_38%)]" },
+    { label: "CDI", value: cdi.toString(), icon: Briefcase, variant: "stat-card--info", iconColor: "text-[hsl(205_80%_45%)]" },
   ];
 
   const repartition = [
