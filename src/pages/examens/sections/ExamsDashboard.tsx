@@ -34,22 +34,11 @@ export default function ExamsDashboard() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {kpis.map((k) => (
-          <Card key={k.label} className="border shadow-[var(--shadow-card)]">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${toneMap[k.tone]}`}>
-                  <k.icon className="h-5 w-5" />
-                </div>
-                <Badge variant="secondary" className="text-xs">{k.badge}</Badge>
-              </div>
-              <div className="mt-4">
-                <p className="text-xs text-muted-foreground">{k.label}</p>
-                <p className="text-xl font-bold font-display text-primary mt-1">{k.value}</p>
-              </div>
-            </CardContent>
-          </Card>
+        {kpis.map((k, i) => (
+          <KpiCard key={k.label} label={k.label} value={k.value} sub={k.badge} icon={k.icon} index={i} />
         ))}
       </div>
+
 
       {evaluations.length === 0 && (
         <Card className="border shadow-[var(--shadow-card)]">
