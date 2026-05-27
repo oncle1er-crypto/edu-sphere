@@ -1,5 +1,6 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, School, Users, GraduationCap, DollarSign, CheckCircle2, PauseCircle } from "lucide-react";
 import { useEcoles } from "@/context/EcoleContext";
 
