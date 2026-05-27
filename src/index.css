@@ -193,24 +193,30 @@
     animation: shimmer 6s linear infinite;
   }
 
-  /* Colored sidebar menu */
+  /* Colored sidebar menu — theme-aware (light + dark) */
   .menu-aside {
     position: relative;
     isolation: isolate;
     background:
-      radial-gradient(130% 90% at 0% 0%, hsl(345 65% 28% / 0.18) 0%, transparent 55%),
-      radial-gradient(130% 90% at 100% 100%, hsl(50 95% 60% / 0.28) 0%, transparent 55%),
-      linear-gradient(165deg, hsl(40 35% 99%) 0%, hsl(345 50% 96%) 55%, hsl(50 80% 94%) 100%);
+      radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.10) 0%, transparent 55%),
+      radial-gradient(130% 90% at 100% 100%, hsl(var(--accent) / 0.14) 0%, transparent 55%),
+      linear-gradient(165deg, hsl(var(--card) / 0.95) 0%, hsl(var(--card) / 0.88) 100%);
     backdrop-filter: blur(8px);
     overflow: hidden;
+  }
+  .dark .menu-aside {
+    background:
+      radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.18) 0%, transparent 55%),
+      radial-gradient(130% 90% at 100% 100%, hsl(var(--accent) / 0.12) 0%, transparent 55%),
+      linear-gradient(165deg, hsl(var(--card) / 0.92) 0%, hsl(var(--card) / 0.82) 100%);
   }
   .menu-aside::before {
     content: "";
     position: absolute;
     inset: 0;
     background:
-      radial-gradient(60% 40% at 100% 0%, hsl(345 70% 50% / 0.18) 0%, transparent 60%),
-      radial-gradient(60% 40% at 0% 100%, hsl(50 95% 60% / 0.22) 0%, transparent 60%);
+      radial-gradient(60% 40% at 100% 0%, hsl(var(--primary) / 0.10) 0%, transparent 60%),
+      radial-gradient(60% 40% at 0% 100%, hsl(var(--accent) / 0.12) 0%, transparent 60%);
     pointer-events: none;
     z-index: 0;
   }
@@ -219,7 +225,7 @@
     position: absolute;
     left: 0; top: 0; bottom: 0;
     width: 3px;
-    background: linear-gradient(180deg, hsl(345 65% 38%), hsl(50 95% 60%));
+    background: linear-gradient(180deg, hsl(var(--primary)), hsl(var(--accent)));
     z-index: 1;
     border-radius: 2px;
   }
@@ -232,17 +238,21 @@
     transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   }
   .menu-link:not(.is-active):hover {
-    background: linear-gradient(90deg, hsl(345 65% 28% / 0.10), hsl(50 95% 60% / 0.18));
+    background: linear-gradient(90deg, hsl(var(--primary) / 0.10), hsl(var(--accent) / 0.16));
     transform: translateX(3px);
     color: hsl(var(--primary));
   }
+  .dark .menu-link:not(.is-active):hover {
+    color: hsl(var(--accent));
+  }
   .menu-link.is-active {
     color: hsl(var(--primary-foreground));
-    background: linear-gradient(95deg, hsl(345 65% 28%) 0%, hsl(345 70% 42%) 60%, hsl(38 90% 50%) 100%);
+    background: linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.85) 60%, hsl(var(--accent)) 100%);
     background-size: 200% 100%;
     animation: shimmer 6s linear infinite;
-    box-shadow: 0 6px 18px -6px hsl(345 65% 28% / 0.55), inset 0 1px 0 hsl(50 95% 80% / 0.4);
+    box-shadow: 0 6px 18px -6px hsl(var(--primary) / 0.55), inset 0 1px 0 hsl(var(--accent) / 0.4);
   }
+
 
   /* Premium glass stat cards — colored, transparent, theme-aware */
   .stat-card {
