@@ -306,6 +306,39 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
           </motion.div>
         )}
 
+        {/* ============== SMS — ACTIVATION (post-vérification numéro) ============== */}
+        {method === "sms" && step === "activate" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex gap-3">
+              <ShieldCheck className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-emerald-700 dark:text-emerald-400">Numéro vérifié</p>
+                <p className="text-muted-foreground mt-1">
+                  Le numéro <span className="font-mono">{phone}</span> a été confirmé.
+                  Confirmez maintenant son utilisation comme <strong>second facteur</strong> de connexion.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
+              <p>En activant le MFA SMS, à chaque connexion :</p>
+              <ul className="list-disc list-inside ml-2 space-y-0.5">
+                <li>un code à 6 chiffres sera envoyé à ce numéro</li>
+                <li>ce code sera requis en plus de votre mot de passe</li>
+                <li>vous pourrez désactiver cette protection à tout moment</li>
+              </ul>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={backToChoose} className="flex-1">
+                Plus tard
+              </Button>
+              <Button onClick={activateSms} disabled={loading} className="flex-1">
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Activer le MFA SMS
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
+
         {/* ============== BACKUP CODES ============== */}
         {step === "backup" && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
