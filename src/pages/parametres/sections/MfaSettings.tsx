@@ -149,41 +149,94 @@ export default function MfaSettings() {
             )}
 
             {smsFactor?.verified && (
-              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3">
-                <Smartphone className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div
+                className={`rounded-xl border p-4 flex items-start gap-3 ${
+                  smsFactor.is_active
+                    ? "border-emerald-500/30 bg-emerald-500/5"
+                    : "border-amber-500/40 bg-amber-500/5"
+                }`}
+              >
+                <Smartphone
+                  className={`h-5 w-5 mt-0.5 ${smsFactor.is_active ? "text-emerald-600" : "text-amber-600"}`}
+                />
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">SMS activé</p>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-medium">
+                      {smsFactor.is_active ? "SMS activé" : "Numéro vérifié — MFA SMS non activé"}
+                    </p>
                     <Badge variant="secondary" className="text-xs">SMS</Badge>
+                    {!smsFactor.is_active && (
+                      <Badge variant="outline" className="text-xs border-amber-500/40 text-amber-700 dark:text-amber-400">
+                        Inactif
+                      </Badge>
+                    )}
                   </div>
                   <p className="text-xs text-muted-foreground mt-1">
                     Numéro : <span className="font-mono">{maskPhone(smsFactor.phone)}</span>
-                    {smsFactor.last_used_at && ` · dernière utilisation ${new Date(smsFactor.last_used_at).toLocaleDateString("fr-FR")}`}
+                    {smsFactor.phone_verified_at &&
+                      ` · vérifié le ${new Date(smsFactor.phone_verified_at).toLocaleDateString("fr-FR")}`}
+                    {smsFactor.last_used_at &&
+                      ` · dernière utilisation ${new Date(smsFactor.last_used_at).toLocaleDateString("fr-FR")}`}
                   </p>
+                  {!smsFactor.is_active && (
+                    <p className="text-xs text-amber-700 dark:text-amber-400 mt-2">
+                      Votre numéro a bien été vérifié, mais le MFA SMS n'est pas encore actif.
+                      Activez-le pour exiger un code à 6 chiffres à chaque connexion.
+                    </p>
+                  )}
                 </div>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button size="sm" variant="ghost" className="text-destructive">
-                      <Trash2 className="h-4 w-4" />
+                <div className="flex items-center gap-1">
+                  {!smsFactor.is_active ? (
+                    <Button
+                      size="sm" variant="default" onClick={handleActivateSms} disabled={activatingSms}
+                    >
+                      {activatingSms && <Loader2 className="h-4 w-4 animate-spin" />} Activer
                     </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Supprimer le facteur SMS ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Vous ne recevrez plus de code de vérification par SMS.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleRemoveSms} disabled={removingSms}>
-                        {removingSms && <Loader2 className="h-4 w-4 animate-spin" />} Supprimer
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                  ) : (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">Désactiver</Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Désactiver le MFA SMS ?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Le numéro restera vérifié et pourra être réactivé sans nouveau code SMS.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Annuler</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleDeactivateSms}>Désactiver</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Supprimer le numéro SMS ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Le numéro vérifié et le facteur SMS seront supprimés. Une nouvelle
+                          vérification par OTP sera nécessaire pour réactiver.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleRemoveSms} disabled={removingSms}>
+                          {removingSms && <Loader2 className="h-4 w-4 animate-spin" />} Supprimer
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             )}
+
 
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => setSetupOpen(true)}>
