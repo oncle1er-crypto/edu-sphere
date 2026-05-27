@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   GraduationCap, Download, Loader2, FileDown, Eye, Printer, AlertTriangle, CheckCircle2,
+  Send, Pencil, Lock, LockOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,9 @@ import {
 import {
   appreciationMatiere, appreciationGenerale, mentionPrincipale, decisionAuto, categorieBulletin,
 } from "@/lib/bulletinHelpers";
+import { useBulletinScolariteStatus } from "@/hooks/useBulletinScolariteStatus";
+import { BulletinSendDialog } from "@/components/bulletins/BulletinSendDialog";
+import { BulletinOverrideDialog } from "@/components/bulletins/BulletinOverrideDialog";
 
 interface BulletinRow {
   eleve_id: string;
