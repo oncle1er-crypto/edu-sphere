@@ -16,10 +16,10 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
   return (
     <nav className="px-3 md:px-6 pt-3 pb-2">
       <div
-        className="relative overflow-hidden rounded-2xl border border-accent/30 shadow-[0_10px_30px_-12px_hsl(345_65%_28%/0.45)]"
+        className="relative overflow-hidden rounded-2xl border border-accent/30 shadow-[0_10px_30px_-12px_hsl(var(--primary)/0.45)]"
         style={{
           background:
-            "linear-gradient(95deg, hsl(345 65% 22%) 0%, hsl(345 70% 32%) 35%, hsl(345 65% 28%) 65%, hsl(20 75% 42%) 100%)",
+            "linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 35%, hsl(var(--primary)) 65%, hsl(var(--accent) / 0.85) 100%)",
           backgroundSize: "200% 100%",
           animation: "shimmer 10s linear infinite",
         }}
@@ -29,11 +29,12 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
           className="pointer-events-none absolute inset-0"
           style={{
             background:
-              "radial-gradient(60% 120% at 0% 50%, hsl(50 95% 60% / 0.18) 0%, transparent 60%), radial-gradient(50% 120% at 100% 50%, hsl(50 95% 60% / 0.22) 0%, transparent 60%)",
+              "radial-gradient(60% 120% at 0% 50%, hsl(var(--accent) / 0.18) 0%, transparent 60%), radial-gradient(50% 120% at 100% 50%, hsl(var(--accent) / 0.22) 0%, transparent 60%)",
           }}
         />
         {/* Top sheen */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
+
 
         <div className="relative flex items-center justify-between px-3 md:px-5 overflow-x-auto">
           <div className="flex items-center gap-1 md:gap-2">
