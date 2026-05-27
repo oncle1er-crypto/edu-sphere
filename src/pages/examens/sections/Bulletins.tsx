@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   GraduationCap, Download, Loader2, FileDown, Eye, Printer, AlertTriangle, CheckCircle2,
+  Send, Pencil, Lock, LockOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +25,9 @@ import {
 import {
   appreciationMatiere, appreciationGenerale, mentionPrincipale, decisionAuto, categorieBulletin,
 } from "@/lib/bulletinHelpers";
+import { useBulletinScolariteStatus } from "@/hooks/useBulletinScolariteStatus";
+import { BulletinSendDialog } from "@/components/bulletins/BulletinSendDialog";
+import { BulletinOverrideDialog } from "@/components/bulletins/BulletinOverrideDialog";
 
 interface BulletinRow {
   eleve_id: string;
@@ -62,6 +66,44 @@ export default function Bulletins() {
   const [previewRow, setPreviewRow] = useState<BulletinRow | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+
+  // ---- Audit / overrides / verrouillage / envoi
+  type AuditRow = {
+    id: string; eleve_id: string; locked: boolean; version: number;
+    appreciation_generale: string | null; decision_conseil: string | null; decision_detail: string | null;
+    sent_at: string | null;
+  };
+  const [auditMap, setAuditMap] = useState<Record<string, AuditRow>>({});
+  const [overrideRow, setOverrideRow] = useState<BulletinRow | null>(null);
+  const [sendRow, setSendRow] = useState<BulletinRow | null>(null);
+  const [sendPdfBlob, setSendPdfBlob] = useState<Blob | null>(null);
+  const [lockingId, setLockingId] = useState<string | null>(null);
+
+  const eleveIds = useMemo(() => rows.map((r) => r.eleve_id), [rows]);
+  const { statusMap: scolariteStatus } = useBulletinScolariteStatus(ecoleId, eleveIds);
+
+  // Charge la dernière version d'audit par élève pour la période/classe
+  const refreshAudit = useCallback(async () => {
+    if (!ecoleId || !selectedClasse || !selectedPeriode || eleveIds.length === 0) {
+      setAuditMap({}); return;
+    }
+    const { data } = await supabase
+      .from("bulletins_audit")
+      .select("id, eleve_id, locked, version, appreciation_generale, decision_conseil, decision_detail, sent_at")
+      .eq("ecole_id", ecoleId)
+      .eq("periode_id", selectedPeriode)
+      .eq("classe_id", selectedClasse)
+      .in("eleve_id", eleveIds)
+      .order("version", { ascending: false });
+    const map: Record<string, AuditRow> = {};
+    for (const r of (data ?? []) as AuditRow[]) {
+      if (!map[r.eleve_id]) map[r.eleve_id] = r; // garde la plus récente version
+    }
+    setAuditMap(map);
+  }, [ecoleId, selectedClasse, selectedPeriode, eleveIds.join("|")]); // eslint-disable-line
+
+  useEffect(() => { refreshAudit(); }, [refreshAudit]);
+
 
   // Charger périodes de l'année active
   useEffect(() => {
@@ -324,8 +366,9 @@ export default function Bulletins() {
     }
 
     const moy = row.moyenne;
+    const auditOverride = auditMap[row.eleve_id];
     const decisions = {
-      appreciation_generale: appreciationGenerale(moy),
+      appreciation_generale: auditOverride?.appreciation_generale || appreciationGenerale(moy),
       tableau_honneur: moy >= 12,
       encouragements: moy >= 14,
       felicitations: moy >= 16,
@@ -333,8 +376,8 @@ export default function Bulletins() {
       avertissement_conduite: false,
       blame_travail: false,
       blame_conduite: false,
-      decision: decisionAuto(moy),
-      decision_detail: moy >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee",
+      decision: auditOverride?.decision_conseil || decisionAuto(moy),
+      decision_detail: auditOverride?.decision_detail || (moy >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee"),
     };
 
     const verification = `BULLETIN|${row.matricule}|${className}|${periodeNom}|${(annee?.libelle ?? "")}|${moy.toFixed(2)}|${row.rang}`;
@@ -434,6 +477,68 @@ export default function Bulletins() {
     } finally { setGeneratingAll(false); }
   };
 
+  // S'assure qu'un brouillon d'audit existe pour cet élève (et retourne son id)
+  const ensureAuditDraft = async (row: BulletinRow): Promise<string | null> => {
+    if (!ecoleId || !anneeId || !selectedPeriode || !selectedClasse) return null;
+    const existing = auditMap[row.eleve_id];
+    if (existing) return existing.id;
+    const { data, error } = await supabase.rpc("upsert_bulletin_audit", {
+      _ecole_id: ecoleId, _annee_id: anneeId, _periode_id: selectedPeriode,
+      _classe_id: selectedClasse, _eleve_id: row.eleve_id,
+      _moyenne: row.moyenne, _rang: row.rang, _mention: row.mention,
+      _appreciation_generale: appreciationGenerale(row.moyenne),
+      _decision_conseil: decisionAuto(row.moyenne),
+      _decision_detail: row.moyenne >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee",
+      _override_motif: null,
+    });
+    if (error) { toast.error("Audit: " + error.message); return null; }
+    await refreshAudit();
+    return data as unknown as string;
+  };
+
+  const handleOpenSend = async (row: BulletinRow) => {
+    if (!scolariteStatus[row.eleve_id]?.aJour) {
+      toast.error("Élève non à jour : envoi désactivé."); return;
+    }
+    setGeneratingId(row.eleve_id);
+    try {
+      const doc = await buildPDFForStudent(row);
+      if (!doc) return;
+      const blob = doc.output("blob");
+      setSendPdfBlob(blob);
+      await ensureAuditDraft(row);
+      setSendRow(row);
+    } finally { setGeneratingId(null); }
+  };
+
+  const handleLockToggle = async (row: BulletinRow) => {
+    const audit = auditMap[row.eleve_id];
+    if (audit?.locked) { toast.info("Ce bulletin est déjà verrouillé."); return; }
+    setLockingId(row.eleve_id);
+    try {
+      const auditId = audit?.id ?? await ensureAuditDraft(row);
+      if (!auditId) return;
+      // Génère le PDF pour calculer un hash + l'archiver
+      const doc = await buildPDFForStudent(row);
+      if (!doc) return;
+      const blob = doc.output("blob") as Blob;
+      const buf = await blob.arrayBuffer();
+      const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+      const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const path = `${ecoleId}/${row.eleve_id}/locked_${selectedPeriode}_${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage.from("bulletins").upload(path, blob, {
+        contentType: "application/pdf", upsert: false,
+      });
+      if (upErr) { toast.error("Archive: " + upErr.message); return; }
+      const { error } = await supabase.rpc("verrouiller_bulletin", {
+        _id: auditId, _pdf_hash: hash, _pdf_path: path,
+      });
+      if (error) { toast.error("Verrouillage: " + error.message); return; }
+      toast.success("Bulletin verrouillé et archivé.");
+      await refreshAudit();
+    } finally { setLockingId(null); }
+  };
+
   const totalWarnings = rows.reduce((acc, r) => acc + r.warnings.length, 0);
 
   return (
@@ -517,11 +622,17 @@ export default function Bulletins() {
                 <TableHead>Moyenne</TableHead>
                 <TableHead>Mention</TableHead>
                 <TableHead>État</TableHead>
+                <TableHead>Audit</TableHead>
+                <TableHead>Scolarité</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => (
+              {rows.map((b) => {
+                const audit = auditMap[b.eleve_id];
+                const scol = scolariteStatus[b.eleve_id];
+                const aJour = scol?.aJour !== false;
+                return (
                 <TableRow key={b.eleve_id}>
                   <TableCell className="font-semibold">{b.rang}</TableCell>
                   <TableCell className="font-mono text-xs">{b.matricule}</TableCell>
@@ -539,10 +650,36 @@ export default function Bulletins() {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {audit ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Badge variant={audit.locked ? "default" : "outline"} className="w-fit text-[10px]">
+                          {audit.locked ? <><Lock className="h-2.5 w-2.5 mr-1" />v{audit.version}</> : <>v{audit.version} (brouillon)</>}
+                        </Badge>
+                        {audit.sent_at && <span className="text-[10px] text-muted-foreground">envoyé ✓</span>}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {aJour ? (
+                      <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">à jour</Badge>
+                    ) : (
+                      <span className="text-[10px] text-destructive" title={`Reste dû : ${Math.round(scol?.resteDu ?? 0).toLocaleString("fr-FR")} FCFA`}>
+                        en retard
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePreview(b)} title="Aperçu">
                         <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={!!audit?.locked}
+                        onClick={() => setOverrideRow(b)} title="Override conseil de classe">
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePrint(b)} title="Imprimer">
                         <Printer className="h-3.5 w-3.5" />
@@ -550,10 +687,23 @@ export default function Bulletins() {
                       <Button size="icon" variant="ghost" className="h-7 w-7" disabled={generatingId === b.eleve_id} onClick={() => handleDownloadPDF(b)} title="Télécharger PDF">
                         {generatingId === b.eleve_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={!aJour || generatingId === b.eleve_id}
+                        title={aJour ? "Envoyer aux parents" : "Élève non à jour"}
+                        onClick={() => handleOpenSend(b)}>
+                        <Send className={`h-3.5 w-3.5 ${aJour ? "text-primary" : ""}`} />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={lockingId === b.eleve_id || !!audit?.locked}
+                        title={audit?.locked ? "Verrouillé" : "Verrouiller la version"}
+                        onClick={() => handleLockToggle(b)}>
+                        {lockingId === b.eleve_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                          audit?.locked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
@@ -576,6 +726,47 @@ export default function Bulletins() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog Override */}
+      {overrideRow && ecoleId && anneeId && (
+        <BulletinOverrideDialog
+          open={!!overrideRow}
+          onOpenChange={(o) => !o && setOverrideRow(null)}
+          ecoleId={ecoleId}
+          anneeId={anneeId}
+          periodeId={selectedPeriode}
+          classeId={selectedClasse}
+          eleveId={overrideRow.eleve_id}
+          eleveLabel={`${overrideRow.nom} ${overrideRow.prenom}`}
+          initial={{
+            moyenne: overrideRow.moyenne,
+            rang: overrideRow.rang,
+            mention: overrideRow.mention,
+            appreciation_generale: auditMap[overrideRow.eleve_id]?.appreciation_generale ?? appreciationGenerale(overrideRow.moyenne),
+            decision_conseil: auditMap[overrideRow.eleve_id]?.decision_conseil ?? decisionAuto(overrideRow.moyenne),
+            decision_detail: auditMap[overrideRow.eleve_id]?.decision_detail ?? "",
+          }}
+          onSaved={() => refreshAudit()}
+        />
+      )}
+
+      {/* Dialog Envoi */}
+      {sendRow && ecoleId && (
+        <BulletinSendDialog
+          open={!!sendRow}
+          onOpenChange={(o) => { if (!o) { setSendRow(null); setSendPdfBlob(null); } }}
+          ecoleId={ecoleId}
+          eleveId={sendRow.eleve_id}
+          eleveNom={sendRow.nom}
+          elevePrenom={sendRow.prenom}
+          classeNom={classes.find((c) => c.id === selectedClasse)?.nom ?? ""}
+          periodeNom={periodeNom}
+          pdfBlob={sendPdfBlob}
+          bulletinAuditId={auditMap[sendRow.eleve_id]?.id ?? null}
+          aJour={scolariteStatus[sendRow.eleve_id]?.aJour !== false}
+          onSent={() => refreshAudit()}
+        />
+      )}
     </SettingsSection>
   );
 }
