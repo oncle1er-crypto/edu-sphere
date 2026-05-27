@@ -224,6 +224,13 @@ import SubjectsConfig from "@/pages/matieres/sections/SubjectsConfig";
 import NotFound from "./pages/NotFound";
 import TeacherPortal from "@/pages/portail-enseignant/TeacherPortal";
 import EvaluationGradesPage from "@/pages/portail-enseignant/EvaluationGradesPage";
+import VieScolaireLayout from "@/pages/vie-scolaire/VieScolaireLayout";
+import VieScolaireDashboard from "@/pages/vie-scolaire/sections/VieScolaireDashboard";
+import VieScolaireBillets from "@/pages/vie-scolaire/sections/VieScolaireBillets";
+import VieScolaireCertificats from "@/pages/vie-scolaire/sections/VieScolaireCertificats";
+import VieScolairePresences from "@/pages/vie-scolaire/sections/VieScolairePresences";
+import VieScolaireDiscipline from "@/pages/vie-scolaire/sections/VieScolaireDiscipline";
+import VieScolaireInfirmerie from "@/pages/vie-scolaire/sections/VieScolaireInfirmerie";
 
 const queryClient = new QueryClient();
 
@@ -460,6 +467,14 @@ const App = () => (
               <Route path="configuration" element={<SubjectsConfig />} />
             </Route>
             
+            <Route path="/vie-scolaire" element={<VieScolaireLayout />}>
+              <Route path="tableau" element={<VieScolaireDashboard />} />
+              <Route path="billets" element={<VieScolaireBillets />} />
+              <Route path="certificats" element={<VieScolaireCertificats />} />
+              <Route path="presences" element={<VieScolairePresences />} />
+              <Route path="discipline" element={<VieScolaireDiscipline />} />
+              <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
+            </Route>
             <Route path="/utilisateurs" element={<UsersRoles />} />
             <Route path="/parametres" element={<SettingsLayout />}>
               <Route path="ecole" element={<SchoolProfile />} />

@@ -310,6 +310,84 @@ export type Database = {
         }
         Relationships: []
       }
+      billets_sortie: {
+        Row: {
+          accompagnateur: string | null
+          created_at: string
+          date_sortie: string
+          delivre_par: string | null
+          destination: string | null
+          ecole_id: string
+          eleve_id: string | null
+          enseignant_id: string | null
+          heure_retour_effective: string | null
+          heure_retour_prevue: string | null
+          heure_sortie: string
+          id: string
+          motif: string
+          numero: string
+          observations: string | null
+          statut: string
+          sujet_type: string
+          updated_at: string
+        }
+        Insert: {
+          accompagnateur?: string | null
+          created_at?: string
+          date_sortie?: string
+          delivre_par?: string | null
+          destination?: string | null
+          ecole_id: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          heure_retour_effective?: string | null
+          heure_retour_prevue?: string | null
+          heure_sortie?: string
+          id?: string
+          motif: string
+          numero?: string
+          observations?: string | null
+          statut?: string
+          sujet_type: string
+          updated_at?: string
+        }
+        Update: {
+          accompagnateur?: string | null
+          created_at?: string
+          date_sortie?: string
+          delivre_par?: string | null
+          destination?: string | null
+          ecole_id?: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          heure_retour_effective?: string | null
+          heure_retour_prevue?: string | null
+          heure_sortie?: string
+          id?: string
+          motif?: string
+          numero?: string
+          observations?: string | null
+          statut?: string
+          sujet_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billets_sortie_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billets_sortie_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulletins_paie: {
         Row: {
           annee: number
@@ -422,6 +500,78 @@ export type Database = {
           },
           {
             foreignKeyName: "cartes_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificats_absence: {
+        Row: {
+          created_at: string
+          date_debut: string
+          date_fin: string
+          delivre_par: string | null
+          ecole_id: string
+          eleve_id: string | null
+          enseignant_id: string | null
+          id: string
+          justifie: boolean
+          motif: string
+          numero: string
+          observations: string | null
+          piece_jointe_url: string | null
+          sujet_type: string
+          type_justificatif: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          delivre_par?: string | null
+          ecole_id: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          id?: string
+          justifie?: boolean
+          motif: string
+          numero?: string
+          observations?: string | null
+          piece_jointe_url?: string | null
+          sujet_type: string
+          type_justificatif?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          delivre_par?: string | null
+          ecole_id?: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          id?: string
+          justifie?: boolean
+          motif?: string
+          numero?: string
+          observations?: string | null
+          piece_jointe_url?: string | null
+          sujet_type?: string
+          type_justificatif?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificats_absence_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificats_absence_enseignant_id_fkey"
             columns: ["enseignant_id"]
             isOneToOne: false
             referencedRelation: "enseignants"
@@ -3825,6 +3975,7 @@ export type Database = {
         | "enseignant"
         | "surveillant"
         | "parent"
+        | "educateur"
       carte_statut: "active" | "perdue" | "expiree" | "annulee"
       carte_type: "eleve" | "enseignant" | "personnel"
       decoupage_type: "trimestre" | "semestre"
@@ -3980,6 +4131,7 @@ export const Constants = {
         "enseignant",
         "surveillant",
         "parent",
+        "educateur",
       ],
       carte_statut: ["active", "perdue", "expiree", "annulee"],
       carte_type: ["eleve", "enseignant", "personnel"],

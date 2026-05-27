@@ -19,12 +19,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 
-const ROLES = ["admin", "directeur", "enseignant", "comptable", "surveillant", "parent"] as const;
+const ROLES = ["admin", "directeur", "enseignant", "educateur", "comptable", "surveillant", "parent"] as const;
 
 const roleColors: Record<string, string> = {
   admin: "bg-accent/15 text-primary border-accent/30",
   directeur: "bg-primary/15 text-primary border-primary/30",
   enseignant: "bg-primary/10 text-primary border-primary/20",
+  educateur: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30",
   comptable: "bg-blue-500/15 text-blue-600 border-blue-500/30",
   surveillant: "bg-muted text-foreground",
   parent: "bg-orange-500/15 text-orange-600 border-orange-500/30",
@@ -36,6 +37,7 @@ const MODULES = [
   { key: "examens", label: "Examens", icon: ClipboardList },
   { key: "finances", label: "Finances", icon: CreditCard },
   { key: "presences", label: "Présences", icon: Eye },
+  { key: "vie_scolaire", label: "Vie scolaire", icon: Shield },
   { key: "transport", label: "Transport", icon: Bus },
   { key: "cantine", label: "Cantine", icon: UtensilsCrossed },
   { key: "parametres", label: "Paramètres", icon: UserCog },
@@ -43,8 +45,9 @@ const MODULES = [
 
 const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
   admin: MODULES.map(m => m.key),
-  directeur: ["eleves", "classes", "examens", "presences", "parametres"],
+  directeur: ["eleves", "classes", "examens", "presences", "vie_scolaire", "parametres"],
   enseignant: ["examens", "presences", "classes"],
+  educateur: ["vie_scolaire", "presences", "eleves", "enseignants"],
   comptable: ["finances", "eleves"],
   surveillant: ["presences", "eleves"],
   parent: ["eleves", "examens"],
