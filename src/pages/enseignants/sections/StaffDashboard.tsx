@@ -1,9 +1,9 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LayoutDashboard, Users, GraduationCap, Briefcase, CalendarCheck, Loader2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
+import { motion } from "framer-motion";
 
 export default function StaffDashboard() {
   const { enseignants, loading } = useEnseignants();
