@@ -384,10 +384,7 @@ export default function UsersRoles() {
         </DialogContent>
       </Dialog>
 
-            );
-          })}
-        </div>
-      )}
+
 
       <div className="rounded-lg bg-muted/50 border p-4 text-sm">
         <p className="font-semibold text-primary mb-2">Rôles & permissions</p>
