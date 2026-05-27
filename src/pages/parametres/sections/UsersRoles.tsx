@@ -322,9 +322,68 @@ export default function UsersRoles() {
                         })}
                       </div>
                     </div>
+                    <div className="pt-2 border-t flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                        onClick={() => setResetMfaUser({ id: u.user_id, name: u.full_name })}
+                      >
+                        <KeyRound className="h-3.5 w-3.5" />
+                        Réinitialiser le MFA
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ============ Dialog Reset MFA (Super Admin) ============ */}
+      <Dialog open={!!resetMfaUser} onOpenChange={(o) => !o && (setResetMfaUser(null), setResetMotif(""))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <KeyRound className="h-5 w-5" /> Réinitialiser le MFA
+            </DialogTitle>
+            <DialogDescription>
+              Cette action <strong>critique</strong> supprime tous les facteurs MFA, codes de secours
+              et appareils de confiance de <strong>{resetMfaUser?.name}</strong>.
+              L'utilisateur devra reconfigurer le MFA à sa prochaine connexion.
+              <br />Toutes ses sessions actives seront automatiquement déconnectées.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Label>Motif (obligatoire, audité)</Label>
+            <Textarea
+              value={resetMotif}
+              onChange={(e) => setResetMotif(e.target.value)}
+              placeholder="Ex. perte du téléphone confirmée par appel téléphonique du directeur"
+              rows={3}
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground">
+              {resetMotif.length}/500 — minimum 5 caractères
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setResetMfaUser(null); setResetMotif(""); }}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleResetMfa}
+              disabled={resettingMfa || resetMotif.trim().length < 5}
+            >
+              {resettingMfa && <Loader2 className="h-4 w-4 animate-spin" />}
+              Confirmer la réinitialisation
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
             );
           })}
         </div>
