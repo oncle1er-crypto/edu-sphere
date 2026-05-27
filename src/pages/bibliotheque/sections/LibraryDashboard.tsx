@@ -1,5 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, BookOpen, Repeat, AlertCircle, Loader2 } from "lucide-react";
 import { useLivres } from "@/hooks/useLivres";
 import { useEmprunts } from "@/hooks/useEmprunts";
