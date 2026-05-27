@@ -33,7 +33,6 @@ export default function ExamsDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {kpis.map((k) => (
         {kpis.map((k, i) => (
           <KpiCard key={k.label} label={k.label} value={k.value} sub={k.badge} icon={k.icon} index={i} />
         ))}
