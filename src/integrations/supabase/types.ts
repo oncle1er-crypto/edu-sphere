@@ -388,6 +388,96 @@ export type Database = {
           },
         ]
       }
+      bulletins_audit: {
+        Row: {
+          annee_id: string
+          appreciation_generale: string | null
+          classe_id: string
+          created_at: string
+          decision_conseil: string | null
+          decision_detail: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          locked: boolean
+          locked_at: string | null
+          locked_by: string | null
+          mention: string | null
+          moyenne: number | null
+          override_at: string | null
+          override_by: string | null
+          override_motif: string | null
+          pdf_hash: string | null
+          pdf_path: string | null
+          periode_id: string
+          rang: number | null
+          sent_at: string | null
+          sent_by: string | null
+          sent_channels: Json
+          sent_recipients: Json
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          annee_id: string
+          appreciation_generale?: string | null
+          classe_id: string
+          created_at?: string
+          decision_conseil?: string | null
+          decision_detail?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          mention?: string | null
+          moyenne?: number | null
+          override_at?: string | null
+          override_by?: string | null
+          override_motif?: string | null
+          pdf_hash?: string | null
+          pdf_path?: string | null
+          periode_id: string
+          rang?: number | null
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_channels?: Json
+          sent_recipients?: Json
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          annee_id?: string
+          appreciation_generale?: string | null
+          classe_id?: string
+          created_at?: string
+          decision_conseil?: string | null
+          decision_detail?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          locked?: boolean
+          locked_at?: string | null
+          locked_by?: string | null
+          mention?: string | null
+          moyenne?: number | null
+          override_at?: string | null
+          override_by?: string | null
+          override_motif?: string | null
+          pdf_hash?: string | null
+          pdf_path?: string | null
+          periode_id?: string
+          rang?: number | null
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_channels?: Json
+          sent_recipients?: Json
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
       bulletins_paie: {
         Row: {
           annee: number
@@ -3963,6 +4053,31 @@ export type Database = {
       reset_failed_mfa: { Args: never; Returns: undefined }
       set_user_permissions: {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
+        Returns: undefined
+      }
+      tracer_envoi_bulletin: {
+        Args: { _channels: Json; _id: string; _recipients: Json }
+        Returns: undefined
+      }
+      upsert_bulletin_audit: {
+        Args: {
+          _annee_id: string
+          _appreciation_generale: string
+          _classe_id: string
+          _decision_conseil: string
+          _decision_detail: string
+          _ecole_id: string
+          _eleve_id: string
+          _mention: string
+          _moyenne: number
+          _override_motif?: string
+          _periode_id: string
+          _rang: number
+        }
+        Returns: string
+      }
+      verrouiller_bulletin: {
+        Args: { _id: string; _pdf_hash: string; _pdf_path: string }
         Returns: undefined
       }
     }
