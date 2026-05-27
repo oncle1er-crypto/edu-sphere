@@ -1179,6 +1179,57 @@ export type Database = {
           },
         ]
       }
+      disponibilites_enseignants: {
+        Row: {
+          created_at: string
+          disponible: boolean
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          jour: number
+          note: string | null
+          plage: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disponible?: boolean
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          jour: number
+          note?: string | null
+          plage: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disponible?: boolean
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          jour?: number
+          note?: string | null
+          plage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disponibilites_enseignants_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disponibilites_enseignants_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents_eleves: {
         Row: {
           chemin_stockage: string
