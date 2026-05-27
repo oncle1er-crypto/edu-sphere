@@ -4169,6 +4169,18 @@ export type Database = {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
       }
+      detect_all_conflicts: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: {
+          creneau_ids: string[]
+          description: string
+          heure_debut: string
+          heure_fin: string
+          jour: number
+          severity: string
+          type: string
+        }[]
+      }
       enregistrer_paiement: {
         Args: {
           _ecole_id: string
