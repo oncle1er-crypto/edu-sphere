@@ -1398,8 +1398,10 @@ export type Database = {
           id: string
           lieu_naissance: string | null
           matricule: string
+          matricule_national: string | null
           nationalite: string | null
           nom: string
+          numero_inscription_en_ligne: string | null
           photo_url: string | null
           prenom: string
           sexe: Database["public"]["Enums"]["sexe_type"] | null
@@ -1417,8 +1419,10 @@ export type Database = {
           id?: string
           lieu_naissance?: string | null
           matricule: string
+          matricule_national?: string | null
           nationalite?: string | null
           nom: string
+          numero_inscription_en_ligne?: string | null
           photo_url?: string | null
           prenom: string
           sexe?: Database["public"]["Enums"]["sexe_type"] | null
@@ -1436,8 +1440,10 @@ export type Database = {
           id?: string
           lieu_naissance?: string | null
           matricule?: string
+          matricule_national?: string | null
           nationalite?: string | null
           nom?: string
+          numero_inscription_en_ligne?: string | null
           photo_url?: string | null
           prenom?: string
           sexe?: Database["public"]["Enums"]["sexe_type"] | null

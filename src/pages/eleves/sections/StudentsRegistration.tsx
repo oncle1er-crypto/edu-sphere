@@ -52,6 +52,8 @@ export default function StudentsRegistration() {
     adresse: "",
     classe_id: "",
     cycle_id: "",
+    matricule_national: "",
+    numero_inscription_en_ligne: "",
   });
 
   const [parent, setParent] = useState({
@@ -96,7 +98,9 @@ export default function StudentsRegistration() {
       annee_id: anneeId,
       ecole_id: ecoleId!,
       statut: "pre_inscrit",
-    });
+      matricule_national: form.matricule_national || null,
+      numero_inscription_en_ligne: form.numero_inscription_en_ligne || null,
+    } as any);
 
     // Créer le parent/tuteur si renseigné
     if (eleve && parent.nom && parent.telephone && ecoleId) {
@@ -124,7 +128,7 @@ export default function StudentsRegistration() {
       }
     }
 
-    setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "" });
+    setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "" });
     setParent({ nom: "", prenom: "", telephone: "", telephone2: "", email: "", profession: "", lien: "père" });
     setSaving(false);
   };
@@ -227,6 +231,12 @@ export default function StudentsRegistration() {
           </FieldRow>
           <FieldRow label="Adresse">
             <Textarea rows={2} value={form.adresse} onChange={(e) => set("adresse", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="N° matricule national">
+            <Input placeholder="Ex: 2024-CI-0001234" value={form.matricule_national} onChange={(e) => set("matricule_national", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="N° d'inscription en ligne">
+            <Input placeholder="Numéro fourni par la plateforme MENA" value={form.numero_inscription_en_ligne} onChange={(e) => set("numero_inscription_en_ligne", e.target.value)} />
           </FieldRow>
         </TabsContent>
 
