@@ -9,6 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useMfa } from "@/hooks/useMfa";
+import { useSmsMfa } from "@/hooks/useSmsMfa";
 import { useAuth } from "@/context/AuthContext";
 import MfaSetupDialog from "@/components/security/MfaSetupDialog";
 import { logSecurityEvent } from "@/hooks/useSecurityAudit";
@@ -18,12 +19,29 @@ import { toast } from "sonner";
 export default function MfaSettings() {
   const { user } = useAuth();
   const { factors, isEnrolled, loading, unenroll, generateBackupCodes, refresh } = useMfa();
+  const smsMfa = useSmsMfa();
   const [setupOpen, setSetupOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
   const [unenrolling, setUnenrolling] = useState(false);
+  const [removingSms, setRemovingSms] = useState(false);
 
   const verified = factors.find((f) => f.status === "verified");
+  const smsFactor = smsMfa.factor;
+  const anyEnrolled = isEnrolled || smsMfa.isEnrolled;
+
+  const handleRemoveSms = async () => {
+    setRemovingSms(true);
+    try {
+      await smsMfa.remove();
+      await logSecurityEvent("mfa_sms_disabled", "critical");
+      toast.success("Facteur SMS supprimé");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setRemovingSms(false); }
+  };
+
+  const maskPhone = (p: string) => p.length <= 4 ? p : p.slice(0, -4).replace(/./g, "*") + p.slice(-4);
 
   const handleUnenroll = async () => {
     if (!verified) return;
@@ -68,49 +86,92 @@ export default function MfaSettings() {
           <div className="flex items-center gap-2 text-muted-foreground text-sm">
             <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
           </div>
-        ) : isEnrolled && verified ? (
+        ) : anyEnrolled ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-emerald-600 mt-0.5" />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">MFA activé</p>
-                  <Badge variant="secondary" className="text-xs">TOTP</Badge>
+            {verified && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3">
+                <ShieldCheck className="h-5 w-5 text-emerald-600 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">Application Authenticator activée</p>
+                    <Badge variant="secondary" className="text-xs">TOTP</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Appareil : {verified.friendly_name || "Authenticator"} · activé le{" "}
+                    {new Date(verified.created_at).toLocaleDateString("fr-FR")}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Appareil : {verified.friendly_name || "Authenticator"} · activé le{" "}
-                  {new Date(verified.created_at).toLocaleDateString("fr-FR")}
-                </p>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Désactiver l'app Authenticator ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Vous devrez la reconfigurer à la prochaine activation.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleUnenroll} disabled={unenrolling}>
+                        {unenrolling && <Loader2 className="h-4 w-4 animate-spin" />} Désactiver
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-            </div>
+            )}
+
+            {smsFactor?.verified && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex items-start gap-3">
+                <Smartphone className="h-5 w-5 text-emerald-600 mt-0.5" />
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">SMS activé</p>
+                    <Badge variant="secondary" className="text-xs">SMS</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Numéro : <span className="font-mono">{maskPhone(smsFactor.phone)}</span>
+                    {smsFactor.last_used_at && ` · dernière utilisation ${new Date(smsFactor.last_used_at).toLocaleDateString("fr-FR")}`}
+                  </p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="text-destructive">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Supprimer le facteur SMS ?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Vous ne recevrez plus de code de vérification par SMS.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleRemoveSms} disabled={removingSms}>
+                        {removingSms && <Loader2 className="h-4 w-4 animate-spin" />} Supprimer
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2">
-              <Button variant="outline" onClick={regenerate} disabled={regenerating}>
-                {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Régénérer les codes de secours
+              <Button variant="outline" onClick={() => setSetupOpen(true)}>
+                <KeyRound className="h-4 w-4" /> Ajouter une autre méthode
               </Button>
-
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" className="text-destructive border-destructive/30 hover:bg-destructive/10">
-                    <ShieldOff className="h-4 w-4" /> Désactiver MFA
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Désactiver l'authentification à deux facteurs ?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Votre compte sera moins protégé. Si votre rôle exige le MFA, vous serez forcé de le réactiver à la prochaine connexion.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Annuler</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleUnenroll} disabled={unenrolling}>
-                      {unenrolling && <Loader2 className="h-4 w-4 animate-spin" />} Désactiver
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              {isEnrolled && (
+                <Button variant="outline" onClick={regenerate} disabled={regenerating}>
+                  {regenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Régénérer les codes de secours
+                </Button>
+              )}
             </div>
 
             {newCodes && (
@@ -130,7 +191,7 @@ export default function MfaSettings() {
               <div className="flex-1 text-sm">
                 <p className="font-medium">MFA non activé</p>
                 <p className="text-muted-foreground mt-1">
-                  Recommandé pour tous les comptes administratifs (admin, directeur, comptable, superviseur).
+                  Recommandé pour tous les comptes administratifs. Choisissez entre app Authenticator (TOTP) ou code par SMS.
                 </p>
               </div>
             </div>
@@ -141,7 +202,11 @@ export default function MfaSettings() {
         )}
       </SettingsSection>
 
-      <MfaSetupDialog open={setupOpen} onOpenChange={setSetupOpen} onSuccess={refresh} />
+      <MfaSetupDialog
+        open={setupOpen}
+        onOpenChange={setSetupOpen}
+        onSuccess={() => { refresh(); smsMfa.refresh(); }}
+      />
     </div>
   );
 }
