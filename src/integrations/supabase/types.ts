@@ -792,6 +792,7 @@ export type Database = {
           nom: string
           professeur_principal_id: string | null
           salle: string | null
+          salle_id: string | null
           updated_at: string
         }
         Insert: {
@@ -804,6 +805,7 @@ export type Database = {
           nom: string
           professeur_principal_id?: string | null
           salle?: string | null
+          salle_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -816,6 +818,7 @@ export type Database = {
           nom?: string
           professeur_principal_id?: string | null
           salle?: string | null
+          salle_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -845,6 +848,13 @@ export type Database = {
             columns: ["professeur_principal_id"]
             isOneToOne: false
             referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "classes_salle_id_fkey"
+            columns: ["salle_id"]
+            isOneToOne: false
+            referencedRelation: "salles"
             referencedColumns: ["id"]
           },
         ]
@@ -946,6 +956,7 @@ export type Database = {
           jour: number
           matiere_id: string
           salle: string | null
+          salle_id: string | null
           updated_at: string
         }
         Insert: {
@@ -960,6 +971,7 @@ export type Database = {
           jour: number
           matiere_id: string
           salle?: string | null
+          salle_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -974,6 +986,7 @@ export type Database = {
           jour?: number
           matiere_id?: string
           salle?: string | null
+          salle_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1010,6 +1023,13 @@ export type Database = {
             columns: ["matiere_id"]
             isOneToOne: false
             referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "creneaux_emploi_temps_salle_id_fkey"
+            columns: ["salle_id"]
+            isOneToOne: false
+            referencedRelation: "salles"
             referencedColumns: ["id"]
           },
         ]
@@ -3404,6 +3424,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      salles: {
+        Row: {
+          batiment: string | null
+          capacite: number
+          code: string
+          created_at: string
+          ecole_id: string
+          equipements: string[] | null
+          etage: string | null
+          id: string
+          nom: string | null
+          notes: string | null
+          statut: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          batiment?: string | null
+          capacite?: number
+          code: string
+          created_at?: string
+          ecole_id: string
+          equipements?: string[] | null
+          etage?: string | null
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          batiment?: string | null
+          capacite?: number
+          code?: string
+          created_at?: string
+          ecole_id?: string
+          equipements?: string[] | null
+          etage?: string | null
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salles_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sanctions_presences: {
         Row: {
