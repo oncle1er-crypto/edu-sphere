@@ -232,6 +232,12 @@ export default function StudentsRegistration() {
           <FieldRow label="Adresse">
             <Textarea rows={2} value={form.adresse} onChange={(e) => set("adresse", e.target.value)} />
           </FieldRow>
+          <FieldRow label="N° matricule national">
+            <Input placeholder="Ex: 2024-CI-0001234" value={form.matricule_national} onChange={(e) => set("matricule_national", e.target.value)} />
+          </FieldRow>
+          <FieldRow label="N° d'inscription en ligne">
+            <Input placeholder="Numéro fourni par la plateforme MENA" value={form.numero_inscription_en_ligne} onChange={(e) => set("numero_inscription_en_ligne", e.target.value)} />
+          </FieldRow>
         </TabsContent>
 
         <TabsContent value="parent" className="space-y-4 mt-4">
