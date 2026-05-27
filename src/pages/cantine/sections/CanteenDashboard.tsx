@@ -38,16 +38,8 @@ export default function CanteenDashboard() {
   return (
     <SettingsSection icon={<LayoutDashboard className="h-5 w-5" />} title="Vue d'ensemble Cantine" description="Indicateurs clés." hideSave>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {kpis.map((k) => (
-          <Card key={k.label} className="border">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-muted-foreground">{k.label}</span>
-                <k.icon className={`h-4 w-4 ${k.color}`} />
-              </div>
-              <p className="text-2xl font-extrabold font-display">{k.value}</p>
-            </CardContent>
-          </Card>
+        {kpis.map((k, i) => (
+          <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
         ))}
       </div>
     </SettingsSection>
