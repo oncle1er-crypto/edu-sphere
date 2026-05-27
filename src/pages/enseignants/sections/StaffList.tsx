@@ -11,11 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FieldRow } from "@/components/settings/SettingsSection";
-import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -56,6 +58,8 @@ export default function StaffList() {
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
   });
+  const [createAccount, setCreateAccount] = useState(true);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
