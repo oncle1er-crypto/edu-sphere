@@ -33,13 +33,15 @@ export default function StaffLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-hero px-2 py-1">
-        <h1 className="text-2xl md:text-3xl font-extrabold font-display text-gradient">
-          Enseignants & Personnel
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Recrutement, contrats, paie, affectations pédagogiques et carrières.
-        </p>
+      <div className="sticky top-16 z-30 -mx-2 px-2">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-hero px-4 py-3 border border-border/60 shadow-[var(--shadow-card)] backdrop-blur-md">
+          <h1 className="text-2xl md:text-3xl font-extrabold font-display text-gradient">
+            Enseignants & Personnel
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Recrutement, contrats, paie, affectations pédagogiques et carrières.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
