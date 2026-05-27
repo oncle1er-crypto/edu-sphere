@@ -71,19 +71,28 @@ export function useUserPermissions(targetUserId: string | null) {
     });
   };
 
-  const applyPreset = (preset: "readonly" | "full" | "none") => {
+  const buildPresetRow = (k: string, preset: "readonly" | "full" | "none"): PermRow => ({
+    module_key: k,
+    can_view: preset !== "none",
+    can_create: preset === "full",
+    can_update: preset === "full",
+    can_delete: preset === "full",
+    can_export: preset !== "none",
+  });
+
+  const applyPreset = (preset: "readonly" | "full" | "none", moduleKeys?: string[]) => {
     setPerms(prev => {
-      const next: Record<string, PermRow> = {};
-      Object.keys(prev).forEach(k => {
-        next[k] = {
-          module_key: k,
-          can_view: preset !== "none",
-          can_create: preset === "full",
-          can_update: preset === "full",
-          can_delete: preset === "full",
-          can_export: preset !== "none",
-        };
-      });
+      const next = { ...prev };
+      const keys = moduleKeys && moduleKeys.length > 0 ? moduleKeys : Object.keys(prev);
+      keys.forEach(k => { if (next[k]) next[k] = buildPresetRow(k, preset); });
+      return next;
+    });
+  };
+
+  const setActionForModules = (action: keyof Omit<PermRow, "module_key">, value: boolean, moduleKeys: string[]) => {
+    setPerms(prev => {
+      const next = { ...prev };
+      moduleKeys.forEach(k => { if (next[k]) next[k] = { ...next[k], [action]: value }; });
       return next;
     });
   };
@@ -109,5 +118,5 @@ export function useUserPermissions(targetUserId: string | null) {
     } finally { setSaving(false); }
   };
 
-  return { modules, perms, loading, saving, toggle, setAllForModule, setAllForAction, applyPreset, save, reload: load };
+  return { modules, perms, loading, saving, toggle, setAllForModule, setAllForAction, setActionForModules, applyPreset, save, reload: load };
 }
