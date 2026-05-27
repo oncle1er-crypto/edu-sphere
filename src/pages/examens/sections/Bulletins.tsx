@@ -366,8 +366,9 @@ export default function Bulletins() {
     }
 
     const moy = row.moyenne;
+    const auditOverride = auditMap[row.eleve_id];
     const decisions = {
-      appreciation_generale: appreciationGenerale(moy),
+      appreciation_generale: auditOverride?.appreciation_generale || appreciationGenerale(moy),
       tableau_honneur: moy >= 12,
       encouragements: moy >= 14,
       felicitations: moy >= 16,
@@ -375,8 +376,8 @@ export default function Bulletins() {
       avertissement_conduite: false,
       blame_travail: false,
       blame_conduite: false,
-      decision: decisionAuto(moy),
-      decision_detail: moy >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee",
+      decision: auditOverride?.decision_conseil || decisionAuto(moy),
+      decision_detail: auditOverride?.decision_detail || (moy >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee"),
     };
 
     const verification = `BULLETIN|${row.matricule}|${className}|${periodeNom}|${(annee?.libelle ?? "")}|${moy.toFixed(2)}|${row.rang}`;
