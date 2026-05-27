@@ -227,6 +227,18 @@ export default function StaffList() {
                     </SelectContent>
                   </Select>
                 </FieldRow>
+                <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
+                  <div className="flex items-start gap-2">
+                    <UserPlus className="h-4 w-4 text-primary mt-0.5" />
+                    <div>
+                      <Label className="cursor-pointer text-sm">Créer un compte utilisateur</Label>
+                      <p className="text-xs text-muted-foreground">
+                        Un lien d'invitation sera envoyé par email + SMS pour qu'il définisse son mot de passe.
+                      </p>
+                    </div>
+                  </div>
+                  <Switch checked={createAccount} onCheckedChange={setCreateAccount} />
+                </div>
                 <Button className="w-full" onClick={handleAdd} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
                 </Button>
@@ -304,6 +316,10 @@ export default function StaffList() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setViewEnseignant(s)}>Voir la fiche</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleResendInvitation(s.id)} disabled={invitingId === s.id}>
+                          {invitingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (s as any).invitation_accepted_at ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Send className="h-3.5 w-3.5" />}
+                          {(s as any).user_id ? "Renvoyer l'invitation" : "Créer compte + inviter"}
+                        </DropdownMenuItem>
                         <DropdownMenuItem>Modifier</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => deleteEnseignant(s.id)}>Supprimer</DropdownMenuItem>
                       </DropdownMenuContent>
