@@ -16,7 +16,8 @@ import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { toast } from "sonner";
 
 type Method = "choose" | "totp" | "sms";
-type Step = "enroll" | "verify" | "backup" | "done";
+type Step = "enroll" | "verify" | "activate" | "backup" | "done";
+
 
 interface Props {
   open: boolean;
@@ -117,12 +118,26 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
     setLoading(true);
     try {
       await sms.verifyOtp(code, "enroll");
-      if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
-      setStep("backup");
+      await logSecurityEvent("mfa_sms_phone_verified", "info", { phone_last4: phone.slice(-4) });
+      toast.success("Numéro vérifié");
+      setStep("activate");
     } catch (e: any) {
       toast.error(e.message ?? "Code invalide");
     } finally { setLoading(false); }
   };
+
+  const activateSms = async () => {
+    setLoading(true);
+    try {
+      await sms.activate();
+      await logSecurityEvent("mfa_sms_enabled", "info", { phone_last4: phone.slice(-4) });
+      if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
+      setStep("backup");
+    } catch (e: any) {
+      toast.error(e.message ?? "Activation impossible");
+    } finally { setLoading(false); }
+  };
+
 
   /* ============ Backup ============ */
   const copyBackup = () => {
@@ -290,6 +305,39 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
             </div>
           </motion.div>
         )}
+
+        {/* ============== SMS — ACTIVATION (post-vérification numéro) ============== */}
+        {method === "sms" && step === "activate" && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+            <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-4 flex gap-3">
+              <ShieldCheck className="h-5 w-5 text-emerald-600 mt-0.5" />
+              <div className="text-sm">
+                <p className="font-medium text-emerald-700 dark:text-emerald-400">Numéro vérifié</p>
+                <p className="text-muted-foreground mt-1">
+                  Le numéro <span className="font-mono">{phone}</span> a été confirmé.
+                  Confirmez maintenant son utilisation comme <strong>second facteur</strong> de connexion.
+                </p>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/60 bg-muted/30 p-4 text-xs text-muted-foreground space-y-1">
+              <p>En activant le MFA SMS, à chaque connexion :</p>
+              <ul className="list-disc list-inside ml-2 space-y-0.5">
+                <li>un code à 6 chiffres sera envoyé à ce numéro</li>
+                <li>ce code sera requis en plus de votre mot de passe</li>
+                <li>vous pourrez désactiver cette protection à tout moment</li>
+              </ul>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={backToChoose} className="flex-1">
+                Plus tard
+              </Button>
+              <Button onClick={activateSms} disabled={loading} className="flex-1">
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />} Activer le MFA SMS
+              </Button>
+            </div>
+          </motion.div>
+        )}
+
 
         {/* ============== BACKUP CODES ============== */}
         {step === "backup" && (

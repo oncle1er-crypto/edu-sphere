@@ -64,21 +64,28 @@ Deno.serve(async (req) => {
         .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
       const { data: role } = await service
         .from("user_roles").select("ecole_id").eq("user_id", user.id).limit(1).maybeSingle();
+      // Numéro vérifié, mais facteur PAS encore actif comme MFA.
+      // L'utilisateur devra confirmer explicitement via activate-mfa-sms.
+      const nowIso = new Date().toISOString();
       await service.from("mfa_sms_factors").upsert({
         user_id: user.id, phone: otp?.phone ?? "", ecole_id: role?.ecole_id ?? null,
-        verified: true, friendly_name: "SMS", last_used_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        verified: true, is_active: false,
+        phone_verified_at: nowIso,
+        friendly_name: "SMS",
+        updated_at: nowIso,
       }, { onConflict: "user_id" });
     } else {
       await service.from("mfa_sms_factors")
         .update({ last_used_at: new Date().toISOString() }).eq("user_id", user.id);
     }
 
+
     await service.rpc("log_security_event", {
-      _event_type: purpose === "enroll" ? "mfa_sms_enabled" : "mfa_sms_challenge_passed",
+      _event_type: purpose === "enroll" ? "mfa_sms_phone_verified" : "mfa_sms_challenge_passed",
       _severity: "info", _ecole_id: null, _ip: null,
       _user_agent: req.headers.get("user-agent"), _device_fp: null, _metadata: {},
     });
+
 
     return new Response(JSON.stringify({ ok: true }), {
       status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },

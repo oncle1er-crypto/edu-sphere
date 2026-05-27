@@ -2151,34 +2151,43 @@ export type Database = {
       }
       mfa_sms_factors: {
         Row: {
+          activated_at: string | null
           created_at: string
           ecole_id: string | null
           friendly_name: string | null
           id: string
+          is_active: boolean
           last_used_at: string | null
           phone: string
+          phone_verified_at: string | null
           updated_at: string
           user_id: string
           verified: boolean
         }
         Insert: {
+          activated_at?: string | null
           created_at?: string
           ecole_id?: string | null
           friendly_name?: string | null
           id?: string
+          is_active?: boolean
           last_used_at?: string | null
           phone: string
+          phone_verified_at?: string | null
           updated_at?: string
           user_id: string
           verified?: boolean
         }
         Update: {
+          activated_at?: string | null
           created_at?: string
           ecole_id?: string | null
           friendly_name?: string | null
           id?: string
+          is_active?: boolean
           last_used_at?: string | null
           phone?: string
+          phone_verified_at?: string | null
           updated_at?: string
           user_id?: string
           verified?: boolean
