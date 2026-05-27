@@ -71,10 +71,14 @@ export default function StaffList() {
 
   const handleAdd = async () => {
     if (!form.nom || !form.prenom) { toast.error("Nom et prénom obligatoires"); return; }
+    if (createAccount && !form.email && !form.telephone) {
+      toast.error("Email ou téléphone requis pour créer un compte");
+      return;
+    }
     setSaving(true);
     const year = new Date().getFullYear().toString().slice(-2);
     const rand = Math.floor(1000 + Math.random() * 9000);
-    await addEnseignant({
+    const created = await addEnseignant({
       matricule: `ENS-${year}${rand}`,
       nom: form.nom,
       prenom: form.prenom,
@@ -86,9 +90,34 @@ export default function StaffList() {
       diplome: form.diplome || null,
       ecole_id: "",
     });
+    if (created && createAccount) {
+      const { data, error } = await supabase.functions.invoke("create-teacher-account", {
+        body: { enseignant_id: created.id, app_base_url: window.location.origin },
+      });
+      if (error || data?.error) {
+        toast.error(`Compte non créé : ${data?.error ?? error?.message ?? "erreur"}`);
+      } else {
+        const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
+        toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
+      }
+    }
     setForm({ nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "" });
     setOpen(false);
     setSaving(false);
+  };
+
+  const handleResendInvitation = async (enseignantId: string) => {
+    setInvitingId(enseignantId);
+    const { data, error } = await supabase.functions.invoke("create-teacher-account", {
+      body: { enseignant_id: enseignantId, app_base_url: window.location.origin },
+    });
+    setInvitingId(null);
+    if (error || data?.error) {
+      toast.error(data?.error ?? error?.message ?? "Erreur");
+    } else {
+      const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
+      toast.success(`Invitation renvoyée${channels ? ` par ${channels}` : ""}`);
+    }
   };
 
   const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
