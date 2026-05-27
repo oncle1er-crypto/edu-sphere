@@ -1,5 +1,6 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LayoutDashboard, BookOpen, Users, GraduationCap, Loader2 } from "lucide-react";
