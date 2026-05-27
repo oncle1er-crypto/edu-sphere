@@ -52,6 +52,8 @@ export default function StudentsRegistration() {
     adresse: "",
     classe_id: "",
     cycle_id: "",
+    matricule_national: "",
+    numero_inscription_en_ligne: "",
   });
 
   const [parent, setParent] = useState({
