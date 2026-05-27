@@ -477,6 +477,68 @@ export default function Bulletins() {
     } finally { setGeneratingAll(false); }
   };
 
+  // S'assure qu'un brouillon d'audit existe pour cet élève (et retourne son id)
+  const ensureAuditDraft = async (row: BulletinRow): Promise<string | null> => {
+    if (!ecoleId || !anneeId || !selectedPeriode || !selectedClasse) return null;
+    const existing = auditMap[row.eleve_id];
+    if (existing) return existing.id;
+    const { data, error } = await supabase.rpc("upsert_bulletin_audit", {
+      _ecole_id: ecoleId, _annee_id: anneeId, _periode_id: selectedPeriode,
+      _classe_id: selectedClasse, _eleve_id: row.eleve_id,
+      _moyenne: row.moyenne, _rang: row.rang, _mention: row.mention,
+      _appreciation_generale: appreciationGenerale(row.moyenne),
+      _decision_conseil: decisionAuto(row.moyenne),
+      _decision_detail: row.moyenne >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee",
+      _override_motif: null,
+    });
+    if (error) { toast.error("Audit: " + error.message); return null; }
+    await refreshAudit();
+    return data as unknown as string;
+  };
+
+  const handleOpenSend = async (row: BulletinRow) => {
+    if (!scolariteStatus[row.eleve_id]?.aJour) {
+      toast.error("Élève non à jour : envoi désactivé."); return;
+    }
+    setGeneratingId(row.eleve_id);
+    try {
+      const doc = await buildPDFForStudent(row);
+      if (!doc) return;
+      const blob = doc.output("blob");
+      setSendPdfBlob(blob);
+      await ensureAuditDraft(row);
+      setSendRow(row);
+    } finally { setGeneratingId(null); }
+  };
+
+  const handleLockToggle = async (row: BulletinRow) => {
+    const audit = auditMap[row.eleve_id];
+    if (audit?.locked) { toast.info("Ce bulletin est déjà verrouillé."); return; }
+    setLockingId(row.eleve_id);
+    try {
+      const auditId = audit?.id ?? await ensureAuditDraft(row);
+      if (!auditId) return;
+      // Génère le PDF pour calculer un hash + l'archiver
+      const doc = await buildPDFForStudent(row);
+      if (!doc) return;
+      const blob = doc.output("blob") as Blob;
+      const buf = await blob.arrayBuffer();
+      const hashBuf = await crypto.subtle.digest("SHA-256", buf);
+      const hash = Array.from(new Uint8Array(hashBuf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+      const path = `${ecoleId}/${row.eleve_id}/locked_${selectedPeriode}_${Date.now()}.pdf`;
+      const { error: upErr } = await supabase.storage.from("bulletins").upload(path, blob, {
+        contentType: "application/pdf", upsert: false,
+      });
+      if (upErr) { toast.error("Archive: " + upErr.message); return; }
+      const { error } = await supabase.rpc("verrouiller_bulletin", {
+        _id: auditId, _pdf_hash: hash, _pdf_path: path,
+      });
+      if (error) { toast.error("Verrouillage: " + error.message); return; }
+      toast.success("Bulletin verrouillé et archivé.");
+      await refreshAudit();
+    } finally { setLockingId(null); }
+  };
+
   const totalWarnings = rows.reduce((acc, r) => acc + r.warnings.length, 0);
 
   return (
