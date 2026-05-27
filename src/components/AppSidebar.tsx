@@ -48,6 +48,7 @@ const managementItems = [
 const academicItems = [
   { title: "Emploi du temps", url: "/emploi-du-temps", icon: Calendar },
   { title: "Présences & Absences", url: "/presences", icon: ClipboardCheck },
+  { title: "Vie scolaire", url: "/vie-scolaire", icon: Shield },
   { title: "Examens & Notes", url: "/examens", icon: ClipboardList },
 ];
 
