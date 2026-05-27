@@ -9,6 +9,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useMfa } from "@/hooks/useMfa";
+import { useSmsMfa } from "@/hooks/useSmsMfa";
 import { useAuth } from "@/context/AuthContext";
 import MfaSetupDialog from "@/components/security/MfaSetupDialog";
 import { logSecurityEvent } from "@/hooks/useSecurityAudit";
@@ -18,12 +19,29 @@ import { toast } from "sonner";
 export default function MfaSettings() {
   const { user } = useAuth();
   const { factors, isEnrolled, loading, unenroll, generateBackupCodes, refresh } = useMfa();
+  const smsMfa = useSmsMfa();
   const [setupOpen, setSetupOpen] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
   const [newCodes, setNewCodes] = useState<string[] | null>(null);
   const [unenrolling, setUnenrolling] = useState(false);
+  const [removingSms, setRemovingSms] = useState(false);
 
   const verified = factors.find((f) => f.status === "verified");
+  const smsFactor = smsMfa.factor;
+  const anyEnrolled = isEnrolled || smsMfa.isEnrolled;
+
+  const handleRemoveSms = async () => {
+    setRemovingSms(true);
+    try {
+      await smsMfa.remove();
+      await logSecurityEvent("mfa_sms_disabled", "critical");
+      toast.success("Facteur SMS supprimé");
+    } catch (e: any) {
+      toast.error(e.message);
+    } finally { setRemovingSms(false); }
+  };
+
+  const maskPhone = (p: string) => p.length <= 4 ? p : p.slice(0, -4).replace(/./g, "*") + p.slice(-4);
 
   const handleUnenroll = async () => {
     if (!verified) return;
