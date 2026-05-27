@@ -118,12 +118,26 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
     setLoading(true);
     try {
       await sms.verifyOtp(code, "enroll");
-      if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
-      setStep("backup");
+      await logSecurityEvent("mfa_sms_phone_verified", "info", { phone_last4: phone.slice(-4) });
+      toast.success("Numéro vérifié");
+      setStep("activate");
     } catch (e: any) {
       toast.error(e.message ?? "Code invalide");
     } finally { setLoading(false); }
   };
+
+  const activateSms = async () => {
+    setLoading(true);
+    try {
+      await sms.activate();
+      await logSecurityEvent("mfa_sms_enabled", "info", { phone_last4: phone.slice(-4) });
+      if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
+      setStep("backup");
+    } catch (e: any) {
+      toast.error(e.message ?? "Activation impossible");
+    } finally { setLoading(false); }
+  };
+
 
   /* ============ Backup ============ */
   const copyBackup = () => {
