@@ -1,4 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClipboardList, CheckCircle2, TrendingUp, Award, Loader2 } from "lucide-react";
