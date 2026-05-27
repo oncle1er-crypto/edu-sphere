@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, Bus, Users, MapPin, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
