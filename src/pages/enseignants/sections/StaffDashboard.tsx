@@ -1,9 +1,9 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { LayoutDashboard, Users, GraduationCap, Briefcase, CalendarCheck, Loader2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
+import { motion } from "framer-motion";
 
 export default function StaffDashboard() {
   const { enseignants, loading } = useEnseignants();
@@ -19,9 +19,9 @@ export default function StaffDashboard() {
   const vacataires = enseignants.filter((e) => e.type_contrat === "Vacataire").length;
 
   const kpis = [
-    { label: "Total personnel", value: total.toString(), icon: Users, color: "text-primary" },
-    { label: "Actifs", value: actifs.toString(), icon: GraduationCap, color: "text-emerald-600" },
-    { label: "CDI", value: cdi.toString(), icon: Briefcase, color: "text-blue-600" },
+    { label: "Total personnel", value: total.toString(), icon: Users, variant: "stat-card--primary", iconColor: "text-primary" },
+    { label: "Actifs", value: actifs.toString(), icon: GraduationCap, variant: "stat-card--success", iconColor: "text-[hsl(152_60%_38%)]" },
+    { label: "CDI", value: cdi.toString(), icon: Briefcase, variant: "stat-card--info", iconColor: "text-[hsl(205_80%_45%)]" },
   ];
 
   const repartition = [
@@ -39,16 +39,22 @@ export default function StaffDashboard() {
         hideSave
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-          {kpis.map((k) => (
-            <Card key={k.label} className="border">
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-muted-foreground">{k.label}</span>
-                  <k.icon className={`h-4 w-4 ${k.color}`} />
-                </div>
-                <p className="text-2xl font-extrabold font-display">{k.value}</p>
-              </CardContent>
-            </Card>
+          {kpis.map((k, i) => (
+            <motion.div
+              key={k.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className={`stat-card ${k.variant} p-4`}
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-muted-foreground">{k.label}</span>
+                <span className="stat-icon h-8 w-8">
+                  <k.icon className={`h-4 w-4 ${k.iconColor}`} />
+                </span>
+              </div>
+              <p className="text-2xl font-extrabold font-display text-card-foreground">{k.value}</p>
+            </motion.div>
           ))}
         </div>
       </SettingsSection>

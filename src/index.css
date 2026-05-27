@@ -243,4 +243,59 @@
     animation: shimmer 6s linear infinite;
     box-shadow: 0 6px 18px -6px hsl(345 65% 28% / 0.55), inset 0 1px 0 hsl(50 95% 80% / 0.4);
   }
+
+  /* Premium glass stat cards — colored, transparent, harmonious */
+  .stat-card {
+    position: relative;
+    isolation: isolate;
+    border-radius: 1rem;
+    border: 1px solid hsl(var(--border) / 0.6);
+    background: linear-gradient(135deg, hsl(0 0% 100% / 0.72) 0%, hsl(0 0% 100% / 0.45) 100%);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.6) inset, 0 10px 24px -16px hsl(345 40% 20% / 0.25);
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .stat-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 80% at 0% 0%, var(--tint-a, hsl(345 65% 28% / 0.14)) 0%, transparent 55%),
+      radial-gradient(120% 80% at 100% 100%, var(--tint-b, hsl(50 95% 60% / 0.18)) 0%, transparent 55%);
+    z-index: -1;
+    pointer-events: none;
+  }
+  .stat-card::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--tint-bar, hsl(345 65% 38% / 0.7)), transparent);
+  }
+  .stat-card:hover {
+    transform: translateY(-2px);
+    border-color: hsl(var(--accent) / 0.45);
+    box-shadow: 0 1px 0 hsl(0 0% 100% / 0.7) inset, 0 18px 32px -18px hsl(345 50% 25% / 0.35);
+  }
+  .stat-card--primary  { --tint-a: hsl(345 65% 28% / 0.16); --tint-b: hsl(345 70% 50% / 0.14); --tint-bar: hsl(345 65% 38% / 0.7); }
+  .stat-card--accent   { --tint-a: hsl(50 95% 60% / 0.24);  --tint-b: hsl(38 90% 55% / 0.18);  --tint-bar: hsl(45 90% 50% / 0.8); }
+  .stat-card--success  { --tint-a: hsl(152 60% 42% / 0.16); --tint-b: hsl(165 55% 50% / 0.14); --tint-bar: hsl(152 60% 42% / 0.7); }
+  .stat-card--info     { --tint-a: hsl(205 80% 56% / 0.16); --tint-b: hsl(220 75% 60% / 0.14); --tint-bar: hsl(205 80% 50% / 0.7); }
+  .stat-card--warning  { --tint-a: hsl(38 92% 50% / 0.18);  --tint-b: hsl(28 90% 55% / 0.14);  --tint-bar: hsl(38 92% 50% / 0.75); }
+  .stat-card--rose     { --tint-a: hsl(340 75% 55% / 0.16); --tint-b: hsl(320 70% 60% / 0.14); --tint-bar: hsl(340 75% 55% / 0.7); }
+  .stat-card--violet   { --tint-a: hsl(265 65% 55% / 0.16); --tint-b: hsl(285 60% 60% / 0.14); --tint-bar: hsl(265 65% 55% / 0.7); }
+
+  .stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 2.25rem;
+    width: 2.25rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, hsl(0 0% 100% / 0.85), hsl(0 0% 100% / 0.55));
+    border: 1px solid hsl(var(--border) / 0.6);
+    box-shadow: 0 4px 12px -6px hsl(345 40% 20% / 0.25), inset 0 1px 0 hsl(0 0% 100% / 0.7);
+  }
 }

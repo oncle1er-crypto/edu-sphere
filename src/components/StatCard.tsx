@@ -10,11 +10,18 @@ interface StatCardProps {
   color: "primary" | "accent" | "warning" | "success";
 }
 
-const colorMap = {
-  primary: "bg-primary/10 text-primary",
-  accent: "bg-accent/10 text-primary",
-  warning: "bg-warning/10 text-warning",
-  success: "bg-success/10 text-success",
+const variantMap: Record<StatCardProps["color"], string> = {
+  primary: "stat-card--primary",
+  accent: "stat-card--accent",
+  warning: "stat-card--warning",
+  success: "stat-card--success",
+};
+
+const iconColorMap: Record<StatCardProps["color"], string> = {
+  primary: "text-primary",
+  accent: "text-[hsl(38_90%_45%)]",
+  warning: "text-warning",
+  success: "text-success",
 };
 
 export function StatCard({ title, value, change, changeType = "neutral", icon: Icon, color }: StatCardProps) {
@@ -23,7 +30,7 @@ export function StatCard({ title, value, change, changeType = "neutral", icon: I
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="rounded-xl border bg-card p-5 shadow-sm hover:shadow-md transition-shadow"
+      className={`stat-card ${variantMap[color]} p-5`}
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1">
@@ -37,8 +44,8 @@ export function StatCard({ title, value, change, changeType = "neutral", icon: I
             </p>
           )}
         </div>
-        <div className={`rounded-lg p-2.5 ${colorMap[color]}`}>
-          <Icon className="h-5 w-5" />
+        <div className="stat-icon">
+          <Icon className={`h-5 w-5 ${iconColorMap[color]}`} />
         </div>
       </div>
     </motion.div>
