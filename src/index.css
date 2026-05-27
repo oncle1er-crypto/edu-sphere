@@ -192,4 +192,42 @@
     background-size: 200% 100%;
     animation: shimmer 6s linear infinite;
   }
+
+  /* Colored sidebar menu */
+  .menu-aside {
+    position: relative;
+    isolation: isolate;
+    background: hsl(var(--card) / 0.85);
+    backdrop-filter: blur(8px);
+    overflow: hidden;
+  }
+  .menu-aside::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 80% at 0% 0%, hsl(var(--primary) / 0.10) 0%, transparent 55%),
+      radial-gradient(120% 80% at 100% 100%, hsl(var(--accent) / 0.14) 0%, transparent 55%),
+      linear-gradient(180deg, hsl(var(--primary) / 0.04), hsl(var(--accent) / 0.04));
+    pointer-events: none;
+    z-index: 0;
+  }
+  .menu-aside > * { position: relative; z-index: 1; }
+
+  .menu-link {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  }
+  .menu-link:not(.is-active):hover {
+    background: var(--gradient-primary-soft);
+    transform: translateX(2px);
+  }
+  .menu-link.is-active {
+    color: hsl(var(--primary-foreground));
+    background: var(--gradient-primary);
+    background-size: 200% 100%;
+    animation: shimmer 6s linear infinite;
+    box-shadow: var(--shadow-glow);
+  }
 }
