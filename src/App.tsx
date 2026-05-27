@@ -102,6 +102,10 @@ import LocalizationSettings from "@/pages/parametres/sections/LocalizationSettin
 import BackupSettings from "@/pages/parametres/sections/BackupSettings";
 import UserProfile from "@/pages/parametres/sections/UserProfile";
 import SecuritySettings from "@/pages/parametres/sections/SecuritySettings";
+import MfaSettings from "@/pages/parametres/sections/MfaSettings";
+import SecurityHistory from "@/pages/parametres/sections/SecurityHistory";
+import TrustedDevices from "@/pages/parametres/sections/TrustedDevices";
+import MfaGuard from "@/components/security/MfaGuard";
 import IntegrationsSettings from "@/pages/parametres/sections/IntegrationsSettings";
 import ActivityLogs from "@/pages/parametres/sections/ActivityLogs";
 import SupportSettings from "@/pages/parametres/sections/SupportSettings";
@@ -226,8 +230,9 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();
   if (loading) return <AppLoader label="Vérification de votre session…" />;
   if (!session) return <Navigate to="/connexion" replace />;
-  return <>{children}</>;
+  return <MfaGuard>{children}</MfaGuard>;
 }
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -467,6 +472,9 @@ const App = () => (
               <Route path="sauvegarde" element={<BackupSettings />} />
               <Route path="profil" element={<UserProfile />} />
               <Route path="securite" element={<SecuritySettings />} />
+              <Route path="mfa" element={<MfaSettings />} />
+              <Route path="appareils" element={<TrustedDevices />} />
+              <Route path="historique-securite" element={<SecurityHistory />} />
               <Route path="integrations" element={<IntegrationsSettings />} />
               <Route path="logs" element={<ActivityLogs />} />
               <Route path="support" element={<SupportSettings />} />

@@ -3,10 +3,12 @@ import { TopNav } from "@/components/TopNav";
 import { AppFooter } from "@/components/AppFooter";
 import { AIAssistant } from "@/components/AIAssistant";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
+import MfaEnforcementBanner from "@/components/security/MfaEnforcementBanner";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col bg-background">
+      <MfaEnforcementBanner />
       <div className="sticky top-0 z-40 shadow-md">
         <AppHeader userName="Ello Charles Frédéric" />
         <TopNav schoolName="COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" />

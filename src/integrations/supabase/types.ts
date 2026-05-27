@@ -2077,6 +2077,78 @@ export type Database = {
         }
         Relationships: []
       }
+      mfa_backup_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_failed_attempts: {
+        Row: {
+          attempts: number
+          last_attempt_at: string
+          locked_until: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_requirements: {
+        Row: {
+          ecole_id: string
+          grace_period_days: number
+          id: string
+          required: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          ecole_id: string
+          grace_period_days?: number
+          id?: string
+          required?: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          ecole_id?: string
+          grace_period_days?: number
+          id?: string
+          required?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       modeles_exigences_documents: {
         Row: {
           created_at: string
@@ -2994,6 +3066,45 @@ export type Database = {
         }
         Relationships: []
       }
+      security_audit_logs: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          ecole_id: string | null
+          event_severity: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          ecole_id?: string | null
+          event_severity?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          ecole_id?: string | null
+          event_severity?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       sms_config: {
         Row: {
           api_token: string
@@ -3200,6 +3311,42 @@ export type Database = {
           },
         ]
       }
+      trusted_devices: {
+        Row: {
+          device_fingerprint: string
+          device_name: string | null
+          id: string
+          ip_address: string | null
+          last_seen_at: string
+          revoked_at: string | null
+          trusted_at: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          device_fingerprint: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          trusted_at?: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          device_fingerprint?: string
+          device_name?: string | null
+          id?: string
+          ip_address?: string | null
+          last_seen_at?: string
+          revoked_at?: string | null
+          trusted_at?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -3355,6 +3502,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_reset_user_mfa: {
+        Args: { _ecole_id: string; _motif: string; _target_user_id: string }
+        Returns: undefined
+      }
       appliquer_decisions_fin_annee: {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: Json
@@ -3388,6 +3539,7 @@ export type Database = {
         }
         Returns: string
       }
+      consume_backup_code: { Args: { _code_hash: string }; Returns: boolean }
       decrypt_sms_api_token: {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
@@ -3412,6 +3564,22 @@ export type Database = {
         Args: { _frais_id: string }
         Returns: number
       }
+      is_mfa_locked: { Args: { _user_id?: string }; Returns: boolean }
+      is_mfa_required_for_user: { Args: { _user_id: string }; Returns: boolean }
+      log_security_event: {
+        Args: {
+          _device_fp?: string
+          _ecole_id?: string
+          _event_type: string
+          _ip?: string
+          _metadata?: Json
+          _severity?: string
+          _user_agent?: string
+        }
+        Returns: string
+      }
+      register_failed_mfa: { Args: never; Returns: Json }
+      reset_failed_mfa: { Args: never; Returns: undefined }
     }
     Enums: {
       annee_statut: "active" | "preparation" | "verrouillee" | "archivee"

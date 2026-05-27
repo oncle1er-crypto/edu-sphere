@@ -1,17 +1,19 @@
-import { ShieldCheck, Smartphone, KeyRound, LogOut, Globe, Loader2 } from "lucide-react";
+import { ShieldCheck, Smartphone, KeyRound, LogOut, Globe, Loader2, ArrowRight } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useMfa } from "@/hooks/useMfa";
+import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 export default function SecuritySettings() {
   const { user } = useAuth();
+  const { isEnrolled } = useMfa();
   const navigate = useNavigate();
   const [pwd, setPwd] = useState({ next: "", confirm: "" });
   const [saving, setSaving] = useState(false);
@@ -24,11 +26,16 @@ export default function SecuritySettings() {
     const { error } = await supabase.auth.updateUser({ password: pwd.next });
     setSaving(false);
     if (error) toast.error(error.message);
-    else { toast.success("Mot de passe modifié"); setPwd({ next: "", confirm: "" }); }
+    else {
+      toast.success("Mot de passe modifié");
+      setPwd({ next: "", confirm: "" });
+      await logSecurityEvent("password_changed", "warning");
+    }
   };
 
   const handleSignOutAll = async () => {
     setSigningOut(true);
+    await logSecurityEvent("global_signout", "critical");
     const { error } = await supabase.auth.signOut({ scope: "global" });
     setSigningOut(false);
     if (error) toast.error(error.message);
@@ -58,11 +65,19 @@ export default function SecuritySettings() {
 
       <SettingsSection
         title="Authentification à deux facteurs (2FA)"
-        description="Bientôt disponible : ajoutez une couche de sécurité supplémentaire."
+        description={isEnrolled ? "MFA activé — protection renforcée." : "Activez le MFA pour sécuriser votre compte."}
         icon={<Smartphone className="h-5 w-5" />}
         hideSave
       >
-        <FieldRow label="Activer la 2FA"><Switch disabled /></FieldRow>
+        <Button asChild variant={isEnrolled ? "outline" : "default"} className="w-full justify-between">
+          <Link to="/parametres/mfa">
+            <span className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4" />
+              {isEnrolled ? "Gérer le MFA" : "Configurer le MFA"}
+            </span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
       </SettingsSection>
 
       <SettingsSection
