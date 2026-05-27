@@ -3825,6 +3825,7 @@ export type Database = {
         | "enseignant"
         | "surveillant"
         | "parent"
+        | "educateur"
       carte_statut: "active" | "perdue" | "expiree" | "annulee"
       carte_type: "eleve" | "enseignant" | "personnel"
       decoupage_type: "trimestre" | "semestre"
@@ -3980,6 +3981,7 @@ export const Constants = {
         "enseignant",
         "surveillant",
         "parent",
+        "educateur",
       ],
       carte_statut: ["active", "perdue", "expiree", "annulee"],
       carte_type: ["eleve", "enseignant", "personnel"],
