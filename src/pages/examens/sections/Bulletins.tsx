@@ -622,11 +622,17 @@ export default function Bulletins() {
                 <TableHead>Moyenne</TableHead>
                 <TableHead>Mention</TableHead>
                 <TableHead>État</TableHead>
+                <TableHead>Audit</TableHead>
+                <TableHead>Scolarité</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((b) => (
+              {rows.map((b) => {
+                const audit = auditMap[b.eleve_id];
+                const scol = scolariteStatus[b.eleve_id];
+                const aJour = scol?.aJour !== false;
+                return (
                 <TableRow key={b.eleve_id}>
                   <TableCell className="font-semibold">{b.rang}</TableCell>
                   <TableCell className="font-mono text-xs">{b.matricule}</TableCell>
@@ -644,10 +650,36 @@ export default function Bulletins() {
                       </span>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {audit ? (
+                      <div className="flex flex-col gap-0.5">
+                        <Badge variant={audit.locked ? "default" : "outline"} className="w-fit text-[10px]">
+                          {audit.locked ? <><Lock className="h-2.5 w-2.5 mr-1" />v{audit.version}</> : <>v{audit.version} (brouillon)</>}
+                        </Badge>
+                        {audit.sent_at && <span className="text-[10px] text-muted-foreground">envoyé ✓</span>}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {aJour ? (
+                      <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">à jour</Badge>
+                    ) : (
+                      <span className="text-[10px] text-destructive" title={`Reste dû : ${Math.round(scol?.resteDu ?? 0).toLocaleString("fr-FR")} FCFA`}>
+                        en retard
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePreview(b)} title="Aperçu">
                         <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={!!audit?.locked}
+                        onClick={() => setOverrideRow(b)} title="Override conseil de classe">
+                        <Pencil className="h-3.5 w-3.5" />
                       </Button>
                       <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePrint(b)} title="Imprimer">
                         <Printer className="h-3.5 w-3.5" />
@@ -655,10 +687,23 @@ export default function Bulletins() {
                       <Button size="icon" variant="ghost" className="h-7 w-7" disabled={generatingId === b.eleve_id} onClick={() => handleDownloadPDF(b)} title="Télécharger PDF">
                         {generatingId === b.eleve_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={!aJour || generatingId === b.eleve_id}
+                        title={aJour ? "Envoyer aux parents" : "Élève non à jour"}
+                        onClick={() => handleOpenSend(b)}>
+                        <Send className={`h-3.5 w-3.5 ${aJour ? "text-primary" : ""}`} />
+                      </Button>
+                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                        disabled={lockingId === b.eleve_id || !!audit?.locked}
+                        title={audit?.locked ? "Verrouillé" : "Verrouiller la version"}
+                        onClick={() => handleLockToggle(b)}>
+                        {lockingId === b.eleve_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> :
+                          audit?.locked ? <Lock className="h-3.5 w-3.5" /> : <LockOpen className="h-3.5 w-3.5" />}
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+              );})}
             </TableBody>
           </Table>
         </div>
