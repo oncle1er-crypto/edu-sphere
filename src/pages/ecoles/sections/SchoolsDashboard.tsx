@@ -1,5 +1,6 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, School, Users, GraduationCap, DollarSign, CheckCircle2, PauseCircle } from "lucide-react";
 import { useEcoles } from "@/context/EcoleContext";
 
@@ -28,18 +29,11 @@ export default function SchoolsDashboard() {
       hideSave
     >
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        {kpis.map((k) => (
-          <Card key={k.label} className="border shadow-[var(--shadow-card)]">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground font-medium">{k.label}</p>
-                <k.icon className={`h-4 w-4 ${k.color}`} />
-              </div>
-              <p className="text-2xl font-bold mt-2">{k.value}</p>
-            </CardContent>
-          </Card>
+        {kpis.map((k, i) => (
+          <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
         ))}
       </div>
+
 
       <Card className="border shadow-[var(--shadow-card)]">
         <CardContent className="p-4">

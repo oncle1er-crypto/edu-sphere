@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { KpiCard } from "@/components/KpiCard";
 import { Progress } from "@/components/ui/progress";
 import { ClipboardCheck, UserX, CalendarClock, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -63,22 +64,11 @@ export default function AttendanceDashboard() {
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {kpis.map((k) => (
-          <Card key={k.label} className="border">
-            <CardContent className="p-5">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{k.label}</p>
-                  <p className="text-2xl font-extrabold font-display text-primary mt-2">{k.value}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center">
-                  <k.icon className="h-5 w-5" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {kpis.map((k, i) => (
+          <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
         ))}
       </div>
+
 
       <Card className="border">
         <CardContent className="p-6">
