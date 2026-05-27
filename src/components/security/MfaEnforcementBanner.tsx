@@ -4,12 +4,16 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useMfa } from "@/hooks/useMfa";
+import { useSmsMfa } from "@/hooks/useSmsMfa";
 import { Button } from "@/components/ui/button";
 
 /** Bandeau global affiché si MFA obligatoire pour le rôle mais non configuré */
 export default function MfaEnforcementBanner() {
   const { user } = useAuth();
-  const { isEnrolled, loading } = useMfa();
+  const { isEnrolled: totpEnrolled, loading: totpLoading } = useMfa();
+  const { isEnrolled: smsEnrolled, loading: smsLoading } = useSmsMfa();
+  const isEnrolled = totpEnrolled || smsEnrolled;
+  const loading = totpLoading || smsLoading;
   const [required, setRequired] = useState(false);
   const [dismissed, setDismissed] = useState(false);
 
