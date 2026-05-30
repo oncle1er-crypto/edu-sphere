@@ -70,6 +70,7 @@ export default function ClassSummary() {
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedEleveId, setSelectedEleveId] = useState<string | null>(null);
+  const [settleClasse, setSettleClasse] = useState<ClasseSyntheseRow | null>(null);
   const selectedEleve = useMemo(
     () => (selectedEleveId ? ELEVES_SCOLARITE.find((e) => e.id === selectedEleveId) ?? null : null),
     [selectedEleveId, ELEVES_SCOLARITE],
