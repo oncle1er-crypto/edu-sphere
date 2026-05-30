@@ -242,6 +242,15 @@ export default function StudentSummary() {
         ecoleId={ecoleId}
         onPaymentRecorded={refetch}
       />
+
+      <SettleDialog
+        open={settleOpen}
+        onOpenChange={setSettleOpen}
+        ecoleId={ecoleId}
+        eleve={eleve}
+        contexteLabel={`${eleve.nom} ${eleve.prenom} — ${eleve.classe}`}
+        onCompleted={refetch}
+      />
     </div>
   );
 }
