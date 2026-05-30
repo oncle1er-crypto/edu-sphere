@@ -22,6 +22,7 @@ export default function StudentSummary() {
   const [selectedId, setSelectedId] = useState<string>("");
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>();
   const [payOpen, setPayOpen] = useState(false);
+  const [settleOpen, setSettleOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
