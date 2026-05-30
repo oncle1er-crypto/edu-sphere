@@ -308,6 +308,15 @@ export default function ClassSummary() {
         ecoleId={ecoleId}
         onPaymentRecorded={refetch}
       />
+
+      <SettleDialog
+        open={!!settleClasse}
+        onOpenChange={(o) => { if (!o) setSettleClasse(null); }}
+        ecoleId={ecoleId}
+        eleves={settleClasse?.eleves ?? []}
+        contexteLabel={settleClasse ? `Classe ${settleClasse.classe} (${settleClasse.cycle})` : undefined}
+        onCompleted={refetch}
+      />
     </div>
   );
 }
