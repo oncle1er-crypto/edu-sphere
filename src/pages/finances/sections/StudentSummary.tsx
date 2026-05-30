@@ -132,6 +132,11 @@ export default function StudentSummary() {
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
+                    {eleve.resteDu > 0 && (
+                      <Button size="sm" onClick={() => setSettleOpen(true)} className="bg-success hover:bg-success/90 text-white">
+                        <Wallet className="h-4 w-4" />Solder ({fcfa(eleve.resteDu)})
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
