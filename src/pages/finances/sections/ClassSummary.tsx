@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { SettleDialog } from "../components/SettleDialog";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
@@ -69,6 +70,7 @@ export default function ClassSummary() {
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
   const [selectedEleveId, setSelectedEleveId] = useState<string | null>(null);
+  const [settleClasse, setSettleClasse] = useState<ClasseSyntheseRow | null>(null);
   const selectedEleve = useMemo(
     () => (selectedEleveId ? ELEVES_SCOLARITE.find((e) => e.id === selectedEleveId) ?? null : null),
     [selectedEleveId, ELEVES_SCOLARITE],
@@ -225,9 +227,21 @@ export default function ClassSummary() {
                       <TableRow key={`${key}-detail`}>
                         <TableCell colSpan={8} className="bg-muted/20 p-0">
                           <div className="p-4">
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                              Élèves de {r.classe} ({r.effectif})
-                            </p>
+                            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Élèves de {r.classe} ({r.effectif})
+                              </p>
+                              {r.reste > 0 && (
+                                <Button
+                                  size="sm"
+                                  className="bg-success hover:bg-success/90 text-white"
+                                  onClick={(ev) => { ev.stopPropagation(); setSettleClasse(r); }}
+                                >
+                                  <Wallet className="h-3.5 w-3.5" />
+                                  Solder la classe ({fcfa(r.reste)})
+                                </Button>
+                              )}
+                            </div>
                             <div className="border rounded-md overflow-hidden bg-card">
                               <Table>
                                 <TableHeader>
@@ -293,6 +307,15 @@ export default function ClassSummary() {
         onOpenChange={(o) => { if (!o) setSelectedEleve(null); }}
         ecoleId={ecoleId}
         onPaymentRecorded={refetch}
+      />
+
+      <SettleDialog
+        open={!!settleClasse}
+        onOpenChange={(o) => { if (!o) setSettleClasse(null); }}
+        ecoleId={ecoleId}
+        eleves={settleClasse?.eleves ?? []}
+        contexteLabel={settleClasse ? `Classe ${settleClasse.classe} (${settleClasse.cycle})` : undefined}
+        onCompleted={refetch}
       />
     </div>
   );

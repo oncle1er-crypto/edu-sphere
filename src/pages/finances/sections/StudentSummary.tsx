@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2 } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
 import { PaymentDialog } from "../components/PaymentDialog";
+import { SettleDialog } from "../components/SettleDialog";
 import { toast } from "sonner";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
@@ -21,6 +22,7 @@ export default function StudentSummary() {
   const [selectedId, setSelectedId] = useState<string>("");
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>();
   const [payOpen, setPayOpen] = useState(false);
+  const [settleOpen, setSettleOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return ELEVES_SCOLARITE.filter((e) => {
@@ -130,6 +132,11 @@ export default function StudentSummary() {
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
                     <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
+                    {eleve.resteDu > 0 && (
+                      <Button size="sm" onClick={() => setSettleOpen(true)} className="bg-success hover:bg-success/90 text-white">
+                        <Wallet className="h-4 w-4" />Solder ({fcfa(eleve.resteDu)})
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -234,6 +241,15 @@ export default function StudentSummary() {
         onOpenChange={(o) => { if (!o) { setPayOpen(false); setPayTrancheNum(undefined); } }}
         ecoleId={ecoleId}
         onPaymentRecorded={refetch}
+      />
+
+      <SettleDialog
+        open={settleOpen}
+        onOpenChange={setSettleOpen}
+        ecoleId={ecoleId}
+        eleve={eleve}
+        contexteLabel={`${eleve.nom} ${eleve.prenom} — ${eleve.classe}`}
+        onCompleted={refetch}
       />
     </div>
   );
