@@ -227,9 +227,21 @@ export default function ClassSummary() {
                       <TableRow key={`${key}-detail`}>
                         <TableCell colSpan={8} className="bg-muted/20 p-0">
                           <div className="p-4">
-                            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                              Élèves de {r.classe} ({r.effectif})
-                            </p>
+                            <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                              <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                Élèves de {r.classe} ({r.effectif})
+                              </p>
+                              {r.reste > 0 && (
+                                <Button
+                                  size="sm"
+                                  className="bg-success hover:bg-success/90 text-white"
+                                  onClick={(ev) => { ev.stopPropagation(); setSettleClasse(r); }}
+                                >
+                                  <Wallet className="h-3.5 w-3.5" />
+                                  Solder la classe ({fcfa(r.reste)})
+                                </Button>
+                              )}
+                            </div>
                             <div className="border rounded-md overflow-hidden bg-card">
                               <Table>
                                 <TableHeader>
