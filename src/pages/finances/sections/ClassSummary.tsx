@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { SettleDialog } from "../components/SettleDialog";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
