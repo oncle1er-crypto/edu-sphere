@@ -45,7 +45,7 @@ export default function StaffLayout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start max-h-[calc(100vh-7rem)] overflow-y-auto">
+        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
           {groups.map((group) => (
             <div key={group} className="mb-4 last:mb-0">
               <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
