@@ -20,7 +20,7 @@ export default function SecuritySettings() {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleChangePassword = async () => {
-    if (pwd.next.length < 12) return toast.error("Minimum 12 caractères requis");
+    if (pwd.next.length < 6) return toast.error("Minimum 6 caractères requis");
     if (pwd.next !== pwd.confirm) return toast.error("Les mots de passe ne correspondent pas");
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pwd.next });
@@ -50,7 +50,7 @@ export default function SecuritySettings() {
         icon={<KeyRound className="h-5 w-5" />}
         hideSave
       >
-        <FieldRow label="Nouveau mot de passe" hint="Min. 12 caractères">
+        <FieldRow label="Nouveau mot de passe" hint="Min. 6 caractères">
           <Input type="password" value={pwd.next} onChange={e => setPwd(p => ({ ...p, next: e.target.value }))} placeholder="••••••••" />
         </FieldRow>
         <FieldRow label="Confirmer">
