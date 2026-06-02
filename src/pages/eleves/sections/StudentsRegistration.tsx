@@ -54,6 +54,7 @@ export default function StudentsRegistration() {
     cycle_id: "",
     matricule_national: "",
     numero_inscription_en_ligne: "",
+    est_nouveau: false,
   });
 
   const [parent, setParent] = useState({
@@ -66,7 +67,7 @@ export default function StudentsRegistration() {
     lien: "père",
   });
 
-  const set = (key: string, value: string) => setForm((p) => ({ ...p, [key]: value }));
+  const set = (key: string, value: string | boolean) => setForm((p) => ({ ...p, [key]: value }));
   const setP = (key: string, value: string) => setParent((p) => ({ ...p, [key]: value }));
 
   const filteredClasses = form.cycle_id
@@ -100,6 +101,7 @@ export default function StudentsRegistration() {
       statut: "pre_inscrit",
       matricule_national: form.matricule_national || null,
       numero_inscription_en_ligne: form.numero_inscription_en_ligne || null,
+      est_nouveau: form.est_nouveau,
     } as any);
 
     // Créer le parent/tuteur si renseigné
@@ -128,7 +130,7 @@ export default function StudentsRegistration() {
       }
     }
 
-    setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "" });
+    setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "", est_nouveau: false });
     setParent({ nom: "", prenom: "", telephone: "", telephone2: "", email: "", profession: "", lien: "père" });
     setSaving(false);
   };
