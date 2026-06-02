@@ -1,4 +1,4 @@
-import { Settings2, Wallet, Bus, Info, Save, Loader2 } from "lucide-react";
+import { Settings2, Bus, Info, Save, Loader2 } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
