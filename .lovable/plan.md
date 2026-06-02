@@ -1,67 +1,83 @@
+# Grille tarifaire scolarité — CRUD + automatisation
+
 ## Objectif
-
-1. **Permissions totalement libres par utilisateur** : matrice modules × actions (voir, créer, modifier, supprimer, exporter) configurable pour chaque utilisateur, indépendamment de son rôle.
-2. **Création automatique du compte enseignant** lors de l'enregistrement, avec invitation envoyée par **email + SMS**. L'enseignant définit son mot de passe lors de sa première connexion via un lien sécurisé.
+Remplacer la grille statique du fichier `scolarite-data.ts` par une grille **éditable en base** par niveau, avec gestion des nouveaux/anciens de la Grande Section, application automatique aux élèves non encore inscrits, et reconduction au passage à une nouvelle année.
 
 ---
 
-## Partie 1 — Permissions personnalisées
+## 1. Base de données (migration)
 
-### Base de données
-- Table `app_modules` (catalogue des modules : `eleves`, `classes`, `enseignants`, `examens`, `finances`, `bibliotheque`, `cantine`, `transport`, `cartes`, `communication`, `presences`, `emploi_temps`, `statistiques`, `parametres`).
-- Table `user_permissions` : `(user_id, ecole_id, module_key, can_view, can_create, can_update, can_delete, can_export)` — surcharge totale, ignore le rôle.
-- Fonction SQL `has_permission(_user_id, _ecole_id, _module, _action)` (SECURITY DEFINER) — retourne true si la ligne existe avec l'action à true, sinon fallback sur `has_ecole_role(admin)` pour les admins.
-- Fonction `set_user_permissions(_target_user, _ecole_id, _permissions jsonb)` — upsert en bulk (admin uniquement, auditée).
-- RLS : seuls les admins de l'école peuvent lire/écrire `user_permissions` ; chaque utilisateur peut lire les siennes.
+**Nouvelle table `grille_tarifs_niveaux`**
+- `ecole_id`, `annee_id`
+- `niveau_code` (ex: `MAT1`, `MAT2`, `GS`, `CP`, `CE`, `CM`, `COL_65`, `COL_4`, `COL_3`)
+- `variant` (`null` par défaut, ou `ancien` / `nouveau` pour la GS)
+- `libelle` (ex: "Grande Section — Nouveau")
+- `tranches` (JSONB : `[{numero, label, mois, jour, montant}, …]` — nombre de tranches libre)
+- `montant_total` (recalculé automatiquement = somme des tranches)
+- Unicité : `(ecole_id, annee_id, niveau_code, variant)`
+- RLS + GRANTs identiques au reste du module finances (admin/comptable)
 
-### Frontend
-- Hook `usePermissions()` — charge les permissions de l'utilisateur courant + helper `can(module, action)`.
-- Hook `useUserPermissions(userId)` — pour l'écran admin.
-- Nouveau dialog `PermissionsMatrixDialog.tsx` ouvert depuis `UsersRoles.tsx` (bouton "Permissions" par utilisateur) :
-  - Tableau modules × actions avec switches
-  - Bouton "Tout cocher / Tout décocher" par ligne et colonne
-  - Preset "Lecture seule", "Plein accès"
-  - Sauvegarde via RPC
-- Guard `<Can module="..." action="..."> ... </Can>` pour masquer boutons/sections dans l'UI.
+**Ajout sur `eleves`**
+- `est_nouveau` (booléen, défaut `false`) — coché pour les élèves de GS en première inscription, sert à choisir le variant tarifaire.
 
----
+**Fonctions SQL (security definer)**
+- `resoudre_niveau_code(classe_nom text) → text` : mappe le nom de classe au code niveau.
+- `generer_tranches_eleve(_eleve_id)` réécrite : cherche d'abord dans `grille_tarifs_niveaux` (avec variant selon `est_nouveau` pour la GS), retombe sur `frais_scolarite` si absent.
+- `regenerer_tranches_pre_inscrits(_ecole_id, _annee_id)` : pour chaque élève au statut `pre_inscrit` **sans aucun paiement**, supprime les tranches et régénère depuis la grille courante.
+- `dupliquer_grille_annee(_ecole_id, _annee_source, _annee_cible)` : copie toutes les lignes de grille d'une année à l'autre.
 
-## Partie 2 — Création compte enseignant + invitation
-
-### Base de données
-- Ajout colonnes sur `enseignants` : `user_id uuid`, `invitation_sent_at timestamptz`, `invitation_accepted_at timestamptz`.
-- Table `teacher_invitations` : `(id, enseignant_id, ecole_id, token_hash, email, telephone, expires_at, consumed_at, created_by)` — token aléatoire 32 octets, expire 7 jours.
-- Fonction `consume_teacher_invitation(_token_hash)` — valide + marque consommée, retourne user_id.
-
-### Edge functions
-- `create-teacher-account` (admin-only) : reçoit enseignant_id → crée user auth (admin API, sans mot de passe), insère rôle `enseignant`, génère token invitation, déclenche envois email + SMS.
-- L'email d'invitation passe par le système Lovable Emails (template dédié "teacher-invitation" à scaffolder).
-- Le SMS passe par la fonction `send-sms` existante avec un message court contenant le lien `https://<app>/invitation?token=...`.
-
-### Frontend
-- `StaffList.tsx` : ajout d'un toggle "Créer un compte" au formulaire enregistrement enseignant + bouton "Renvoyer l'invitation" sur les enseignants existants.
-- Nouvelle page publique `/invitation?token=...` :
-  - Valide le token (edge function `accept-teacher-invitation`)
-  - Affiche un formulaire "Définir votre mot de passe" (avec confirmation + règles de force)
-  - À la soumission : met à jour le mot de passe via `supabase.auth.updateUser`, marque invitation consommée, redirige vers login.
+**Seed** : insertion de la grille actuelle (la table visible dans la capture) pour l'année académique en cours du Groupe Scolaire La Providence.
 
 ---
 
-## Sécurité
-- Audit log (`log_security_event`) sur : changement permissions, création compte enseignant, envoi/consommation invitation.
-- RLS strict : `teacher_invitations` lisible uniquement par admins de l'école ; le token brut n'est jamais stocké (hash SHA-256).
-- Lien invitation à usage unique, expiration 7 jours, possibilité de renvoyer.
+## 2. Interface — page Configuration finances
+
+Remplacement de la table statique « Grille tarifaire — Scolarité » par un **éditeur CRUD** :
+- Ligne par niveau (avec badge Ancien/Nouveau pour la GS)
+- Boutons **+ Niveau**, **Modifier**, **Supprimer**
+- Dialog d'édition d'un niveau :
+  - Libellé, nb de tranches (1 à 6), pour chaque tranche : libellé / mois / montant
+  - Total recalculé en direct
+  - Toggle « créer la variante Ancien/Nouveau » disponible uniquement pour la GS
+- Au **Enregistrer** : upsert + appel automatique de `regenerer_tranches_pre_inscrits` (avec confirmation et compte d'élèves impactés).
+- Bannière d'info : « X élèves pré-inscrits ont vu leurs tranches mises à jour. Les élèves déjà inscrits avec paiements en cours ne sont pas touchés. »
+
+## 3. Fiche élève
+
+Ajout d'une case à cocher **« Nouvel élève (1ère inscription en GS) »** dans le formulaire d'inscription / édition d'un élève. Affichée uniquement si la classe est en Grande Section. Le tarif appliqué (ancien/nouveau) suit automatiquement ce champ.
+
+## 4. Nouvelle année académique
+
+Lors de la création d'une nouvelle année dans **Écoles → Années scolaires** :
+- Si une année précédente existe avec une grille, dialog modal :
+  > « Reconduire la grille tarifaire de l'année 2025-2026 ? »
+  > [Reconduire à l'identique] [Modifier après création] [Ne pas reconduire]
+- Si « Reconduire » : appel de `dupliquer_grille_annee` puis redirection vers la page de configuration de la grille pour l'année cible (en lecture seule modifiable).
 
 ---
 
-## Étapes d'implémentation
+## 5. Compatibilité
 
-1. Migration SQL (modules, permissions, invitations, fonctions, RLS, grants).
-2. Hooks frontend (`usePermissions`, `useUserPermissions`) + composant `<Can>`.
-3. Dialog matrice de permissions dans `UsersRoles.tsx`.
-4. Edge functions `create-teacher-account` + `accept-teacher-invitation`.
-5. Page publique `/invitation`.
-6. Intégration UI dans `StaffList.tsx` (case "Créer compte" + renvoi invitation).
-7. Template email invitation enseignant (si Lovable Emails déjà configuré, sinon SMS uniquement au début).
+- L'ancienne table `frais_scolarite` (par cycle) reste en place comme **fallback** pour ne pas casser les paiements en cours.
+- Les élèves déjà inscrits avec au moins un paiement ne sont **jamais** régénérés : leurs tranches existantes restent intactes.
+- Le fichier `scolarite-data.ts` (constantes UI) garde son rôle d'affichage de démo, mais la page Configuration affichera dorénavant les valeurs réelles de la base.
 
-Confirmez-moi pour démarrer.
+---
+
+## Détails techniques
+
+```
+grille_tarifs_niveaux
+├─ ecole_id            uuid    FK ecoles
+├─ annee_id            uuid    FK annees_scolaires
+├─ niveau_code         text    MAT1|MAT2|GS|CP|CE|CM|COL_65|COL_4|COL_3
+├─ variant             text    null | 'ancien' | 'nouveau'
+├─ libelle             text
+├─ tranches            jsonb   [{numero:int, label:text, mois:int, jour:int, montant:numeric}]
+├─ montant_total       numeric (calculé via trigger)
+└─ UNIQUE(ecole_id, annee_id, niveau_code, variant)
+```
+
+Le trigger existant `frais_generer_tranches` n'est pas touché ; un nouveau trigger sur `grille_tarifs_niveaux` régénère automatiquement les tranches des pré-inscrits du niveau concerné après chaque insert/update/delete.
+
+Implémentation estimée : 1 migration SQL + 4 fichiers TSX modifiés/créés.

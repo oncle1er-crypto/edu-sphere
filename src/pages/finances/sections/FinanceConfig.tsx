@@ -1,4 +1,4 @@
-import { Settings2, Wallet, Bus, Info, Save, Loader2 } from "lucide-react";
+import { Settings2, Bus, Info, Save, Loader2 } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -9,10 +9,11 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
 import {
-  TARIFS_SCOLARITE, TARIFS_SERVICES,
-  ECHEANCES_SCOLARITE, ECHEANCES_SERVICES,
+  TARIFS_SERVICES,
+  ECHEANCES_SERVICES,
   fcfa,
 } from "../scolarite-data";
+import GrilleTarifaireSection from "../components/GrilleTarifaireSection";
 
 const paymentMethods = [
   { id: "cash", label: "Espèces" },
@@ -62,55 +63,8 @@ export default function FinanceConfig() {
 
   return (
     <div className="space-y-6">
-      {/* ─── Grille tarifaire scolarité ─── */}
-      <SettingsSection
-        title="Grille tarifaire — Scolarité"
-        description="Tarifs indicatifs incluant inscription + scolarité annuelle + frais annexes."
-        icon={<Wallet className="h-5 w-5" />}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b-2 border-primary/20">
-                <th className="text-left py-3 px-3 font-bold text-foreground">Niveau</th>
-                {ECHEANCES_SCOLARITE.map((e) => (
-                  <th key={e} className="text-right py-3 px-3 font-bold text-foreground">{e}</th>
-                ))}
-                <th className="text-right py-3 px-3 font-extrabold text-primary">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TARIFS_SCOLARITE.map((t, i) => (
-                <tr key={t.niveau} className={i % 2 === 0 ? "bg-muted/30" : ""}>
-                  <td className="py-2.5 px-3 font-medium italic text-foreground">{t.niveau}</td>
-                  {t.tranches.map((m, j) => (
-                    <td key={j} className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
-                      {fcfa(m)}
-                    </td>
-                  ))}
-                  <td className="py-2.5 px-3 text-right tabular-nums font-bold text-primary">
-                    {fcfa(t.total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
-          <p className="flex items-start gap-1.5">
-            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span><strong>Grande Section :</strong> Ancien = {fcfa(140_000)} F / Nouveau = {fcfa(150_000)} F</span>
-          </p>
-          <p className="flex items-start gap-1.5">
-            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>Tarifs indicatifs incluant inscription + scolarité annuelle + frais annexes.</span>
-          </p>
-          <p className="flex items-start gap-1.5">
-            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>L'achat des papiers hygiéniques, crayons de couleur et des feutres pour la maternelle ainsi que le paquet de papiers rames et cansons sont compris dans les frais annexes, même les fêtes de l'école.</span>
-          </p>
-        </div>
-      </SettingsSection>
+      {/* ─── Grille tarifaire scolarité (CRUD en base) ─── */}
+      <GrilleTarifaireSection />
 
       {/* ─── Grille tarifaire Car & Cantine ─── */}
       <SettingsSection

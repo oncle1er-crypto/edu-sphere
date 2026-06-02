@@ -1395,6 +1395,7 @@ export type Database = {
           date_inscription: string | null
           date_naissance: string | null
           ecole_id: string
+          est_nouveau: boolean
           id: string
           lieu_naissance: string | null
           matricule: string
@@ -1416,6 +1417,7 @@ export type Database = {
           date_inscription?: string | null
           date_naissance?: string | null
           ecole_id: string
+          est_nouveau?: boolean
           id?: string
           lieu_naissance?: string | null
           matricule: string
@@ -1437,6 +1439,7 @@ export type Database = {
           date_inscription?: string | null
           date_naissance?: string | null
           ecole_id?: string
+          est_nouveau?: boolean
           id?: string
           lieu_naissance?: string | null
           matricule?: string
@@ -2033,6 +2036,60 @@ export type Database = {
           },
           {
             foreignKeyName: "frais_scolarite_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grille_tarifs_niveaux: {
+        Row: {
+          annee_id: string
+          created_at: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_total: number
+          niveau_code: string
+          tranches: Json
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant_total?: number
+          niveau_code: string
+          tranches?: Json
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_total?: number
+          niveau_code?: string
+          tranches?: Json
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grille_tarifs_niveaux_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_niveaux_ecole_id_fkey"
             columns: ["ecole_id"]
             isOneToOne: false
             referencedRelation: "ecoles"
@@ -4294,6 +4351,10 @@ export type Database = {
           type: string
         }[]
       }
+      dupliquer_grille_annee: {
+        Args: { _annee_cible: string; _annee_source: string; _ecole_id: string }
+        Returns: number
+      }
       enregistrer_paiement: {
         Args: {
           _ecole_id: string
@@ -4337,8 +4398,13 @@ export type Database = {
         }
         Returns: string
       }
+      regenerer_tranches_pre_inscrits: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: number
+      }
       register_failed_mfa: { Args: never; Returns: Json }
       reset_failed_mfa: { Args: never; Returns: undefined }
+      resoudre_niveau_code: { Args: { _classe_nom: string }; Returns: string }
       set_user_permissions: {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
         Returns: undefined
