@@ -294,6 +294,24 @@ export default function StudentsRegistration() {
               </SelectContent>
             </Select>
           </FieldRow>
+          {(() => {
+            const cl = classes.find((c) => c.id === form.classe_id);
+            const isGS = !!cl && /GS|GRANDE\s*SEC/i.test(cl.nom);
+            if (!isGS) return null;
+            return (
+              <FieldRow label="Nouvel élève (1ère inscription)" hint="Détermine le tarif appliqué pour la Grande Section.">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 accent-primary"
+                    checked={form.est_nouveau}
+                    onChange={(e) => set("est_nouveau", e.target.checked)}
+                  />
+                  <span className="text-sm">Oui, premier passage en GS</span>
+                </label>
+              </FieldRow>
+            );
+          })()}
         </TabsContent>
       </Tabs>
 
