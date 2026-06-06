@@ -18,22 +18,35 @@ export function useMfa() {
   const [nextLevel, setNextLevel] = useState<AAL>(null);
   const [loading, setLoading] = useState(true);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    const [{ data: lf }, { data: aal }] = await Promise.all([
-      supabase.auth.mfa.listFactors(),
-      supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
-    ]);
-    const totp = (lf?.totp ?? []) as MfaFactor[];
-    setFactors(totp);
-    setCurrentLevel((aal?.currentLevel as AAL) ?? null);
-    setNextLevel((aal?.nextLevel as AAL) ?? null);
-    setLoading(false);
+  const refresh = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const [{ data: lf }, { data: aal }] = await Promise.all([
+        supabase.auth.mfa.listFactors(),
+        supabase.auth.mfa.getAuthenticatorAssuranceLevel(),
+      ]);
+      const totp = (lf?.totp ?? []) as MfaFactor[];
+      setFactors(totp);
+      setCurrentLevel((aal?.currentLevel as AAL) ?? null);
+      setNextLevel((aal?.nextLevel as AAL) ?? null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    refresh();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => refresh());
+    // Chargement initial uniquement avec loader plein écran
+    refresh(true);
+    // Les events Supabase (TOKEN_REFRESHED, USER_UPDATED, etc.) se déclenchent
+    // en arrière-plan toutes les ~heures — on rafraîchit en silence pour ne PAS
+    // ré-afficher le splash "Vérification de sécurité…".
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        refresh(true);
+      } else {
+        refresh(false);
+      }
+    });
     return () => sub.subscription.unsubscribe();
   }, [refresh]);
 
