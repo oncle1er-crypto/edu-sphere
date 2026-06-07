@@ -158,7 +158,7 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
     if (patch.directeur !== undefined) dbPatch.directeur = patch.directeur;
     if (patch.type !== undefined) dbPatch.type = patch.type;
     if (patch.status !== undefined) dbPatch.status = patch.status;
-    const { error } = await supabase.from("ecoles").update(dbPatch).eq("id", id);
+    const { error } = await supabase.from("ecoles").update(dbPatch as any).eq("id", id);
     if (error) { toast.error(error.message); return; }
     setEcoles((prev) => prev.map((e) => (e.ecole_id === id ? { ...e, ...patch } : e)));
   };
