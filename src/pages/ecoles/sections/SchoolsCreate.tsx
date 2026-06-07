@@ -25,13 +25,14 @@ export default function SchoolsCreate() {
 
   const update = (k: keyof FormState, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nom || !form.code || !form.ville) {
       toast.error("Renseigne au minimum le nom, le code et la ville.");
       return;
     }
-    const ecole = createEcole(form);
+    const ecole = await createEcole(form);
+    if (!ecole) return;
     setCurrentEcoleId(ecole.ecole_id);
     toast.success(`École créée — tenant ${ecole.ecole_id}`);
     setForm(empty);

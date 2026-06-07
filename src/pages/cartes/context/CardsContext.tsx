@@ -1,129 +1,204 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import { toast } from "sonner";
 import type { CardData, CardType } from "@/pages/cartes/components/SchoolCard";
 
 export type CardStatut = "active" | "perdue" | "revoquee" | "expiree";
 
 export interface IssuedCard extends CardData {
   id: string;
-  emiseLe: string;     // ISO
+  emiseLe: string;
   statut: CardStatut;
   motifRevocation?: string;
 }
 
 interface Ctx {
   cards: IssuedCard[];
-  addCards: (cards: IssuedCard[]) => void;
-  updateCard: (id: string, patch: Partial<IssuedCard>) => void;
-  removeCard: (id: string) => void;
-  setStatut: (id: string, statut: CardStatut, motif?: string) => void;
-  /** Met à jour le statut "expiree" sur les cartes dépassées. */
-  recomputeExpirations: () => void;
-  /** Statistiques par type. */
+  loading: boolean;
+  addCards: (cards: IssuedCard[]) => Promise<void>;
+  updateCard: (id: string, patch: Partial<IssuedCard>) => Promise<void>;
+  removeCard: (id: string) => Promise<void>;
+  setStatut: (id: string, statut: CardStatut, motif?: string) => Promise<void>;
+  recomputeExpirations: () => Promise<void>;
   countsByType: Record<CardType, number>;
+  refresh: () => Promise<void>;
 }
 
 const C = createContext<Ctx | null>(null);
-const STORAGE = "lovable.cards.v1";
 
-const seedAnnee = "2025-2026";
-const validJusqu = "2026-07-31";
+/** Mappe une ligne DB vers IssuedCard (structure UI). */
+function rowToCard(row: any, ecoleNom: string, ecoleVille?: string): IssuedCard {
+  const meta = row.metadata ?? {};
+  const eleve = row.eleves;
+  const ens = row.enseignants;
+  const annee = row.annees_scolaires;
+  return {
+    id: row.id,
+    type: row.type as CardType,
+    ecoleId: row.ecole_id,
+    ecoleNom: meta.ecoleNom ?? ecoleNom,
+    ecoleVille: meta.ecoleVille ?? ecoleVille,
+    nom: eleve?.nom ?? ens?.nom ?? meta.nom ?? "",
+    prenom: eleve?.prenom ?? ens?.prenom ?? meta.prenom ?? "",
+    matricule: eleve?.matricule ?? ens?.matricule ?? meta.matricule ?? row.numero,
+    classe: meta.classe,
+    fonction: meta.fonction,
+    formule: meta.formule,
+    ligne: meta.ligne,
+    arret: meta.arret,
+    numLecteur: meta.numLecteur,
+    motif: meta.motif,
+    hote: meta.hote,
+    photo: meta.photo,
+    anneeScolaire: annee?.libelle ?? meta.anneeScolaire ?? "",
+    validJusqu: row.date_expiration ?? meta.validJusqu ?? "",
+    emiseLe: row.date_emission ?? row.created_at?.slice(0, 10) ?? "",
+    statut: row.statut as CardStatut,
+    motifRevocation: row.motif_revocation ?? undefined,
+    couleurPrimaire: meta.couleurPrimaire,
+    couleurAccent: meta.couleurAccent,
+  };
+}
 
-const seed: IssuedCard[] = [
-  {
-    id: "card_1", type: "eleve",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "MBALLA", prenom: "Junior", matricule: "EL-2451", classe: "3ème A",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-09-15", statut: "active",
-  },
-  {
-    id: "card_2", type: "eleve",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "NGUEMO", prenom: "Sarah", matricule: "EL-2452", classe: "3ème A",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-09-15", statut: "active",
-  },
-  {
-    id: "card_3", type: "personnel",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "DIALLO", prenom: "Aïssatou", matricule: "ENS-042", fonction: "Professeure de Mathématiques",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-09-01", statut: "active",
-  },
-  {
-    id: "card_4", type: "cantine",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "TCHOUMI", prenom: "Paul", matricule: "EL-2453", classe: "5ème B",
-    formule: "Demi-pensionnaire",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-09-20", statut: "active",
-  },
-  {
-    id: "card_5", type: "transport",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "ATANGANA", prenom: "Léa", matricule: "EL-2454", ligne: "Ligne 3 — Yoff",
-    arret: "Arrêt École Primaire",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-09-22", statut: "active",
-  },
-  {
-    id: "card_6", type: "bibliotheque",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "KAMGA", prenom: "Yves", matricule: "EL-2455", numLecteur: "LEC-128",
-    anneeScolaire: seedAnnee, validJusqu,
-    emiseLe: "2025-10-05", statut: "active",
-  },
-  {
-    id: "card_7", type: "visiteur",
-    ecoleId: "ec_001", ecoleNom: "Complexe Scolaire La Providence de Don Orione", ecoleVille: "Dakar",
-    nom: "BAKARY", prenom: "Ousmane", matricule: "VIS-0421", motif: "Réunion parents",
-    hote: "Mme Diop (Direction)",
-    anneeScolaire: seedAnnee, validJusqu: new Date().toISOString().slice(0, 10),
-    emiseLe: new Date().toISOString().slice(0, 10), statut: "active",
-  },
-];
-
-function load(): IssuedCard[] {
-  try {
-    const raw = localStorage.getItem(STORAGE);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return seed;
+/** Mappe IssuedCard vers payload INSERT/UPDATE DB. */
+function cardToRow(c: IssuedCard, ecoleId: string) {
+  const metadata: Record<string, any> = {
+    ecoleNom: c.ecoleNom,
+    ecoleVille: c.ecoleVille,
+    classe: c.classe,
+    fonction: c.fonction,
+    formule: c.formule,
+    ligne: c.ligne,
+    arret: c.arret,
+    numLecteur: c.numLecteur,
+    motif: c.motif,
+    hote: c.hote,
+    photo: c.photo,
+    anneeScolaire: c.anneeScolaire,
+    validJusqu: c.validJusqu,
+    couleurPrimaire: c.couleurPrimaire,
+    couleurAccent: c.couleurAccent,
+  };
+  // Pour les types sans FK (cantine, transport, biblio, visiteur), on stocke l'identité dans metadata
+  if (!["eleve", "personnel", "enseignant"].includes(c.type)) {
+    metadata.nom = c.nom;
+    metadata.prenom = c.prenom;
+    metadata.matricule = c.matricule;
+  }
+  return {
+    ecole_id: ecoleId,
+    type: c.type as any,
+    numero: c.matricule || `CARD-${Date.now()}`,
+    date_emission: c.emiseLe || new Date().toISOString().slice(0, 10),
+    date_expiration: c.validJusqu || null,
+    statut: c.statut as any,
+    motif_revocation: c.motifRevocation ?? null,
+    metadata,
+  };
 }
 
 export function CardsProvider({ children }: { children: ReactNode }) {
-  const [cards, setCards] = useState<IssuedCard[]>(() => load());
+  const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const [cards, setCards] = useState<IssuedCard[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [ecoleInfo, setEcoleInfo] = useState<{ nom: string; ville?: string }>({ nom: "" });
+
+  const refresh = useCallback(async () => {
+    if (!ecoleId) { setCards([]); setLoading(false); return; }
+    setLoading(true);
+    const { data: ecole } = await supabase
+      .from("ecoles")
+      .select("nom, ville")
+      .eq("id", ecoleId)
+      .maybeSingle();
+    const info = { nom: ecole?.nom ?? "", ville: ecole?.ville ?? undefined };
+    setEcoleInfo(info);
+
+    const { data, error } = await supabase
+      .from("cartes")
+      .select("*, eleves(nom, prenom, matricule), enseignants(nom, prenom, matricule), annees_scolaires(libelle)")
+      .eq("ecole_id", ecoleId)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      toast.error("Erreur chargement cartes");
+      setCards([]);
+    } else {
+      setCards((data ?? []).map((r: any) => rowToCard(r, info.nom, info.ville)));
+    }
+    setLoading(false);
+  }, [ecoleId]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE, JSON.stringify(cards));
-  }, [cards]);
+    if (!ecoleLoading) refresh();
+  }, [ecoleLoading, refresh]);
 
-  const addCards: Ctx["addCards"] = (newCards) => setCards((s) => [...newCards, ...s]);
-  const updateCard: Ctx["updateCard"] = (id, patch) =>
-    setCards((s) => s.map((c) => (c.id === id ? { ...c, ...patch } : c)));
-  const removeCard: Ctx["removeCard"] = (id) => setCards((s) => s.filter((c) => c.id !== id));
-  const setStatut: Ctx["setStatut"] = (id, statut, motif) =>
-    updateCard(id, { statut, motifRevocation: motif });
+  const addCards = useCallback(async (newCards: IssuedCard[]) => {
+    if (!ecoleId) { toast.error("École non sélectionnée"); return; }
+    const rows = newCards.map((c) => cardToRow({ ...c, ecoleId }, ecoleId));
+    const { error } = await supabase.from("cartes").insert(rows as any);
+    if (error) { toast.error(error.message); return; }
+    await refresh();
+  }, [ecoleId, refresh]);
 
-  const recomputeExpirations: Ctx["recomputeExpirations"] = () => {
+  const updateCard = useCallback(async (id: string, patch: Partial<IssuedCard>) => {
+    const current = cards.find((c) => c.id === id);
+    if (!current || !ecoleId) return;
+    const merged = { ...current, ...patch } as IssuedCard;
+    const row = cardToRow(merged, ecoleId);
+    const { error } = await supabase
+      .from("cartes")
+      .update({
+        statut: row.statut,
+        motif_revocation: row.motif_revocation,
+        date_expiration: row.date_expiration,
+        metadata: row.metadata,
+      })
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setCards((s) => s.map((c) => (c.id === id ? merged : c)));
+  }, [cards, ecoleId]);
+
+  const removeCard = useCallback(async (id: string) => {
+    const { error } = await supabase.from("cartes").delete().eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setCards((s) => s.filter((c) => c.id !== id));
+  }, []);
+
+  const setStatut = useCallback(async (id: string, statut: CardStatut, motif?: string) => {
+    const { error } = await supabase
+      .from("cartes")
+      .update({ statut: statut as any, motif_revocation: motif ?? null })
+      .eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    setCards((s) => s.map((c) => (c.id === id ? { ...c, statut, motifRevocation: motif } : c)));
+  }, []);
+
+  const recomputeExpirations = useCallback(async () => {
     const today = new Date().toISOString().slice(0, 10);
-    setCards((s) =>
-      s.map((c) =>
-        c.statut === "active" && c.validJusqu < today ? { ...c, statut: "expiree" as CardStatut } : c
-      )
-    );
-  };
+    const expired = cards.filter((c) => c.statut === "active" && c.validJusqu && c.validJusqu < today);
+    if (expired.length === 0) return;
+    const ids = expired.map((c) => c.id);
+    const { error } = await supabase
+      .from("cartes")
+      .update({ statut: "expiree" as any })
+      .in("id", ids);
+    if (error) { toast.error(error.message); return; }
+    setCards((s) => s.map((c) => (ids.includes(c.id) ? { ...c, statut: "expiree" as CardStatut } : c)));
+  }, [cards]);
 
   const countsByType = useMemo(() => {
     const acc: Record<CardType, number> = {
       eleve: 0, personnel: 0, cantine: 0, transport: 0, bibliotheque: 0, visiteur: 0,
     };
-    cards.forEach((c) => { acc[c.type]++; });
+    cards.forEach((c) => { if (acc[c.type] !== undefined) acc[c.type]++; });
     return acc;
   }, [cards]);
 
   return (
-    <C.Provider value={{ cards, addCards, updateCard, removeCard, setStatut, recomputeExpirations, countsByType }}>
+    <C.Provider value={{ cards, loading, addCards, updateCard, removeCard, setStatut, recomputeExpirations, countsByType, refresh }}>
       {children}
     </C.Provider>
   );
