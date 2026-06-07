@@ -1,0 +1,2 @@
+DROP POLICY IF EXISTS "Logos publicly readable" ON storage.objects;
+CREATE POLICY "Logos read by ecole members" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'logos' AND private.user_belongs_to_ecole(auth.uid(), ((storage.foldername(name))[1])::uuid));
