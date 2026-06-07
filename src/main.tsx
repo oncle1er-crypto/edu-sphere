@@ -2,7 +2,11 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 import { applySavedPalette } from "./lib/applyPalette";
+import { registerPWA } from "./pwa/registerSW";
 
 applySavedPalette();
 
 createRoot(document.getElementById("root")!).render(<App />);
+
+registerPWA();
+
