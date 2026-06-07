@@ -4,6 +4,7 @@ import { AppFooter } from "@/components/AppFooter";
 import { AIAssistant } from "@/components/AIAssistant";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import MfaEnforcementBanner from "@/components/security/MfaEnforcementBanner";
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <AppFooter />
       <AIAssistant />
       <ScrollToTopButton />
+      <OfflineIndicator />
     </div>
   );
 }
