@@ -533,7 +533,10 @@ export type Database = {
           eleve_id: string | null
           enseignant_id: string | null
           id: string
+          metadata: Json
+          motif_revocation: string | null
           numero: string
+          qr_payload: string | null
           statut: Database["public"]["Enums"]["carte_statut"]
           type: Database["public"]["Enums"]["carte_type"]
           updated_at: string
@@ -547,7 +550,10 @@ export type Database = {
           eleve_id?: string | null
           enseignant_id?: string | null
           id?: string
+          metadata?: Json
+          motif_revocation?: string | null
           numero: string
+          qr_payload?: string | null
           statut?: Database["public"]["Enums"]["carte_statut"]
           type?: Database["public"]["Enums"]["carte_type"]
           updated_at?: string
@@ -561,7 +567,10 @@ export type Database = {
           eleve_id?: string | null
           enseignant_id?: string | null
           id?: string
+          metadata?: Json
+          motif_revocation?: string | null
           numero?: string
+          qr_payload?: string | null
           statut?: Database["public"]["Enums"]["carte_statut"]
           type?: Database["public"]["Enums"]["carte_type"]
           updated_at?: string
@@ -4445,8 +4454,15 @@ export type Database = {
         | "surveillant"
         | "parent"
         | "educateur"
-      carte_statut: "active" | "perdue" | "expiree" | "annulee"
-      carte_type: "eleve" | "enseignant" | "personnel"
+      carte_statut: "active" | "perdue" | "expiree" | "annulee" | "revoquee"
+      carte_type:
+        | "eleve"
+        | "enseignant"
+        | "personnel"
+        | "cantine"
+        | "transport"
+        | "bibliotheque"
+        | "visiteur"
       decoupage_type: "trimestre" | "semestre"
       ecole_status: "active" | "suspendue" | "archivee"
       paiement_mode:
@@ -4603,8 +4619,16 @@ export const Constants = {
         "parent",
         "educateur",
       ],
-      carte_statut: ["active", "perdue", "expiree", "annulee"],
-      carte_type: ["eleve", "enseignant", "personnel"],
+      carte_statut: ["active", "perdue", "expiree", "annulee", "revoquee"],
+      carte_type: [
+        "eleve",
+        "enseignant",
+        "personnel",
+        "cantine",
+        "transport",
+        "bibliotheque",
+        "visiteur",
+      ],
       decoupage_type: ["trimestre", "semestre"],
       ecole_status: ["active", "suspendue", "archivee"],
       paiement_mode: [
