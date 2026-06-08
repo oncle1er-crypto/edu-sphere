@@ -356,7 +356,7 @@ export default function StaffList() {
                           {invitingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (s as any).invitation_accepted_at ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Send className="h-3.5 w-3.5" />}
                           {(s as any).user_id ? "Renvoyer l'invitation" : "Créer compte + inviter"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(s)}>Modifier</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => deleteEnseignant(s.id)}>Supprimer</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
