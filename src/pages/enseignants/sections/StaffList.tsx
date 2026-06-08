@@ -46,7 +46,7 @@ const contratColor: Record<string, string> = {
 type ViewMode = "list" | "grid";
 
 export default function StaffList() {
-  const { enseignants, loading, addEnseignant, deleteEnseignant } = useEnseignants();
+  const { enseignants, loading, addEnseignant, updateEnseignant, deleteEnseignant } = useEnseignants();
   const [search, setSearch] = useState("");
   const [contrat, setContrat] = useState("all");
   const [open, setOpen] = useState(false);
@@ -60,6 +60,42 @@ export default function StaffList() {
   });
   const [createAccount, setCreateAccount] = useState(true);
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [editEnseignant, setEditEnseignant] = useState<typeof enseignants[0] | null>(null);
+  const [editForm, setEditForm] = useState({
+    nom: "", prenom: "", sexe: "" as "" | "F" | "M",
+    email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "", statut: "actif",
+  });
+  const [savingEdit, setSavingEdit] = useState(false);
+
+  const openEdit = (s: typeof enseignants[0]) => {
+    setEditEnseignant(s);
+    setEditForm({
+      nom: s.nom ?? "", prenom: s.prenom ?? "",
+      sexe: (s.sexe as any) ?? "",
+      email: s.email ?? "", telephone: s.telephone ?? "",
+      specialite: s.specialite ?? "", type_contrat: s.type_contrat ?? "CDI",
+      diplome: s.diplome ?? "", statut: s.statut ?? "actif",
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editEnseignant) return;
+    if (!editForm.nom || !editForm.prenom) { toast.error("Nom et prénom obligatoires"); return; }
+    setSavingEdit(true);
+    const ok = await updateEnseignant(editEnseignant.id, {
+      nom: editForm.nom,
+      prenom: editForm.prenom,
+      sexe: (editForm.sexe || null) as any,
+      email: editForm.email || null,
+      telephone: editForm.telephone || null,
+      specialite: editForm.specialite || null,
+      type_contrat: editForm.type_contrat || "CDI",
+      diplome: editForm.diplome || null,
+      statut: editForm.statut as any,
+    });
+    setSavingEdit(false);
+    if (ok) setEditEnseignant(null);
+  };
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
 
@@ -320,7 +356,7 @@ export default function StaffList() {
                           {invitingId === s.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : (s as any).invitation_accepted_at ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Send className="h-3.5 w-3.5" />}
                           {(s as any).user_id ? "Renvoyer l'invitation" : "Créer compte + inviter"}
                         </DropdownMenuItem>
-                        <DropdownMenuItem>Modifier</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEdit(s)}>Modifier</DropdownMenuItem>
                         <DropdownMenuItem className="text-destructive" onClick={() => deleteEnseignant(s.id)}>Supprimer</DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -361,6 +397,55 @@ export default function StaffList() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editEnseignant} onOpenChange={(o) => !o && setEditEnseignant(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier l'enseignant</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[65vh] overflow-y-auto">
+            <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
+            <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
+            <FieldRow label="Sexe">
+              <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="F">Féminin</SelectItem>
+                  <SelectItem value="M">Masculin</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FieldRow>
+            <FieldRow label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FieldRow>
+            <FieldRow label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FieldRow>
+            <FieldRow label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FieldRow>
+            <FieldRow label="Contrat">
+              <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CDI">CDI</SelectItem>
+                  <SelectItem value="CDD">CDD</SelectItem>
+                  <SelectItem value="Vacataire">Vacataire</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Statut">
+              <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="actif">Actif</SelectItem>
+                  <SelectItem value="inactif">Inactif</SelectItem>
+                  <SelectItem value="conge">En congé</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <Button className="w-full" onClick={handleSaveEdit} disabled={savingEdit}>
+              {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer les modifications
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
       <ImportDialog
         open={showImport}
