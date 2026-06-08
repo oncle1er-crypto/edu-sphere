@@ -1,30 +1,29 @@
 import { useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { ChefHat, List, LayoutGrid } from "lucide-react";
+import { ChefHat, Plus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useCantinePersonnel } from "@/hooks/useCantine";
 
-const team = [
-  { nom: "Mariama Sy", poste: "Chef cuisinier", contrat: "CDI", anciennete: "8 ans", statut: "Actif" },
-  { nom: "Ousmane Diatta", poste: "Aide cuisinier", contrat: "CDI", anciennete: "3 ans", statut: "Actif" },
-  { nom: "Awa Diop", poste: "Plongeuse", contrat: "CDD", anciennete: "1 an", statut: "Actif" },
-  { nom: "Pape Ndiaye", poste: "Magasinier", contrat: "CDI", anciennete: "5 ans", statut: "Congé" },
-];
-
-const getInitials = (nom: string) => {
-  const parts = nom.split(" ");
-  return parts.map((p) => p[0]).join("").toUpperCase().slice(0, 2);
-};
-
-type ViewMode = "list" | "grid";
+const getInitials = (nom: string, prenom: string) =>
+  `${(prenom?.[0] ?? "")}${(nom?.[0] ?? "")}`.toUpperCase();
 
 export default function CanteenTeam() {
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [viewMember, setViewMember] = useState<typeof team[0] | null>(null);
+  const { items, loading, add, update, remove } = useCantinePersonnel();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ nom: "", prenom: "", fonction: "Cuisinier", telephone: "", email: "" });
+
+  const handleAdd = async () => {
+    if (!form.nom || !form.prenom) return;
+    await add(form);
+    setOpen(false);
+    setForm({ nom: "", prenom: "", fonction: "Cuisinier", telephone: "", email: "" });
+  };
 
   return (
     <SettingsSection
@@ -34,82 +33,74 @@ export default function CanteenTeam() {
       hideSave
     >
       <div className="flex justify-end">
-        <div className="flex border rounded-md overflow-hidden">
-          <Button variant={viewMode === "list" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setViewMode("list")}>
-            <List className="h-4 w-4" />
-          </Button>
-          <Button variant={viewMode === "grid" ? "default" : "ghost"} size="sm" className="rounded-none" onClick={() => setViewMode("grid")}>
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button size="sm" className="gap-2" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Nouveau membre</Button>
       </div>
-
-      {viewMode === "grid" ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-          {team.map((t, i) => (
-            <Card
-              key={i}
-              className="p-3 flex flex-col items-center text-center gap-2 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => setViewMember(t)}
-            >
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="text-lg bg-primary/10 text-primary font-semibold">{getInitials(t.nom)}</AvatarFallback>
-              </Avatar>
-              <p className="font-semibold text-sm truncate w-full">{t.nom}</p>
-              <p className="text-xs text-muted-foreground">{t.poste}</p>
-              <Badge variant={t.statut === "Actif" ? "default" : "secondary"} className="text-[10px]">{t.statut}</Badge>
-            </Card>
-          ))}
-        </div>
+      {loading ? (
+        <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+      ) : items.length === 0 ? (
+        <p className="text-center text-sm text-muted-foreground py-6">Aucun membre enregistré.</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead>Nom</TableHead>
-              <TableHead>Poste</TableHead>
-              <TableHead>Contrat</TableHead>
-              <TableHead>Ancienneté</TableHead>
+              <TableHead>Fonction</TableHead>
+              <TableHead>Téléphone</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Statut</TableHead>
+              <TableHead></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {team.map((t, i) => (
-              <TableRow key={i} className="cursor-pointer hover:bg-muted/50" onClick={() => setViewMember(t)}>
+            {items.map((t: any) => (
+              <TableRow key={t.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{getInitials(t.nom)}</AvatarFallback>
+                      <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{getInitials(t.nom, t.prenom)}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{t.nom}</span>
+                    <span className="font-medium">{t.prenom} {t.nom}</span>
                   </div>
                 </TableCell>
-                <TableCell>{t.poste}</TableCell>
-                <TableCell>{t.contrat}</TableCell>
-                <TableCell>{t.anciennete}</TableCell>
-                <TableCell><Badge variant={t.statut === "Actif" ? "default" : "secondary"}>{t.statut}</Badge></TableCell>
+                <TableCell>{t.fonction}</TableCell>
+                <TableCell>{t.telephone ?? "—"}</TableCell>
+                <TableCell>{t.email ?? "—"}</TableCell>
+                <TableCell>
+                  <Badge
+                    variant={t.actif ? "default" : "secondary"}
+                    className="cursor-pointer"
+                    onClick={() => update(t.id, { actif: !t.actif })}
+                  >
+                    {t.actif ? "Actif" : "Inactif"}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button size="icon" variant="ghost" onClick={() => remove(t.id)}>
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
 
-      <Dialog open={!!viewMember} onOpenChange={(o) => !o && setViewMember(null)}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader><DialogTitle>Fiche membre</DialogTitle></DialogHeader>
-          {viewMember && (
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">{getInitials(viewMember.nom)}</AvatarFallback>
-              </Avatar>
-              <h3 className="text-lg font-semibold">{viewMember.nom}</h3>
-              <div className="w-full space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Poste</span><span>{viewMember.poste}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Contrat</span><span>{viewMember.contrat}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Ancienneté</span><span>{viewMember.anciennete}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Statut</span><Badge variant={viewMember.statut === "Actif" ? "default" : "secondary"}>{viewMember.statut}</Badge></div>
-              </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nouveau membre</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Prénom</Label><Input value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} /></div>
+              <div><Label>Nom</Label><Input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
             </div>
-          )}
+            <div><Label>Fonction</Label><Input value={form.fonction} onChange={(e) => setForm({ ...form, fonction: e.target.value })} /></div>
+            <div><Label>Téléphone</Label><Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} /></div>
+            <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button onClick={handleAdd} disabled={!form.nom || !form.prenom}>Enregistrer</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </SettingsSection>
