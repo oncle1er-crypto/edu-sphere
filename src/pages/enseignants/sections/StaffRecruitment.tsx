@@ -1,4 +1,5 @@
-import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
+import { useState } from "react";
+import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -6,78 +7,123 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { UserPlus, Upload } from "lucide-react";
+import { UserPlus, Plus, Loader2, Trash2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { useEnseignantCandidatures } from "@/hooks/useEnseignantsRH";
 
-const candidats = [
-  { nom: "Bah Ousmane", poste: "Prof Anglais", exp: "5 ans", statut: "Présélectionné" },
-  { nom: "Maïga Salif", poste: "Prof Maths", exp: "8 ans", statut: "Entretien" },
-  { nom: "Ndiaye Awa", poste: "Surveillante", exp: "2 ans", statut: "Refusé" },
-  { nom: "Fofana Bintou", poste: "Prof SVT", exp: "10 ans", statut: "Recruté" },
-];
+const STATUTS = ["recue", "presélectionnée", "entretien", "recrutee", "refusee"];
 
 const variantFor = (s: string) =>
-  s === "Recruté" ? "default" : s === "Refusé" ? "destructive" : "secondary";
+  s === "recrutee" ? "default" : s === "refusee" ? "destructive" : "secondary";
 
 export default function StaffRecruitment() {
+  const { items, loading, add, update, remove } = useEnseignantCandidatures();
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState<any>({
+    nom: "", prenom: "", email: "", telephone: "",
+    matiere_souhaitee: "", niveau_etudes: "", experience_annees: 0, notes_entretien: "",
+  });
+
+  const handleAdd = async () => {
+    if (!form.nom || !form.prenom) return;
+    await add(form);
+    setOpen(false);
+    setForm({ nom: "", prenom: "", email: "", telephone: "", matiere_souhaitee: "", niveau_etudes: "", experience_annees: 0, notes_entretien: "" });
+  };
+
   return (
     <SettingsSection
       icon={<UserPlus className="h-5 w-5" />}
       title="Recrutement"
-      description="Postes ouverts, candidats et processus de sélection."
+      description="Candidatures reçues et suivi du processus de sélection."
+      hideSave
     >
-      <Tabs defaultValue="poste" className="w-full">
+      <Tabs defaultValue="candidats" className="w-full">
         <TabsList>
-          <TabsTrigger value="poste">Nouveau poste</TabsTrigger>
-          <TabsTrigger value="candidats">Candidats</TabsTrigger>
+          <TabsTrigger value="candidats">Candidatures</TabsTrigger>
+          <TabsTrigger value="nouveau">Nouvelle</TabsTrigger>
         </TabsList>
-
-        <TabsContent value="poste" className="space-y-4 mt-4">
-          <FieldRow label="Intitulé du poste"><Input placeholder="Professeur de Mathématiques" /></FieldRow>
-          <FieldRow label="Type de contrat">
-            <Select><SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="cdi">CDI</SelectItem>
-                <SelectItem value="cdd">CDD</SelectItem>
-                <SelectItem value="vac">Vacataire</SelectItem>
-                <SelectItem value="stage">Stage</SelectItem>
-              </SelectContent>
-            </Select>
-          </FieldRow>
-          <FieldRow label="Diplôme requis"><Input placeholder="Licence / Master" /></FieldRow>
-          <FieldRow label="Expérience minimum"><Input placeholder="Ex: 3 ans" /></FieldRow>
-          <FieldRow label="Salaire indicatif"><Input placeholder="250 000 FCFA" /></FieldRow>
-          <FieldRow label="Date limite candidature"><Input type="date" /></FieldRow>
-          <FieldRow label="Description"><Textarea rows={4} /></FieldRow>
-        </TabsContent>
 
         <TabsContent value="candidats" className="space-y-3 mt-4">
           <div className="flex justify-end">
-            <Button size="sm"><Upload className="h-4 w-4" />Importer des CV</Button>
+            <Button size="sm" className="gap-2" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Saisir candidature</Button>
           </div>
-          <div className="border rounded-lg overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Candidat</TableHead>
-                  <TableHead>Poste</TableHead>
-                  <TableHead>Expérience</TableHead>
-                  <TableHead>Statut</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {candidats.map((c) => (
-                  <TableRow key={c.nom}>
-                    <TableCell className="font-medium">{c.nom}</TableCell>
-                    <TableCell>{c.poste}</TableCell>
-                    <TableCell><Badge variant="secondary">{c.exp}</Badge></TableCell>
-                    <TableCell><Badge variant={variantFor(c.statut) as any}>{c.statut}</Badge></TableCell>
+          {loading ? (
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : items.length === 0 ? (
+            <p className="text-center text-sm text-muted-foreground py-6">Aucune candidature.</p>
+          ) : (
+            <div className="border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Candidat</TableHead>
+                    <TableHead>Matière</TableHead>
+                    <TableHead>Expérience</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead></TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {items.map((c: any) => (
+                    <TableRow key={c.id}>
+                      <TableCell className="font-medium">{c.prenom} {c.nom}</TableCell>
+                      <TableCell>{c.matiere_souhaitee ?? "—"}</TableCell>
+                      <TableCell><Badge variant="secondary">{c.experience_annees ?? 0} ans</Badge></TableCell>
+                      <TableCell className="text-xs">{c.email ?? c.telephone ?? "—"}</TableCell>
+                      <TableCell>
+                        <Select value={c.statut} onValueChange={(v) => update(c.id, { statut: v })}>
+                          <SelectTrigger className="w-36 h-8">
+                            <SelectValue>
+                              <Badge variant={variantFor(c.statut) as any} className="text-xs">{c.statut}</Badge>
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {STATUTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell>
+                        <Button size="icon" variant="ghost" onClick={() => remove(c.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="nouveau" className="space-y-3 mt-4">
+          <p className="text-sm text-muted-foreground">Utilisez le bouton « Saisir candidature » dans l'onglet Candidatures.</p>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nouvelle candidature</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto">
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Prénom</Label><Input value={form.prenom} onChange={(e) => setForm({ ...form, prenom: e.target.value })} /></div>
+              <div><Label>Nom</Label><Input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
+              <div><Label>Email</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label>Téléphone</Label><Input value={form.telephone} onChange={(e) => setForm({ ...form, telephone: e.target.value })} /></div>
+              <div><Label>Matière souhaitée</Label><Input value={form.matiere_souhaitee} onChange={(e) => setForm({ ...form, matiere_souhaitee: e.target.value })} /></div>
+              <div><Label>Niveau d'études</Label><Input value={form.niveau_etudes} onChange={(e) => setForm({ ...form, niveau_etudes: e.target.value })} /></div>
+              <div><Label>Expérience (années)</Label><Input type="number" min={0} value={form.experience_annees} onChange={(e) => setForm({ ...form, experience_annees: Number(e.target.value) })} /></div>
+            </div>
+            <div><Label>Notes / entretien</Label><Textarea rows={3} value={form.notes_entretien} onChange={(e) => setForm({ ...form, notes_entretien: e.target.value })} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
+            <Button onClick={handleAdd} disabled={!form.nom || !form.prenom}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SettingsSection>
   );
 }
