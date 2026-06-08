@@ -46,7 +46,7 @@ const contratColor: Record<string, string> = {
 type ViewMode = "list" | "grid";
 
 export default function StaffList() {
-  const { enseignants, loading, addEnseignant, deleteEnseignant } = useEnseignants();
+  const { enseignants, loading, addEnseignant, updateEnseignant, deleteEnseignant } = useEnseignants();
   const [search, setSearch] = useState("");
   const [contrat, setContrat] = useState("all");
   const [open, setOpen] = useState(false);
