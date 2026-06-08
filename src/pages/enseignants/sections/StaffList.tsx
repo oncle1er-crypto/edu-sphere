@@ -398,6 +398,55 @@ export default function StaffList() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
+      <Dialog open={!!editEnseignant} onOpenChange={(o) => !o && setEditEnseignant(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Modifier l'enseignant</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[65vh] overflow-y-auto">
+            <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
+            <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
+            <FieldRow label="Sexe">
+              <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="F">Féminin</SelectItem>
+                  <SelectItem value="M">Masculin</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FieldRow>
+            <FieldRow label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FieldRow>
+            <FieldRow label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FieldRow>
+            <FieldRow label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FieldRow>
+            <FieldRow label="Contrat">
+              <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CDI">CDI</SelectItem>
+                  <SelectItem value="CDD">CDD</SelectItem>
+                  <SelectItem value="Vacataire">Vacataire</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Statut">
+              <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="actif">Actif</SelectItem>
+                  <SelectItem value="inactif">Inactif</SelectItem>
+                  <SelectItem value="conge">En congé</SelectItem>
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <Button className="w-full" onClick={handleSaveEdit} disabled={savingEdit}>
+              {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer les modifications
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
       <ImportDialog
         open={showImport}
         onOpenChange={setShowImport}
