@@ -20,8 +20,6 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
         style={{
           background:
             "linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 35%, hsl(var(--primary)) 65%, hsl(var(--accent) / 0.85) 100%)",
-          backgroundSize: "200% 100%",
-          animation: "shimmer 10s linear infinite",
         }}
       >
         {/* Glow accents */}
