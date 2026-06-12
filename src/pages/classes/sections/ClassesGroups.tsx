@@ -164,13 +164,13 @@ export default function ClassesGroups() {
             </div>
             <div>
               <Label>Enseignant responsable</Label>
-              <Select value={profId} onValueChange={setProfId}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— Aucun —</SelectItem>
-                  {enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={profId}
+                onValueChange={setProfId}
+                placeholder="— Aucun —"
+                searchPlaceholder="Rechercher un enseignant..."
+                options={[{ value: "none", label: "— Aucun —" }, ...enseignants.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}` }))]}
+              />
             </div>
             <div><Label>Description</Label><Textarea value={desc} onChange={(e) => setDesc(e.target.value)} rows={2} /></div>
           </div>

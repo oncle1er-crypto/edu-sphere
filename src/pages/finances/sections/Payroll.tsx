@@ -47,10 +47,13 @@ export default function Payroll() {
             <DialogHeader><DialogTitle>Nouveau bulletin de paie</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div><Label>Employé *</Label>
-                <Select value={form.enseignant_id} onValueChange={(v) => setForm({ ...form, enseignant_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                  <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.enseignant_id}
+                  onValueChange={(v) => setForm({ ...form, enseignant_id: v })}
+                  placeholder="Choisir..."
+                  searchPlaceholder="Rechercher un employé..."
+                  options={enseignants.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}` }))}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Salaire brut (FCFA) *</Label><Input type="number" value={form.salaire_brut} onChange={(e) => setForm({ ...form, salaire_brut: e.target.value })} /></div>
