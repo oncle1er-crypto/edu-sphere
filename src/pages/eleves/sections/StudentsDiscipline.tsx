@@ -78,12 +78,13 @@ export default function StudentsDiscipline() {
           <DialogContent>
             <DialogHeader><DialogTitle>Nouvel incident</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Select value={form.eleve_id} onValueChange={(v) => set("eleve_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                <SelectContent>
-                  {eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.eleve_id}
+                onValueChange={(v) => set("eleve_id", v)}
+                placeholder="Sélectionner un élève"
+                searchPlaceholder="Rechercher un élève..."
+                options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+              />
               <Select value={form.classe_id} onValueChange={(v) => set("classe_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
                 <SelectContent>

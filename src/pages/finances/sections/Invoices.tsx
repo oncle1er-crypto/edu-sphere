@@ -101,14 +101,13 @@ export default function Invoices() {
               <div className="space-y-3">
                 <div>
                   <Label>Élève</Label>
-                  <Select value={form.eleve_id} onValueChange={(v) => setForm({ ...form, eleve_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                    <SelectContent>
-                      {eleves.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.eleve_id}
+                    onValueChange={(v) => setForm({ ...form, eleve_id: v })}
+                    placeholder="Sélectionner un élève"
+                    searchPlaceholder="Rechercher un élève..."
+                    options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+                  />
                 </div>
                 <div>
                   <Label>Libellé</Label>

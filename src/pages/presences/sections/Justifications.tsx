@@ -55,14 +55,13 @@ export default function Justifications() {
             <div className="space-y-4">
               <div>
                 <Label>Élève</Label>
-                <Select value={eleveId} onValueChange={setEleveId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                  <SelectContent>
-                    {eleves.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={eleveId}
+                  onValueChange={setEleveId}
+                  placeholder="Sélectionner un élève"
+                  searchPlaceholder="Rechercher un élève..."
+                  options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+                />
               </div>
               <div>
                 <Label>Motif</Label>

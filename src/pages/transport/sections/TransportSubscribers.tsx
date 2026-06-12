@@ -75,10 +75,13 @@ export default function TransportSubscribers() {
             <DialogHeader><DialogTitle>Nouvel abonnement transport</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <FieldRow label="Élève *">
-                <Select value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={form.eleve_id}
+                  onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}
+                  placeholder="Sélectionner un élève"
+                  searchPlaceholder="Rechercher un élève..."
+                  options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+                />
               </FieldRow>
               <FieldRow label="Ligne *">
                 <Select value={form.ligne_id} onValueChange={(v) => setForm((p) => ({ ...p, ligne_id: v }))}>

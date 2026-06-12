@@ -143,18 +143,15 @@ export default function StudentsDocuments() {
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
-        <Select value={selectedEleve} onValueChange={setSelectedEleve}>
-          <SelectTrigger className="w-full sm:w-72">
-            <SelectValue placeholder="Sélectionner un élève" />
-          </SelectTrigger>
-          <SelectContent>
-            {filteredEleves.slice(0, 50).map((e) => (
-              <SelectItem key={e.id} value={e.id}>
-                {e.nom} {e.prenom} — {e.matricule}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <SearchableSelect
+          value={selectedEleve}
+          onValueChange={setSelectedEleve}
+          placeholder="Sélectionner un élève"
+          searchPlaceholder="Rechercher un élève..."
+          className="w-full sm:w-72"
+          fullWidth={false}
+          options={filteredEleves.slice(0, 200).map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom} — ${e.matricule}`, keywords: `${e.classe_nom ?? ""}` }))}
+        />
       </div>
 
       {eleve ? (
