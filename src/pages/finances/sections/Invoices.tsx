@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { useFactures } from "@/hooks/useFactures";
@@ -101,14 +102,13 @@ export default function Invoices() {
               <div className="space-y-3">
                 <div>
                   <Label>Élève</Label>
-                  <Select value={form.eleve_id} onValueChange={(v) => setForm({ ...form, eleve_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                    <SelectContent>
-                      {eleves.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <SearchableSelect
+                    value={form.eleve_id}
+                    onValueChange={(v) => setForm({ ...form, eleve_id: v })}
+                    placeholder="Sélectionner un élève"
+                    searchPlaceholder="Rechercher un élève..."
+                    options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+                  />
                 </div>
                 <div>
                   <Label>Libellé</Label>

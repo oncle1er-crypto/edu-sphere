@@ -124,10 +124,13 @@ export default function SubjectsTeachersAssignment() {
               <SelectTrigger><SelectValue placeholder="Matière" /></SelectTrigger>
               <SelectContent>{matieres.map((m) => <SelectItem key={m.id} value={m.id}>{m.nom}</SelectItem>)}</SelectContent>
             </Select>
-            <Select value={form.enseignant_id} onValueChange={(v) => setForm({ ...form, enseignant_id: v })}>
-              <SelectTrigger><SelectValue placeholder="Enseignant" /></SelectTrigger>
-              <SelectContent>{enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
-            </Select>
+            <SearchableSelect
+              value={form.enseignant_id}
+              onValueChange={(v) => setForm({ ...form, enseignant_id: v })}
+              placeholder="Enseignant"
+              searchPlaceholder="Rechercher un enseignant..."
+              options={enseignants.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}` }))}
+            />
             <Select value={form.classe_id} onValueChange={(v) => setForm({ ...form, classe_id: v })}>
               <SelectTrigger><SelectValue placeholder="Classe (optionnel)" /></SelectTrigger>
               <SelectContent>{classes.map((c) => <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>)}</SelectContent>

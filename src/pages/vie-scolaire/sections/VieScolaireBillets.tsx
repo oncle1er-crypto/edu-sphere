@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose,
 } from "@/components/ui/dialog";
@@ -154,19 +155,21 @@ export default function VieScolaireBillets() {
                   <div className="space-y-1.5">
                     <Label>{form.sujet_type === "eleve" ? "Élève" : "Personne"}</Label>
                     {form.sujet_type === "eleve" ? (
-                      <Select value={form.eleve_id} onValueChange={v => setForm({ ...form, eleve_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                        <SelectContent>
-                          {eleves.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom} — {e.matricule}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.eleve_id}
+                        onValueChange={(v) => setForm({ ...form, eleve_id: v })}
+                        placeholder="Sélectionner un élève"
+                        searchPlaceholder="Rechercher un élève..."
+                        options={eleves.map(e => ({ value: e.id, label: `${e.prenom} ${e.nom} — ${e.matricule}`, keywords: `${e.classe_nom ?? ""}` }))}
+                      />
                     ) : (
-                      <Select value={form.enseignant_id} onValueChange={v => setForm({ ...form, enseignant_id: v })}>
-                        <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                        <SelectContent>
-                          {enseignants.map(e => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                      <SearchableSelect
+                        value={form.enseignant_id}
+                        onValueChange={(v) => setForm({ ...form, enseignant_id: v })}
+                        placeholder="Sélectionner"
+                        searchPlaceholder="Rechercher..."
+                        options={enseignants.map(e => ({ value: e.id, label: `${e.prenom} ${e.nom}` }))}
+                      />
                     )}
                   </div>
                 </div>

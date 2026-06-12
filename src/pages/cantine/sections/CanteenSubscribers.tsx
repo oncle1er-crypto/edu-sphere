@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { FieldRow } from "@/components/settings/SettingsSection";
 import { Users, Plus, Search, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,10 +91,17 @@ export default function CanteenSubscribers() {
           <DialogContent>
             <DialogHeader><DialogTitle>Nouvel abonnement cantine</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Select value={form.eleve_id} onValueChange={(v) => set("eleve_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.eleve_id}
+                onValueChange={(v) => set("eleve_id", v)}
+                placeholder="Sélectionner un élève"
+                searchPlaceholder="Rechercher un élève..."
+                options={eleves.map((e) => ({
+                  value: e.id,
+                  label: `${e.nom} ${e.prenom}`,
+                  keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}`,
+                }))}
+              />
               <FieldRow label="Régime">
                 <Select value={form.regime} onValueChange={(v) => set("regime", v)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>

@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Textarea } from "@/components/ui/textarea";
 import { useJustifications } from "@/hooks/useJustifications";
 import { useEleves } from "@/hooks/useEleves";
@@ -55,14 +56,13 @@ export default function Justifications() {
             <div className="space-y-4">
               <div>
                 <Label>Élève</Label>
-                <Select value={eleveId} onValueChange={setEleveId}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                  <SelectContent>
-                    {eleves.map((e) => (
-                      <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  value={eleveId}
+                  onValueChange={setEleveId}
+                  placeholder="Sélectionner un élève"
+                  searchPlaceholder="Rechercher un élève..."
+                  options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+                />
               </div>
               <div>
                 <Label>Motif</Label>

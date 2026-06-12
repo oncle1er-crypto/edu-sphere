@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -78,12 +79,13 @@ export default function StudentsDiscipline() {
           <DialogContent>
             <DialogHeader><DialogTitle>Nouvel incident</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <Select value={form.eleve_id} onValueChange={(v) => set("eleve_id", v)}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner un élève" /></SelectTrigger>
-                <SelectContent>
-                  {eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.eleve_id}
+                onValueChange={(v) => set("eleve_id", v)}
+                placeholder="Sélectionner un élève"
+                searchPlaceholder="Rechercher un élève..."
+                options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
+              />
               <Select value={form.classe_id} onValueChange={(v) => set("classe_id", v)}>
                 <SelectTrigger><SelectValue placeholder="Classe" /></SelectTrigger>
                 <SelectContent>

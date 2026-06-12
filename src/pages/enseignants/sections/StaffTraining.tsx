@@ -101,12 +101,13 @@ export default function StaffTraining() {
           <div className="space-y-3 max-h-[60vh] overflow-y-auto">
             <div>
               <Label>Enseignant</Label>
-              <Select value={form.enseignant_id} onValueChange={(v) => setForm({ ...form, enseignant_id: v })}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
-                <SelectContent>
-                  {enseignants.map((e) => <SelectItem key={e.id} value={e.id}>{e.prenom} {e.nom}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <SearchableSelect
+                value={form.enseignant_id}
+                onValueChange={(v) => setForm({ ...form, enseignant_id: v })}
+                placeholder="Choisir"
+                searchPlaceholder="Rechercher un enseignant..."
+                options={enseignants.map((e) => ({ value: e.id, label: `${e.prenom} ${e.nom}` }))}
+              />
             </div>
             <div><Label>Intitulé</Label><Input value={form.intitule} onChange={(e) => setForm({ ...form, intitule: e.target.value })} /></div>
             <div><Label>Organisme</Label><Input value={form.organisme} onChange={(e) => setForm({ ...form, organisme: e.target.value })} /></div>
