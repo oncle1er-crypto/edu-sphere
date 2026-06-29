@@ -5036,6 +5036,10 @@ export type Database = {
       }
     }
     Functions: {
+      activer_annee_scolaire: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: undefined
+      }
       admin_reset_user_mfa: {
         Args: { _ecole_id: string; _motif: string; _target_user_id: string }
         Returns: undefined
@@ -5145,11 +5149,39 @@ export type Database = {
         }
         Returns: string
       }
+      promouvoir_eleves_annee: {
+        Args: {
+          _annee_cible: string
+          _annee_source: string
+          _ecole_id: string
+          _mapping?: Json
+          _mode?: string
+        }
+        Returns: Json
+      }
+      reconduire_affectations_pedagogiques: {
+        Args: {
+          _annee_cible: string
+          _annee_source: string
+          _ecole_id: string
+          _options?: Json
+        }
+        Returns: Json
+      }
       regenerer_tranches_pre_inscrits: {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: number
       }
       register_failed_mfa: { Args: never; Returns: Json }
+      renouveler_abonnements: {
+        Args: {
+          _annee_cible: string
+          _annee_source: string
+          _ecole_id: string
+          _types: string[]
+        }
+        Returns: Json
+      }
       reset_failed_mfa: { Args: never; Returns: undefined }
       resoudre_niveau_code: { Args: { _classe_nom: string }; Returns: string }
       set_user_permissions: {
