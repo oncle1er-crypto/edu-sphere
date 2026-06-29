@@ -327,6 +327,7 @@ const App = () => (
               <Route path="nouvelle" element={<SchoolsCreate />} />
               <Route path="statistiques" element={<SchoolsStats />} />
               <Route path="configuration" element={<SchoolsConfig />} />
+              <Route path="transition" element={<SchoolsYearTransition />} />
             </Route>
             <Route path="/emploi-du-temps" element={<TimetableLayout />}>
               <Route path="tableau" element={<TimetableDashboard />} />
