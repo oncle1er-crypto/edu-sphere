@@ -186,6 +186,7 @@ const SchoolsList = lazy(() => import("@/pages/ecoles/sections/SchoolsList"));
 const SchoolsCreate = lazy(() => import("@/pages/ecoles/sections/SchoolsCreate"));
 const SchoolsStats = lazy(() => import("@/pages/ecoles/sections/SchoolsStats"));
 const SchoolsConfig = lazy(() => import("@/pages/ecoles/sections/SchoolsConfig"));
+const SchoolsYearTransition = lazy(() => import("@/pages/ecoles/sections/SchoolsYearTransition"));
 import { EcoleProvider } from "@/context/EcoleContext";
 import { AcademicPeriodProvider } from "@/context/AcademicPeriodContext";
 const CardsLayout = lazy(() => import("@/pages/cartes/CardsLayout"));
