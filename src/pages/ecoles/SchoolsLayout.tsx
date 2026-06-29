@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
-import { LayoutDashboard, School, PlusCircle, BarChart3, Settings2 } from "lucide-react";
+import { LayoutDashboard, School, PlusCircle, BarChart3, Settings2, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 
@@ -7,6 +7,7 @@ const sections = [
   { to: "tableau", label: "Tableau de bord", icon: LayoutDashboard, group: "Vue d'ensemble" },
   { to: "liste", label: "Liste des écoles", icon: School, group: "Gestion" },
   { to: "nouvelle", label: "Créer une école", icon: PlusCircle, group: "Gestion" },
+  { to: "transition", label: "Transition d'année", icon: Sparkles, group: "Année scolaire" },
   { to: "statistiques", label: "Statistiques par école", icon: BarChart3, group: "Analyse" },
   { to: "configuration", label: "Configuration multi-tenant", icon: Settings2, group: "Système" },
 ];

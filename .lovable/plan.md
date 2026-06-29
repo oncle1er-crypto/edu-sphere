@@ -1,83 +1,75 @@
-# Grille tarifaire scolarité — CRUD + automatisation
+## Assistant « Clôture & ouverture d'année »
 
-## Objectif
-Remplacer la grille statique du fichier `scolarite-data.ts` par une grille **éditable en base** par niveau, avec gestion des nouveaux/anciens de la Grande Section, application automatique aux élèves non encore inscrits, et reconduction au passage à une nouvelle année.
-
----
-
-## 1. Base de données (migration)
-
-**Nouvelle table `grille_tarifs_niveaux`**
-- `ecole_id`, `annee_id`
-- `niveau_code` (ex: `MAT1`, `MAT2`, `GS`, `CP`, `CE`, `CM`, `COL_65`, `COL_4`, `COL_3`)
-- `variant` (`null` par défaut, ou `ancien` / `nouveau` pour la GS)
-- `libelle` (ex: "Grande Section — Nouveau")
-- `tranches` (JSONB : `[{numero, label, mois, jour, montant}, …]` — nombre de tranches libre)
-- `montant_total` (recalculé automatiquement = somme des tranches)
-- Unicité : `(ecole_id, annee_id, niveau_code, variant)`
-- RLS + GRANTs identiques au reste du module finances (admin/comptable)
-
-**Ajout sur `eleves`**
-- `est_nouveau` (booléen, défaut `false`) — coché pour les élèves de GS en première inscription, sert à choisir le variant tarifaire.
-
-**Fonctions SQL (security definer)**
-- `resoudre_niveau_code(classe_nom text) → text` : mappe le nom de classe au code niveau.
-- `generer_tranches_eleve(_eleve_id)` réécrite : cherche d'abord dans `grille_tarifs_niveaux` (avec variant selon `est_nouveau` pour la GS), retombe sur `frais_scolarite` si absent.
-- `regenerer_tranches_pre_inscrits(_ecole_id, _annee_id)` : pour chaque élève au statut `pre_inscrit` **sans aucun paiement**, supprime les tranches et régénère depuis la grille courante.
-- `dupliquer_grille_annee(_ecole_id, _annee_source, _annee_cible)` : copie toutes les lignes de grille d'une année à l'autre.
-
-**Seed** : insertion de la grille actuelle (la table visible dans la capture) pour l'année académique en cours du Groupe Scolaire La Providence.
+Un nouvel écran dédié dans **Écoles → Années scolaires** qui guide l'utilisateur en 6 étapes pour clôturer proprement l'année en cours et préparer la suivante, avec actions sélectionnables et rapport final.
 
 ---
 
-## 2. Interface — page Configuration finances
+### Étape 1 — Création de la nouvelle année
+- Formulaire : libellé, date début, date fin, découpage (trimestre/semestre).
+- Génération automatique des périodes.
+- Statut initial : `preparation`.
 
-Remplacement de la table statique « Grille tarifaire — Scolarité » par un **éditeur CRUD** :
-- Ligne par niveau (avec badge Ancien/Nouveau pour la GS)
-- Boutons **+ Niveau**, **Modifier**, **Supprimer**
-- Dialog d'édition d'un niveau :
-  - Libellé, nb de tranches (1 à 6), pour chaque tranche : libellé / mois / montant
-  - Total recalculé en direct
-  - Toggle « créer la variante Ancien/Nouveau » disponible uniquement pour la GS
-- Au **Enregistrer** : upsert + appel automatique de `regenerer_tranches_pre_inscrits` (avec confirmation et compte d'élèves impactés).
-- Bannière d'info : « X élèves pré-inscrits ont vu leurs tranches mises à jour. Les élèves déjà inscrits avec paiements en cours ne sont pas touchés. »
+### Étape 2 — Grille tarifaire
+- Choix : **Reconduire à l'identique** / **Reconduire puis modifier** / **Repartir de zéro**.
+- Appel à `dupliquer_grille_annee` si reconduction.
 
-## 3. Fiche élève
+### Étape 3 — Promotion des élèves
+- Tableau récapitulatif par classe avec compteurs (passage / redoublement / exclusion) basés sur `decisions_fin_annee`.
+- Bouton **Appliquer les décisions verrouillées** → appel de `appliquer_decisions_fin_annee` (existant).
+- Pour les élèves sans décision : règle par défaut configurable (passage automatique vers la classe N+1 selon le mapping ci-dessous).
+- Mapping de promotion : PS→MS, MS→GS, GS→CP, CP→CE1, CE1→CE2, CE2→CM1, CM1→CM2, CM2→6ème, etc.
+- Les élèves promus sont **rattachés à la nouvelle année** au statut `pre_inscrit` (nouvelle ligne dans `eleves` pour `annee_id = annee_cible`, ou réutilisation de la fiche en gardant l'historique via `parcours_scolaire`).
 
-Ajout d'une case à cocher **« Nouvel élève (1ère inscription en GS) »** dans le formulaire d'inscription / édition d'un élève. Affichée uniquement si la classe est en Grande Section. Le tarif appliqué (ancien/nouveau) suit automatiquement ce champ.
+### Étape 4 — Reconduction des affectations pédagogiques
+- Cases à cocher pour reconduire :
+  - **Affectations enseignants ↔ matières** (`enseignant_matieres`)
+  - **Affectations matières ↔ classes** (`classe_matieres` avec volumes horaires)
+  - **Emploi du temps** (`creneaux_emploi_temps`) — option proposée mais désactivée par défaut (recommandation : régénérer).
+- Copie ligne à ligne avec `annee_id = annee_cible`.
 
-## 4. Nouvelle année académique
+### Étape 5 — Renouvellement des services
+- **Cartes scolaires** : redirection vers `CardsRenewal` (déjà existant) ou exécution directe.
+- **Abonnements cantine** : reconduire les abonnés actifs (`abonnements_cantine` avec nouveau `annee_id`).
+- **Abonnements transport** : idem (`abonnements_transport`).
+- Cases à cocher individuelles.
 
-Lors de la création d'une nouvelle année dans **Écoles → Années scolaires** :
-- Si une année précédente existe avec une grille, dialog modal :
-  > « Reconduire la grille tarifaire de l'année 2025-2026 ? »
-  > [Reconduire à l'identique] [Modifier après création] [Ne pas reconduire]
-- Si « Reconduire » : appel de `dupliquer_grille_annee` puis redirection vers la page de configuration de la grille pour l'année cible (en lecture seule modifiable).
+### Étape 6 — Activation
+- Récapitulatif des actions effectuées (compteurs : X élèves promus, Y affectations copiées, Z abonnements renouvelés…).
+- Bouton **Activer la nouvelle année** : passe l'ancienne en `verrouillee`, la nouvelle en `active`.
+- Confirmation explicite avec saisie du libellé de l'année.
 
 ---
 
-## 5. Compatibilité
+### Détails techniques
 
-- L'ancienne table `frais_scolarite` (par cycle) reste en place comme **fallback** pour ne pas casser les paiements en cours.
-- Les élèves déjà inscrits avec au moins un paiement ne sont **jamais** régénérés : leurs tranches existantes restent intactes.
-- Le fichier `scolarite-data.ts` (constantes UI) garde son rôle d'affichage de démo, mais la page Configuration affichera dorénavant les valeurs réelles de la base.
+**Migration SQL** — nouvelles fonctions SECURITY DEFINER (admin/directeur uniquement) :
 
----
+```text
+promouvoir_eleves_annee(_ecole_id, _annee_source, _annee_cible, _mapping jsonb, _mode text)
+  → crée/met à jour les eleves pour annee_cible, statut pre_inscrit
+  → enregistre dans parcours_scolaire
+  → retourne {promus, redoubles, sans_decision}
 
-## Détails techniques
+reconduire_affectations_pedagogiques(_ecole_id, _annee_source, _annee_cible, _options jsonb)
+  → copie classe_matieres et/ou enseignant_matieres
+  → optionnellement creneaux_emploi_temps
+  → retourne compteurs
 
-```
-grille_tarifs_niveaux
-├─ ecole_id            uuid    FK ecoles
-├─ annee_id            uuid    FK annees_scolaires
-├─ niveau_code         text    MAT1|MAT2|GS|CP|CE|CM|COL_65|COL_4|COL_3
-├─ variant             text    null | 'ancien' | 'nouveau'
-├─ libelle             text
-├─ tranches            jsonb   [{numero:int, label:text, mois:int, jour:int, montant:numeric}]
-├─ montant_total       numeric (calculé via trigger)
-└─ UNIQUE(ecole_id, annee_id, niveau_code, variant)
+renouveler_abonnements(_ecole_id, _annee_source, _annee_cible, _types text[])
+  → duplique abonnements_cantine/transport actifs
+  → retourne compteurs
+
+activer_annee_scolaire(_ecole_id, _annee_id)
+  → verrouille les autres années actives
+  → bascule annee_id en 'active'
 ```
 
-Le trigger existant `frais_generer_tranches` n'est pas touché ; un nouveau trigger sur `grille_tarifs_niveaux` régénère automatiquement les tranches des pré-inscrits du niveau concerné après chaque insert/update/delete.
+**Fichiers UI à créer** :
+- `src/pages/ecoles/sections/SchoolsYearTransition.tsx` — écran assistant 6 étapes avec stepper.
+- `src/pages/ecoles/components/PromotionMappingEditor.tsx` — éditeur du mapping de promotion par défaut.
+- `src/hooks/useYearTransition.ts` — hook regroupant les appels RPC.
+- Route + entrée de menu dans `SchoolsLayout.tsx` : « Transition d'année ».
 
-Implémentation estimée : 1 migration SQL + 4 fichiers TSX modifiés/créés.
+**Aucune modification destructive** : toutes les données de l'année source restent intactes ; tout est duplication vers l'année cible.
+
+Estimation : 1 migration SQL + 4 fichiers TSX + 1 ajout de route.
