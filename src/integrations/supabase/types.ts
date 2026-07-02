@@ -70,6 +70,13 @@ export type Database = {
             referencedRelation: "eleves"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "abonnements_cantine_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
         ]
       }
       abonnements_transport: {
@@ -121,6 +128,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abonnements_transport_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "abonnements_transport_ligne_id_fkey"
@@ -489,6 +503,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "billets_sortie_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "billets_sortie_enseignant_id_fkey"
             columns: ["enseignant_id"]
             isOneToOne: false
@@ -690,6 +711,13 @@ export type Database = {
             referencedRelation: "eleves"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cantine_incidents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
         ]
       }
       cantine_personnel: {
@@ -847,6 +875,13 @@ export type Database = {
             referencedRelation: "eleves"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cantine_regimes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
         ]
       }
       cartes: {
@@ -924,6 +959,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "cartes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "cartes_enseignant_id_fkey"
             columns: ["enseignant_id"]
             isOneToOne: false
@@ -994,6 +1036,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certificats_absence_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "certificats_absence_enseignant_id_fkey"
@@ -1786,6 +1835,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "eleve_parents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "eleve_parents_parent_id_fkey"
             columns: ["parent_id"]
             isOneToOne: false
@@ -1810,11 +1866,14 @@ export type Database = {
           matricule_national: string | null
           nationalite: string | null
           nom: string
+          numero_extrait_naissance: string | null
           numero_inscription_en_ligne: string | null
           photo_url: string | null
           prenom: string
           sexe: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le: string | null
           statut: string
+          statut_sigfne: string
           updated_at: string
         }
         Insert: {
@@ -1832,11 +1891,14 @@ export type Database = {
           matricule_national?: string | null
           nationalite?: string | null
           nom: string
+          numero_extrait_naissance?: string | null
           numero_inscription_en_ligne?: string | null
           photo_url?: string | null
           prenom: string
           sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le?: string | null
           statut?: string
+          statut_sigfne?: string
           updated_at?: string
         }
         Update: {
@@ -1854,11 +1916,14 @@ export type Database = {
           matricule_national?: string | null
           nationalite?: string | null
           nom?: string
+          numero_extrait_naissance?: string | null
           numero_inscription_en_ligne?: string | null
           photo_url?: string | null
           prenom?: string
           sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le?: string | null
           statut?: string
+          statut_sigfne?: string
           updated_at?: string
         }
         Relationships: [
@@ -1936,6 +2001,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprunts_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "emprunts_enseignant_id_fkey"
@@ -2559,6 +2631,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
         ]
       }
@@ -3487,6 +3566,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "notes_evaluation_id_fkey"
             columns: ["evaluation_id"]
             isOneToOne: false
@@ -3591,6 +3677,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "paiements_tranche_id_fkey"
@@ -3830,6 +3923,44 @@ export type Database = {
         }
         Relationships: []
       }
+      parametres_sigfne: {
+        Row: {
+          code_etablissement: string | null
+          created_at: string
+          drena: string | null
+          ecole_id: string
+          id: string
+          regex_matricule: string
+          updated_at: string
+        }
+        Insert: {
+          code_etablissement?: string | null
+          created_at?: string
+          drena?: string | null
+          ecole_id: string
+          id?: string
+          regex_matricule?: string
+          updated_at?: string
+        }
+        Update: {
+          code_etablissement?: string | null
+          created_at?: string
+          drena?: string | null
+          ecole_id?: string
+          id?: string
+          regex_matricule?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametres_sigfne_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parcours_scolaire: {
         Row: {
           annee_id: string
@@ -4035,6 +4166,13 @@ export type Database = {
             referencedRelation: "eleves"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "presences_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
         ]
       }
       profiles: {
@@ -4171,6 +4309,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relances_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "relances_parent_id_fkey"
@@ -4784,6 +4929,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "tranches_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "tranches_frais_id_fkey"
             columns: ["frais_id"]
             isOneToOne: false
@@ -5007,6 +5159,61 @@ export type Database = {
       }
     }
     Views: {
+      v_conformite_sigfne: {
+        Row: {
+          classe: string | null
+          classe_id: string | null
+          diagnostic: string | null
+          doublon_matricule: boolean | null
+          ecole_id: string | null
+          eleve_id: string | null
+          matricule: string | null
+          matricule_national: string | null
+          nom: string | null
+          prenom: string | null
+          statut_sigfne: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eleves_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_export_sigfne_eleves: {
+        Row: {
+          CLASSE: string | null
+          code_etablissement: string | null
+          DATE_NAISSANCE: string | null
+          drena: string | null
+          ecole_id: string | null
+          LIEU_NAISSANCE: string | null
+          MATRICULE: string | null
+          NATIONALITE: string | null
+          NOM: string | null
+          PRENOMS: string | null
+          SEXE: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eleves_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_paiements_incoherents: {
         Row: {
           ecole_id: string | null
@@ -5031,6 +5238,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "eleves"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tranches_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
         ]
       }
@@ -5149,6 +5363,11 @@ export type Database = {
         }
         Returns: string
       }
+      matricule_valide: {
+        Args: { p_ecole_id: string; p_matricule: string }
+        Returns: boolean
+      }
+      normaliser_etat_civil: { Args: { txt: string }; Returns: string }
       promouvoir_eleves_annee: {
         Args: {
           _annee_cible: string
@@ -5188,10 +5407,22 @@ export type Database = {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
         Returns: undefined
       }
+      stats_conformite_sigfne: {
+        Args: { p_ecole_id: string }
+        Returns: {
+          anomalies: number
+          conformes: number
+          doublons: number
+          sans_matricule: number
+          taux_conformite: number
+          total: number
+        }[]
+      }
       tracer_envoi_bulletin: {
         Args: { _channels: Json; _id: string; _recipients: Json }
         Returns: undefined
       }
+      unaccent: { Args: { "": string }; Returns: string }
       upsert_bulletin_audit: {
         Args: {
           _annee_id: string
