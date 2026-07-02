@@ -9,6 +9,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 
 export default function ClassesDashboard() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading } = useClasses(activeAnnee.id);
   const { cycles, loading: cyclesLoading } = useCycles();
 

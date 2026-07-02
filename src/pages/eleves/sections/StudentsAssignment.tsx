@@ -15,6 +15,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { toast } from "sonner";
 
 export default function StudentsAssignment() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: loadingC } = useClasses(activeAnnee.id);
   const { eleves, loading: loadingE, updateEleve } = useEleves(activeAnnee.id);
 

@@ -22,6 +22,7 @@ function downloadCSV(filename: string, rows: (string | number)[][]) {
 }
 
 export default function ClassesReports() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: lc } = useClasses(activeAnnee.id);
   const { eleves, loading: le } = useEleves(activeAnnee.id);
   const { enseignants, loading: lt } = useEnseignants();

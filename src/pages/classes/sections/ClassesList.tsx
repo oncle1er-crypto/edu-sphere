@@ -33,6 +33,7 @@ const EXAMPLE_ROWS_CLASSES = [
 ];
 
 export default function ClassesList() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading, addClass, fetchClasses, ecoleId } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();
   const { enseignants } = useEnseignants();

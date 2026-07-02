@@ -37,6 +37,7 @@ function formatFileSize(bytes: number | null) {
 }
 
 export default function StudentsDocuments() {
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading: loadingEleves } = useEleves(activeAnnee.id);
   const { user } = useAuth();
   const [selectedEleve, setSelectedEleve] = useState("");

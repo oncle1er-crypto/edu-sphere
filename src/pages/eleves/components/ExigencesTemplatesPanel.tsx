@@ -28,6 +28,7 @@ interface Props {
 
 export default function ExigencesTemplatesPanel({ docTypes }: Props) {
   const { modeles, saveModele, deleteModele, applyToEleves } = useModelesExigences();
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves } = useEleves(activeAnnee.id);
   const [manageOpen, setManageOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<ModeleExigences> | null>(null);

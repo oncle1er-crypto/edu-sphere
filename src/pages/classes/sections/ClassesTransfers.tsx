@@ -23,6 +23,7 @@ interface Transfert {
 }
 
 export default function ClassesTransfers() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes } = useClasses(activeAnnee.id);
   const { eleves } = useEleves(activeAnnee.id);
   const { user } = useAuth();

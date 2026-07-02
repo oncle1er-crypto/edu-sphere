@@ -7,6 +7,7 @@ import { MapPin, BookOpen, Loader2 } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
 
 export default function ClassesRooms() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading } = useClasses(activeAnnee.id);
 
   const salles = useMemo(() => {

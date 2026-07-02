@@ -30,6 +30,7 @@ const typeLabels: Record<string, string> = {
 
 export default function StudentsDiscipline() {
   const { incidents, loading, addIncident, ecoleId } = useIncidentsDiscipline();
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
   const { anneeId } = useAnneeId();

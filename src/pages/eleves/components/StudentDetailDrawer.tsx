@@ -84,6 +84,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
   const pendingActionRef = useRef<"cancel" | "close" | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const { activeAnnee } = useAcademicPeriod();
   const { classes } = useClasses(activeAnnee.id);
 
   const isDirty = useCallback(() => {

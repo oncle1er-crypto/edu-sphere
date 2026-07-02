@@ -36,6 +36,7 @@ const EXAMPLE_ROWS = [
 const LIEN_OPTIONS = ["père", "mère", "tuteur", "tutrice", "oncle", "tante", "grand-père", "grand-mère", "autre"];
 
 export default function StudentsRegistration() {
+  const { activeAnnee } = useAcademicPeriod();
   const { addEleve, ecoleId } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();

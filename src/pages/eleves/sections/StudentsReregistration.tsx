@@ -25,6 +25,7 @@ const MOYENNE_PASSAGE = 10; // sur 20
 
 export default function StudentsReregistration() {
   const { ecoleId } = useEcoleId();
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
 

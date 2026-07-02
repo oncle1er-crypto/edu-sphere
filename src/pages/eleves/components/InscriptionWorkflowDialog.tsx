@@ -51,6 +51,7 @@ interface TrancheRow {
 }
 
 export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpenDrawer, onUpdated }: Props) {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes } = useClasses(activeAnnee.id);
   const { user } = useAuth();
   const { ecoleId } = useEcoleId();

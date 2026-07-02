@@ -51,6 +51,7 @@ function currentAnnee(): string {
 }
 
 export default function StudentsAttestations() {
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading } = useEleves(activeAnnee.id);
   const { currentEcole } = useEcoles();
   const [q, setQ] = useState("");

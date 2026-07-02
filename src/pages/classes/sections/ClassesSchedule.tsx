@@ -21,6 +21,7 @@ const COULEURS = [
 ];
 
 export default function ClassesSchedule() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: classesLoading } = useClasses(activeAnnee.id);
   const { creneaux, loading: creneauxLoading, fetchCreneaux } = useEmploiDuTemps();
   const [selectedClasseId, setSelectedClasseId] = useState("");

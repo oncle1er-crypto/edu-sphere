@@ -17,6 +17,7 @@ import { toast } from "sonner";
 type Status = "present" | "absent" | "retard";
 
 export default function StudentsAttendance() {
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: loadingC } = useClasses(activeAnnee.id);
   const { eleves, loading: loadingE } = useEleves(activeAnnee.id);
   const { presences, fetchPresences, savePresences, ecoleId } = usePresences();

@@ -11,6 +11,7 @@ const colors = ["bg-pink-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", 
 
 export default function ClassesCycles() {
   const { cycles, loading: cyclesLoading } = useCycles();
+  const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: classesLoading } = useClasses(activeAnnee.id);
 
   if (cyclesLoading || classesLoading) {

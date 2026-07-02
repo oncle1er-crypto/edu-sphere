@@ -33,6 +33,7 @@ const TYPES = ["option", "langue", "soutien", "specialite", "atelier"];
 export default function ClassesGroups() {
   const { ecoleId } = useEcoleId();
   const { enseignants } = useEnseignants();
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves } = useEleves(activeAnnee.id);
   const [groupes, setGroupes] = useState<Groupe[]>([]);
   const [loading, setLoading] = useState(true);

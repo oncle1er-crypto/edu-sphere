@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 export default function StudentsHealth() {
   const { visites, loading, addVisite, ecoleId } = useVisitesInfirmerie();
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
   const { user } = useAuth();

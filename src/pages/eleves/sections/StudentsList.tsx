@@ -32,6 +32,7 @@ const formatDate = (d: string | null) => {
 type ViewMode = "list" | "grid";
 
 export default function StudentsList() {
+  const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();
