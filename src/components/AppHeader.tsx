@@ -1,4 +1,14 @@
-import { GraduationCap, ChevronDown, User, LogOut, Settings, Menu, ArrowLeft } from "lucide-react";
+import {
+  GraduationCap,
+  ChevronDown,
+  User,
+  LogOut,
+  Settings,
+  Menu,
+  ArrowLeft,
+  Calendar,
+  Check,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +21,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { Select, SelectTrigger, SelectValue, SelectContent } from "@/components/ui/select";
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+
+const statutLabels: Record<string, string> = {
+  active: "Active",
+  preparation: "Préparation",
+  verrouillee: "Verrouillée",
+  archivee: "Archivée",
+};
+
+const statutBadgeClass: Record<string, string> = {
+  active: "bg-green-50 text-green-700 border-green-200",
+  preparation: "bg-blue-50 text-blue-700 border-blue-200",
+  verrouillee: "bg-amber-50 text-amber-700 border-amber-200",
+  archivee: "bg-gray-50 text-gray-600 border-gray-200",
+};
 
 interface AppHeaderProps {
   userName?: string;
@@ -21,6 +50,10 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
   const navigate = useNavigate();
   const location = useLocation();
   const canGoBack = location.pathname !== "/" && location.pathname !== "/index";
+  const { annees, activeAnneeId, setActiveAnneeId, activeAnnee, loading } = useAcademicPeriod();
+
+  const sortedAnnees = annees.slice().sort((a, b) => b.debut.localeCompare(a.debut));
+  const isConsultation = activeAnnee.statut !== "active";
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b shadow-[var(--shadow-soft)]">
@@ -58,6 +91,63 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             </p>
           </div>
         </div>
+
+        {!loading && annees.length > 0 && (
+          <div className="flex flex-col items-center justify-center">
+            <Select value={activeAnneeId} onValueChange={setActiveAnneeId}>
+              <SelectTrigger
+                className={cn(
+                  "h-8 w-auto gap-1.5 px-2 text-xs font-medium bg-background",
+                  isConsultation ? "border-amber-500 border-2" : "border"
+                )}
+              >
+                <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                <SelectValue asChild>
+                  <span className="flex items-center gap-1">
+                    <span className="truncate max-w-[80px] sm:max-w-[140px]">
+                      {activeAnnee.libelle || "—"}
+                    </span>
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {sortedAnnees.map((a) => (
+                  <SelectPrimitive.Item
+                    key={a.id}
+                    value={a.id}
+                    className={cn(
+                      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground",
+                      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                    )}
+                  >
+                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                      <SelectPrimitive.ItemIndicator>
+                        <Check className="h-4 w-4" />
+                      </SelectPrimitive.ItemIndicator>
+                    </span>
+                    <SelectPrimitive.ItemText className="flex-1 truncate pr-2">
+                      {a.libelle}
+                    </SelectPrimitive.ItemText>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-[10px] px-1.5 py-0 h-auto font-normal whitespace-nowrap",
+                        statutBadgeClass[a.statut]
+                      )}
+                    >
+                      {statutLabels[a.statut]}
+                    </Badge>
+                  </SelectPrimitive.Item>
+                ))}
+              </SelectContent>
+            </Select>
+            {isConsultation && (
+              <span className="text-[10px] text-amber-600 font-medium leading-none mt-0.5">
+                Consultation
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex flex-col items-end leading-tight">
