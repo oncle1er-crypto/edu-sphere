@@ -1,4 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoles } from "@/context/EcoleContext";
+import { toast } from "sonner";
 
 export type PeriodeStatut = "a_venir" | "en_cours" | "verrouillee";
 export type AnneeStatut = "active" | "preparation" | "verrouillee" | "archivee";
@@ -23,7 +26,7 @@ export const LOCKABLE_MODULES: { key: LockableModule; label: string }[] = [
 export interface Periode {
   id: string;
   nom: string;
-  debut: string; // ISO yyyy-mm-dd
+  debut: string;
   fin: string;
   statut: PeriodeStatut;
 }
@@ -50,19 +53,16 @@ interface Ctx {
   activeAnneeId: string;
   setActiveAnneeId: (id: string) => void;
   activeAnnee: AnneeScolaire;
-  /** Modules concernés par le verrouillage de période. */
+  loading: boolean;
   lockedModules: LockableModule[];
   setLockedModules: (m: LockableModule[]) => void;
-  /** Mutations */
   upsertAnnee: (a: AnneeScolaire) => void;
   setAnneeStatut: (id: string, statut: AnneeStatut) => void;
   setPeriodeStatut: (anneeId: string, periodeId: string, statut: PeriodeStatut) => void;
-  /** Logique de verrouillage central — date optionnelle (défaut = aujourd'hui). */
   getLockState: (module: LockableModule, dateIso?: string) => LockState;
   isLocked: (module: LockableModule, dateIso?: string) => boolean;
 }
 
-const STORAGE_ANNEES = "lovable.academic.annees.v1";
 const STORAGE_ACTIVE = "lovable.academic.active.v1";
 const STORAGE_MODULES = "lovable.academic.lockedModules.v1";
 
@@ -90,44 +90,19 @@ export function genererPeriodes(debutIso: string, finIso: string, decoupage: Dec
   return out;
 }
 
-const seed: AnneeScolaire[] = [
-  {
-    id: "2025-2026",
-    libelle: "2025 - 2026",
-    debut: "2025-09-01",
-    fin: "2026-07-31",
-    decoupage: "trimestre",
-    statut: "active",
-    periodes: [
-      { id: "p1", nom: "1er Trimestre", debut: "2025-09-02", fin: "2025-12-20", statut: "verrouillee" },
-      { id: "p2", nom: "2ème Trimestre", debut: "2026-01-06", fin: "2026-04-04", statut: "en_cours" },
-      { id: "p3", nom: "3ème Trimestre", debut: "2026-04-21", fin: "2026-06-30", statut: "a_venir" },
-    ],
-  },
-  {
-    id: "2024-2025",
-    libelle: "2024 - 2025",
-    debut: "2024-09-02",
-    fin: "2025-07-04",
-    decoupage: "trimestre",
-    statut: "archivee",
-    periodes: [
-      { id: "p1", nom: "1er Trimestre", debut: "2024-09-02", fin: "2024-12-20", statut: "verrouillee" },
-      { id: "p2", nom: "2ème Trimestre", debut: "2025-01-06", fin: "2025-04-04", statut: "verrouillee" },
-      { id: "p3", nom: "3ème Trimestre", debut: "2025-04-21", fin: "2025-07-04", statut: "verrouillee" },
-    ],
-  },
-];
+/** Année de repli quand la base est vide / en cours de chargement. */
+const EMPTY_ANNEE: AnneeScolaire = {
+  id: "",
+  libelle: "—",
+  debut: new Date().toISOString().slice(0, 10),
+  fin: new Date().toISOString().slice(0, 10),
+  decoupage: "trimestre",
+  statut: "preparation",
+  periodes: [],
+};
 
 const C = createContext<Ctx | null>(null);
 
-function loadAnnees(): AnneeScolaire[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_ANNEES);
-    if (raw) return JSON.parse(raw);
-  } catch {}
-  return seed;
-}
 function loadModules(): LockableModule[] {
   try {
     const raw = localStorage.getItem(STORAGE_MODULES);
@@ -137,102 +112,193 @@ function loadModules(): LockableModule[] {
 }
 
 export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
-  const [annees, setAnnees] = useState<AnneeScolaire[]>(() => loadAnnees());
-  const [activeAnneeId, setActiveAnneeIdState] = useState<string>(() => {
-    return (
-      localStorage.getItem(STORAGE_ACTIVE) ??
-      annees.find((a) => a.statut === "active")?.id ??
-      annees[0]?.id ??
-      ""
-    );
-  });
+  const { currentEcoleId } = useEcoles();
+  const [annees, setAnnees] = useState<AnneeScolaire[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeAnneeId, setActiveAnneeIdState] = useState<string>(
+    () => localStorage.getItem(STORAGE_ACTIVE) ?? ""
+  );
   const [lockedModules, setLockedModulesState] = useState<LockableModule[]>(() => loadModules());
 
-  useEffect(() => {
-    localStorage.setItem(STORAGE_ANNEES, JSON.stringify(annees));
-  }, [annees]);
-  useEffect(() => {
-    if (activeAnneeId) localStorage.setItem(STORAGE_ACTIVE, activeAnneeId);
-  }, [activeAnneeId]);
   useEffect(() => {
     localStorage.setItem(STORAGE_MODULES, JSON.stringify(lockedModules));
   }, [lockedModules]);
 
+  useEffect(() => {
+    if (activeAnneeId) localStorage.setItem(STORAGE_ACTIVE, activeAnneeId);
+  }, [activeAnneeId]);
+
+  const fetchAll = useCallback(async () => {
+    if (!currentEcoleId) {
+      setAnnees([]);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    const { data: aData, error: aErr } = await supabase
+      .from("annees_scolaires")
+      .select("id, libelle, debut, fin, decoupage, statut")
+      .eq("ecole_id", currentEcoleId)
+      .order("debut", { ascending: false });
+    if (aErr) {
+      console.error(aErr);
+      setAnnees([]);
+      setLoading(false);
+      return;
+    }
+    const ids = (aData ?? []).map((a) => a.id);
+    let periodesByAnnee: Record<string, Periode[]> = {};
+    if (ids.length > 0) {
+      const { data: pData, error: pErr } = await supabase
+        .from("periodes")
+        .select("id, annee_id, nom, debut, fin, statut")
+        .in("annee_id", ids)
+        .order("debut", { ascending: true });
+      if (pErr) console.error(pErr);
+      (pData ?? []).forEach((p: any) => {
+        (periodesByAnnee[p.annee_id] ||= []).push({
+          id: p.id,
+          nom: p.nom,
+          debut: p.debut,
+          fin: p.fin,
+          statut: p.statut as PeriodeStatut,
+        });
+      });
+    }
+    const list: AnneeScolaire[] = (aData ?? []).map((a: any) => ({
+      id: a.id,
+      libelle: a.libelle,
+      debut: a.debut,
+      fin: a.fin,
+      decoupage: a.decoupage as Decoupage,
+      statut: a.statut as AnneeStatut,
+      periodes: periodesByAnnee[a.id] ?? [],
+    }));
+    setAnnees(list);
+    setLoading(false);
+  }, [currentEcoleId]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]);
+
+  // Valide l'année active en fonction des données chargées
+  useEffect(() => {
+    if (loading || annees.length === 0) return;
+    const stillValid = activeAnneeId && annees.some((a) => a.id === activeAnneeId);
+    if (!stillValid) {
+      const fallback = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
+      setActiveAnneeIdState(fallback);
+    }
+  }, [loading, annees, activeAnneeId]);
+
   const activeAnnee = useMemo(
-    () => annees.find((a) => a.id === activeAnneeId) ?? annees[0],
+    () => annees.find((a) => a.id === activeAnneeId) ?? annees[0] ?? EMPTY_ANNEE,
     [annees, activeAnneeId]
   );
 
   const setActiveAnneeId = (id: string) => setActiveAnneeIdState(id);
   const setLockedModules = (m: LockableModule[]) => setLockedModulesState(m);
 
-  const upsertAnnee: Ctx["upsertAnnee"] = (a) =>
-    setAnnees((s) => {
-      const idx = s.findIndex((x) => x.id === a.id);
-      if (idx === -1) return [a, ...s];
-      const copy = [...s];
-      copy[idx] = a;
-      return copy;
-    });
+  const upsertAnnee: Ctx["upsertAnnee"] = async (a) => {
+    if (!currentEcoleId) return;
+    const existing = annees.find((x) => x.id === a.id);
+    try {
+      if (existing) {
+        const { error } = await supabase
+          .from("annees_scolaires")
+          .update({
+            libelle: a.libelle,
+            debut: a.debut,
+            fin: a.fin,
+            decoupage: a.decoupage as any,
+            statut: a.statut as any,
+          })
+          .eq("id", a.id);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("annees_scolaires").insert({
+          ecole_id: currentEcoleId,
+          libelle: a.libelle,
+          debut: a.debut,
+          fin: a.fin,
+          decoupage: a.decoupage as any,
+          statut: a.statut as any,
+        });
+        if (error) throw error;
+      }
+      await fetchAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur enregistrement année");
+    }
+  };
 
-  const setAnneeStatut: Ctx["setAnneeStatut"] = (id, statut) =>
-    setAnnees((s) =>
-      s.map((a) => {
-        if (a.id !== id) {
-          // si on passe une autre année à "active", désactive l'ancienne active
-          if (statut === "active" && a.statut === "active") {
-            return { ...a, statut: "verrouillee" as AnneeStatut };
-          }
-          return a;
+  const setAnneeStatut: Ctx["setAnneeStatut"] = async (id, statut) => {
+    if (!currentEcoleId) return;
+    try {
+      if (statut === "active") {
+        // Verrouille l'ancienne active (si différente)
+        const oldActive = annees.find((a) => a.statut === "active" && a.id !== id);
+        if (oldActive) {
+          const { error } = await supabase
+            .from("annees_scolaires")
+            .update({ statut: "verrouillee" as any })
+            .eq("id", oldActive.id);
+          if (error) throw error;
         }
-        if (statut === "verrouillee" || statut === "archivee") {
-          return {
-            ...a,
-            statut,
-            periodes: a.periodes.map((p) => ({ ...p, statut: "verrouillee" as PeriodeStatut })),
-          };
+      }
+      const { error } = await supabase
+        .from("annees_scolaires")
+        .update({ statut: statut as any })
+        .eq("id", id);
+      if (error) throw error;
+
+      if (statut === "verrouillee" || statut === "archivee") {
+        const target = annees.find((a) => a.id === id);
+        if (target && target.periodes.length > 0) {
+          const { error: pErr } = await supabase
+            .from("periodes")
+            .update({ statut: "verrouillee" as any })
+            .in("id", target.periodes.map((p) => p.id));
+          if (pErr) throw pErr;
         }
-        return { ...a, statut };
-      })
-    );
+      }
+      await fetchAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur mise à jour statut année");
+    }
+  };
 
-  const setPeriodeStatut: Ctx["setPeriodeStatut"] = (anneeId, periodeId, statut) =>
-    setAnnees((s) =>
-      s.map((a) =>
-        a.id === anneeId
-          ? { ...a, periodes: a.periodes.map((p) => (p.id === periodeId ? { ...p, statut } : p)) }
-          : a
-      )
-    );
+  const setPeriodeStatut: Ctx["setPeriodeStatut"] = async (_anneeId, periodeId, statut) => {
+    try {
+      const { error } = await supabase
+        .from("periodes")
+        .update({ statut: statut as any })
+        .eq("id", periodeId);
+      if (error) throw error;
+      await fetchAll();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur mise à jour statut période");
+    }
+  };
 
-  /** Trouve la période contenant la date donnée. Si aucune → période la plus proche dans le passé. */
   const findPeriode = (a: AnneeScolaire, dateIso: string): Periode | undefined => {
     const inside = a.periodes.find((p) => dateIso >= p.debut && dateIso <= p.fin);
     if (inside) return inside;
-    // Date hors de toute période (vacances) — on prend la dernière dont la fin <= date
     const past = a.periodes.filter((p) => p.fin < dateIso).sort((x, y) => (x.fin > y.fin ? -1 : 1));
     return past[0];
   };
 
   const getLockState: Ctx["getLockState"] = (module, dateIso) => {
-    const date = (dateIso ?? new Date().toISOString().slice(0, 10));
+    const date = dateIso ?? new Date().toISOString().slice(0, 10);
     const a = activeAnnee;
-    if (!a) return { locked: false, annee: a };
+    if (!a || !a.id) return { locked: false, annee: a };
     if (a.statut === "archivee") {
-      return {
-        locked: true,
-        annee: a,
-        reason: `L'année ${a.libelle} est archivée (lecture seule).`,
-      };
+      return { locked: true, annee: a, reason: `L'année ${a.libelle} est archivée (lecture seule).` };
     }
     if (a.statut === "verrouillee") {
-      return {
-        locked: true,
-        annee: a,
-        reason: `L'année ${a.libelle} est verrouillée.`,
-      };
+      return { locked: true, annee: a, reason: `L'année ${a.libelle} est verrouillée.` };
     }
-    // module non concerné par le verrouillage de période
     if (!lockedModules.includes(module)) return { locked: false, annee: a };
 
     const periode = findPeriode(a, date);
@@ -251,9 +317,10 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
 
   const value: Ctx = {
     annees,
-    activeAnneeId,
+    activeAnneeId: activeAnnee.id,
     setActiveAnneeId,
     activeAnnee,
+    loading,
     lockedModules,
     setLockedModules,
     upsertAnnee,
@@ -272,7 +339,6 @@ export function useAcademicPeriod() {
   return ctx;
 }
 
-/** Hook pratique pour un écran qui édite un module donné. */
 export function useLock(module: LockableModule, dateIso?: string) {
   const { getLockState } = useAcademicPeriod();
   return getLockState(module, dateIso);
