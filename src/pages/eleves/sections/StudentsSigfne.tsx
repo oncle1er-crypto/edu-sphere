@@ -54,6 +54,7 @@ const statutBadge = (s: ConfRow["statut_sigfne"]) => {
 
 export default function StudentsSigfne() {
   const { ecoleId, loading: loadingEcole } = useEcoleId();
+  const { activeAnnee, loading: loadingAnnee } = useAcademicPeriod();
   const { isAdmin } = useIsAdmin();
   const [rows, setRows] = useState<ConfRow[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
@@ -65,26 +66,33 @@ export default function StudentsSigfne() {
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [importOpen, setImportOpen] = useState(false);
 
+  const computeStats = (list: ConfRow[]): Stats => {
+    const total = list.length;
+    const conformes = list.filter((r) => r.statut_sigfne === "conforme").length;
+    const sans_matricule = list.filter((r) => r.statut_sigfne === "sans_matricule").length;
+    const anomalies = list.filter((r) => r.statut_sigfne === "anomalie").length;
+    const doublons = list.filter((r) => !!r.doublon_matricule).length;
+    const taux_conformite = total > 0 ? (conformes / total) * 100 : 0;
+    return { total, conformes, sans_matricule, anomalies, doublons, taux_conformite };
+  };
+
   const fetchAll = useCallback(async () => {
-    if (!ecoleId) return;
+    if (!ecoleId || !activeAnnee.id) return;
     setLoading(true);
-    const [vRes, sRes, eRes] = await Promise.all([
-      (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).order("classe").order("nom"),
-      (supabase as any).rpc("stats_conformite_sigfne", { p_ecole_id: ecoleId }),
-      supabase.from("eleves").select("id,lieu_naissance,date_naissance").eq("ecole_id", ecoleId),
+    const [vRes, eRes] = await Promise.all([
+      (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id).order("classe").order("nom"),
+      supabase.from("eleves").select("id,lieu_naissance,date_naissance").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id),
     ]);
     if (vRes.error) toast.error("Erreur chargement conformité: " + vRes.error.message);
-    if (sRes.error) toast.error("Erreur stats: " + sRes.error.message);
     const extra = new Map<string, { lieu_naissance: string | null; date_naissance: string | null }>();
     (eRes.data ?? []).forEach((e: any) => extra.set(e.id, { lieu_naissance: e.lieu_naissance, date_naissance: e.date_naissance }));
     const merged: ConfRow[] = (vRes.data ?? []).map((r: any) => ({ ...r, ...(extra.get(r.eleve_id) ?? {}) }));
     setRows(merged);
-    const s = Array.isArray(sRes.data) ? sRes.data[0] : sRes.data;
-    setStats(s ?? null);
+    setStats(computeStats(merged));
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, activeAnnee.id]);
 
-  useEffect(() => { fetchAll(); }, [fetchAll]);
+  useEffect(() => { if (!loadingAnnee) fetchAll(); }, [fetchAll, loadingAnnee]);
 
   const classes = useMemo(() => {
     const set = new Map<string, string>();
