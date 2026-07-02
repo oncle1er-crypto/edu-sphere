@@ -19,6 +19,7 @@ export function useClasses(anneeId?: string) {
 
   const fetchClasses = useCallback(async () => {
     if (!ecoleId) return;
+    if (anneeId === "") { setClasses([]); setLoading(false); return; }
     setLoading(true);
 
     let q = supabase
