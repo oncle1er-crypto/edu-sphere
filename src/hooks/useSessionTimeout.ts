@@ -9,6 +9,7 @@ import { toast } from "sonner";
  */
 export function useSessionTimeout(timeoutMs = 30 * 60 * 1000) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const warnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const warned = useRef(false);
 
   useEffect(() => {
@@ -29,11 +30,9 @@ export function useSessionTimeout(timeoutMs = 30 * 60 * 1000) {
     const reset = () => {
       warned.current = false;
       if (timer.current) clearTimeout(timer.current);
-      const warnTimer = setTimeout(warn, Math.max(0, timeoutMs - 60_000));
-      timer.current = setTimeout(() => {
-        clearTimeout(warnTimer);
-        expire();
-      }, timeoutMs);
+      if (warnTimer.current) clearTimeout(warnTimer.current);
+      warnTimer.current = setTimeout(warn, Math.max(0, timeoutMs - 60_000));
+      timer.current = setTimeout(expire, timeoutMs);
     };
 
     const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
@@ -42,7 +41,9 @@ export function useSessionTimeout(timeoutMs = 30 * 60 * 1000) {
 
     return () => {
       if (timer.current) clearTimeout(timer.current);
+      if (warnTimer.current) clearTimeout(warnTimer.current);
       events.forEach((e) => window.removeEventListener(e, reset));
     };
   }, [timeoutMs]);
 }
+
