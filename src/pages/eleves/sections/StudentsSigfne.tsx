@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Download, ShieldCheck, AlertTriangle, XCircle, Copy, Loader2, Settings2, Save } from "lucide-react";
+import { Download, ShieldCheck, AlertTriangle, XCircle, Copy, Loader2, Settings2, Save, Upload } from "lucide-react";
+import { SigfneImportDialog } from "./SigfneImportDialog";
 
 type ConfRow = {
   ecole_id: string;
