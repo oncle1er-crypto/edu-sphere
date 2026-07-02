@@ -62,6 +62,7 @@ export default function StudentsSigfne() {
   const [statutFilter, setStatutFilter] = useState<string>("all");
   const [savingId, setSavingId] = useState<string | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!ecoleId) return;
