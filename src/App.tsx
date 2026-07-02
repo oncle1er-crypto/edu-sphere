@@ -25,6 +25,7 @@ const StudentsDocuments = lazy(() => import("@/pages/eleves/sections/StudentsDoc
 const StudentsAttestations = lazy(() => import("@/pages/eleves/sections/StudentsAttestations"));
 const StudentsAlumni = lazy(() => import("@/pages/eleves/sections/StudentsAlumni"));
 const StudentsConfig = lazy(() => import("@/pages/eleves/sections/StudentsConfig"));
+const StudentsSigfne = lazy(() => import("@/pages/eleves/sections/StudentsSigfne"));
 const StaffLayout = lazy(() => import("@/pages/enseignants/StaffLayout"));
 const StaffDashboard = lazy(() => import("@/pages/enseignants/sections/StaffDashboard"));
 const StaffList = lazy(() => import("@/pages/enseignants/sections/StaffList"));
@@ -294,6 +295,7 @@ const App = () => (
               <Route path="documents" element={<StudentsDocuments />} />
               <Route path="attestations" element={<StudentsAttestations />} />
               <Route path="anciens" element={<StudentsAlumni />} />
+              <Route path="sigfne" element={<StudentsSigfne />} />
               <Route path="configuration" element={<StudentsConfig />} />
             </Route>
             <Route path="/enseignants" element={<StaffLayout />}>
