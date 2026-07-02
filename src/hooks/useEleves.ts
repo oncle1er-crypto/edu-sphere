@@ -19,6 +19,8 @@ export function useEleves(anneeId?: string) {
 
   const fetchEleves = useCallback(async () => {
     if (!ecoleId) return;
+    // Si l'appelant a explicitement passé une année vide, on n'affiche rien.
+    if (anneeId === "") { setEleves([]); setLoading(false); return; }
     setLoading(true);
     let q = supabase
       .from("eleves")
