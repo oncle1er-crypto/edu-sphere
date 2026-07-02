@@ -111,21 +111,20 @@ export default function StudentsSigfne() {
   }, [rows, search, classeFilter, statutFilter]);
 
   const saveField = async (eleveId: string, field: "matricule_national" | "lieu_naissance" | "date_naissance", value: string) => {
-    if (!ecoleId) return;
+    if (!ecoleId || !activeAnnee.id) return;
     setSavingId(eleveId + field);
     const { error } = await supabase.from("eleves").update({ [field]: value || null } as any).eq("id", eleveId);
     setSavingId(null);
     if (error) { toast.error("Erreur: " + error.message); return; }
-    // Re-fetch just this row + stats
-    const [vRes, sRes] = await Promise.all([
-      (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("eleve_id", eleveId).maybeSingle(),
-      (supabase as any).rpc("stats_conformite_sigfne", { p_ecole_id: ecoleId }),
-    ]);
-    if (vRes.data) {
-      setRows((prev) => prev.map((r) => r.eleve_id === eleveId ? { ...r, ...vRes.data, lieu_naissance: r.lieu_naissance, date_naissance: r.date_naissance, [field]: value || null } : r));
-    }
-    const s = Array.isArray(sRes.data) ? sRes.data[0] : sRes.data;
-    if (s) setStats(s);
+    // Re-fetch just this row
+    const vRes = await (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id).eq("eleve_id", eleveId).maybeSingle();
+    setRows((prev) => {
+      const next = prev.map((r) => r.eleve_id === eleveId
+        ? { ...r, ...(vRes.data ?? {}), lieu_naissance: r.lieu_naissance, date_naissance: r.date_naissance, [field]: value || null }
+        : r);
+      setStats(computeStats(next));
+      return next;
+    });
     toast.success("Enregistré");
   };
 
