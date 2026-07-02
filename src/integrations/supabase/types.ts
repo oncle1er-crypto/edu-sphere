@@ -5349,6 +5349,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      import_matricules_sigfne: {
+        Args: { p_dry_run?: boolean; p_ecole_id: string; p_rows: Json }
+        Returns: {
+          detail: string
+          eleve_id: string
+          eleve_nom: string
+          ligne: number
+          matricule_national: string
+          resultat: string
+        }[]
+      }
       is_mfa_locked: { Args: { _user_id?: string }; Returns: boolean }
       is_mfa_required_for_user: { Args: { _user_id: string }; Returns: boolean }
       log_security_event: {

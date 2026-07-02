@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Download, ShieldCheck, AlertTriangle, XCircle, Copy, Loader2, Settings2, Save } from "lucide-react";
+import { Download, ShieldCheck, AlertTriangle, XCircle, Copy, Loader2, Settings2, Save, Upload } from "lucide-react";
+import { SigfneImportDialog } from "./SigfneImportDialog";
 
 type ConfRow = {
   ecole_id: string;
@@ -61,6 +62,7 @@ export default function StudentsSigfne() {
   const [statutFilter, setStatutFilter] = useState<string>("all");
   const [savingId, setSavingId] = useState<string | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [importOpen, setImportOpen] = useState(false);
 
   const fetchAll = useCallback(async () => {
     if (!ecoleId) return;
@@ -157,8 +159,13 @@ export default function StudentsSigfne() {
           <h2 className="text-2xl font-bold font-display">Conformité SIGFNE</h2>
           <p className="text-sm text-muted-foreground">Contrôle et mise en conformité des matricules nationaux pour l'export SIGFNE.</p>
         </div>
-        <Button onClick={handleExport} className="gap-2"><Download className="h-4 w-4" /> Exporter (CSV)</Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setImportOpen(true)} className="gap-2"><Upload className="h-4 w-4" /> Importer (CSV)</Button>
+          <Button onClick={handleExport} className="gap-2"><Download className="h-4 w-4" /> Exporter (CSV)</Button>
+        </div>
       </div>
+
+      <SigfneImportDialog open={importOpen} onOpenChange={setImportOpen} ecoleId={ecoleId} onImported={fetchAll} />
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <StatMini title="Taux de conformité" value={stats ? `${Math.round(stats.taux_conformite * 100) / 100}%` : "—"} tone="primary" icon={<ShieldCheck className="h-4 w-4" />} />
