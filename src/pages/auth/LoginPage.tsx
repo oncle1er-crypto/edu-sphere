@@ -26,7 +26,7 @@ const NAVY = "#071B3B";
 const GOLD = "#D4A017";
 
 const DEMO_EMAIL = "admin@gsp.ci";
-const DEMO_PASSWORD = "demo1234";
+const DEMO_PASSWORD = "Demo@2026!";
 
 export default function LoginPage() {
   const navigate = useNavigate();
