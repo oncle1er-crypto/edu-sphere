@@ -5291,6 +5291,20 @@ export type Database = {
         }
         Returns: string
       }
+      cloturer_et_basculer_annee: {
+        Args: {
+          p_annee_cible: string
+          p_annee_source: string
+          p_dry_run?: boolean
+          p_ecole_id: string
+        }
+        Returns: {
+          detail: string
+          element: string
+          etape: string
+          niveau: string
+        }[]
+      }
       consume_backup_code: { Args: { _code_hash: string }; Returns: boolean }
       consume_sms_otp: {
         Args: { _code_hash: string; _purpose: string; _user_id: string }
