@@ -22,27 +22,32 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Auth : requiert un utilisateur avec rôle admin sur au moins une école
-    const authHeader = req.headers.get("Authorization") ?? "";
-    const jwt = authHeader.replace("Bearer ", "");
-    const { data: userRes, error: userErr } = await admin.auth.getUser(jwt);
-    if (userErr || !userRes?.user) {
-      return new Response(JSON.stringify({ error: "Non authentifié" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Auth : soit token bootstrap admin (header x-bootstrap-token), soit JWT d'un admin
+    const bootstrap = req.headers.get("x-bootstrap-token");
+    const bootstrapExpected = Deno.env.get("ADMIN_RESET_BOOTSTRAP_TOKEN");
+    let authorized = !!bootstrap && !!bootstrapExpected && bootstrap === bootstrapExpected;
 
-    const { data: roles } = await admin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userRes.user.id);
-    const isAdmin = (roles ?? []).some((r: any) => r.role === "admin");
-    if (!isAdmin) {
-      return new Response(JSON.stringify({ error: "Rôle admin requis" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    if (!authorized) {
+      const authHeader = req.headers.get("Authorization") ?? "";
+      const jwt = authHeader.replace("Bearer ", "");
+      const { data: userRes, error: userErr } = await admin.auth.getUser(jwt);
+      if (userErr || !userRes?.user) {
+        return new Response(JSON.stringify({ error: "Non authentifié" }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: roles } = await admin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userRes.user.id);
+      authorized = (roles ?? []).some((r: any) => r.role === "admin");
+      if (!authorized) {
+        return new Response(JSON.stringify({ error: "Rôle admin requis" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     // Trouver l'utilisateur cible par email
