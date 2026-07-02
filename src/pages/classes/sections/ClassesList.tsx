@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,8 @@ const EXAMPLE_ROWS_CLASSES = [
 ];
 
 export default function ClassesList() {
-  const { classes, loading, addClass, fetchClasses, ecoleId } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes, loading, addClass, fetchClasses, ecoleId } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();
   const { enseignants } = useEnseignants();
   const { anneeId } = useAnneeId();
@@ -58,7 +60,7 @@ export default function ClassesList() {
 
   // Eleves dialog
   const [viewElevesClass, setViewElevesClass] = useState<Classe | null>(null);
-  const { eleves } = useEleves();
+  const { eleves } = useEleves(activeAnnee.id);
   const [showImport, setShowImport] = useState(false);
 
   const filtered = classes.filter((c) => {

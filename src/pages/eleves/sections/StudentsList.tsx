@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner, StatusLegend, STATUTS_ELEVE } from "@/components/help";
@@ -31,8 +32,9 @@ const formatDate = (d: string | null) => {
 type ViewMode = "list" | "grid";
 
 export default function StudentsList() {
-  const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves();
-  const { classes } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves(activeAnnee.id);
+  const { classes } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");

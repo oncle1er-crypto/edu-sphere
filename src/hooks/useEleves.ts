@@ -12,19 +12,22 @@ export interface Eleve extends EleveRow {
   cycle_nom?: string | null;
 }
 
-export function useEleves() {
+export function useEleves(anneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [eleves, setEleves] = useState<Eleve[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchEleves = useCallback(async () => {
     if (!ecoleId) return;
+    // Si l'appelant a explicitement passé une année vide, on n'affiche rien.
+    if (anneeId === "") { setEleves([]); setLoading(false); return; }
     setLoading(true);
-    const { data, error } = await supabase
+    let q = supabase
       .from("eleves")
       .select("*, classes(nom, cycles(nom))")
-      .eq("ecole_id", ecoleId)
-      .order("nom");
+      .eq("ecole_id", ecoleId);
+    if (anneeId) q = q.eq("annee_id", anneeId);
+    const { data, error } = await q.order("nom");
 
     if (error) {
       console.error(error);
@@ -39,7 +42,7 @@ export function useEleves() {
       );
     }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, anneeId]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchEleves();

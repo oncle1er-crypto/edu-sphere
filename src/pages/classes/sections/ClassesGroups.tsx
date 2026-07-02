@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,7 +33,8 @@ const TYPES = ["option", "langue", "soutien", "specialite", "atelier"];
 export default function ClassesGroups() {
   const { ecoleId } = useEcoleId();
   const { enseignants } = useEnseignants();
-  const { eleves } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { eleves } = useEleves(activeAnnee.id);
   const [groupes, setGroupes] = useState<Groupe[]>([]);
   const [loading, setLoading] = useState(true);
 

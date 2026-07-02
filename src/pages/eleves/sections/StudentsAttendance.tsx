@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,8 +17,9 @@ import { toast } from "sonner";
 type Status = "present" | "absent" | "retard";
 
 export default function StudentsAttendance() {
-  const { classes, loading: loadingC } = useClasses();
-  const { eleves, loading: loadingE } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes, loading: loadingC } = useClasses(activeAnnee.id);
+  const { eleves, loading: loadingE } = useEleves(activeAnnee.id);
   const { presences, fetchPresences, savePresences, ecoleId } = usePresences();
   const { user } = useAuth();
   const [classeId, setClasseId] = useState("");

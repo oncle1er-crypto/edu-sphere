@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,7 +7,8 @@ import { MapPin, BookOpen, Loader2 } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
 
 export default function ClassesRooms() {
-  const { classes, loading } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes, loading } = useClasses(activeAnnee.id);
 
   const salles = useMemo(() => {
     const map = new Map<string, { code: string; classes: typeof classes; capacite: number; effectif: number }>();

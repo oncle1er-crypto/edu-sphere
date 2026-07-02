@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,8 +23,9 @@ interface Transfert {
 }
 
 export default function ClassesTransfers() {
-  const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes } = useClasses(activeAnnee.id);
+  const { eleves } = useEleves(activeAnnee.id);
   const { user } = useAuth();
   const [transferts, setTransferts] = useState<Transfert[]>([]);
   const [loading, setLoading] = useState(true);

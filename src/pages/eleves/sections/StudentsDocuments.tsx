@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -36,7 +37,8 @@ function formatFileSize(bytes: number | null) {
 }
 
 export default function StudentsDocuments() {
-  const { eleves, loading: loadingEleves } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { eleves, loading: loadingEleves } = useEleves(activeAnnee.id);
   const { user } = useAuth();
   const [selectedEleve, setSelectedEleve] = useState("");
   const [q, setQ] = useState("");

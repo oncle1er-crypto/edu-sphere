@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,7 +51,8 @@ interface TrancheRow {
 }
 
 export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpenDrawer, onUpdated }: Props) {
-  const { classes } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes } = useClasses(activeAnnee.id);
   const { user } = useAuth();
   const { ecoleId } = useEcoleId();
   const [loading, setLoading] = useState(false);

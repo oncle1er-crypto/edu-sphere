@@ -12,20 +12,22 @@ export interface Classe extends ClasseRow {
   prof_nom?: string;
 }
 
-export function useClasses() {
+export function useClasses(anneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [classes, setClasses] = useState<Classe[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchClasses = useCallback(async () => {
     if (!ecoleId) return;
+    if (anneeId === "") { setClasses([]); setLoading(false); return; }
     setLoading(true);
 
-    const { data, error } = await supabase
+    let q = supabase
       .from("classes")
       .select("*, cycles(nom), enseignants(nom, prenom), eleves(count)")
-      .eq("ecole_id", ecoleId)
-      .order("nom");
+      .eq("ecole_id", ecoleId);
+    if (anneeId) q = q.eq("annee_id", anneeId);
+    const { data, error } = await q.order("nom");
 
     if (error) {
       console.error(error);
@@ -43,7 +45,7 @@ export function useClasses() {
       }))
     );
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, anneeId]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchClasses();

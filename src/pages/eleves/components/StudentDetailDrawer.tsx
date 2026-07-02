@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
@@ -83,7 +84,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
   const pendingActionRef = useRef<"cancel" | "close" | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const { classes } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes } = useClasses(activeAnnee.id);
 
   const isDirty = useCallback(() => {
     const init = initialFormRef.current;

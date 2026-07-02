@@ -5161,6 +5161,7 @@ export type Database = {
     Views: {
       v_conformite_sigfne: {
         Row: {
+          annee_id: string | null
           classe: string | null
           classe_id: string | null
           diagnostic: string | null
@@ -5174,6 +5175,13 @@ export type Database = {
           statut_sigfne: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "eleves_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "eleves_classe_id_fkey"
             columns: ["classe_id"]
@@ -5192,6 +5200,7 @@ export type Database = {
       }
       v_export_sigfne_eleves: {
         Row: {
+          annee_id: string | null
           CLASSE: string | null
           code_etablissement: string | null
           DATE_NAISSANCE: string | null
@@ -5205,6 +5214,13 @@ export type Database = {
           SEXE: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "eleves_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "eleves_ecole_id_fkey"
             columns: ["ecole_id"]

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -14,8 +15,9 @@ import { useEleves } from "@/hooks/useEleves";
 import { toast } from "sonner";
 
 export default function StudentsAssignment() {
-  const { classes, loading: loadingC } = useClasses();
-  const { eleves, loading: loadingE, updateEleve } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { classes, loading: loadingC } = useClasses(activeAnnee.id);
+  const { eleves, loading: loadingE, updateEleve } = useEleves(activeAnnee.id);
 
   const [sourceClasseId, setSourceClasseId] = useState<string | null>(null);
   const [targetClasseId, setTargetClasseId] = useState("");

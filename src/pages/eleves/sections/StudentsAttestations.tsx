@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -50,7 +51,8 @@ function currentAnnee(): string {
 }
 
 export default function StudentsAttestations() {
-  const { eleves, loading } = useEleves();
+  const { activeAnnee } = useAcademicPeriod();
+  const { eleves, loading } = useEleves(activeAnnee.id);
   const { currentEcole } = useEcoles();
   const [q, setQ] = useState("");
   const [selectedId, setSelectedId] = useState<string>("");

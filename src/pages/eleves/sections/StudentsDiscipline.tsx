@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -29,8 +30,9 @@ const typeLabels: Record<string, string> = {
 
 export default function StudentsDiscipline() {
   const { incidents, loading, addIncident, ecoleId } = useIncidentsDiscipline();
-  const { eleves } = useEleves();
-  const { classes } = useClasses();
+  const { activeAnnee } = useAcademicPeriod();
+  const { eleves } = useEleves(activeAnnee.id);
+  const { classes } = useClasses(activeAnnee.id);
   const { anneeId } = useAnneeId();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
