@@ -136,10 +136,10 @@ export default function StudentsSigfne() {
   };
 
   const handleExport = async () => {
-    if (!ecoleId) return;
+    if (!ecoleId || !activeAnnee.id) return;
     const nonConformes = (stats?.total ?? 0) - (stats?.conformes ?? 0);
     if (nonConformes > 0) toast.warning(`${nonConformes} élève(s) non conforme(s) seront exclus de l'export.`);
-    const { data, error } = await (supabase as any).from("v_export_sigfne_eleves").select("*").eq("ecole_id", ecoleId);
+    const { data, error } = await (supabase as any).from("v_export_sigfne_eleves").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id);
     if (error) { toast.error(error.message); return; }
     const cols = ["MATRICULE","NOM","PRENOMS","DATE_NAISSANCE","LIEU_NAISSANCE","SEXE","NATIONALITE","CLASSE"];
     const escape = (v: any) => {
