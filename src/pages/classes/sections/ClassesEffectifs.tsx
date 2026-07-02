@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -6,7 +7,7 @@ import { GraduationCap, Loader2 } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
 
 export default function ClassesEffectifs() {
-  const { classes, loading } = useClasses();
+  const { classes, loading } = useClasses(activeAnnee.id);
 
   if (loading) {
     return (

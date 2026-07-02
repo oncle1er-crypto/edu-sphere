@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +25,8 @@ const MOYENNE_PASSAGE = 10; // sur 20
 
 export default function StudentsReregistration() {
   const { ecoleId } = useEcoleId();
-  const { eleves, loading } = useEleves();
-  const { classes } = useClasses();
+  const { eleves, loading } = useEleves(activeAnnee.id);
+  const { classes } = useClasses(activeAnnee.id);
 
   const [annees, setAnnees] = useState<AnneeRow[]>([]);
   const [anneeActiveId, setAnneeActiveId] = useState<string | null>(null);

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useIsAdmin } from "@/hooks/useIsAdmin";

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,7 @@ const COULEURS = [
 ];
 
 export default function ClassesSchedule() {
-  const { classes, loading: classesLoading } = useClasses();
+  const { classes, loading: classesLoading } = useClasses(activeAnnee.id);
   const { creneaux, loading: creneauxLoading, fetchCreneaux } = useEmploiDuTemps();
   const [selectedClasseId, setSelectedClasseId] = useState("");
 

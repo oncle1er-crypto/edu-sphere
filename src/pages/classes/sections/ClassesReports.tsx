@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileBarChart, Download, Loader2 } from "lucide-react";
@@ -21,8 +22,8 @@ function downloadCSV(filename: string, rows: (string | number)[][]) {
 }
 
 export default function ClassesReports() {
-  const { classes, loading: lc } = useClasses();
-  const { eleves, loading: le } = useEleves();
+  const { classes, loading: lc } = useClasses(activeAnnee.id);
+  const { eleves, loading: le } = useEleves(activeAnnee.id);
   const { enseignants, loading: lt } = useEnseignants();
   const [busy, setBusy] = useState<string | null>(null);
 

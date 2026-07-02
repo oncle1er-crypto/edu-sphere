@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,7 @@ const colors = ["bg-pink-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", 
 
 export default function ClassesCycles() {
   const { cycles, loading: cyclesLoading } = useCycles();
-  const { classes, loading: classesLoading } = useClasses();
+  const { classes, loading: classesLoading } = useClasses(activeAnnee.id);
 
   if (cyclesLoading || classesLoading) {
     return (

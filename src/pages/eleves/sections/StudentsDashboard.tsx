@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,8 +12,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 
 export default function StudentsDashboard() {
-  const { eleves, loading: loadingE } = useEleves();
-  const { classes, loading: loadingC } = useClasses();
+  const { eleves, loading: loadingE } = useEleves(activeAnnee.id);
+  const { classes, loading: loadingC } = useClasses(activeAnnee.id);
   const { cycles, loading: loadingCy } = useCycles();
   const { ecoleId } = useEcoleId();
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +18,8 @@ import { toast } from "sonner";
 
 export default function StudentsHealth() {
   const { visites, loading, addVisite, ecoleId } = useVisitesInfirmerie();
-  const { eleves } = useEleves();
-  const { classes } = useClasses();
+  const { eleves } = useEleves(activeAnnee.id);
+  const { classes } = useClasses(activeAnnee.id);
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);

@@ -1,4 +1,5 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { KpiCard } from "@/components/KpiCard";
 import { Badge } from "@/components/ui/badge";
@@ -8,7 +9,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 
 export default function ClassesDashboard() {
-  const { classes, loading } = useClasses();
+  const { classes, loading } = useClasses(activeAnnee.id);
   const { cycles, loading: cyclesLoading } = useCycles();
 
   if (loading || cyclesLoading) {

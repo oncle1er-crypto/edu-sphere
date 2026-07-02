@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
@@ -35,8 +36,8 @@ const EXAMPLE_ROWS = [
 const LIEN_OPTIONS = ["père", "mère", "tuteur", "tutrice", "oncle", "tante", "grand-père", "grand-mère", "autre"];
 
 export default function StudentsRegistration() {
-  const { addEleve, ecoleId } = useEleves();
-  const { classes } = useClasses();
+  const { addEleve, ecoleId } = useEleves(activeAnnee.id);
+  const { classes } = useClasses(activeAnnee.id);
   const { cycles } = useCycles();
   const { anneeId } = useAnneeId();
 
