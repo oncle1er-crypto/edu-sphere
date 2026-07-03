@@ -11,9 +11,10 @@ import {
 import { ClipboardList, Plus, Loader2, Pencil, Trash2 } from "lucide-react";
 import { useEvaluations } from "@/hooks/useEvaluations";
 import { useClasses } from "@/hooks/useClasses";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 
 const TYPES = ["devoir", "interrogation", "composition"] as const;
