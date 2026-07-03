@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { statutEleve, type Cycle, type EleveScolarite } from "../scolarite-data";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
