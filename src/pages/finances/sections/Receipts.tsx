@@ -36,6 +36,7 @@ interface EcoleInfo {
 
 export default function Receipts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const [recus, setRecus] = useState<PaiementRecu[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
