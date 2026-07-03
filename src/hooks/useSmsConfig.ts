@@ -51,7 +51,7 @@ export function useSmsConfig() {
     if (error) {
       console.error("Error fetching sms_config:", error);
     }
-    setConfig(data as SmsConfig | null);
+    setConfig(data ? ({ ...(data as any), api_token: "" } as SmsConfig) : null);
     setLoading(false);
   }, [ecoleId]);
 
