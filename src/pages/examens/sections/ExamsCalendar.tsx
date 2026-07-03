@@ -3,12 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarRange, Loader2 } from "lucide-react";
 import { useEvaluations } from "@/hooks/useEvaluations";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useMemo } from "react";
 
 const MONTHS = ["jan", "fév", "mar", "avr", "mai", "jun", "jui", "aoû", "sep", "oct", "nov", "déc"];
 
 export default function ExamsCalendar() {
-  const { evaluations, loading } = useEvaluations();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { evaluations, loading } = useEvaluations(periodeIds);
 
   const events = useMemo(() => {
     const today = new Date();
