@@ -41,8 +41,14 @@ const emptyForm: EvalForm = {
 };
 
 export default function Evaluations() {
-  const { evaluations, loading, addEvaluation, updateEvaluation, deleteEvaluation, ecoleId } = useEvaluations();
-  const { classes } = useClasses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = useMemo(
+    () => (periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id)),
+    [periodLoading, activeAnnee],
+  );
+  const { evaluations, loading, addEvaluation, updateEvaluation, deleteEvaluation, ecoleId } = useEvaluations(periodeIds);
+  const { classes } = useClasses(scopedAnneeId);
   const [matieres, setMatieres] = useState<{ id: string; nom: string }[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState<EvalForm>(emptyForm);
