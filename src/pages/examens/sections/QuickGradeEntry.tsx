@@ -174,6 +174,7 @@ export default function QuickGradeEntry() {
         .select("id, titre, bareme, type, matieres(nom)")
         .eq("ecole_id", ecoleId)
         .eq("classe_id", selectedClasse)
+        .in("periode_id", periodeIds.length ? periodeIds : ["00000000-0000-0000-0000-000000000000"])
         .order("date_eval", { ascending: false });
       setClassEvals((refreshed ?? []).map((e: any) => ({
         id: e.id, titre: e.titre, bareme: e.bareme ?? 20, type: e.type, matiere_nom: e.matieres?.nom ?? "",
