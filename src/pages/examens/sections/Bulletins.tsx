@@ -53,8 +53,10 @@ const mentionTone: Record<string, string> = {
 
 export default function Bulletins() {
   const { ecoleId } = useEcoleId();
-  const { anneeId } = useAnneeId();
-  const { classes } = useClasses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const anneeId = activeAnnee?.id ?? null;
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { classes } = useClasses(scopedAnneeId);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [selectedPeriode, setSelectedPeriode] = useState("");
   const [selectedClasse, setSelectedClasse] = useState("");
