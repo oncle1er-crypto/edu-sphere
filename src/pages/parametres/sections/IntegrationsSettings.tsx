@@ -8,8 +8,8 @@ import { useSmsConfig } from "@/hooks/useSmsConfig";
 
 export default function IntegrationsSettings() {
   const { config } = useSmsConfig();
-  const smsConnected = !!config?.is_active && !!config?.api_token;
-  const waConnected = !!config?.whatsapp_enabled && !!config?.api_token;
+  const smsConnected = !!config?.is_active && !!config?.has_api_token;
+  const waConnected = !!config?.whatsapp_enabled && !!config?.has_api_token;
 
   const integrations = [
     { icon: CreditCard, name: "Stripe", desc: "Paiements en ligne par carte bancaire", connected: false, category: "Paiements", to: null as string | null },
