@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
 import { useEcoles } from "@/context/EcoleContext";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { getHonorRollThreshold, DEFAULT_HONOR_ROLL_THRESHOLD } from "@/lib/honorRoll";
 import { generateTableauHonneurPDF } from "@/lib/generateDocumentsPDF";
 import { toast } from "sonner";
