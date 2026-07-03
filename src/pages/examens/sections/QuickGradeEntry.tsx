@@ -56,11 +56,13 @@ export default function QuickGradeEntry() {
   // Fetch class evaluations
   useEffect(() => {
     if (!selectedClasse || !ecoleId) { setClassEvals([]); return; }
+    if (periodeIds.length === 0) { setClassEvals([]); return; }
     supabase
       .from("evaluations")
       .select("id, titre, bareme, type, matieres(nom)")
       .eq("ecole_id", ecoleId)
       .eq("classe_id", selectedClasse)
+      .in("periode_id", periodeIds)
       .order("date_eval", { ascending: false })
       .then(({ data }) => {
         setClassEvals((data ?? []).map((e: any) => ({
@@ -71,7 +73,7 @@ export default function QuickGradeEntry() {
           matiere_nom: e.matieres?.nom ?? "",
         })));
       });
-  }, [selectedClasse, ecoleId]);
+  }, [selectedClasse, ecoleId, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch matieres for new eval dialog
   useEffect(() => {
