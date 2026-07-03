@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { statutEleve, type Cycle, type EleveScolarite, STATUT_LABEL, STATUT_CLASS } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
 import { SettleDialog } from "../components/SettleDialog";
