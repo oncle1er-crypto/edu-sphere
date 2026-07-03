@@ -7,6 +7,7 @@ import { fcfa } from "../useFinanceData";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface PaiementRecu {
