@@ -15,7 +15,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
-import { useAnneeId } from "@/hooks/useAnneeId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 import {
   generateBulletinPDF,
