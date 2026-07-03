@@ -13,6 +13,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useNotes } from "@/hooks/useNotes";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 
 interface QuickEval {
