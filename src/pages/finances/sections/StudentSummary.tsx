@@ -17,7 +17,9 @@ import { toast } from "sonner";
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
 export default function StudentSummary() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [selectedId, setSelectedId] = useState<string>("");
