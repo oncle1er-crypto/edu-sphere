@@ -10,6 +10,7 @@ import { useDepenses } from "@/hooks/useDepenses";
 import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
@@ -64,8 +65,11 @@ const REPORTS: ReportDef[] = [
 ];
 
 export default function Reports() {
-  const { data: financeData, loading: finLoading } = useFinanceData();
-  const { depenses, loading: depLoading } = useDepenses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
+  const { depenses, loading: depLoading } = useDepenses(dateRange);
   const { comptes, mouvements, loading: tresLoading } = useTresorerie();
   const { lignes: budgetLignes, loading: budLoading } = useBudget();
   const { bulletins, loading: paieLoading } = useBulletinsPaie();

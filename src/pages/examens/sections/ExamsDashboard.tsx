@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { ClipboardList, CheckCircle2, TrendingUp, Award, Loader2 } from "lucide-react";
 import { useEvaluations } from "@/hooks/useEvaluations";
 import { useCycles } from "@/hooks/useCycles";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useMemo } from "react";
 
 const toneMap: Record<string, string> = {
@@ -13,7 +14,9 @@ const toneMap: Record<string, string> = {
 };
 
 export default function ExamsDashboard() {
-  const { evaluations, loading } = useEvaluations();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { evaluations, loading } = useEvaluations(periodeIds);
   const { cycles } = useCycles();
 
   const kpis = useMemo(() => {

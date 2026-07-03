@@ -13,13 +13,17 @@ import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useFactures } from "@/hooks/useFactures";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 
 export default function FinanceDashboard() {
-  const { data: ELEVES, loading } = useFinanceData();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  const { data: ELEVES, loading } = useFinanceData(scopedAnneeId);
   const { comptes, loading: tresLoading } = useTresorerie();
   const { lignes, loading: budgetLoading } = useBudget();
-  const { depenses, loading: depLoading } = useDepenses();
-  const { factures, loading: facLoading } = useFactures();
+  const { depenses, loading: depLoading } = useDepenses(dateRange);
+  const { factures, loading: facLoading } = useFactures(scopedAnneeId);
 
   if (loading || tresLoading || budgetLoading || depLoading || facLoading) {
     return (

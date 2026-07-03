@@ -16,20 +16,30 @@ export interface Evaluation extends EvalRow {
   nb_eleves?: number;
 }
 
-export function useEvaluations() {
+export function useEvaluations(periodeIds?: string[]) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { anneeId } = useAnneeId();
   const [evaluations, setEvaluations] = useState<Evaluation[]>([]);
   const [loading, setLoading] = useState(true);
+  const scopedProvided = periodeIds !== undefined;
+  const periodeKey = (periodeIds ?? []).join("|");
 
   const fetchEvaluations = useCallback(async () => {
     if (!ecoleId) return;
+    if (scopedProvided && (periodeIds!.length === 0)) {
+      setEvaluations([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { data, error } = await supabase
+    let query = supabase
       .from("evaluations")
       .select("*, classes(nom, annee_id), matieres(nom), enseignants(nom, prenom), periodes(nom), notes(count)")
-      .eq("ecole_id", ecoleId)
-      .order("date_eval", { ascending: false });
+      .eq("ecole_id", ecoleId);
+    if (scopedProvided) query = query.in("periode_id", periodeIds!);
+    query = query.order("date_eval", { ascending: false });
+
+    const { data, error } = await query;
 
     if (error) {
       console.error(error);
@@ -49,7 +59,7 @@ export function useEvaluations() {
       );
     }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, scopedProvided, periodeKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchEvaluations();

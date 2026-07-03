@@ -13,6 +13,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useNotes } from "@/hooks/useNotes";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 
 interface QuickEval {
@@ -29,8 +30,11 @@ interface QuickEval {
  */
 export default function QuickGradeEntry() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
+  const { eleves } = useEleves(scopedAnneeId);
   const { notes, fetchNotesByEvaluation, saveSingleNote } = useNotes();
 
   const [selectedClasse, setSelectedClasse] = useState("");
@@ -52,11 +56,13 @@ export default function QuickGradeEntry() {
   // Fetch class evaluations
   useEffect(() => {
     if (!selectedClasse || !ecoleId) { setClassEvals([]); return; }
+    if (periodeIds.length === 0) { setClassEvals([]); return; }
     supabase
       .from("evaluations")
       .select("id, titre, bareme, type, matieres(nom)")
       .eq("ecole_id", ecoleId)
       .eq("classe_id", selectedClasse)
+      .in("periode_id", periodeIds)
       .order("date_eval", { ascending: false })
       .then(({ data }) => {
         setClassEvals((data ?? []).map((e: any) => ({
@@ -67,7 +73,7 @@ export default function QuickGradeEntry() {
           matiere_nom: e.matieres?.nom ?? "",
         })));
       });
-  }, [selectedClasse, ecoleId]);
+  }, [selectedClasse, ecoleId, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch matieres for new eval dialog
   useEffect(() => {
@@ -168,6 +174,7 @@ export default function QuickGradeEntry() {
         .select("id, titre, bareme, type, matieres(nom)")
         .eq("ecole_id", ecoleId)
         .eq("classe_id", selectedClasse)
+        .in("periode_id", periodeIds.length ? periodeIds : ["00000000-0000-0000-0000-000000000000"])
         .order("date_eval", { ascending: false });
       setClassEvals((refreshed ?? []).map((e: any) => ({
         id: e.id, titre: e.titre, bareme: e.bareme ?? 20, type: e.type, matiere_nom: e.matieres?.nom ?? "",

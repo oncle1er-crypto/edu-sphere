@@ -21,14 +21,23 @@ export interface Facture {
   classe_nom?: string;
 }
 
-export function useFactures() {
+export function useFactures(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const { anneeId } = useAnneeId();
+  const { anneeId: dbAnneeId } = useAnneeId();
+  // Si un anneeId scopé est fourni, il prime (chaîne vide = ne rien charger).
+  // Sinon, on retombe sur l'année active DB (rétro-compatibilité).
+  const scopedProvided = scopedAnneeId !== undefined;
+  const effectiveAnneeId = scopedProvided ? scopedAnneeId : dbAnneeId;
   const [factures, setFactures] = useState<Facture[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetch = useCallback(async () => {
     if (!ecoleId) return;
+    if (scopedProvided && !effectiveAnneeId) {
+      setFactures([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     let query = supabase
       .from("factures")
@@ -36,7 +45,7 @@ export function useFactures() {
       .eq("ecole_id", ecoleId)
       .order("created_at", { ascending: false });
 
-    if (anneeId) query = query.eq("annee_id", anneeId);
+    if (effectiveAnneeId) query = query.eq("annee_id", effectiveAnneeId);
 
     const { data, error } = await query;
     if (error) {
@@ -63,7 +72,7 @@ export function useFactures() {
       }))
     );
     setLoading(false);
-  }, [ecoleId, anneeId]);
+  }, [ecoleId, effectiveAnneeId, scopedProvided]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetch();
@@ -77,7 +86,9 @@ export function useFactures() {
     date_echeance: string;
     notes?: string;
   }) => {
-    if (!ecoleId || !anneeId) return;
+    // Pour l'insert : privilégier l'année scopée si fournie, sinon la DB.
+    const insertAnneeId = effectiveAnneeId ?? dbAnneeId;
+    if (!ecoleId || !insertAnneeId) return;
     // Generate next number
     const { count } = await supabase
       .from("factures")
@@ -87,7 +98,7 @@ export function useFactures() {
 
     const { error } = await supabase.from("factures").insert({
       ecole_id: ecoleId,
-      annee_id: anneeId,
+      annee_id: insertAnneeId,
       eleve_id: f.eleve_id,
       numero: num,
       libelle: f.libelle,

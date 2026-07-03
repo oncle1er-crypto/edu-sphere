@@ -7,6 +7,7 @@ import { fcfa } from "../useFinanceData";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface PaiementRecu {
@@ -35,6 +36,7 @@ interface EcoleInfo {
 
 export default function Receipts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const [recus, setRecus] = useState<PaiementRecu[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
@@ -73,32 +75,44 @@ export default function Receipts() {
   }, [ecoleId]);
 
   useEffect(() => {
-    if (!ecoleId) { setLoading(false); return; }
+    if (!ecoleId || periodLoading || !activeAnnee?.id) { if (!ecoleId && !ecoleLoading) setLoading(false); return; }
+    setLoading(true);
+    // Récupère les tranches de l'année pour filtrer les paiements
     supabase
-      .from("paiements")
-      .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))")
+      .from("tranches")
+      .select("id, frais_scolarite!inner(annee_id)")
       .eq("ecole_id", ecoleId)
-      .order("date_paiement", { ascending: false })
-      .limit(50)
-      .then(({ data }) => {
-        if (data) {
-          setRecus(data.map((p: any) => ({
-            id: p.id,
-            reference: p.reference,
-            eleve_id: p.eleve_id,
-            eleve_nom: p.eleves?.nom ?? "—",
-            eleve_prenom: p.eleves?.prenom ?? "",
-            matricule: p.eleves?.matricule ?? "",
-            classe: p.eleves?.classes?.nom ?? "",
-            photo_url: p.eleves?.photo_url ?? null,
-            montant: Number(p.montant),
-            date_paiement: p.date_paiement,
-            mode: p.mode,
-          })));
-        }
-        setLoading(false);
+      .eq("frais_scolarite.annee_id", activeAnnee.id)
+      .then(({ data: trData }) => {
+        const trancheIds = (trData ?? []).map((t: any) => t.id);
+        if (trancheIds.length === 0) { setRecus([]); setLoading(false); return; }
+        supabase
+          .from("paiements")
+          .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))")
+          .eq("ecole_id", ecoleId)
+          .in("tranche_id", trancheIds)
+          .order("date_paiement", { ascending: false })
+          .limit(50)
+          .then(({ data }) => {
+            if (data) {
+              setRecus(data.map((p: any) => ({
+                id: p.id,
+                reference: p.reference,
+                eleve_id: p.eleve_id,
+                eleve_nom: p.eleves?.nom ?? "—",
+                eleve_prenom: p.eleves?.prenom ?? "",
+                matricule: p.eleves?.matricule ?? "",
+                classe: p.eleves?.classes?.nom ?? "",
+                photo_url: p.eleves?.photo_url ?? null,
+                montant: Number(p.montant),
+                date_paiement: p.date_paiement,
+                mode: p.mode,
+              })));
+            }
+            setLoading(false);
+          });
       });
-  }, [ecoleId]);
+  }, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id]);
 
   const buildPDF = async (r: PaiementRecu) => {
     const [{ data: tranches }, { data: paiements }] = await Promise.all([

@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "../useFinanceData";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { statutEleve, type Cycle, type EleveScolarite } from "../scolarite-data";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
@@ -39,7 +40,9 @@ function buildSmsRelance(e: EleveScolarite): string {
 }
 
 export default function Unpaid() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const { relances, fetchRelances, addRelance, getRelancesCount, getDerniereRelance } = useRelances();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");

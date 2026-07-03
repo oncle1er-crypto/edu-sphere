@@ -15,7 +15,7 @@ import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
-import { useAnneeId } from "@/hooks/useAnneeId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 import {
   generateBulletinPDF,
@@ -53,8 +53,10 @@ const mentionTone: Record<string, string> = {
 
 export default function Bulletins() {
   const { ecoleId } = useEcoleId();
-  const { anneeId } = useAnneeId();
-  const { classes } = useClasses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const anneeId = activeAnnee?.id ?? null;
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { classes } = useClasses(scopedAnneeId);
   const [periodes, setPeriodes] = useState<Periode[]>([]);
   const [selectedPeriode, setSelectedPeriode] = useState("");
   const [selectedClasse, setSelectedClasse] = useState("");

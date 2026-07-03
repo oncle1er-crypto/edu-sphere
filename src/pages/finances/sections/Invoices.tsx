@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { useFactures } from "@/hooks/useFactures";
 import { useEleves } from "@/hooks/useEleves";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 
 const STATUT_LABEL: Record<string, string> = {
   brouillon: "Brouillon",
@@ -33,8 +34,10 @@ const STATUT_CLASS: Record<string, string> = {
 };
 
 export default function Invoices() {
-  const { factures, loading, addFacture, updateStatut, deleteFacture } = useFactures();
-  const { eleves } = useEleves();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { factures, loading, addFacture, updateStatut, deleteFacture } = useFactures(scopedAnneeId);
+  const { eleves } = useEleves(scopedAnneeId);
   const [q, setQ] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [open, setOpen] = useState(false);

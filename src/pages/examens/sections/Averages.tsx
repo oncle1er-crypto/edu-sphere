@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
 import { useEcoles } from "@/context/EcoleContext";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { getHonorRollThreshold, DEFAULT_HONOR_ROLL_THRESHOLD } from "@/lib/honorRoll";
 import { generateTableauHonneurPDF } from "@/lib/generateDocumentsPDF";
 import { toast } from "sonner";
@@ -52,7 +53,10 @@ const mentionColor: Record<string, string> = {
 
 export default function Averages() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
   const { currentEcole } = useEcoles();
   const [selectedClasse, setSelectedClasse] = useState("");
   const [topEleves, setTopEleves] = useState<EleveAvg[]>([]);
@@ -108,13 +112,19 @@ export default function Averages() {
 
 
   useEffect(() => {
-    if (!ecoleId) return;
+    if (!ecoleId || periodLoading) return;
+    if (periodeIds.length === 0) {
+      setTopEleves([]); setMatiereAvgs([]); setGlobalStats({ moyenne: 0, admis: 0, total: 0 });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     let query = supabase
       .from("notes")
-      .select("note, absent, eleve_id, eleves!inner(nom, prenom, classe_id, matricule, classes(nom)), evaluations(matiere_id, matieres(nom), coefficient)")
+      .select("note, absent, eleve_id, eleves!inner(nom, prenom, classe_id, matricule, classes(nom)), evaluations!inner(matiere_id, matieres(nom), coefficient, periode_id)")
       .eq("ecole_id", ecoleId)
+      .in("evaluations.periode_id", periodeIds)
       .eq("absent", false)
       .not("note", "is", null);
 
@@ -200,7 +210,7 @@ export default function Averages() {
 
       setLoading(false);
     });
-  }, [ecoleId, selectedClasse]);
+  }, [ecoleId, selectedClasse, periodLoading, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <SettingsSection icon={<Award className='h-5 w-5' />} title="Moyennes & classements" description="Classements automatiques basés sur les notes enregistrées.">

@@ -17,24 +17,34 @@ export interface Depense {
   created_at: string;
 }
 
-export function useDepenses() {
+export function useDepenses(range?: { from?: string; to?: string }) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [loading, setLoading] = useState(true);
+  const rangeProvided = range !== undefined;
+  const from = range?.from;
+  const to = range?.to;
 
   const fetch = useCallback(async () => {
     if (!ecoleId) return;
+    if (rangeProvided && (!from || !to)) {
+      setDepenses([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
-    const { data, error } = await supabase
+    let q = supabase
       .from("depenses")
       .select("*, fournisseurs(nom)")
-      .eq("ecole_id", ecoleId)
-      .order("date_depense", { ascending: false });
+      .eq("ecole_id", ecoleId);
+    if (from) q = q.gte("created_at", from);
+    if (to) q = q.lte("created_at", `${to}T23:59:59`);
+    const { data, error } = await q.order("date_depense", { ascending: false });
     if (!error && data) {
       setDepenses(data.map((d: any) => ({ ...d, montant: Number(d.montant), fournisseur_nom: d.fournisseurs?.nom })));
     }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, from, to, rangeProvided]);
 
   useEffect(() => { if (!ecoleLoading && ecoleId) fetch(); if (!ecoleLoading && !ecoleId) setLoading(false); }, [ecoleLoading, ecoleId, fetch]);
 

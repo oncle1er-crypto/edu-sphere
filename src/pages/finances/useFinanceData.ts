@@ -42,22 +42,37 @@ function mapTrancheStatut(dbStatut: string, paye: number, montant: number, echea
   return "due";
 }
 
-export function useFinanceData() {
+export function useFinanceData(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [data, setData] = useState<EleveScolarite[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingMock, setUsingMock] = useState(false);
+  const scopedProvided = scopedAnneeId !== undefined;
 
   const fetchData = useCallback(async () => {
     if (!ecoleId) return;
+    if (scopedProvided && !scopedAnneeId) {
+      setData([]);
+      setUsingMock(false);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
-    // Fetch tranches with student info
-    const { data: tranchesData, error: trErr } = await supabase
+    // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
+    let tranchesQuery = supabase
       .from("tranches")
-      .select("*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
+      .select(scopedAnneeId
+        ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))"
+        : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
       .eq("ecole_id", ecoleId)
       .order("numero");
+
+    if (scopedAnneeId) {
+      tranchesQuery = tranchesQuery.eq("frais_scolarite.annee_id", scopedAnneeId);
+    }
+
+    const { data: tranchesData, error: trErr } = await tranchesQuery;
 
     if (trErr || !tranchesData || tranchesData.length === 0) {
       setData([]);
@@ -103,12 +118,17 @@ export function useFinanceData() {
     const trancheNumByTrancheId = new Map<string, number>();
     (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
 
-    const { data: paiementsData } = await supabase
+    const trancheIdsArr = (tranchesData as any[]).map((t) => t.id);
+    let paiementsQuery = supabase
       .from("paiements")
       .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
       .eq("ecole_id", ecoleId)
-      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"])
-      .order("date_paiement", { ascending: false });
+      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"]);
+    // Si on est en mode scopé année : filtrer les paiements par tranche_id pour ignorer ceux des autres années.
+    if (scopedAnneeId && trancheIdsArr.length) {
+      paiementsQuery = paiementsQuery.in("tranche_id", trancheIdsArr);
+    }
+    const { data: paiementsData } = await paiementsQuery.order("date_paiement", { ascending: false });
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
@@ -194,7 +214,7 @@ export function useFinanceData() {
     setData(result);
     setUsingMock(false);
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, scopedAnneeId, scopedProvided]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchData();

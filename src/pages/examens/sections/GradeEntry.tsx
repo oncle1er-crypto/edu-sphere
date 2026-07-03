@@ -13,6 +13,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 
 interface LocalNote {
@@ -24,8 +25,11 @@ interface LocalNote {
 
 export default function GradeEntry() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
+  const { eleves } = useEleves(scopedAnneeId);
   const { notes, fetchNotesByEvaluation, saveNotes, saveSingleNote, loading: notesLoading } = useNotes();
   const [selectedClasse, setSelectedClasse] = useState<string>("");
   const [selectedEval, setSelectedEval] = useState<string>("");
@@ -38,14 +42,18 @@ export default function GradeEntry() {
   // Fetch evaluations for selected class
   useEffect(() => {
     if (!selectedClasse || !ecoleId) { setClassEvals([]); return; }
+    if (periodeIds.length === 0) { setClassEvals([]); return; }
     supabase
       .from("evaluations")
       .select("id, titre, date_eval, type, bareme, matieres(nom)")
       .eq("ecole_id", ecoleId)
       .eq("classe_id", selectedClasse)
+      .in("periode_id", periodeIds)
       .order("date_eval", { ascending: false })
       .then(({ data }) => setClassEvals(data ?? []));
-  }, [selectedClasse, ecoleId]);
+  }, [selectedClasse, ecoleId, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
 
   // Fetch notes when evaluation selected
   useEffect(() => {
