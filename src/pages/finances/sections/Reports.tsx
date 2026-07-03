@@ -65,8 +65,11 @@ const REPORTS: ReportDef[] = [
 ];
 
 export default function Reports() {
-  const { data: financeData, loading: finLoading } = useFinanceData();
-  const { depenses, loading: depLoading } = useDepenses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
+  const { depenses, loading: depLoading } = useDepenses(dateRange);
   const { comptes, mouvements, loading: tresLoading } = useTresorerie();
   const { lignes: budgetLignes, loading: budLoading } = useBudget();
   const { bulletins, loading: paieLoading } = useBulletinsPaie();
