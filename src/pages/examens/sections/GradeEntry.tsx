@@ -42,14 +42,18 @@ export default function GradeEntry() {
   // Fetch evaluations for selected class
   useEffect(() => {
     if (!selectedClasse || !ecoleId) { setClassEvals([]); return; }
+    if (periodeIds.length === 0) { setClassEvals([]); return; }
     supabase
       .from("evaluations")
       .select("id, titre, date_eval, type, bareme, matieres(nom)")
       .eq("ecole_id", ecoleId)
       .eq("classe_id", selectedClasse)
+      .in("periode_id", periodeIds)
       .order("date_eval", { ascending: false })
       .then(({ data }) => setClassEvals(data ?? []));
-  }, [selectedClasse, ecoleId]);
+  }, [selectedClasse, ecoleId, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
 
   // Fetch notes when evaluation selected
   useEffect(() => {
