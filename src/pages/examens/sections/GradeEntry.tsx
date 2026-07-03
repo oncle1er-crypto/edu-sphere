@@ -25,8 +25,11 @@ interface LocalNote {
 
 export default function GradeEntry() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
+  const { eleves } = useEleves(scopedAnneeId);
   const { notes, fetchNotesByEvaluation, saveNotes, saveSingleNote, loading: notesLoading } = useNotes();
   const [selectedClasse, setSelectedClasse] = useState<string>("");
   const [selectedEval, setSelectedEval] = useState<string>("");
