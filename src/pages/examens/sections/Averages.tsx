@@ -112,13 +112,19 @@ export default function Averages() {
 
 
   useEffect(() => {
-    if (!ecoleId) return;
+    if (!ecoleId || periodLoading) return;
+    if (periodeIds.length === 0) {
+      setTopEleves([]); setMatiereAvgs([]); setGlobalStats({ moyenne: 0, admis: 0, total: 0 });
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
     let query = supabase
       .from("notes")
-      .select("note, absent, eleve_id, eleves!inner(nom, prenom, classe_id, matricule, classes(nom)), evaluations(matiere_id, matieres(nom), coefficient)")
+      .select("note, absent, eleve_id, eleves!inner(nom, prenom, classe_id, matricule, classes(nom)), evaluations!inner(matiere_id, matieres(nom), coefficient, periode_id)")
       .eq("ecole_id", ecoleId)
+      .in("evaluations.periode_id", periodeIds)
       .eq("absent", false)
       .not("note", "is", null);
 
