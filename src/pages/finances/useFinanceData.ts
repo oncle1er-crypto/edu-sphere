@@ -118,12 +118,17 @@ export function useFinanceData(scopedAnneeId?: string) {
     const trancheNumByTrancheId = new Map<string, number>();
     (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
 
-    const { data: paiementsData } = await supabase
+    const trancheIdsArr = (tranchesData as any[]).map((t) => t.id);
+    let paiementsQuery = supabase
       .from("paiements")
       .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
       .eq("ecole_id", ecoleId)
-      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"])
-      .order("date_paiement", { ascending: false });
+      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"]);
+    // Si on est en mode scopé année : filtrer les paiements par tranche_id pour ignorer ceux des autres années.
+    if (scopedAnneeId && trancheIdsArr.length) {
+      paiementsQuery = paiementsQuery.in("tranche_id", trancheIdsArr);
+    }
+    const { data: paiementsData } = await paiementsQuery.order("date_paiement", { ascending: false });
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
