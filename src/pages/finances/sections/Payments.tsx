@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { LockBanner } from "@/components/LockGuard";
-import { useLock } from "@/context/AcademicPeriodContext";
+import { useLock, useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type EleveScolarite, type Cycle } from "../scolarite-data";
