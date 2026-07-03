@@ -86,7 +86,9 @@ export function useFactures(scopedAnneeId?: string) {
     date_echeance: string;
     notes?: string;
   }) => {
-    if (!ecoleId || !anneeId) return;
+    // Pour l'insert : privilégier l'année scopée si fournie, sinon la DB.
+    const insertAnneeId = effectiveAnneeId ?? dbAnneeId;
+    if (!ecoleId || !insertAnneeId) return;
     // Generate next number
     const { count } = await supabase
       .from("factures")
@@ -96,7 +98,7 @@ export function useFactures(scopedAnneeId?: string) {
 
     const { error } = await supabase.from("factures").insert({
       ecole_id: ecoleId,
-      annee_id: anneeId,
+      annee_id: insertAnneeId,
       eleve_id: f.eleve_id,
       numero: num,
       libelle: f.libelle,
