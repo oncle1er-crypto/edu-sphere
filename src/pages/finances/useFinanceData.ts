@@ -214,7 +214,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     setData(result);
     setUsingMock(false);
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, scopedAnneeId, scopedProvided]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchData();
