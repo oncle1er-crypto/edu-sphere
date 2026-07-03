@@ -25,7 +25,6 @@ export default function SmsSettings() {
 
   const [apiToken, setApiToken] = useState("");
   const [apiTokenTouched, setApiTokenTouched] = useState(false);
-  const [showToken, setShowToken] = useState(false);
   const [senderId, setSenderId] = useState("");
   const [baseUrl, setBaseUrl] = useState("https://panel.yellikasms.com/api/v3/sms/send");
   const [isActive, setIsActive] = useState(false);
@@ -44,7 +43,8 @@ export default function SmsSettings() {
 
   useEffect(() => {
     if (config) {
-      setApiToken(config.api_token || "");
+      // We never receive the raw api_token from the server anymore.
+      setApiToken("");
       setApiTokenTouched(false);
       setSenderId(config.sender_id || "");
       setBaseUrl(config.base_url || "https://panel.yellikasms.com/api/v3/sms/send");
