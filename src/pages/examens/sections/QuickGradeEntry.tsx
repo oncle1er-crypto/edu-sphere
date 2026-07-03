@@ -30,8 +30,11 @@ interface QuickEval {
  */
 export default function QuickGradeEntry() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
+  const { eleves } = useEleves(scopedAnneeId);
   const { notes, fetchNotesByEvaluation, saveSingleNote } = useNotes();
 
   const [selectedClasse, setSelectedClasse] = useState("");
