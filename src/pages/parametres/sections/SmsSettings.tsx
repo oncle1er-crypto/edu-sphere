@@ -58,9 +58,16 @@ export default function SmsSettings() {
 
   const validate = (): boolean => {
     const e: FormErrors = {};
-    const tokenToCheck = apiTokenTouched ? apiToken : config?.api_token;
-    if (isActive && (!tokenToCheck || tokenToCheck.trim().length < 10)) {
-      e.apiToken = "La clé API doit comporter au moins 10 caractères.";
+    // If the user typed a new token, it must look valid. Otherwise we trust
+    // whatever is already stored server-side (indicated by has_api_token).
+    if (isActive) {
+      if (apiTokenTouched) {
+        if (!apiToken || apiToken.trim().length < 10) {
+          e.apiToken = "La clé API doit comporter au moins 10 caractères.";
+        }
+      } else if (!config?.has_api_token) {
+        e.apiToken = "Renseignez la clé API YellikaSMS.";
+      }
     }
     if (isActive && (!senderId || senderId.trim().length === 0)) {
       e.senderId = "Le Sender ID est requis.";
@@ -100,7 +107,7 @@ export default function SmsSettings() {
     }
     await save(payload);
     setApiTokenTouched(false);
-    setShowToken(false);
+    setApiToken("");
     setSaving(false);
   };
 
@@ -130,16 +137,10 @@ export default function SmsSettings() {
     setWaTesting(false);
   };
 
-  /** Display value for the API token field */
-  const displayToken = (() => {
-    if (apiTokenTouched) return apiToken; // user is editing — show raw
-    if (showToken) return config?.api_token || "";
-    return maskToken(config?.api_token || "");
-  })();
-
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
 
-  const hasExistingToken = !!config?.api_token;
+  const hasExistingToken = !!config?.has_api_token;
+  const tokenLast4 = config?.api_token_last4 || "";
 
   return (
     <div className="space-y-6">
@@ -165,39 +166,22 @@ export default function SmsSettings() {
           <Switch checked={isActive} onCheckedChange={setIsActive} />
         </div>
 
-        <FieldRow label="Clé API YellikaSMS" hint="Disponible dans votre tableau de bord YellikaSMS → Paramètres → API">
+        <FieldRow label="Clé API YellikaSMS" hint="Disponible dans votre tableau de bord YellikaSMS → Paramètres → API. Pour des raisons de sécurité, la clé enregistrée ne peut plus être ré-affichée : saisissez une nouvelle valeur uniquement si vous souhaitez la remplacer.">
           <div className="space-y-1">
-            <div className="relative">
-              <Input
-                type={apiTokenTouched || showToken ? "text" : "password"}
-                placeholder={hasExistingToken ? "••••••••(inchangée)" : "Collez votre clé API..."}
-                value={apiTokenTouched ? apiToken : (showToken ? (config?.api_token || "") : "")}
-                onChange={(e) => {
-                  setApiTokenTouched(true);
-                  setApiToken(e.target.value);
-                  setErrors((prev) => ({ ...prev, apiToken: undefined }));
-                }}
-                onFocus={() => {
-                  if (!apiTokenTouched && hasExistingToken) {
-                    // Don't auto-fill — let the user type a new one or leave empty to keep current
-                  }
-                }}
-                className="pr-10"
-              />
-              {hasExistingToken && !apiTokenTouched && (
-                <button
-                  type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowToken(!showToken)}
-                  title={showToken ? "Masquer" : "Afficher"}
-                >
-                  {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              )}
-            </div>
+            <Input
+              type="password"
+              placeholder={hasExistingToken ? "••••••••(inchangée)" : "Collez votre clé API..."}
+              value={apiToken}
+              onChange={(e) => {
+                setApiTokenTouched(true);
+                setApiToken(e.target.value);
+                setErrors((prev) => ({ ...prev, apiToken: undefined }));
+              }}
+              autoComplete="new-password"
+            />
             {hasExistingToken && !apiTokenTouched && (
               <p className="text-xs text-muted-foreground">
-                Clé actuelle : <code className="bg-muted px-1 rounded">{maskToken(config?.api_token || "")}</code> — laissez vide pour conserver.
+                Clé actuelle : <code className="bg-muted px-1 rounded">{maskToken(tokenLast4)}</code> — laissez vide pour conserver.
               </p>
             )}
             {errors.apiToken && <p className="text-xs text-destructive">{errors.apiToken}</p>}
