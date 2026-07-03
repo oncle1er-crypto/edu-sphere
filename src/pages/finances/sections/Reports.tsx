@@ -10,6 +10,7 @@ import { useDepenses } from "@/hooks/useDepenses";
 import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
