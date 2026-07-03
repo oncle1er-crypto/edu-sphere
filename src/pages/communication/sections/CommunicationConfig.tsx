@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 export default function CommunicationConfig() {
   const { config } = useSmsConfig();
-  const isReady = config?.is_active && !!config?.api_token;
+  const isReady = config?.is_active && !!config?.has_api_token;
 
   return (
     <SettingsSection

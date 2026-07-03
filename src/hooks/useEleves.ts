@@ -49,19 +49,10 @@ export function useEleves(anneeId?: string) {
     if (!ecoleLoading && !ecoleId) setLoading(false);
   }, [ecoleLoading, ecoleId, fetchEleves]);
 
-  // Realtime subscription
-  useEffect(() => {
-    if (!ecoleId) return;
-    const channel = supabase
-      .channel(`eleves-realtime-${ecoleId}-${Math.random().toString(36).slice(2)}`)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "eleves", filter: `ecole_id=eq.${ecoleId}` },
-        () => { fetchEleves(); }
-      )
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [ecoleId, fetchEleves]);
+  // Realtime subscription disabled for privacy: streaming full student rows
+  // to every school member would leak sensitive personal data (dates of
+  // birth, national IDs, addresses…). Callers refresh via fetchEleves()
+  // after their own mutations.
 
   const addEleve = async (eleve: Database["public"]["Tables"]["eleves"]["Insert"]) => {
     if (!ecoleId) return null;

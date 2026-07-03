@@ -14,7 +14,7 @@ export default function SmsCampaigns() {
   const [sending, setSending] = useState(false);
   const remaining = 160 - text.length;
 
-  const isReady = config?.is_active && !!config?.api_token;
+  const isReady = config?.is_active && !!config?.has_api_token;
 
   const handleSend = async () => {
     // For now, placeholder: in real usage, destinataires come from the selected group

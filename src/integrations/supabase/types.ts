@@ -4684,10 +4684,12 @@ export type Database = {
       sms_config: {
         Row: {
           api_token: string
+          api_token_last4: string | null
           base_url: string
           cout_unitaire: number
           created_at: string
           ecole_id: string
+          has_api_token: boolean
           id: string
           is_active: boolean
           provider: string
@@ -4699,10 +4701,12 @@ export type Database = {
         }
         Insert: {
           api_token?: string
+          api_token_last4?: string | null
           base_url?: string
           cout_unitaire?: number
           created_at?: string
           ecole_id: string
+          has_api_token?: boolean
           id?: string
           is_active?: boolean
           provider?: string
@@ -4714,10 +4718,12 @@ export type Database = {
         }
         Update: {
           api_token?: string
+          api_token_last4?: string | null
           base_url?: string
           cout_unitaire?: number
           created_at?: string
           ecole_id?: string
+          has_api_token?: boolean
           id?: string
           is_active?: boolean
           provider?: string

@@ -7,7 +7,12 @@ export interface SmsConfig {
   id: string;
   ecole_id: string;
   provider: string;
+  /** Never populated on the client — the raw token is not readable via the API. */
   api_token: string;
+  /** Last 4 characters of the stored token, for display only. */
+  api_token_last4: string | null;
+  /** True when a token is configured server-side. */
+  has_api_token: boolean;
   sender_id: string;
   base_url: string;
   is_active: boolean;
@@ -17,11 +22,17 @@ export interface SmsConfig {
   whatsapp_cout_unitaire: number;
 }
 
-/** Mask an API token, showing only the last 4 characters */
-export function maskToken(token: string): string {
-  if (!token || token.length <= 4) return token ? "••••" : "";
-  return "••••••••" + token.slice(-4);
+/** Mask a token given its last 4 chars. */
+export function maskToken(tokenOrLast4: string): string {
+  if (!tokenOrLast4) return "";
+  const tail = tokenOrLast4.length <= 4 ? tokenOrLast4 : tokenOrLast4.slice(-4);
+  return "••••••••" + tail;
 }
+
+// Columns explicitly excluded from client selects — api_token is column-revoked
+// server-side, but we also avoid asking for it to prevent noisy errors.
+const CLIENT_COLUMNS =
+  "id, ecole_id, provider, api_token_last4, has_api_token, sender_id, base_url, is_active, cout_unitaire, whatsapp_url, whatsapp_enabled, whatsapp_cout_unitaire";
 
 export function useSmsConfig() {
   const { ecoleId } = useEcoleId();
@@ -33,14 +44,14 @@ export function useSmsConfig() {
     setLoading(true);
     const { data, error } = await supabase
       .from("sms_config")
-      .select("*")
+      .select(CLIENT_COLUMNS)
       .eq("ecole_id", ecoleId)
       .maybeSingle();
 
     if (error) {
       console.error("Error fetching sms_config:", error);
     }
-    setConfig(data as SmsConfig | null);
+    setConfig(data ? ({ ...(data as any), api_token: "" } as SmsConfig) : null);
     setLoading(false);
   }, [ecoleId]);
 
