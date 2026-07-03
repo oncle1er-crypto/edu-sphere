@@ -66,7 +66,9 @@ function buildClassesSynthese(allEleves: EleveScolarite[]): ClasseSyntheseRow[] 
 }
 
 export default function ClassSummary() {
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
   const [expanded, setExpanded] = useState<string | null>(null);
