@@ -11,12 +11,15 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useFournisseurs } from "@/hooks/useFournisseurs";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useState } from "react";
 
 const CATEGORIES = ["Fournitures pédagogiques", "Énergie & utilities", "Maintenance & entretien", "Transport scolaire", "Cantine", "Télécoms", "Autre"];
 
 export default function Expenses() {
-  const { depenses, loading, addDepense, updateStatut } = useDepenses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const range = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  const { depenses, loading, addDepense, updateStatut } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
