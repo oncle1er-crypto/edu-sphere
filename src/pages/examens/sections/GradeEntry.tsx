@@ -13,6 +13,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 
 interface LocalNote {
