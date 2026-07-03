@@ -42,22 +42,37 @@ function mapTrancheStatut(dbStatut: string, paye: number, montant: number, echea
   return "due";
 }
 
-export function useFinanceData() {
+export function useFinanceData(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [data, setData] = useState<EleveScolarite[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingMock, setUsingMock] = useState(false);
+  const scopedProvided = scopedAnneeId !== undefined;
 
   const fetchData = useCallback(async () => {
     if (!ecoleId) return;
+    if (scopedProvided && !scopedAnneeId) {
+      setData([]);
+      setUsingMock(false);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
 
-    // Fetch tranches with student info
-    const { data: tranchesData, error: trErr } = await supabase
+    // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
+    let tranchesQuery = supabase
       .from("tranches")
-      .select("*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
+      .select(scopedAnneeId
+        ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))"
+        : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
       .eq("ecole_id", ecoleId)
       .order("numero");
+
+    if (scopedAnneeId) {
+      tranchesQuery = tranchesQuery.eq("frais_scolarite.annee_id", scopedAnneeId);
+    }
+
+    const { data: tranchesData, error: trErr } = await tranchesQuery;
 
     if (trErr || !tranchesData || tranchesData.length === 0) {
       setData([]);
