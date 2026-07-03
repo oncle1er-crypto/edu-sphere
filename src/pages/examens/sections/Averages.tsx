@@ -210,7 +210,7 @@ export default function Averages() {
 
       setLoading(false);
     });
-  }, [ecoleId, selectedClasse]);
+  }, [ecoleId, selectedClasse, periodLoading, periodeIds.join("|")]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <SettingsSection icon={<Award className='h-5 w-5' />} title="Moyennes & classements" description="Classements automatiques basés sur les notes enregistrées.">
