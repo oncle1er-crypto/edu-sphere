@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { useFactures } from "@/hooks/useFactures";
 import { useEleves } from "@/hooks/useEleves";
+import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 
 const STATUT_LABEL: Record<string, string> = {
   brouillon: "Brouillon",
