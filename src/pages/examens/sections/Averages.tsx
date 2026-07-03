@@ -53,7 +53,10 @@ const mentionColor: Record<string, string> = {
 
 export default function Averages() {
   const { ecoleId } = useEcoleId();
-  const { classes } = useClasses();
+  const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
+  const periodeIds = periodLoading || !activeAnnee ? [] : activeAnnee.periodes.map((p) => p.id);
+  const { classes } = useClasses(scopedAnneeId);
   const { currentEcole } = useEcoles();
   const [selectedClasse, setSelectedClasse] = useState("");
   const [topEleves, setTopEleves] = useState<EleveAvg[]>([]);
