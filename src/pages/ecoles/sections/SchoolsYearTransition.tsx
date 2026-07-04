@@ -1,20 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  CalendarPlus, Coins, GraduationCap, Users2, Sparkles, CheckCircle2, Loader2, AlertTriangle,
+  CalendarPlus, Coins, GraduationCap, Users2, Sparkles, CheckCircle2, Loader2, AlertTriangle, PlayCircle, ArrowRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 
 type Annee = { id: string; libelle: string; debut: string; fin: string; decoupage: string; statut: string };
+type BasculeRow = { etape: string; niveau: string; element: string; detail: string };
 
 export default function SchoolsYearTransition() {
   const { ecoleId } = useEcoleId();
@@ -41,6 +43,11 @@ export default function SchoolsYearTransition() {
   const [optCantine, setOptCantine] = useState(true);
   const [optTransport, setOptTransport] = useState(true);
 
+  // Step 3 — bascule
+  const [basculeRows, setBasculeRows] = useState<BasculeRow[] | null>(null);
+  const [basculeApplied, setBasculeApplied] = useState(false);
+  const [confirmLib, setConfirmLib] = useState("");
+
   // Report
   const [report, setReport] = useState<Record<string, any>>({});
 
@@ -60,6 +67,23 @@ export default function SchoolsYearTransition() {
 
   const source = useMemo(() => annees.find((a) => a.id === sourceId), [annees, sourceId]);
   const target = useMemo(() => annees.find((a) => a.id === targetId), [annees, targetId]);
+
+  const bloquants = useMemo(
+    () => (basculeRows ?? []).filter((r) => r.niveau === "bloquant"),
+    [basculeRows],
+  );
+  const compteurs = useMemo(() => {
+    const rows = basculeRows ?? [];
+    const byEtape: Record<string, number> = {};
+    for (const r of rows) byEtape[r.etape] = (byEtape[r.etape] ?? 0) + 1;
+    return {
+      total: rows.length,
+      bloquants: bloquants.length,
+      archivages: byEtape["archivage_parcours"] ?? 0,
+      reinscriptions: byEtape["reinscription"] ?? 0,
+      byEtape,
+    };
+  }, [basculeRows, bloquants]);
 
   // ---- Step 1: créer année ----
   const creerAnnee = async () => {
@@ -92,18 +116,30 @@ export default function SchoolsYearTransition() {
     toast.success(`${data} ligne(s) de grille tarifaire dupliquée(s)`);
   };
 
-  // ---- Step 3: promotion ----
-  const promouvoir = async () => {
+  // ---- Step 3: bascule (simulation & application) ----
+  const runBascule = async (dryRun: boolean) => {
     if (!ecoleId || !sourceId || !targetId) return;
-    setBusy("promotion");
-    const { data, error } = await supabase.rpc("promouvoir_eleves_annee", {
-      _ecole_id: ecoleId, _annee_source: sourceId, _annee_cible: targetId,
-      _mapping: {}, _mode: "auto",
+    setBusy(dryRun ? "simuler" : "appliquer");
+    const { data, error } = await (supabase.rpc as any)("cloturer_et_basculer_annee", {
+      p_ecole_id: ecoleId,
+      p_annee_source: sourceId,
+      p_annee_cible: targetId,
+      p_dry_run: dryRun,
     });
     setBusy(null);
     if (error) { toast.error(error.message); return; }
-    setReport((r) => ({ ...r, promotion: data }));
-    toast.success(`${(data as any)?.promus ?? 0} élève(s) promu(s)`);
+    const rows = (data ?? []) as BasculeRow[];
+    setBasculeRows(rows);
+    if (!dryRun) {
+      setBasculeApplied(true);
+      setReport((r) => ({ ...r, bascule: { total: rows.length, bloquants: rows.filter(x => x.niveau === "bloquant").length } }));
+      toast.success("Bascule appliquée : année source archivée, année cible activée");
+      await reload();
+    } else {
+      const nb = rows.filter((r) => r.niveau === "bloquant").length;
+      if (nb > 0) toast.warning(`${nb} bloquant(s) détecté(s) — corrige les décisions de fin d'année`);
+      else toast.success("Simulation OK — aucun bloquant");
+    }
   };
 
   // ---- Step 4: affectations ----
@@ -137,31 +173,16 @@ export default function SchoolsYearTransition() {
     toast.success("Abonnements renouvelés");
   };
 
-  // ---- Step 6: activation ----
-  const [confirmLib, setConfirmLib] = useState("");
-  const activer = async () => {
-    if (!ecoleId || !targetId || !target) return;
-    if (confirmLib.trim() !== target.libelle) {
-      toast.error("Le libellé saisi ne correspond pas"); return;
-    }
-    setBusy("activer");
-    const { error } = await supabase.rpc("activer_annee_scolaire", {
-      _ecole_id: ecoleId, _annee_id: targetId,
-    });
-    setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    toast.success(`Année ${target.libelle} activée`);
-    await reload();
-  };
-
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+
+  const canApply = basculeRows !== null && bloquants.length === 0 && !basculeApplied && !!target && confirmLib.trim() === target.libelle;
 
   return (
     <div className="space-y-6">
       <SettingsSection
         icon={<Sparkles className="h-5 w-5" />}
         title="Assistant — Clôture & ouverture d'année"
-        description="Guide pas-à-pas pour clôturer l'année en cours et préparer la suivante sans rien casser."
+        description="Flux recommandé : (1) créer la nouvelle année, puis préparer la grille tarifaire (étape 2), les affectations pédagogiques (étape 4) et les abonnements de services (étape 5). L'étape 3 est l'action FINALE : elle clôture l'année source, réaffecte les élèves selon leurs décisions de fin d'année validées, archive la source et active la cible en une seule opération."
         hideSave
       >
         <FieldRow label="Année source (à clôturer)">
@@ -231,31 +252,6 @@ export default function SchoolsYearTransition() {
         )}
       </SettingsSection>
 
-      {/* Étape 3 */}
-      <SettingsSection
-        icon={<Users2 className="h-5 w-5" />}
-        title="Étape 3 — Promotion des élèves"
-        description="Crée les fiches élèves dans la nouvelle année au statut « pré-inscrit », en conservant la classe (à ajuster ensuite par classe supérieure)."
-        hideSave
-      >
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-          <p>Les élèves <strong>exclus</strong> ou <strong>transférés</strong> sont ignorés. L'historique est consigné dans <code>parcours_scolaire</code>.</p>
-        </div>
-        <div className="flex justify-end">
-          <Button onClick={promouvoir} disabled={busy === "promotion" || !targetId}>
-            {busy === "promotion" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users2 className="h-4 w-4" />}
-            Promouvoir les élèves
-          </Button>
-        </div>
-        {report.promotion && (
-          <div className="text-sm">
-            <Badge variant="secondary">{report.promotion.promus} promu(s)</Badge>{" "}
-            <Badge variant="outline">{report.promotion.ignores} ignoré(s)</Badge>
-          </div>
-        )}
-      </SettingsSection>
-
       {/* Étape 4 */}
       <SettingsSection
         icon={<GraduationCap className="h-5 w-5" />}
@@ -313,31 +309,146 @@ export default function SchoolsYearTransition() {
         </p>
       </SettingsSection>
 
-      {/* Étape 6 */}
+      {/* Étape 3 — Clôture & bascule (ACTION FINALE) */}
       <SettingsSection
-        icon={<CheckCircle2 className="h-5 w-5" />}
-        title="Étape 6 — Activation"
-        description="Verrouille l'ancienne année et bascule la nouvelle en active. Action irréversible côté UI."
+        icon={<Users2 className="h-5 w-5" />}
+        title="Étape 3 — Clôture & bascule des élèves (action finale)"
+        description="Réaffecte les élèves selon leurs décisions de fin d'année validées, archive l'année source et active l'année cible. Toujours simuler avant d'appliquer."
         hideSave
       >
-        {target ? (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm flex items-start gap-2">
+          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+          <p>
+            Chaque élève actif de l'année source doit avoir une <strong>décision de fin d'année validée</strong> (statut <code>valide</code> ou <code>verrouille</code>).
+            Sans cela, la bascule est bloquée.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-2 justify-end">
+          <Button
+            variant="outline"
+            onClick={() => runBascule(true)}
+            disabled={busy === "simuler" || !sourceId || !targetId || basculeApplied}
+          >
+            {busy === "simuler" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+            Simuler la bascule
+          </Button>
+        </div>
+
+        {basculeRows && (
           <>
-            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
-              Saisis exactement <strong>{target.libelle}</strong> pour confirmer.
+            <div className="flex flex-wrap gap-2 text-sm">
+              <Badge variant={bloquants.length > 0 ? "destructive" : "secondary"}>
+                {compteurs.bloquants} bloquant(s)
+              </Badge>
+              <Badge variant="outline">{compteurs.archivages} archivage(s)</Badge>
+              <Badge variant="outline">{compteurs.reinscriptions} réinscription(s)</Badge>
+              <Badge variant="outline">{compteurs.total} ligne(s) au total</Badge>
             </div>
-            <FieldRow label="Confirmation">
-              <Input value={confirmLib} onChange={(e) => setConfirmLib(e.target.value)} placeholder={target.libelle} />
-            </FieldRow>
-            <div className="flex justify-end">
-              <Button variant="destructive" onClick={activer} disabled={busy === "activer" || confirmLib !== target.libelle}>
-                {busy === "activer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                Activer {target.libelle}
-              </Button>
+
+            <div className="rounded-md border max-h-96 overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-40">Étape</TableHead>
+                    <TableHead className="w-24">Niveau</TableHead>
+                    <TableHead>Élément</TableHead>
+                    <TableHead>Détail</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...basculeRows]
+                    .sort((a, b) => (a.etape.localeCompare(b.etape)) || (a.niveau.localeCompare(b.niveau)))
+                    .map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-mono text-xs">{r.etape}</TableCell>
+                        <TableCell>
+                          <Badge variant={r.niveau === "bloquant" ? "destructive" : "secondary"}>
+                            {r.niveau}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{r.element}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{r.detail}</TableCell>
+                      </TableRow>
+                    ))}
+                  {basculeRows.length === 0 && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground text-sm">Aucune ligne retournée.</TableCell></TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </div>
+
+            {bloquants.length > 0 ? (
+              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 space-y-2 text-sm">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium">Bascule impossible : {bloquants.length} élément(s) bloquant(s).</p>
+                    <p className="text-muted-foreground">
+                      Chaque élève actif doit avoir une décision de fin d'année VALIDÉE. Rends-toi sur la page dédiée pour saisir et valider les décisions manquantes.
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <Button asChild variant="destructive" size="sm">
+                    <Link to="/examens/fin-annee">
+                      Ouvrir Examens → Fin d'année <ArrowRight className="h-4 w-4" />
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            ) : basculeApplied ? (
+              <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm flex items-start gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
+                <p>Bascule appliquée. L'année source est archivée et l'année cible est active.</p>
+              </div>
+            ) : target ? (
+              <div className="space-y-3">
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
+                  Action irréversible. Saisis exactement <strong>{target.libelle}</strong> pour confirmer.
+                </div>
+                <FieldRow label="Confirmation">
+                  <Input value={confirmLib} onChange={(e) => setConfirmLib(e.target.value)} placeholder={target.libelle} />
+                </FieldRow>
+                <div className="flex justify-end">
+                  <Button
+                    variant="destructive"
+                    onClick={() => runBascule(false)}
+                    disabled={busy === "appliquer" || !canApply}
+                  >
+                    {busy === "appliquer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    Appliquer la bascule définitive
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </>
-        ) : (
-          <p className="text-sm text-muted-foreground">Crée d'abord la nouvelle année à l'étape 1.</p>
         )}
+      </SettingsSection>
+
+      {/* Étape 6 — Récapitulatif */}
+      <SettingsSection
+        icon={<CheckCircle2 className="h-5 w-5" />}
+        title="Étape 6 — Récapitulatif"
+        description="L'activation de l'année cible et l'archivage de l'année source sont effectués automatiquement par la bascule de l'étape 3. Ce panneau récapitule l'état actuel."
+        hideSave
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div className="rounded-md border p-3">
+            <div className="text-muted-foreground text-xs uppercase">Année source</div>
+            <div className="font-medium">{source?.libelle ?? "—"}</div>
+            <Badge variant={source?.statut === "archivee" ? "secondary" : "outline"} className="mt-1">
+              {source?.statut ?? "—"}
+            </Badge>
+          </div>
+          <div className="rounded-md border p-3">
+            <div className="text-muted-foreground text-xs uppercase">Année cible</div>
+            <div className="font-medium">{target?.libelle ?? "—"}</div>
+            <Badge variant={target?.statut === "active" ? "default" : "outline"} className="mt-1">
+              {target?.statut ?? "—"}
+            </Badge>
+          </div>
+        </div>
         {Object.keys(report).length > 0 && (
           <>
             <Separator />
