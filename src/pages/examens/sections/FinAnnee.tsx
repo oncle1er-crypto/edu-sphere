@@ -179,6 +179,18 @@ export default function FinAnnee() {
   const isLocked = classeStatut === "verrouille" || classeStatut === "applique";
   const isApplied = classeStatut === "applique";
 
+  // Un élève est verrouillé individuellement si sa propre décision est verrouille/appliquée
+  const isEleveLocked = (eleveId: string) => {
+    const d = classeDecisions.find((x) => x.eleve_id === eleveId);
+    return d?.statut === "verrouille" || d?.statut === "applique";
+  };
+  const editableEleves = useMemo(
+    () => eleves.filter((e) => !isEleveLocked(e.id)),
+    [eleves, classeDecisions]
+  );
+  const hasEditable = editableEleves.length > 0;
+
+
   // Ordre pédagogique des niveaux (maternelle → terminale)
   const NIVEAU_ORDER = [
     "PS", "MS", "GS",
