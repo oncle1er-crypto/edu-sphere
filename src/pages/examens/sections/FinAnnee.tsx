@@ -226,7 +226,7 @@ export default function FinAnnee() {
   };
 
   const setDecisionFor = (eleveId: string, field: string, value: string) => {
-    if (isLocked) return;
+    if (isEleveLocked(eleveId)) return;
     setLocalDecisions((prev) => {
       const eleve = eleves.find((e) => e.id === eleveId);
       const current = prev[eleveId] ?? { decision: "passage" as DecisionType };
@@ -243,8 +243,15 @@ export default function FinAnnee() {
   };
 
   const applyBulkDecision = (decision: DecisionType) => {
-    if (isLocked) return;
-    const ids = selectedIds.size > 0 ? selectedIds : new Set(eleves.map((e) => e.id));
+    // Cible : sélection (hors élèves verrouillés) sinon tous les élèves modifiables
+    const targetIds = selectedIds.size > 0
+      ? Array.from(selectedIds).filter((id) => !isEleveLocked(id))
+      : editableEleves.map((e) => e.id);
+    if (targetIds.length === 0) {
+      toast.warning("Aucun élève modifiable dans la sélection");
+      return;
+    }
+
     setLocalDecisions((prev) => {
       const next = { ...prev };
       ids.forEach((id) => {
