@@ -179,6 +179,18 @@ export default function FinAnnee() {
   const isLocked = classeStatut === "verrouille" || classeStatut === "applique";
   const isApplied = classeStatut === "applique";
 
+  // Un élève est verrouillé individuellement si sa propre décision est verrouille/appliquée
+  const isEleveLocked = (eleveId: string) => {
+    const d = classeDecisions.find((x) => x.eleve_id === eleveId);
+    return d?.statut === "verrouille" || d?.statut === "applique";
+  };
+  const editableEleves = useMemo(
+    () => eleves.filter((e) => !isEleveLocked(e.id)),
+    [eleves, classeDecisions]
+  );
+  const hasEditable = editableEleves.length > 0;
+
+
   // Ordre pédagogique des niveaux (maternelle → terminale)
   const NIVEAU_ORDER = [
     "PS", "MS", "GS",
@@ -214,7 +226,7 @@ export default function FinAnnee() {
   };
 
   const setDecisionFor = (eleveId: string, field: string, value: string) => {
-    if (isLocked) return;
+    if (isEleveLocked(eleveId)) return;
     setLocalDecisions((prev) => {
       const eleve = eleves.find((e) => e.id === eleveId);
       const current = prev[eleveId] ?? { decision: "passage" as DecisionType };
@@ -231,11 +243,18 @@ export default function FinAnnee() {
   };
 
   const applyBulkDecision = (decision: DecisionType) => {
-    if (isLocked) return;
-    const ids = selectedIds.size > 0 ? selectedIds : new Set(eleves.map((e) => e.id));
+    // Cible : sélection (hors élèves verrouillés) sinon tous les élèves modifiables
+    const targetIds = selectedIds.size > 0
+      ? Array.from(selectedIds).filter((id) => !isEleveLocked(id))
+      : editableEleves.map((e) => e.id);
+    if (targetIds.length === 0) {
+      toast.warning("Aucun élève modifiable dans la sélection");
+      return;
+    }
+
     setLocalDecisions((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => {
+      targetIds.forEach((id) => {
         const eleve = eleves.find((e) => e.id === id);
         const cur = next[id] ?? {} as any;
         const updated: any = { ...cur, decision };
@@ -250,7 +269,8 @@ export default function FinAnnee() {
       });
       return next;
     });
-    toast.info(`${DECISION_CONFIG[decision].label} appliqué à ${ids.size} élève(s)`);
+    toast.info(`${DECISION_CONFIG[decision].label} appliqué à ${targetIds.length} élève(s)`);
+
   };
 
   const toggleSelect = (id: string) => {
@@ -367,7 +387,8 @@ export default function FinAnnee() {
               {/* Workflow actions bar */}
               {eleves.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg border">
-                  {!isLocked && (
+                  {hasEditable ? (
+
                     <>
                       <span className="text-sm font-medium mr-2">Actions en masse :</span>
                       {(Object.entries(DECISION_CONFIG) as [DecisionType, typeof DECISION_CONFIG["passage"]][]).map(
@@ -384,7 +405,10 @@ export default function FinAnnee() {
                         </Button>
                       </div>
                     </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Toutes les décisions de cette classe sont verrouillées ou appliquées.</span>
                   )}
+
                 </div>
               )}
 
