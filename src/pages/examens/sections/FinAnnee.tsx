@@ -80,14 +80,44 @@ export default function FinAnnee() {
   }, [ecoleId, selectedAnnee]);
 
   useEffect(() => {
-    if (!ecoleId || !selectedClasse) { setEleves([]); return; }
+    if (!ecoleId || !selectedClasse || !selectedAnnee) { setEleves([]); return; }
     setLoadingData(true);
-    supabase.from("eleves").select("id, nom, prenom, matricule, classe_id").eq("ecole_id", ecoleId)
-      .eq("classe_id", selectedClasse).order("nom").then(({ data }) => {
-        setEleves(data ?? []);
-        setLoadingData(false);
-      });
-  }, [ecoleId, selectedClasse]);
+    (async () => {
+      // 1) Élèves actuellement dans la classe
+      const currentRes = await supabase
+        .from("eleves")
+        .select("id, nom, prenom, matricule, classe_id")
+        .eq("ecole_id", ecoleId)
+        .eq("classe_id", selectedClasse);
+
+      // 2) Élèves qui avaient une décision pour cette classe d'origine
+      //    (ils ont pu être déplacés vers leur classe de destination après application)
+      const decRes = await supabase
+        .from("decisions_fin_annee" as any)
+        .select("eleve_id")
+        .eq("ecole_id", ecoleId)
+        .eq("annee_id", selectedAnnee)
+        .eq("classe_origine_id", selectedClasse);
+      const decidedIds = ((decRes.data as any[]) ?? []).map((d) => d.eleve_id);
+
+      let decidedEleves: Eleve[] = [];
+      if (decidedIds.length > 0) {
+        const dRes = await supabase
+          .from("eleves")
+          .select("id, nom, prenom, matricule, classe_id")
+          .eq("ecole_id", ecoleId)
+          .in("id", decidedIds);
+        decidedEleves = (dRes.data ?? []) as Eleve[];
+      }
+
+      const merged = new Map<string, Eleve>();
+      ((currentRes.data ?? []) as Eleve[]).forEach((e) => merged.set(e.id, e));
+      decidedEleves.forEach((e) => merged.set(e.id, e));
+      const list = Array.from(merged.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+      setEleves(list);
+      setLoadingData(false);
+    })();
+  }, [ecoleId, selectedClasse, selectedAnnee]);
 
   useEffect(() => {
     if (selectedAnnee) {
