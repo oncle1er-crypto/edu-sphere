@@ -149,12 +149,55 @@ export default function FinAnnee() {
   const isLocked = classeStatut === "verrouille" || classeStatut === "applique";
   const isApplied = classeStatut === "applique";
 
+  // Ordre pédagogique des niveaux (maternelle → terminale)
+  const NIVEAU_ORDER = [
+    "PS", "MS", "GS",
+    "CP1", "CP2", "CE1", "CE2", "CM1", "CM2",
+    "6EME", "5EME", "4EME", "3EME",
+    "2NDE", "1ERE", "TLE",
+  ];
+  const normalize = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .toUpperCase()
+      .replace(/È|É|Ê/g, "E")
+      .replace(/[^A-Z0-9]/g, "");
+  const niveauIndex = (nom: string) => {
+    const n = normalize(nom);
+    let best = -1;
+    NIVEAU_ORDER.forEach((lvl, i) => {
+      if (n.startsWith(lvl) && lvl.length > (best >= 0 ? NIVEAU_ORDER[best].length : 0)) best = i;
+    });
+    return best;
+  };
+  const getNextClasseId = (currentClasseId: string): string | undefined => {
+    const current = classes.find((c) => c.id === currentClasseId);
+    if (!current) return undefined;
+    const currentIdx = niveauIndex(current.nom);
+    if (currentIdx < 0 || currentIdx >= NIVEAU_ORDER.length - 1) return undefined;
+    const nextLvl = NIVEAU_ORDER[currentIdx + 1];
+    // Même suffixe (A/B/…) en priorité
+    const currentSuffix = normalize(current.nom).slice(NIVEAU_ORDER[currentIdx].length);
+    const candidates = classes.filter((c) => normalize(c.nom).startsWith(nextLvl));
+    if (candidates.length === 0) return undefined;
+    const sameSuffix = candidates.find((c) => normalize(c.nom).slice(nextLvl.length) === currentSuffix);
+    return (sameSuffix ?? candidates[0]).id;
+  };
+
   const setDecisionFor = (eleveId: string, field: string, value: string) => {
     if (isLocked) return;
-    setLocalDecisions((prev) => ({
-      ...prev,
-      [eleveId]: { ...prev[eleveId], decision: prev[eleveId]?.decision ?? "passage", [field]: value },
-    }));
+    setLocalDecisions((prev) => {
+      const eleve = eleves.find((e) => e.id === eleveId);
+      const current = prev[eleveId] ?? { decision: "passage" as DecisionType };
+      const next = { ...current, [field]: value };
+      if (field === "decision" && value === "passage" && !next.classe_destination_id && eleve) {
+        const dest = getNextClasseId(eleve.classe_id);
+        if (dest) next.classe_destination_id = dest;
+      }
+      if (field === "decision" && value !== "passage" && value !== "transfert") {
+        next.classe_destination_id = undefined;
+      }
+      return { ...prev, [eleveId]: next };
+    });
   };
 
   const applyBulkDecision = (decision: DecisionType) => {
@@ -162,7 +205,19 @@ export default function FinAnnee() {
     const ids = selectedIds.size > 0 ? selectedIds : new Set(eleves.map((e) => e.id));
     setLocalDecisions((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => { next[id] = { ...next[id], decision }; });
+      ids.forEach((id) => {
+        const eleve = eleves.find((e) => e.id === id);
+        const cur = next[id] ?? {} as any;
+        const updated: any = { ...cur, decision };
+        if (decision === "passage" && !updated.classe_destination_id && eleve) {
+          const dest = getNextClasseId(eleve.classe_id);
+          if (dest) updated.classe_destination_id = dest;
+        }
+        if (decision !== "passage" && decision !== "transfert") {
+          updated.classe_destination_id = undefined;
+        }
+        next[id] = updated;
+      });
       return next;
     });
     toast.info(`${DECISION_CONFIG[decision].label} appliqué à ${ids.size} élève(s)`);
