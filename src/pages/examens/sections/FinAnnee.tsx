@@ -254,7 +254,7 @@ export default function FinAnnee() {
 
     setLocalDecisions((prev) => {
       const next = { ...prev };
-      ids.forEach((id) => {
+      targetIds.forEach((id) => {
         const eleve = eleves.find((e) => e.id === id);
         const cur = next[id] ?? {} as any;
         const updated: any = { ...cur, decision };
@@ -269,7 +269,8 @@ export default function FinAnnee() {
       });
       return next;
     });
-    toast.info(`${DECISION_CONFIG[decision].label} appliqué à ${ids.size} élève(s)`);
+    toast.info(`${DECISION_CONFIG[decision].label} appliqué à ${targetIds.length} élève(s)`);
+
   };
 
   const toggleSelect = (id: string) => {
