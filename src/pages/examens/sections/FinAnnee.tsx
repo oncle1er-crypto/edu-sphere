@@ -387,7 +387,8 @@ export default function FinAnnee() {
               {/* Workflow actions bar */}
               {eleves.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2 p-3 bg-muted/50 rounded-lg border">
-                  {!isLocked && (
+                  {hasEditable ? (
+
                     <>
                       <span className="text-sm font-medium mr-2">Actions en masse :</span>
                       {(Object.entries(DECISION_CONFIG) as [DecisionType, typeof DECISION_CONFIG["passage"]][]).map(
