@@ -405,7 +405,10 @@ export default function FinAnnee() {
                         </Button>
                       </div>
                     </>
+                  ) : (
+                    <span className="text-sm text-muted-foreground">Toutes les décisions de cette classe sont verrouillées ou appliquées.</span>
                   )}
+
                 </div>
               )}
 
