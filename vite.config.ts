@@ -23,8 +23,8 @@ export default defineConfig(({ mode }) => ({
       devOptions: { enabled: false },
       includeAssets: ["favicon.png", "robots.txt", "pwa-192x192.png", "pwa-512x512.png"],
       manifest: {
-        name: "Complexe Scolaire La Providence de Don Orione",
-        short_name: "CSP La Providence",
+        name: "GSP — La Providence",
+        short_name: "GSP",
         description:
           "Plateforme de gestion scolaire — Foi, Savoir, Excellence.",
         lang: "fr",
@@ -58,6 +58,11 @@ export default defineConfig(({ mode }) => ({
           /supabase/i,
         ],
         runtimeCaching: [
+          {
+            // Supabase (auth + data + storage + functions) : JAMAIS mis en cache
+            urlPattern: /supabase\.co\/.*/i,
+            handler: "NetworkOnly",
+          },
           {
             // HTML navigations : toujours réseau d'abord
             urlPattern: ({ request }) => request.mode === "navigate",
