@@ -26,6 +26,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent } from "@/components/
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 
 const statutLabels: Record<string, string> = {
   active: "Active",
