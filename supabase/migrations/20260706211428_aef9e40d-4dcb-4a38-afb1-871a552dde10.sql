@@ -1,0 +1,1 @@
+ALTER FUNCTION public.cloturer_et_basculer_annee(uuid, uuid, uuid, boolean) SET search_path = public;
