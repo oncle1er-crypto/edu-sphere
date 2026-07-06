@@ -59,6 +59,11 @@ export default defineConfig(({ mode }) => ({
         ],
         runtimeCaching: [
           {
+            // Supabase (auth + data + storage + functions) : JAMAIS mis en cache
+            urlPattern: /supabase\.co\/.*/i,
+            handler: "NetworkOnly",
+          },
+          {
             // HTML navigations : toujours réseau d'abord
             urlPattern: ({ request }) => request.mode === "navigate",
             handler: "NetworkFirst",
