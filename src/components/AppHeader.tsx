@@ -183,6 +183,7 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
                 <Settings className="mr-2 h-4 w-4" />
                 Paramètres
               </DropdownMenuItem>
+              <InstallPWAMenuItem />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"
