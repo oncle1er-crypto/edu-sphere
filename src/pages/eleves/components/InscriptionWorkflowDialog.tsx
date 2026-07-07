@@ -437,7 +437,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
             {!allDone && (
               <div className="rounded-md bg-muted/50 border p-2.5 text-xs text-muted-foreground flex gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0 text-amber-600" />
-                <span>Une fois les 3 étapes vertes, cliquez sur « Valider l'inscription » pour finaliser.</span>
+                <span>Une fois la classe affectée et un paiement enregistré, cliquez sur « Valider l'inscription ». Les documents restent facultatifs.</span>
               </div>
             )}
           </div>
