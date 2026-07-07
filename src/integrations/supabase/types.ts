@@ -5119,6 +5119,318 @@ export type Database = {
           },
         ]
       }
+      vacances_classes: {
+        Row: {
+          actif: boolean
+          annee_id: string | null
+          capacite: number | null
+          created_at: string
+          ecole_id: string
+          id: string
+          montant: number
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          annee_id?: string | null
+          capacite?: number | null
+          created_at?: string
+          ecole_id: string
+          id?: string
+          montant?: number
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          annee_id?: string | null
+          capacite?: number | null
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          montant?: number
+          nom?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacances_classes_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_classes_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacances_eleves: {
+        Row: {
+          annee_id: string | null
+          classe_id: string
+          contact_parent: string | null
+          created_at: string
+          date_inscription: string
+          date_naissance: string | null
+          ecole_id: string
+          etablissement_origine: string | null
+          id: string
+          nom: string
+          observation: string | null
+          prenom: string
+          sexe: string | null
+          statut_paiement: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id: string
+          contact_parent?: string | null
+          created_at?: string
+          date_inscription?: string
+          date_naissance?: string | null
+          ecole_id: string
+          etablissement_origine?: string | null
+          id?: string
+          nom: string
+          observation?: string | null
+          prenom: string
+          sexe?: string | null
+          statut_paiement?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string
+          contact_parent?: string | null
+          created_at?: string
+          date_inscription?: string
+          date_naissance?: string | null
+          ecole_id?: string
+          etablissement_origine?: string | null
+          id?: string
+          nom?: string
+          observation?: string | null
+          prenom?: string
+          sexe?: string | null
+          statut_paiement?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacances_eleves_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_eleves_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "vacances_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_eleves_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacances_enseignants: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          ecole_id: string
+          honoraire_prevu: number
+          id: string
+          matiere: string | null
+          nom: string
+          observation: string | null
+          prenom: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id: string
+          honoraire_prevu?: number
+          id?: string
+          matiere?: string | null
+          nom: string
+          observation?: string | null
+          prenom: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          honoraire_prevu?: number
+          id?: string
+          matiere?: string | null
+          nom?: string
+          observation?: string | null
+          prenom?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacances_enseignants_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_enseignants_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "vacances_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_enseignants_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacances_honoraires: {
+        Row: {
+          created_at: string
+          date_paiement: string
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          mode: string
+          montant: number
+          observation: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_paiement?: string
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          mode?: string
+          montant: number
+          observation?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_paiement?: string
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          mode?: string
+          montant?: number
+          observation?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacances_honoraires_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_honoraires_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "vacances_enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vacances_paiements: {
+        Row: {
+          classe_id: string
+          created_at: string
+          date_paiement: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mode: string
+          montant_attendu: number
+          montant_paye: number
+          observation: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          date_paiement?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mode?: string
+          montant_attendu?: number
+          montant_paye?: number
+          observation?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          date_paiement?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mode?: string
+          montant_attendu?: number
+          montant_paye?: number
+          observation?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vacances_paiements_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "vacances_classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_paiements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "vacances_eleves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vehicules: {
         Row: {
           capacite: number | null

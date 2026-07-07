@@ -1,99 +1,123 @@
-## Plan — Transition d'année simplifiée + isolation stricte par année active
+## Module « Cours de vacances » — Plan d'intégration
 
-### Objectif
+Module **totalement indépendant** des élèves réguliers. Nouvelles tables préfixées `vacances_*`, nouvelles pages sous `/cours-vacances`, aucune modification des tables ou modules existants (`eleves`, `classes`, `paiements`, etc.).
 
-Remplacer l'assistant multi-étapes actuel par **un seul écran "Passage de classe"** qui permet, pour chaque classe de l'année en cours, de faire passer ses élèves vers la classe suivante de l'année à venir en quelques clics — avec **clôture définitive** ou **restauration** possible, et **filtrage automatique** de toute l'application sur l'année active.
+### 1. Base de données (migration unique)
 
----
+Toutes les tables sont scopées par `ecole_id` + `annee_id` (multi-tenant, cohérent avec l'existant). RLS activée, GRANT explicites, policies basées sur `has_ecole_role` / `has_permission`.
 
-### 1. Écran unique « Passage de classe »
+**Tables créées :**
 
-Chemin : `Écoles → Transition d'année` (on remplace le stepper actuel).
+- **`vacances_sessions`** — une session = une édition (ex. « Vacances 2026 »)
+  - `libelle`, `date_debut`, `date_fin`, `statut` (preparation/active/cloturee), `ecole_id`, `annee_id`
+  - Permet de séparer les éditions d'une année à l'autre.
 
-Interface :
+- **`vacances_classes`**
+  - `session_id`, `nom` (CP1, 6e…), `montant` (numeric), `capacite` (nullable), `actif` (bool)
 
-```text
-Année source : [2025-2026 ▾]      Année cible : [2026-2027 ▾ | + Créer]
+- **`vacances_eleves`** — indépendante de `eleves`
+  - `session_id`, `classe_id` (→ vacances_classes), `nom`, `prenom`, `sexe`, `date_naissance`, `contact_parent`, `etablissement_origine` (nullable), `observation`, `date_inscription`, `statut_paiement` (payé/non_payé, calculé au fil des paiements)
 
-┌────────────────────────────────────────────────────────────────┐
-│ Classe source     Élèves   →   Classe cible          Action    │
-├────────────────────────────────────────────────────────────────┤
-│ CP1 A              32      →   [CP2 A     ▾]         [Tous ▾] │
-│ CP2 A              28      →   [CE1 A     ▾]         [Tous ▾] │
-│ CM2 A              25      →   [6ème A    ▾]         [Tous ▾] │
-│ 3ème B             30      →   [Sortants  ▾]         [Tous ▾] │
-└────────────────────────────────────────────────────────────────┘
+- **`vacances_paiements`**
+  - `eleve_id` (→ vacances_eleves), `classe_id`, `montant_attendu`, `montant_paye`, `date_paiement`, `mode` (especes/mobile_money/virement/autre), `statut`, `observation`
+  - Trigger : recalcule `statut_paiement` de l'élève.
 
-Par défaut : mapping auto PS→MS→…→CM2→6ème→…→Tle.
-Action par classe : "Tous promus" / "Choisir élève par élève"
-  → ouvre un panneau latéral pour marquer redoublants / exclus / sortants.
+- **`vacances_enseignants`**
+  - `session_id`, `nom`, `prenom`, `telephone`, `classe_id` (nullable), `matiere`, `honoraire_prevu`, `observation`
+  - Colonnes calculées via vue : `montant_paye`, `reste_a_payer`.
 
-[Aperçu]  [Lancer le passage]
+- **`vacances_honoraires`** — paiements versés aux enseignants
+  - `enseignant_id`, `montant`, `date_paiement`, `mode`, `observation`
+
+**Grants + RLS** : `authenticated` (SELECT/INSERT/UPDATE/DELETE via policies), `service_role` (ALL). Policies :
+- Lecture/écriture : `has_ecole_role(auth.uid(), ecole_id, 'admin'|'directeur'|'comptable')` OU `has_permission(auth.uid(), ecole_id, 'cours_vacances', 'view'|'create'|…)`.
+
+**Module ajouté à `app_modules`** avec `module_key = 'cours_vacances'` pour intégration à la matrice de permissions existante.
+
+### 2. Architecture front
+
+Suivre exactement le pattern des modules existants (`/pages/cantine`, `/pages/bibliotheque`) :
+
+```
+src/pages/cours-vacances/
+  VacancesLayout.tsx              ← sidebar + Outlet (comme CanteenLayout)
+  sections/
+    VacancesDashboard.tsx
+    VacancesInscriptions.tsx
+    VacancesClasses.tsx           ← Classes / Tarifs
+    VacancesPaiements.tsx
+    VacancesEnseignants.tsx
+    VacancesHonoraires.tsx
+    VacancesRapports.tsx
+  hooks/
+    useVacancesSessions.ts
+    useVacancesClasses.ts
+    useVacancesEleves.ts
+    useVacancesPaiements.ts
+    useVacancesEnseignants.ts
+    useVacancesHonoraires.ts
+  lib/
+    exportVacancesPDF.ts          ← jsPDF (déjà utilisé)
+    exportVacancesExcel.ts        ← xlsx (déjà utilisé)
 ```
 
-Un seul bouton **Lancer le passage** appelle une RPC unique `executer_passage_classe(_ecole_id, _annee_source, _annee_cible, _plan jsonb)` qui :
+**Routing** — ajout dans `src/App.tsx` :
+```
+/cours-vacances → VacancesLayout
+  ├── tableau
+  ├── inscriptions
+  ├── classes
+  ├── paiements
+  ├── enseignants
+  ├── honoraires
+  └── rapports
+```
 
-- crée les inscriptions de l'année cible (statut `pre_inscrit`, matricule conservé),
-- applique redoublement / exclusion / sortie selon `_plan`,
-- reconduit affectations pédagogiques (`classe_matieres`, `enseignant_matieres`) et abonnements cantine/transport,
-- trace tout dans `parcours_scolaire` + une nouvelle table `passages_classe` (journal réversible).
+**Navigation** — ajout d'une entrée « Cours de vacances » dans `AppSidebar.tsx` (section « Autres ») avec icône `Sun` ou `Palmtree` (lucide-react). Aucune modification du `TopNav` (top-level items existants conservés).
 
-Pas de brouillon / validation / verrouillage en 3 étapes : une seule action, journalisée.
+### 3. Fonctionnalités par page
 
----
+**Tableau de bord** — `KpiCard` (composant existant) :
+Total élèves inscrits · Élèves par classe (BarChart) · Total encaissé · Impayés · Total maîtres · Honoraires prévus · Honoraires payés · **Résultat net = encaissé − honoraires payés**.
 
-### 2. Clôture définitive & Restauration
+**Inscriptions** : formulaire (Dialog shadcn) + tableau avec recherche, filtre classe, filtre statut paiement, actions (voir/éditer/supprimer). Montant attendu auto-rempli depuis la classe.
 
-Deux boutons en tête d'écran, à côté du sélecteur d'année source :
+**Classes / Tarifs** : CRUD avec toggle actif/inactif.
 
-- **Clôturer définitivement l'année** → RPC `cloturer_annee(_ecole_id, _annee_id)` : passe l'année en `cloturee`, rend les données lecture seule (RLS : bloque INSERT/UPDATE/DELETE sur les tables scoped `annee_id` quand `statut = 'cloturee'`).
-- **Restaurer / Rouvrir** → RPC `restaurer_annee(_ecole_id, _annee_id)` : repasse en `verrouillee` (modifiable par admin) OU **annule un passage** via le journal `passages_classe` (supprime les inscriptions créées dans l'année cible pour ce lot, restaure les statuts source).
+**Paiements** : formulaire (élève auto-complété → classe & montant auto-remplis), tableau avec filtres, totaux par classe et global affichés en pied de tableau.
 
-Le journal `passages_classe` stocke : `id, ecole_id, annee_source, annee_cible, plan jsonb, resultat jsonb, execute_par, execute_le, annule_le`. Chaque exécution est réversible tant que l'année cible n'est pas clôturée.
+**Maîtres/Enseignants** : CRUD + colonnes calculées (montant payé, reste à payer).
 
----
+**Honoraires** : tableau récap par maître + Dialog « enregistrer un paiement d'honoraire ».
 
-### 3. Isolation stricte par année active
+**Rapports** : 7 rapports (Liste inscrits · Par classe · Payés · Non payés · Maîtres · Situation honoraires · Résumé financier) avec boutons **Imprimer** (window.print stylé) + **PDF** (jsPDF) + **Excel** (xlsx).
 
-Aujourd'hui certains écrans montrent toutes les années confondues. Objectif : **quand une année est active, seules ses données s'affichent partout** (élèves, classes, paiements, notes, présences, cantine, transport, bulletins, etc.).
+### 4. Permissions
 
-Mise en œuvre :
+Utilise `Can` (composant existant) et `usePermissions` avec `module = 'cours_vacances'`.
+- Admin/Directeur : accès total.
+- Comptable : voir + gérer paiements/honoraires.
+- Autres rôles : selon `user_permissions` (matrice existante — la nouvelle clé apparaît automatiquement).
 
-- Un **`AcademicPeriodContext`** déjà présent expose `anneeActiveId`. On l'utilise comme filtre par défaut dans **tous** les hooks data (`useEleves`, `useClasses`, `useNotes`, `useFactures`, `usePaiements`, `usePresences`, `useAbonnementsCantine`, `useAbonnementsTransport`, `useBulletinsPaie`, `useEvaluations`, `useRetards`, `useSanctionsPresences`…).
-- Ajout d'un sélecteur global "Année : 2026-2027 ▾" dans le header, mais **verrouillé sur l'année active** pour les non-admins. Les admins peuvent temporairement consulter une année clôturée (lecture seule).
-- Les **modalités de paiement** (grille tarifs, tranches, frais scolarité) sont déjà scoped par `annee_id` : on vérifie que `useGrilleTarifs`, `useFactures`, `useTranches` filtrent bien sur `anneeActiveId` sans exception.
+### 5. Design
 
----
+- Réutilise tokens sémantiques existants (rouge bordeaux/jaune poussin) définis dans `index.css`.
+- Composants shadcn (`Card`, `Table`, `Dialog`, `Input`, `Select`, `Badge`).
+- Layout responsive (grille `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` pour les KPI, tableaux avec scroll horizontal sur mobile).
+- Icônes `lucide-react` : `Sun`, `Users`, `BookOpen`, `Wallet`, `GraduationCap`, `Receipt`, `FileText`.
 
-### 4. Détails techniques
+### 6. Garanties
 
-**Nouvelles migrations SQL :**
+- Aucune table existante modifiée.
+- Aucun code des modules `Élèves`, `Classes`, `Finances` touché.
+- Toutes les nouvelles tables préfixées `vacances_` → zéro collision.
+- Module isolable/désinstallable en supprimant les 6 tables + le dossier `src/pages/cours-vacances/`.
 
-1. Table `passages_classe` (journal réversible) + RLS + GRANT.
-2. Colonne `statut` de `annees_scolaires` : ajout de la valeur `cloturee` (enum ou check).
-3. RPC `executer_passage_classe` (SECURITY DEFINER, admin/directeur + `user_belongs_to_ecole`).
-4. RPC `cloturer_annee`, `restaurer_annee`, `annuler_passage_classe` (idem).
-5. Trigger `annees_scolaires_readonly_when_cloturee` : bloque les mutations sur tables filles quand année parent `= cloturee` (sauf admin).
+### Ordre d'implémentation
 
-**Fichiers frontend modifiés :**
-
-- `src/pages/ecoles/sections/SchoolsYearTransition.tsx` → réécrit en écran unique (tableau classes source → cible).
-- `src/hooks/useYearTransition.ts` → simplifié : un seul appel RPC + journal.
-- Nouveau `src/hooks/usePassagesClasse.ts` (historique + annulation).
-- `src/context/AcademicPeriodContext.tsx` → devient source unique de `anneeActiveId`.
-- Audit et ajout de `.eq('annee_id', anneeActiveId)` dans les hooks data listés au §3.
-- Nouveau composant `YearScopeBadge` dans le header : "Année active : 2026-2027" (badge + sélecteur admin).
-
-**Non touché :** logique des modules eux-mêmes (bulletins, finances, cantine…) — uniquement leur filtre `annee_id`.
-
----
-
-### 5. Ordre d'exécution
-
-1. Migration `passages_classe` + statut `cloturee` + RPC (§4.1-4.4).
-2. Trigger lecture-seule année clôturée (§4.5).
-3. Réécriture écran `SchoolsYearTransition` + hook.
-4. Audit + patch des hooks data pour filtrage strict `anneeActiveId`.
-5. Badge/sélecteur d'année dans le header.
-
-Chaque étape est indépendante et réversible. Aucune donnée existante supprimée.
+1. Migration SQL (tables + RLS + grants + entrée app_modules)
+2. Hooks Supabase
+3. Layout + routing + entrée sidebar
+4. 7 sections (Dashboard → Rapports)
+5. Exports PDF/Excel
+6. Test manuel du parcours complet (créer session → classe → inscription → paiement → maître → honoraire → rapport)

@@ -236,6 +236,14 @@ const VieScolairePresences = lazy(() => import("@/pages/vie-scolaire/sections/Vi
 const VieScolaireDiscipline = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireDiscipline"));
 const VieScolaireInfirmerie = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireInfirmerie"));
 const OfflinePage = lazy(() => import("@/pages/Offline"));
+const VacancesLayout = lazy(() => import("@/pages/cours-vacances/VacancesLayout"));
+const VacancesDashboard = lazy(() => import("@/pages/cours-vacances/sections/VacancesDashboard"));
+const VacancesInscriptions = lazy(() => import("@/pages/cours-vacances/sections/VacancesInscriptions"));
+const VacancesClasses = lazy(() => import("@/pages/cours-vacances/sections/VacancesClasses"));
+const VacancesPaiements = lazy(() => import("@/pages/cours-vacances/sections/VacancesPaiements"));
+const VacancesEnseignants = lazy(() => import("@/pages/cours-vacances/sections/VacancesEnseignants"));
+const VacancesHonoraires = lazy(() => import("@/pages/cours-vacances/sections/VacancesHonoraires"));
+const VacancesRapports = lazy(() => import("@/pages/cours-vacances/sections/VacancesRapports"));
 const queryClient = new QueryClient();
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -482,6 +490,15 @@ const App = () => (
               <Route path="presences" element={<VieScolairePresences />} />
               <Route path="discipline" element={<VieScolaireDiscipline />} />
               <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
+            </Route>
+            <Route path="/cours-vacances" element={<VacancesLayout />}>
+              <Route path="tableau" element={<VacancesDashboard />} />
+              <Route path="inscriptions" element={<VacancesInscriptions />} />
+              <Route path="classes" element={<VacancesClasses />} />
+              <Route path="paiements" element={<VacancesPaiements />} />
+              <Route path="enseignants" element={<VacancesEnseignants />} />
+              <Route path="honoraires" element={<VacancesHonoraires />} />
+              <Route path="rapports" element={<VacancesRapports />} />
             </Route>
             <Route path="/utilisateurs" element={<UsersRoles />} />
             <Route path="/parametres" element={<SettingsLayout />}>
