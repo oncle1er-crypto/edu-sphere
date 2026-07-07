@@ -2,7 +2,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { purgeSensitiveCaches } from "@/pwa/registerSW";
 import { toast } from "sonner";
+
 
 interface AuthContextValue {
   session: Session | null;
