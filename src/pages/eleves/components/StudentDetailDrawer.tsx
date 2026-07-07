@@ -321,15 +321,18 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
               const totalPaye = paiements.reduce((s, p) => s + Number(p.montant ?? 0), 0);
               const cPaie = totalPaye > 0;
               const cClasse = !!eleve.classe_id;
-              const done = [cDocs, cPaie, cClasse].filter(Boolean).length;
+              // Documents désormais facultatifs → seuls classe + paiement comptent.
+              const done = [cPaie, cClasse].filter(Boolean).length;
 
-              const Row = ({ ok, title, detail }: { ok: boolean; title: string; detail?: React.ReactNode }) => (
+              const Row = ({ ok, title, detail, optional }: { ok: boolean; title: string; detail?: React.ReactNode; optional?: boolean }) => (
                 <div className="flex items-start gap-2 text-xs">
-                  <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${ok ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
-                    {ok ? "✓" : "!"}
+                  <span className={`mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold ${ok ? "bg-green-100 text-green-700" : optional ? "bg-muted text-muted-foreground" : "bg-amber-100 text-amber-800"}`}>
+                    {ok ? "✓" : optional ? "○" : "!"}
                   </span>
                   <div className="min-w-0">
-                    <p className={`font-medium ${ok ? "text-green-800" : "text-amber-900"}`}>{title}</p>
+                    <p className={`font-medium ${ok ? "text-green-800" : optional ? "text-foreground" : "text-amber-900"}`}>
+                      {title}{optional && !ok ? " (facultatif)" : ""}
+                    </p>
                     {detail && <p className="text-muted-foreground mt-0.5">{detail}</p>}
                   </div>
                 </div>
@@ -338,17 +341,19 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
               return (
                 <div className="mt-3 rounded-md border border-amber-200 bg-amber-50/60 p-3 space-y-2.5">
                   <p className="text-xs font-semibold text-amber-900">
-                    Conditions restantes pour passage en « inscrit » — {done}/3 validées
+                    Conditions restantes pour passage en « inscrit » — {done}/2 validées
                   </p>
                   <Row
                     ok={cDocs}
+                    optional
                     title={`Dossier administratif (${REQUIRED_DOCS.length - missingDocs.length}/${REQUIRED_DOCS.length})`}
                     detail={
                       cDocs
-                        ? "Tous les documents obligatoires sont fournis."
-                        : <>Manque : <span className="font-medium">{missingDocs.map((d) => d.label).join(", ")}</span></>
+                        ? "Tous les documents sont fournis."
+                        : <>Facultatif — manque : <span className="font-medium">{missingDocs.map((d) => d.label).join(", ")}</span></>
                     }
                   />
+
                   <Row
                     ok={cPaie}
                     title="Paiement 1ʳᵉ tranche"
