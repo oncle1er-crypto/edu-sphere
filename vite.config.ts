@@ -49,12 +49,15 @@ export default defineConfig(({ mode }) => ({
         clientsClaim: true,
         skipWaiting: true,
         navigateFallback: "/index.html",
-        // Ne pas servir le fallback pour OAuth, Supabase, API, edge functions
+        // Ne pas servir le fallback pour OAuth, Supabase, API, edge functions, MFA, auth
         navigateFallbackDenylist: [
           /^\/~oauth/,
           /^\/api\//,
           /^\/auth\//,
+          /^\/auth$/,
           /^\/functions\//,
+          /^\/parametres\/mfa/,
+          /^\/mfa/,
           /supabase/i,
         ],
         runtimeCaching: [
@@ -64,8 +67,15 @@ export default defineConfig(({ mode }) => ({
             handler: "NetworkOnly",
           },
           {
-            // HTML navigations : toujours réseau d'abord
-            urlPattern: ({ request }) => request.mode === "navigate",
+            // Endpoints MFA / auth / reset password : JAMAIS mis en cache (sécurité)
+            urlPattern: /\/functions\/v1\/(send-mfa-sms-otp|verify-mfa-sms-otp|admin-reset-password|accept-teacher-invitation|create-teacher-account)/i,
+            handler: "NetworkOnly",
+          },
+          {
+            // HTML navigations : toujours réseau d'abord (hors auth/mfa gérés en denylist)
+            urlPattern: ({ request, url }) =>
+              request.mode === "navigate" &&
+              !/^\/(auth|parametres\/mfa|mfa|~oauth)/.test(url.pathname),
             handler: "NetworkFirst",
             options: {
               cacheName: "html-navigations",
@@ -93,7 +103,8 @@ export default defineConfig(({ mode }) => ({
             },
           },
         ],
-        // IMPORTANT : ne JAMAIS mettre en cache les appels Supabase (données sensibles)
+        // IMPORTANT : ne JAMAIS mettre en cache les appels Supabase ni les endpoints MFA/auth
+
       },
     }),
   ].filter(Boolean),
