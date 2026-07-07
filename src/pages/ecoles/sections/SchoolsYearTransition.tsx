@@ -142,6 +142,42 @@ export default function SchoolsYearTransition() {
     await reload();
   };
 
+  const dupliquerClasses = async () => {
+    if (!ecoleId || !sourceId || !cibleId) { toast.error("Sélectionne l'année source et l'année cible"); return; }
+    setBusy("dupliquer");
+    const { data: srcClasses, error: sErr } = await supabase
+      .from("classes")
+      .select("nom, cycle_id, capacite, salle, salle_id")
+      .eq("ecole_id", ecoleId).eq("annee_id", sourceId);
+    if (sErr) { setBusy(null); toast.error(sErr.message); return; }
+
+    const existingNames = new Set(
+      classesCible.map((c) => c.nom.toLowerCase())
+    );
+    const toInsert = (srcClasses ?? [])
+      .filter((c: any) => !existingNames.has(c.nom.toLowerCase()))
+      .map((c: any) => ({
+        ecole_id: ecoleId,
+        annee_id: cibleId,
+        nom: c.nom,
+        cycle_id: c.cycle_id,
+        capacite: c.capacite,
+        salle: c.salle,
+        salle_id: c.salle_id,
+      }));
+
+    if (toInsert.length === 0) {
+      setBusy(null);
+      toast.info("Toutes les classes existent déjà dans l'année cible.");
+      return;
+    }
+    const { error } = await supabase.from("classes").insert(toInsert);
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${toInsert.length} classe(s) dupliquée(s) vers l'année cible.`);
+    await reload();
+  };
+
   const cibleAnnee = annees.find((a) => a.id === cibleId);
   const sourceAnnee = annees.find((a) => a.id === sourceId);
 
