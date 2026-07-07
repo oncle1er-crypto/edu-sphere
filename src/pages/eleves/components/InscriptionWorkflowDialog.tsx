@@ -285,19 +285,19 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Progress value={progress} className="flex-1 h-2" />
-              <span className="text-xs font-semibold tabular-nums">{done}/3</span>
+              <span className="text-xs font-semibold tabular-nums">{done}/2</span>
             </div>
 
-            {/* Étape 1 : Documents */}
-            <div className={`rounded-lg border p-3 ${cDocs ? "bg-green-50/60 border-green-200" : "bg-amber-50/60 border-amber-200"}`}>
+            {/* Étape 1 : Documents (facultatif) */}
+            <div className={`rounded-lg border p-3 ${cDocs ? "bg-green-50/60 border-green-200" : "bg-muted/40 border-muted"}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${cDocs ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${cDocs ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                   {cDocs ? <Check className="h-4 w-4" /> : <Files className="h-4 w-4" />}
                 </div>
-                <p className={`font-medium text-sm ${cDocs ? "text-green-800" : "text-amber-900"}`}>
+                <p className={`font-medium text-sm ${cDocs ? "text-green-800" : "text-foreground"}`}>
                   Dossier administratif ({REQUIRED_DOCS.length - missingDocs.length}/{REQUIRED_DOCS.length})
                 </p>
-                {cDocs && <Badge variant="outline" className="text-[10px] bg-green-100 border-green-300 text-green-800 ml-auto">Validé</Badge>}
+                <Badge variant="outline" className="text-[10px] ml-auto">Facultatif</Badge>
               </div>
               {!cDocs && (
                 <div className="space-y-1.5">
