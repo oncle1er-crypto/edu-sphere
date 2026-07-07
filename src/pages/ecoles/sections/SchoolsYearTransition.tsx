@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  ArrowRight, CalendarPlus, CheckCircle2, Lock, Loader2, PlayCircle, RotateCcw, Sparkles, Unlock, Users2,
+  ArrowRight, CalendarPlus, CheckCircle2, Copy, Lock, Loader2, PlayCircle, RotateCcw, Sparkles, Unlock, Users2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
