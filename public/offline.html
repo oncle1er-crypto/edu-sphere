@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6e1a2c" />
+    <title>Hors ligne — GSP La Providence</title>
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <style>
+      :root { color-scheme: light; }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        font-family: "Plus Jakarta Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background: linear-gradient(160deg, #faf7f2 0%, #f2ecdd 100%);
+        color: #2b1a1f;
+      }
+      .card {
+        max-width: 460px;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid rgba(110, 26, 44, 0.12);
+        border-radius: 20px;
+        padding: 36px 28px;
+        text-align: center;
+        box-shadow: 0 20px 60px -30px rgba(110, 26, 44, 0.35);
+      }
+      .logo {
+        width: 72px; height: 72px; border-radius: 50%;
+        margin: 0 auto 20px;
+        background: #fff;
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 10px 30px -10px rgba(110, 26, 44, 0.35);
+        overflow: hidden;
+      }
+      .logo img { width: 60px; height: 60px; object-fit: contain; }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 22px;
+        color: #6e1a2c;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+      p { margin: 0 0 20px; font-size: 15px; line-height: 1.55; color: #5b4a50; }
+      .badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        padding: 4px 10px; border-radius: 999px;
+        background: rgba(110, 26, 44, 0.08); color: #6e1a2c;
+        font-size: 12px; font-weight: 600; margin-bottom: 14px;
+      }
+      .dot { width: 8px; height: 8px; border-radius: 50%; background: #b91c1c; }
+      button {
+        appearance: none; border: 0; cursor: pointer;
+        background: #6e1a2c; color: #fff;
+        padding: 12px 22px; border-radius: 12px;
+        font-weight: 700; font-size: 14px;
+        transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+        box-shadow: 0 8px 20px -8px rgba(110, 26, 44, 0.55);
+      }
+      button:hover { background: #5a1424; transform: translateY(-1px); }
+      button:active { transform: translateY(0); }
+      .foot { margin-top: 18px; font-size: 12px; color: #8a7a80; }
+    </style>
+  </head>
+  <body>
+    <main class="card" role="main">
+      <div class="logo"><img src="/favicon.png" alt="GSP" /></div>
+      <div class="badge"><span class="dot"></span> Hors ligne</div>
+      <h1>Connexion internet indisponible</h1>
+      <p>
+        Impossible d'atteindre le serveur. Vérifiez votre réseau puis
+        réessayez — vos données ne sont pas perdues.
+      </p>
+      <button type="button" onclick="location.reload()">Réessayer</button>
+      <div class="foot">GSP — La Providence · Foi, Savoir, Excellence</div>
+    </main>
+    <script>
+      window.addEventListener("online", function () { location.reload(); });
+    </script>
+  </body>
+</html>
