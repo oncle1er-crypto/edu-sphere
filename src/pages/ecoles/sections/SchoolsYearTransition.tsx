@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  ArrowRight, CalendarPlus, CheckCircle2, Lock, Loader2, PlayCircle, RotateCcw, Sparkles, Unlock, Users2,
+  ArrowRight, CalendarPlus, CheckCircle2, Copy, Lock, Loader2, PlayCircle, RotateCcw, Sparkles, Unlock, Users2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
@@ -142,6 +142,42 @@ export default function SchoolsYearTransition() {
     await reload();
   };
 
+  const dupliquerClasses = async () => {
+    if (!ecoleId || !sourceId || !cibleId) { toast.error("Sélectionne l'année source et l'année cible"); return; }
+    setBusy("dupliquer");
+    const { data: srcClasses, error: sErr } = await supabase
+      .from("classes")
+      .select("nom, cycle_id, capacite, salle, salle_id")
+      .eq("ecole_id", ecoleId).eq("annee_id", sourceId);
+    if (sErr) { setBusy(null); toast.error(sErr.message); return; }
+
+    const existingNames = new Set(
+      classesCible.map((c) => c.nom.toLowerCase())
+    );
+    const toInsert = (srcClasses ?? [])
+      .filter((c: any) => !existingNames.has(c.nom.toLowerCase()))
+      .map((c: any) => ({
+        ecole_id: ecoleId,
+        annee_id: cibleId,
+        nom: c.nom,
+        cycle_id: c.cycle_id,
+        capacite: c.capacite,
+        salle: c.salle,
+        salle_id: c.salle_id,
+      }));
+
+    if (toInsert.length === 0) {
+      setBusy(null);
+      toast.info("Toutes les classes existent déjà dans l'année cible.");
+      return;
+    }
+    const { error } = await supabase.from("classes").insert(toInsert);
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${toInsert.length} classe(s) dupliquée(s) vers l'année cible.`);
+    await reload();
+  };
+
   const cibleAnnee = annees.find((a) => a.id === cibleId);
   const sourceAnnee = annees.find((a) => a.id === sourceId);
 
@@ -217,6 +253,15 @@ export default function SchoolsYearTransition() {
           description="Pour chaque classe de l'année source, choisis la classe cible dans l'année à venir. Les élèves sans classe cible seront marqués sortants (fin de cursus)."
           hideSave
         >
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+            <p className="text-xs text-muted-foreground">
+              {classesCible.length} classe(s) dans l'année cible. Dupliquer recopie les classes source manquantes (nom, cycle, capacité, salle).
+            </p>
+            <Button size="sm" variant="outline" onClick={dupliquerClasses} disabled={busy === "dupliquer" || !sourceId || !cibleId}>
+              {busy === "dupliquer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+              Dupliquer les classes source → cible
+            </Button>
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
