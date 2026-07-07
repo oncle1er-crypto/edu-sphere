@@ -111,9 +111,10 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
   const totalPaye = paiements.reduce((s, p) => s + Number(p.montant ?? 0), 0);
   const cPaie = totalPaye > 0;
   const cClasse = !!eleve.classe_id;
-  const done = [cDocs, cPaie, cClasse].filter(Boolean).length;
-  const progress = (done / 3) * 100;
-  const allDone = done === 3;
+  // Documents désormais FACULTATIFS : seuls la classe et un paiement sont requis.
+  const done = [cPaie, cClasse].filter(Boolean).length;
+  const progress = (done / 2) * 100;
+  const allDone = cPaie && cClasse;
 
   const handleSaveClasse = async () => {
     if (!classeId || classeId === eleve.classe_id) return;
