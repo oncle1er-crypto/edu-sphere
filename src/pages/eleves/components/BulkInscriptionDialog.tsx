@@ -83,22 +83,22 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
         };
       });
       setReadiness(list);
-      // Pre-select all that are ready
+      // Documents facultatifs : « prêt » = classe + paiement OK.
       const init: Record<string, boolean> = {};
-      list.forEach((r) => { if (r.cDocs && r.cPaie && r.cClasse) init[r.eleve.id] = true; });
+      list.forEach((r) => { if (r.cPaie && r.cClasse) init[r.eleve.id] = true; });
       setSelected(init);
       setLoading(false);
     })();
   }, [open, eleves]);
 
-  const readyCount = readiness.filter((r) => r.cDocs && r.cPaie && r.cClasse).length;
-  const selectedReady = readiness.filter((r) => selected[r.eleve.id] && r.cDocs && r.cPaie && r.cClasse);
+  const readyCount = readiness.filter((r) => r.cPaie && r.cClasse).length;
+  const selectedReady = readiness.filter((r) => selected[r.eleve.id] && r.cPaie && r.cClasse);
 
   const toggleAllReady = () => {
     const allOn = selectedReady.length === readyCount && readyCount > 0;
     const next: Record<string, boolean> = {};
     readiness.forEach((r) => {
-      if (r.cDocs && r.cPaie && r.cClasse) next[r.eleve.id] = !allOn;
+      if (r.cPaie && r.cClasse) next[r.eleve.id] = !allOn;
     });
     setSelected(next);
   };
