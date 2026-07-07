@@ -286,7 +286,7 @@ export default function FinAnnee() {
     if (!selectedAnnee || !selectedClasse) return;
     setSaving(true);
     const items = eleves
-      .filter((e) => localDecisions[e.id])
+      .filter((e) => localDecisions[e.id] && !isEleveLocked(e.id))
       .map((e) => ({
         eleve_id: e.id,
         classe_origine_id: selectedClasse,
