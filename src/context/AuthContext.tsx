@@ -33,11 +33,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
         setLoading(false);
+        // Purger tout cache navigation à la connexion/déconnexion pour éviter
+        // qu'une page d'auth/MFA stockée puisse être servie depuis le SW.
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+          void purgeSensitiveCaches();
+        }
       }
     );
+
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
