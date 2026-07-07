@@ -21,7 +21,7 @@ export default defineConfig(({ mode }) => ({
       injectRegister: null,
       filename: "sw.js",
       devOptions: { enabled: false },
-      includeAssets: ["favicon.png", "robots.txt", "pwa-192x192.png", "pwa-512x512.png"],
+      includeAssets: ["favicon.png", "robots.txt", "pwa-192x192.png", "pwa-512x512.png", "offline.html"],
       manifest: {
         name: "GSP — La Providence",
         short_name: "GSP",

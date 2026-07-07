@@ -19,11 +19,21 @@ export function lazyWithRetry<T extends ComponentType<any>>(
           msg
         );
       if (isChunkError && typeof window !== "undefined") {
+        // Hors ligne : basculer sur la page de secours dédiée
+        if (!navigator.onLine && window.location.pathname !== "/offline") {
+          window.location.replace("/offline");
+          return await new Promise<{ default: T }>(() => {});
+        }
         const already = sessionStorage.getItem(KEY);
         if (!already) {
           sessionStorage.setItem(KEY, "1");
           window.location.reload();
           // Return a never-resolving promise while reload happens
+          return await new Promise<{ default: T }>(() => {});
+        }
+        // Second échec consécutif : afficher la page hors-ligne plutôt qu'un écran blanc
+        if (window.location.pathname !== "/offline") {
+          window.location.replace("/offline");
           return await new Promise<{ default: T }>(() => {});
         }
       }
