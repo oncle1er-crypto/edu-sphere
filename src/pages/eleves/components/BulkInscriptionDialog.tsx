@@ -176,7 +176,7 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
 
             <div className="border rounded-lg max-h-[40vh] overflow-y-auto divide-y">
               {readiness.map((r) => {
-                const ready = r.cDocs && r.cPaie && r.cClasse;
+                const ready = r.cPaie && r.cClasse;
                 const res = results.find((x) => x.id === r.eleve.id);
                 return (
                   <div key={r.eleve.id} className={`flex items-start gap-3 p-3 ${!ready ? "bg-muted/30" : ""}`}>
@@ -200,8 +200,8 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
                         {res?.status === "error" && <Badge variant="destructive" className="text-[10px]">✗ Erreur</Badge>}
                       </div>
                       <div className="flex flex-wrap gap-2 mt-1.5 text-[11px]">
-                        <span className={`flex items-center gap-1 ${r.cDocs ? "text-green-700" : "text-amber-700"}`}>
-                          <Files className="h-3 w-3" /> {r.cDocs ? "Docs OK" : `Manque: ${r.missingDocs.join(", ")}`}
+                        <span className={`flex items-center gap-1 ${r.cDocs ? "text-green-700" : "text-muted-foreground"}`}>
+                          <Files className="h-3 w-3" /> {r.cDocs ? "Docs OK" : `Docs facultatifs — manque: ${r.missingDocs.join(", ")}`}
                         </span>
                         <span className={`flex items-center gap-1 ${r.cPaie ? "text-green-700" : "text-amber-700"}`}>
                           <Wallet className="h-3 w-3" /> {r.cPaie ? `${r.totalPaye.toLocaleString("fr-FR")} FCFA` : "Aucun paiement"}
