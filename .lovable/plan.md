@@ -1,104 +1,99 @@
-## Plan de correction — Priorité HAUTE
+## Plan — Transition d'année simplifiée + isolation stricte par année active
 
-Objectif : traiter les 4 points bloquants/critiques listés dans le rapport, sans toucher au reste de l'application.
+### Objectif
 
----
-
-### 1. Assistant de transition d'année — finaliser les RPC serveur
-
-Créer les 4 fonctions SECURITY DEFINER manquantes (spécifiées dans `.lovable/plan.md`) et brancher l'UI existante (`SchoolsYearTransition.tsx` + `useYearTransition.ts`) dessus.
-
-**Migration SQL** (une seule migration) :
-
-- `promouvoir_eleves_annee(_ecole_id uuid, _annee_source uuid, _annee_cible uuid, _mapping jsonb, _mode text)`
-  - Parcourt les élèves actifs de l'année source.
-  - Applique les décisions verrouillées de `decisions_fin_annee` (passage / redoublement / exclusion).
-  - Pour les élèves sans décision : applique `_mapping` (PS→MS, …, CM2→6ème) selon `_mode` ('auto' ou 'skip').
-  - Crée les nouvelles lignes `eleves` pour `annee_id = _annee_cible`, statut `pre_inscrit`, en réutilisant le matricule.
-  - Trace dans `parcours_scolaire`.
-  - Retourne `jsonb {promus, redoubles, exclus, sans_decision}`.
-- `reconduire_affectations_pedagogiques(_ecole_id, _annee_source, _annee_cible, _options jsonb)`
-  - Copie `classe_matieres` et/ou `enseignant_matieres` (et optionnellement `creneaux_emploi_temps` si `_options->>'emploi_du_temps' = 'true'`).
-  - Ignore les doublons via `ON CONFLICT DO NOTHING`.
-- `renouveler_abonnements(_ecole_id, _annee_source, _annee_cible, _types text[])`
-  - Duplique `abonnements_cantine` et/ou `abonnements_transport` actifs vers l'année cible.
-- `activer_annee_scolaire(_ecole_id, _annee_id)`
-  - Passe toutes les autres années de l'école à `verrouillee`, la cible à `active`.
-
-**Sécurité** :
-- Chaque fonction vérifie `has_role(auth.uid(), 'admin')` OU `has_role(auth.uid(), 'directeur')` + `user_belongs_to_ecole(auth.uid(), _ecole_id)`.
-- `SET search_path = public`, `SECURITY DEFINER`, `REVOKE ALL FROM public` + `GRANT EXECUTE TO authenticated`.
-
-**Frontend** :
-- Mettre à jour `src/hooks/useYearTransition.ts` pour appeler les 4 RPC réelles au lieu des appels partiels actuels.
-- Ajouter toasts + rapport final (compteurs renvoyés par chaque RPC).
+Remplacer l'assistant multi-étapes actuel par **un seul écran "Passage de classe"** qui permet, pour chaque classe de l'année en cours, de faire passer ses élèves vers la classe suivante de l'année à venir en quelques clics — avec **clôture définitive** ou **restauration** possible, et **filtrage automatique** de toute l'application sur l'année active.
 
 ---
 
-### 2. Empêcher les doublons d'année scolaire
+### 1. Écran unique « Passage de classe »
 
-**Migration SQL** :
+Chemin : `Écoles → Transition d'année` (on remplace le stepper actuel).
 
-```
-CREATE UNIQUE INDEX IF NOT EXISTS uniq_annees_scolaires_ecole_libelle
-  ON public.annees_scolaires (ecole_id, lower(libelle));
+Interface :
+
+```text
+Année source : [2025-2026 ▾]      Année cible : [2026-2027 ▾ | + Créer]
+
+┌────────────────────────────────────────────────────────────────┐
+│ Classe source     Élèves   →   Classe cible          Action    │
+├────────────────────────────────────────────────────────────────┤
+│ CP1 A              32      →   [CP2 A     ▾]         [Tous ▾] │
+│ CP2 A              28      →   [CE1 A     ▾]         [Tous ▾] │
+│ CM2 A              25      →   [6ème A    ▾]         [Tous ▾] │
+│ 3ème B             30      →   [Sortants  ▾]         [Tous ▾] │
+└────────────────────────────────────────────────────────────────┘
+
+Par défaut : mapping auto PS→MS→…→CM2→6ème→…→Tle.
+Action par classe : "Tous promus" / "Choisir élève par élève"
+  → ouvre un panneau latéral pour marquer redoublants / exclus / sortants.
+
+[Aperçu]  [Lancer le passage]
 ```
 
-- Contrainte insensible à la casse.
-- Pré-check : détecter les doublons existants avant migration ; si présents, la migration échoue proprement (le user devra nettoyer manuellement — sinon on peut ajouter un suffixe " (doublon)").
+Un seul bouton **Lancer le passage** appelle une RPC unique `executer_passage_classe(_ecole_id, _annee_source, _annee_cible, _plan jsonb)` qui :
 
-**Frontend** :
-- Dans le formulaire de création (`SchoolsYearTransition` étape 1 + éventuellement `SchoolsConfig`), intercepter l'erreur `23505` et afficher « Une année scolaire avec ce libellé existe déjà ».
+- crée les inscriptions de l'année cible (statut `pre_inscrit`, matricule conservé),
+- applique redoublement / exclusion / sortie selon `_plan`,
+- reconduit affectations pédagogiques (`classe_matieres`, `enseignant_matieres`) et abonnements cantine/transport,
+- trace tout dans `parcours_scolaire` + une nouvelle table `passages_classe` (journal réversible).
 
----
-
-### 3. Politique de rôles centralisée — audit RLS/GRANT
-
-Audit systématique des 90+ tables `public.*` pour garantir :
-- `ENABLE ROW LEVEL SECURITY` actif partout.
-- `GRANT SELECT, INSERT, UPDATE, DELETE ON <table> TO authenticated` (ou plus restreint) + `GRANT ALL ... TO service_role`.
-- Toutes les policies data scoped via `private.user_belongs_to_ecole(auth.uid(), ecole_id)` (ou `has_role` pour tables globales).
-
-**Méthode** :
-1. Requête d'audit via `supabase--read_query` sur `pg_tables` + `pg_policies` + `information_schema.role_table_grants` pour lister les tables :
-   - sans RLS,
-   - sans GRANT à `authenticated`/`service_role`,
-   - avec policy sans référence à `ecole_id`.
-2. Générer un **rapport CSV** (dans `/mnt/documents/`) listant chaque anomalie.
-3. Produire **une migration corrective** ajoutant les `GRANT`/`ENABLE RLS`/policies manquantes, table par table.
-4. Ne pas modifier les policies déjà correctes.
-
-**Livrable** : 1 rapport + 1 migration de mise en conformité.
+Pas de brouillon / validation / verrouillage en 3 étapes : une seule action, journalisée.
 
 ---
 
-### 4. Sécurité MFA — service worker PWA
+### 2. Clôture définitive & Restauration
 
-Le SW actuel (`vite.config.ts`) exclut déjà `supabase.co` et `/auth/` du fallback, mais :
-- La règle `runtimeCaching` sur Supabase est `NetworkOnly` (OK).
-- Ajouter explicitement dans `navigateFallbackDenylist` :
-  - `/mfa`, `/parametres/mfa`, `/auth/callback`, `/~oauth`.
-- Ajouter une règle `runtimeCaching` `NetworkOnly` pour les endpoints MFA edge functions :
-  - `/functions/v1/send-mfa-sms-otp`, `/functions/v1/verify-mfa-sms-otp`, `/functions/v1/admin-reset-password`.
-- Vérifier qu'aucun cache `html-navigations` ne stocke les pages `/auth/*` ni `/parametres/mfa` (ajouter un `denylist` sur la règle NetworkFirst).
+Deux boutons en tête d'écran, à côté du sélecteur d'année source :
 
-**Frontend** : ajouter en tête de `src/pwa/registerSW.ts` un `caches.delete('html-navigations')` au premier login réussi pour purger d'éventuels résidus.
+- **Clôturer définitivement l'année** → RPC `cloturer_annee(_ecole_id, _annee_id)` : passe l'année en `cloturee`, rend les données lecture seule (RLS : bloque INSERT/UPDATE/DELETE sur les tables scoped `annee_id` quand `statut = 'cloturee'`).
+- **Restaurer / Rouvrir** → RPC `restaurer_annee(_ecole_id, _annee_id)` : repasse en `verrouillee` (modifiable par admin) OU **annule un passage** via le journal `passages_classe` (supprime les inscriptions créées dans l'année cible pour ce lot, restaure les statuts source).
+
+Le journal `passages_classe` stocke : `id, ecole_id, annee_source, annee_cible, plan jsonb, resultat jsonb, execute_par, execute_le, annule_le`. Chaque exécution est réversible tant que l'année cible n'est pas clôturée.
 
 ---
 
-### Ordre d'exécution recommandé
+### 3. Isolation stricte par année active
 
-1. Migration transitions d'année (point 1) + branchement UI.
-2. Migration contrainte unique `annees_scolaires` (point 2).
-3. Audit RLS/GRANT + migration corrective (point 3).
-4. Ajustement `vite.config.ts` + `registerSW.ts` (point 4).
+Aujourd'hui certains écrans montrent toutes les années confondues. Objectif : **quand une année est active, seules ses données s'affichent partout** (élèves, classes, paiements, notes, présences, cantine, transport, bulletins, etc.).
 
-Chaque étape est indépendante et testable isolément. Aucune donnée existante n'est supprimée ; tout est additif ou dédupliqué.
+Mise en œuvre :
+
+- Un **`AcademicPeriodContext`** déjà présent expose `anneeActiveId`. On l'utilise comme filtre par défaut dans **tous** les hooks data (`useEleves`, `useClasses`, `useNotes`, `useFactures`, `usePaiements`, `usePresences`, `useAbonnementsCantine`, `useAbonnementsTransport`, `useBulletinsPaie`, `useEvaluations`, `useRetards`, `useSanctionsPresences`…).
+- Ajout d'un sélecteur global "Année : 2026-2027 ▾" dans le header, mais **verrouillé sur l'année active** pour les non-admins. Les admins peuvent temporairement consulter une année clôturée (lecture seule).
+- Les **modalités de paiement** (grille tarifs, tranches, frais scolarité) sont déjà scoped par `annee_id` : on vérifie que `useGrilleTarifs`, `useFactures`, `useTranches` filtrent bien sur `anneeActiveId` sans exception.
 
 ---
 
-### Détails techniques (résumé)
+### 4. Détails techniques
 
-- **Nouveaux fichiers** : 4 migrations SQL (1 par point sauf point 4).
-- **Fichiers modifiés** : `src/hooks/useYearTransition.ts`, `src/pages/ecoles/sections/SchoolsYearTransition.tsx` (câblage rapports), `vite.config.ts`, `src/pwa/registerSW.ts`.
-- **Aucun changement** sur les autres modules (élèves, finances, examens, etc.).
+**Nouvelles migrations SQL :**
+
+1. Table `passages_classe` (journal réversible) + RLS + GRANT.
+2. Colonne `statut` de `annees_scolaires` : ajout de la valeur `cloturee` (enum ou check).
+3. RPC `executer_passage_classe` (SECURITY DEFINER, admin/directeur + `user_belongs_to_ecole`).
+4. RPC `cloturer_annee`, `restaurer_annee`, `annuler_passage_classe` (idem).
+5. Trigger `annees_scolaires_readonly_when_cloturee` : bloque les mutations sur tables filles quand année parent `= cloturee` (sauf admin).
+
+**Fichiers frontend modifiés :**
+
+- `src/pages/ecoles/sections/SchoolsYearTransition.tsx` → réécrit en écran unique (tableau classes source → cible).
+- `src/hooks/useYearTransition.ts` → simplifié : un seul appel RPC + journal.
+- Nouveau `src/hooks/usePassagesClasse.ts` (historique + annulation).
+- `src/context/AcademicPeriodContext.tsx` → devient source unique de `anneeActiveId`.
+- Audit et ajout de `.eq('annee_id', anneeActiveId)` dans les hooks data listés au §3.
+- Nouveau composant `YearScopeBadge` dans le header : "Année active : 2026-2027" (badge + sélecteur admin).
+
+**Non touché :** logique des modules eux-mêmes (bulletins, finances, cantine…) — uniquement leur filtre `annee_id`.
+
+---
+
+### 5. Ordre d'exécution
+
+1. Migration `passages_classe` + statut `cloturee` + RPC (§4.1-4.4).
+2. Trigger lecture-seule année clôturée (§4.5).
+3. Réécriture écran `SchoolsYearTransition` + hook.
+4. Audit + patch des hooks data pour filtrage strict `anneeActiveId`.
+5. Badge/sélecteur d'année dans le header.
+
+Chaque étape est indépendante et réversible. Aucune donnée existante supprimée.
