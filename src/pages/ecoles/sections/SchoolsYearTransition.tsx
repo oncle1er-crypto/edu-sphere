@@ -253,6 +253,15 @@ export default function SchoolsYearTransition() {
           description="Pour chaque classe de l'année source, choisis la classe cible dans l'année à venir. Les élèves sans classe cible seront marqués sortants (fin de cursus)."
           hideSave
         >
+          <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
+            <p className="text-xs text-muted-foreground">
+              {classesCible.length} classe(s) dans l'année cible. Dupliquer recopie les classes source manquantes (nom, cycle, capacité, salle).
+            </p>
+            <Button size="sm" variant="outline" onClick={dupliquerClasses} disabled={busy === "dupliquer" || !sourceId || !cibleId}>
+              {busy === "dupliquer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
+              Dupliquer les classes source → cible
+            </Button>
+          </div>
           <div className="rounded-md border">
             <Table>
               <TableHeader>
