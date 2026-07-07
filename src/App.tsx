@@ -235,6 +235,7 @@ const VieScolaireCertificats = lazy(() => import("@/pages/vie-scolaire/sections/
 const VieScolairePresences = lazy(() => import("@/pages/vie-scolaire/sections/VieScolairePresences"));
 const VieScolaireDiscipline = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireDiscipline"));
 const VieScolaireInfirmerie = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireInfirmerie"));
+const OfflinePage = lazy(() => import("@/pages/Offline"));
 const queryClient = new QueryClient();
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -256,6 +257,7 @@ const App = () => (
         <EcoleProvider>
         <AcademicPeriodProvider>
           <Routes>
+            <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/invitation" element={<AcceptInvitationPage />} />
             <Route path="/carte-scolaire/verification/:token" element={<StudentCardVerificationPage />} />
