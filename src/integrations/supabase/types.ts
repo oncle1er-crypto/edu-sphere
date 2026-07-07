@@ -4056,6 +4056,54 @@ export type Database = {
           },
         ]
       }
+      passages_classe: {
+        Row: {
+          annee_cible: string
+          annee_source: string
+          annule_le: string | null
+          annule_par: string | null
+          created_at: string
+          ecole_id: string
+          eleves_cibles_ids: string[]
+          execute_le: string
+          execute_par: string | null
+          id: string
+          plan: Json
+          resultat: Json | null
+          updated_at: string
+        }
+        Insert: {
+          annee_cible: string
+          annee_source: string
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          ecole_id: string
+          eleves_cibles_ids?: string[]
+          execute_le?: string
+          execute_par?: string | null
+          id?: string
+          plan: Json
+          resultat?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          annee_cible?: string
+          annee_source?: string
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          ecole_id?: string
+          eleves_cibles_ids?: string[]
+          execute_le?: string
+          execute_par?: string | null
+          id?: string
+          plan?: Json
+          resultat?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       periodes: {
         Row: {
           annee_id: string
@@ -5280,6 +5328,7 @@ export type Database = {
         Args: { _ecole_id: string; _motif: string; _target_user_id: string }
         Returns: undefined
       }
+      annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
       appliquer_decisions_fin_annee: {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: Json
@@ -5312,6 +5361,10 @@ export type Database = {
           _jour: number
         }
         Returns: string
+      }
+      cloturer_annee: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: undefined
       }
       cloturer_et_basculer_annee: {
         Args: {
@@ -5367,6 +5420,15 @@ export type Database = {
           _tranche_id: string
         }
         Returns: string
+      }
+      executer_passage_classe: {
+        Args: {
+          _annee_cible: string
+          _annee_source: string
+          _ecole_id: string
+          _plan: Json
+        }
+        Returns: Json
       }
       generer_tranches_eleve: {
         Args: { _eleve_id: string }
@@ -5450,6 +5512,10 @@ export type Database = {
       }
       reset_failed_mfa: { Args: never; Returns: undefined }
       resoudre_niveau_code: { Args: { _classe_nom: string }; Returns: string }
+      restaurer_annee: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: undefined
+      }
       set_user_permissions: {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
         Returns: undefined
@@ -5493,7 +5559,12 @@ export type Database = {
       }
     }
     Enums: {
-      annee_statut: "active" | "preparation" | "verrouillee" | "archivee"
+      annee_statut:
+        | "active"
+        | "preparation"
+        | "verrouillee"
+        | "archivee"
+        | "cloturee"
       app_role:
         | "admin"
         | "directeur"
@@ -5657,7 +5728,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      annee_statut: ["active", "preparation", "verrouillee", "archivee"],
+      annee_statut: [
+        "active",
+        "preparation",
+        "verrouillee",
+        "archivee",
+        "cloturee",
+      ],
       app_role: [
         "admin",
         "directeur",

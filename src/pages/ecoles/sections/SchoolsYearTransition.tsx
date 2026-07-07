@@ -1,462 +1,370 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  CalendarPlus, Coins, GraduationCap, Users2, Sparkles, CheckCircle2, Loader2, AlertTriangle, PlayCircle, ArrowRight,
+  ArrowRight, CalendarPlus, CheckCircle2, Lock, Loader2, PlayCircle, RotateCcw, Sparkles, Unlock, Users2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { usePassagesClasse, type PlanClasseGroup } from "@/hooks/usePassagesClasse";
 import { toast } from "sonner";
+import { formatDistanceToNow } from "date-fns";
+import { fr } from "date-fns/locale";
 
 type Annee = { id: string; libelle: string; debut: string; fin: string; decoupage: string; statut: string };
-type BasculeRow = { etape: string; niveau: string; element: string; detail: string };
+type Classe = { id: string; nom: string; annee_id: string; niveau?: string | null };
+
+// Mapping automatique par nom de classe (préfixe le plus long)
+const NIVEAUX = ["PS","MS","GS","CP1","CP2","CE1","CE2","CM1","CM2","6ème","5ème","4ème","3ème","2nde","1ère","Tle"];
+function niveauSuivant(nom: string): string | null {
+  const found = NIVEAUX.find((n) => nom.toUpperCase().startsWith(n.toUpperCase()));
+  if (!found) return null;
+  const idx = NIVEAUX.indexOf(found);
+  if (idx < 0 || idx >= NIVEAUX.length - 1) return null;
+  return nom.replace(new RegExp("^" + found, "i"), NIVEAUX[idx + 1]);
+}
 
 export default function SchoolsYearTransition() {
   const { ecoleId } = useEcoleId();
+  const { passages, executer, annuler, cloturer, restaurer, activer, fetchPassages } = usePassagesClasse();
+
   const [annees, setAnnees] = useState<Annee[]>([]);
+  const [classes, setClasses] = useState<Classe[]>([]);
+  const [effectifs, setEffectifs] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
 
-  // Step 1
-  const [sourceId, setSourceId] = useState<string>("");
-  const [libelle, setLibelle] = useState("");
-  const [debut, setDebut] = useState("");
-  const [fin, setFin] = useState("");
-  const [decoupage, setDecoupage] = useState<"trimestre" | "semestre">("trimestre");
-  const [targetId, setTargetId] = useState<string>("");
+  const [sourceId, setSourceId] = useState("");
+  const [cibleId, setCibleId] = useState("");
+  const [mapping, setMapping] = useState<Record<string, string | "sortants">>({});
 
-  // Step 2
-  const [grilleMode, setGrilleMode] = useState<"reconduire" | "vide">("reconduire");
-
-  // Step 4
-  const [optEnsMat, setOptEnsMat] = useState(true);
-  const [optCreneaux, setOptCreneaux] = useState(false);
-
-  // Step 5
-  const [optCantine, setOptCantine] = useState(true);
-  const [optTransport, setOptTransport] = useState(true);
-
-  // Step 3 — bascule
-  const [basculeRows, setBasculeRows] = useState<BasculeRow[] | null>(null);
-  const [basculeApplied, setBasculeApplied] = useState(false);
-  const [confirmLib, setConfirmLib] = useState("");
-
-  // Report
-  const [report, setReport] = useState<Record<string, any>>({});
+  // Création rapide année cible
+  const [newLibelle, setNewLibelle] = useState("");
+  const [newDebut, setNewDebut] = useState("");
+  const [newFin, setNewFin] = useState("");
 
   const reload = async () => {
     if (!ecoleId) return;
     setLoading(true);
-    const { data } = await supabase
-      .from("annees_scolaires").select("*")
-      .eq("ecole_id", ecoleId).order("debut", { ascending: false });
-    setAnnees((data ?? []) as any);
-    const active = (data ?? []).find((a: any) => a.statut === "active");
+    const [{ data: aData }, { data: cData }, { data: eData }] = await Promise.all([
+      supabase.from("annees_scolaires").select("*").eq("ecole_id", ecoleId).order("debut", { ascending: false }),
+      supabase.from("classes").select("id, nom, annee_id").eq("ecole_id", ecoleId),
+      supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId),
+    ]);
+    setAnnees((aData ?? []) as any);
+    setClasses((cData ?? []) as any);
+    const eff: Record<string, number> = {};
+    (eData ?? []).forEach((e: any) => { if (e.classe_id) eff[e.classe_id] = (eff[e.classe_id] ?? 0) + 1; });
+    setEffectifs(eff);
+    const active = (aData ?? []).find((a: any) => a.statut === "active");
     if (active && !sourceId) setSourceId(active.id);
     setLoading(false);
   };
 
   useEffect(() => { reload(); /* eslint-disable-next-line */ }, [ecoleId]);
 
-  const source = useMemo(() => annees.find((a) => a.id === sourceId), [annees, sourceId]);
-  const target = useMemo(() => annees.find((a) => a.id === targetId), [annees, targetId]);
-
-  const bloquants = useMemo(
-    () => (basculeRows ?? []).filter((r) => r.niveau === "bloquant"),
-    [basculeRows],
+  const classesSource = useMemo(
+    () => classes.filter((c) => c.annee_id === sourceId).sort((a, b) => a.nom.localeCompare(b.nom)),
+    [classes, sourceId],
   );
-  const compteurs = useMemo(() => {
-    const rows = basculeRows ?? [];
-    const byEtape: Record<string, number> = {};
-    for (const r of rows) byEtape[r.etape] = (byEtape[r.etape] ?? 0) + 1;
-    return {
-      total: rows.length,
-      bloquants: bloquants.length,
-      archivages: byEtape["archivage_parcours"] ?? 0,
-      reinscriptions: byEtape["reinscription"] ?? 0,
-      byEtape,
-    };
-  }, [basculeRows, bloquants]);
+  const classesCible = useMemo(
+    () => classes.filter((c) => c.annee_id === cibleId).sort((a, b) => a.nom.localeCompare(b.nom)),
+    [classes, cibleId],
+  );
 
-  // ---- Step 1: créer année ----
-  const creerAnnee = async () => {
-    if (!ecoleId || !libelle || !debut || !fin) {
-      toast.error("Renseigne libellé, dates de début et fin"); return;
-    }
+  // Auto-mapping quand cible change
+  useEffect(() => {
+    if (!cibleId || classesSource.length === 0) return;
+    const m: Record<string, string | "sortants"> = {};
+    classesSource.forEach((cs) => {
+      // 1. nom identique
+      let cible = classesCible.find((cc) => cc.nom.toLowerCase() === cs.nom.toLowerCase());
+      // 2. niveau suivant
+      if (!cible) {
+        const suivant = niveauSuivant(cs.nom);
+        if (suivant) cible = classesCible.find((cc) => cc.nom.toLowerCase() === suivant.toLowerCase());
+      }
+      m[cs.id] = cible ? cible.id : "sortants";
+    });
+    setMapping(m);
+  }, [cibleId, classesSource, classesCible]);
+
+  const creerAnneeCible = async () => {
+    if (!ecoleId || !newLibelle || !newDebut || !newFin) { toast.error("Renseigne libellé et dates"); return; }
     setBusy("creer");
     const { data, error } = await supabase
       .from("annees_scolaires")
-      .insert({ ecole_id: ecoleId, libelle, debut, fin, decoupage, statut: "preparation" })
+      .insert({ ecole_id: ecoleId, libelle: newLibelle, debut: newDebut, fin: newFin, decoupage: "trimestre", statut: "preparation" })
       .select().single();
     setBusy(null);
     if (error) { toast.error(error.message); return; }
-    setTargetId(data.id);
-    setReport((r) => ({ ...r, annee_creee: data.libelle }));
-    toast.success(`Année ${data.libelle} créée`);
+    setCibleId(data.id);
     await reload();
   };
 
-  // ---- Step 2: grille ----
-  const dupliquerGrille = async () => {
-    if (!ecoleId || !sourceId || !targetId) return;
-    setBusy("grille");
-    const { data, error } = await supabase.rpc("dupliquer_grille_annee", {
-      _ecole_id: ecoleId, _annee_source: sourceId, _annee_cible: targetId,
+  const lancerPassage = async () => {
+    if (!sourceId || !cibleId) { toast.error("Sélectionne l'année source et cible"); return; }
+    const plan: PlanClasseGroup[] = classesSource.map((cs) => {
+      const cible = mapping[cs.id];
+      const isSortants = cible === "sortants" || !cible;
+      return {
+        classe_source_id: cs.id,
+        classe_cible_id: isSortants ? null : (cible as string),
+        action_defaut: isSortants ? "sortant" : "promu",
+        eleves: [], // vide → prendra tous les élèves via seed ci-dessous
+      };
     });
+
+    // Charger tous les élèves actifs de l'année source, groupés par classe
+    const { data: elevesData, error: eErr } = await supabase
+      .from("eleves").select("id, classe_id")
+      .eq("ecole_id", ecoleId).eq("annee_id", sourceId)
+      .not("statut", "in", "(exclu,transfere)");
+    if (eErr) { toast.error(eErr.message); return; }
+
+    const byClasse: Record<string, string[]> = {};
+    (elevesData ?? []).forEach((e: any) => {
+      if (e.classe_id) (byClasse[e.classe_id] ||= []).push(e.id);
+    });
+
+    plan.forEach((g) => {
+      const ids = byClasse[g.classe_source_id] ?? [];
+      g.eleves = ids.map((id) => ({ eleve_id: id }));
+    });
+
+    setBusy("passage");
+    await executer(sourceId, cibleId, plan);
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    setReport((r) => ({ ...r, grille_lignes: data }));
-    toast.success(`${data} ligne(s) de grille tarifaire dupliquée(s)`);
+    await reload();
   };
 
-  // ---- Step 3: bascule (simulation & application) ----
-  const runBascule = async (dryRun: boolean) => {
-    if (!ecoleId || !sourceId || !targetId) return;
-    setBusy(dryRun ? "simuler" : "appliquer");
-    const { data, error } = await (supabase.rpc as any)("cloturer_et_basculer_annee", {
-      p_ecole_id: ecoleId,
-      p_annee_source: sourceId,
-      p_annee_cible: targetId,
-      p_dry_run: dryRun,
-    });
-    setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    const rows = (data ?? []) as BasculeRow[];
-    setBasculeRows(rows);
-    if (!dryRun) {
-      setBasculeApplied(true);
-      setReport((r) => ({ ...r, bascule: { total: rows.length, bloquants: rows.filter(x => x.niveau === "bloquant").length } }));
-      toast.success("Bascule appliquée : année source archivée, année cible activée");
-      await reload();
-    } else {
-      const nb = rows.filter((r) => r.niveau === "bloquant").length;
-      if (nb > 0) toast.warning(`${nb} bloquant(s) détecté(s) — corrige les décisions de fin d'année`);
-      else toast.success("Simulation OK — aucun bloquant");
-    }
-  };
-
-  // ---- Step 4: affectations ----
-  const reconduire = async () => {
-    if (!ecoleId || !sourceId || !targetId) return;
-    setBusy("affect");
-    const { data, error } = await supabase.rpc("reconduire_affectations_pedagogiques", {
-      _ecole_id: ecoleId, _annee_source: sourceId, _annee_cible: targetId,
-      _options: { enseignant_matieres: optEnsMat, creneaux: optCreneaux },
-    });
-    setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    setReport((r) => ({ ...r, affectations: data }));
-    toast.success("Affectations reconduites");
-  };
-
-  // ---- Step 5: abonnements ----
-  const renouvelerAbos = async () => {
-    if (!ecoleId || !sourceId || !targetId) return;
-    const types: string[] = [];
-    if (optCantine) types.push("cantine");
-    if (optTransport) types.push("transport");
-    if (types.length === 0) { toast.info("Sélectionne au moins un type"); return; }
-    setBusy("abo");
-    const { data, error } = await supabase.rpc("renouveler_abonnements", {
-      _ecole_id: ecoleId, _annee_source: sourceId, _annee_cible: targetId, _types: types,
-    });
-    setBusy(null);
-    if (error) { toast.error(error.message); return; }
-    setReport((r) => ({ ...r, abonnements: data }));
-    toast.success("Abonnements renouvelés");
-  };
+  const cibleAnnee = annees.find((a) => a.id === cibleId);
+  const sourceAnnee = annees.find((a) => a.id === sourceId);
 
   if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
-  const canApply = basculeRows !== null && bloquants.length === 0 && !basculeApplied && !!target && confirmLib.trim() === target.libelle;
-
   return (
     <div className="space-y-6">
+      {/* Sélection années */}
       <SettingsSection
         icon={<Sparkles className="h-5 w-5" />}
-        title="Assistant — Clôture & ouverture d'année"
-        description="Flux recommandé : (1) créer la nouvelle année, puis préparer la grille tarifaire (étape 2), les affectations pédagogiques (étape 4) et les abonnements de services (étape 5). L'étape 3 est l'action FINALE : elle clôture l'année source, réaffecte les élèves selon leurs décisions de fin d'année validées, archive la source et active la cible en une seule opération."
+        title="Passage de classe — assistant simplifié"
+        description="Sélectionne l'année source et l'année cible, ajuste le mapping des classes, puis lance le passage en un clic. Chaque passage est journalisé et peut être annulé tant que l'année cible n'est pas clôturée."
         hideSave
       >
-        <FieldRow label="Année source (à clôturer)">
-          <Select value={sourceId} onValueChange={setSourceId}>
-            <SelectTrigger><SelectValue placeholder="Choisir l'année source" /></SelectTrigger>
-            <SelectContent>
-              {annees.map((a) => (
-                <SelectItem key={a.id} value={a.id}>{a.libelle} — {a.statut}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </FieldRow>
-      </SettingsSection>
-
-      {/* Étape 1 */}
-      <SettingsSection
-        icon={<CalendarPlus className="h-5 w-5" />}
-        title="Étape 1 — Créer la nouvelle année"
-        description="Définit le libellé, les dates et le découpage de la nouvelle année scolaire."
-        hideSave
-      >
-        <FieldRow label="Libellé"><Input value={libelle} onChange={(e) => setLibelle(e.target.value)} placeholder="2026 - 2027" /></FieldRow>
-        <FieldRow label="Début"><Input type="date" value={debut} onChange={(e) => setDebut(e.target.value)} /></FieldRow>
-        <FieldRow label="Fin"><Input type="date" value={fin} onChange={(e) => setFin(e.target.value)} /></FieldRow>
-        <FieldRow label="Découpage">
-          <Select value={decoupage} onValueChange={(v: any) => setDecoupage(v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="trimestre">Trimestre</SelectItem>
-              <SelectItem value="semestre">Semestre</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
-        <div className="flex justify-end">
-          <Button onClick={creerAnnee} disabled={busy === "creer"}>
-            {busy === "creer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
-            Créer l'année
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <FieldRow label="Année source">
+            <Select value={sourceId} onValueChange={setSourceId}>
+              <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+              <SelectContent>
+                {annees.map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.libelle} — {a.statut}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
+          <FieldRow label="Année cible">
+            <Select value={cibleId} onValueChange={setCibleId}>
+              <SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
+              <SelectContent>
+                {annees.filter((a) => a.id !== sourceId).map((a) => (
+                  <SelectItem key={a.id} value={a.id}>{a.libelle} — {a.statut}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </FieldRow>
         </div>
-        {target && <Badge variant="secondary">Année cible : {target.libelle}</Badge>}
-      </SettingsSection>
 
-      {/* Étape 2 */}
-      <SettingsSection
-        icon={<Coins className="h-5 w-5" />}
-        title="Étape 2 — Grille tarifaire"
-        description="Reconduit la grille de tarifs scolaires de l'année source vers la nouvelle année."
-        hideSave
-      >
-        <FieldRow label="Mode">
-          <Select value={grilleMode} onValueChange={(v: any) => setGrilleMode(v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="reconduire">Reconduire à l'identique</SelectItem>
-              <SelectItem value="vide">Repartir de zéro (configurer manuellement)</SelectItem>
-            </SelectContent>
-          </Select>
-        </FieldRow>
-        <div className="flex justify-end">
-          <Button onClick={dupliquerGrille} disabled={busy === "grille" || !targetId || grilleMode === "vide"}>
-            {busy === "grille" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Coins className="h-4 w-4" />}
-            Dupliquer la grille
-          </Button>
-        </div>
-        {report.grille_lignes != null && (
-          <Badge variant="secondary">{report.grille_lignes} ligne(s) dupliquée(s)</Badge>
-        )}
-      </SettingsSection>
-
-      {/* Étape 4 */}
-      <SettingsSection
-        icon={<GraduationCap className="h-5 w-5" />}
-        title="Étape 4 — Affectations pédagogiques"
-        description="Reconduit les affectations enseignants/matières et, en option, l'emploi du temps."
-        hideSave
-      >
-        <FieldRow label="Enseignants ↔ matières/classes">
-          <Checkbox checked={optEnsMat} onCheckedChange={(v) => setOptEnsMat(v === true)} />
-        </FieldRow>
-        <FieldRow label="Créneaux d'emploi du temps" hint="Recommandé : laisser décoché et régénérer avec l'assistant EDT.">
-          <Checkbox checked={optCreneaux} onCheckedChange={(v) => setOptCreneaux(v === true)} />
-        </FieldRow>
-        <div className="flex justify-end">
-          <Button onClick={reconduire} disabled={busy === "affect" || !targetId}>
-            {busy === "affect" ? <Loader2 className="h-4 w-4 animate-spin" /> : <GraduationCap className="h-4 w-4" />}
-            Reconduire
-          </Button>
-        </div>
-        {report.affectations && (
-          <div className="text-sm">
-            <Badge variant="secondary">{report.affectations.enseignant_matieres} affectation(s) enseignants</Badge>{" "}
-            <Badge variant="outline">{report.affectations.creneaux} créneau(x)</Badge>
+        {sourceAnnee && (
+          <div className="flex flex-wrap gap-2 pt-2">
+            <Badge variant="secondary">Source : {sourceAnnee.libelle} ({sourceAnnee.statut})</Badge>
+            {cibleAnnee && <Badge>Cible : {cibleAnnee.libelle} ({cibleAnnee.statut})</Badge>}
           </div>
         )}
       </SettingsSection>
 
-      {/* Étape 5 */}
-      <SettingsSection
-        icon={<Sparkles className="h-5 w-5" />}
-        title="Étape 5 — Renouvellement des services"
-        description="Reconduit les abonnements cantine et transport actifs vers la nouvelle année."
-        hideSave
-      >
-        <FieldRow label="Abonnements cantine">
-          <Checkbox checked={optCantine} onCheckedChange={(v) => setOptCantine(v === true)} />
-        </FieldRow>
-        <FieldRow label="Abonnements transport">
-          <Checkbox checked={optTransport} onCheckedChange={(v) => setOptTransport(v === true)} />
-        </FieldRow>
-        <div className="flex justify-end">
-          <Button onClick={renouvelerAbos} disabled={busy === "abo" || !targetId}>
-            {busy === "abo" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            Renouveler
-          </Button>
-        </div>
-        {report.abonnements && (
-          <div className="text-sm">
-            <Badge variant="secondary">{report.abonnements.cantine} cantine</Badge>{" "}
-            <Badge variant="outline">{report.abonnements.transport} transport</Badge>
+      {/* Création rapide année cible */}
+      {!cibleId && (
+        <SettingsSection
+          icon={<CalendarPlus className="h-5 w-5" />}
+          title="Créer rapidement l'année cible"
+          description="Si l'année à venir n'existe pas encore."
+          hideSave
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <FieldRow label="Libellé"><Input value={newLibelle} onChange={(e) => setNewLibelle(e.target.value)} placeholder="2026 - 2027" /></FieldRow>
+            <FieldRow label="Début"><Input type="date" value={newDebut} onChange={(e) => setNewDebut(e.target.value)} /></FieldRow>
+            <FieldRow label="Fin"><Input type="date" value={newFin} onChange={(e) => setNewFin(e.target.value)} /></FieldRow>
           </div>
-        )}
-        <p className="text-xs text-muted-foreground">
-          Pour les <strong>cartes scolaires</strong>, utilise la page Cartes → Renouvellement de masse.
-        </p>
-      </SettingsSection>
+          <div className="flex justify-end">
+            <Button onClick={creerAnneeCible} disabled={busy === "creer"}>
+              {busy === "creer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CalendarPlus className="h-4 w-4" />}
+              Créer l'année
+            </Button>
+          </div>
+        </SettingsSection>
+      )}
 
-      {/* Étape 3 — Clôture & bascule (ACTION FINALE) */}
-      <SettingsSection
-        icon={<Users2 className="h-5 w-5" />}
-        title="Étape 3 — Clôture & bascule des élèves (action finale)"
-        description="Réaffecte les élèves selon leurs décisions de fin d'année validées, archive l'année source et active l'année cible. Toujours simuler avant d'appliquer."
-        hideSave
-      >
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm flex items-start gap-2">
-          <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
-          <p>
-            Chaque élève actif de l'année source doit avoir une <strong>décision de fin d'année validée</strong> (statut <code>valide</code> ou <code>verrouille</code>).
-            Sans cela, la bascule est bloquée.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2 justify-end">
-          <Button
-            variant="outline"
-            onClick={() => runBascule(true)}
-            disabled={busy === "simuler" || !sourceId || !targetId || basculeApplied}
-          >
-            {busy === "simuler" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
-            Simuler la bascule
-          </Button>
-        </div>
-
-        {basculeRows && (
-          <>
-            <div className="flex flex-wrap gap-2 text-sm">
-              <Badge variant={bloquants.length > 0 ? "destructive" : "secondary"}>
-                {compteurs.bloquants} bloquant(s)
-              </Badge>
-              <Badge variant="outline">{compteurs.archivages} archivage(s)</Badge>
-              <Badge variant="outline">{compteurs.reinscriptions} réinscription(s)</Badge>
-              <Badge variant="outline">{compteurs.total} ligne(s) au total</Badge>
-            </div>
-
-            <div className="rounded-md border max-h-96 overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-40">Étape</TableHead>
-                    <TableHead className="w-24">Niveau</TableHead>
-                    <TableHead>Élément</TableHead>
-                    <TableHead>Détail</TableHead>
+      {/* Mapping classes */}
+      {sourceId && cibleId && (
+        <SettingsSection
+          icon={<Users2 className="h-5 w-5" />}
+          title="Mapping des classes"
+          description="Pour chaque classe de l'année source, choisis la classe cible dans l'année à venir. Les élèves sans classe cible seront marqués sortants (fin de cursus)."
+          hideSave
+        >
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Classe source</TableHead>
+                  <TableHead className="w-24 text-center">Élèves</TableHead>
+                  <TableHead className="w-8"></TableHead>
+                  <TableHead>Classe cible</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {classesSource.map((cs) => (
+                  <TableRow key={cs.id}>
+                    <TableCell className="font-medium">{cs.nom}</TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline">{effectifs[cs.id] ?? 0}</Badge>
+                    </TableCell>
+                    <TableCell><ArrowRight className="h-4 w-4 text-muted-foreground" /></TableCell>
+                    <TableCell>
+                      <Select
+                        value={mapping[cs.id] ?? "sortants"}
+                        onValueChange={(v) => setMapping((m) => ({ ...m, [cs.id]: v as any }))}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sortants">Sortants (fin de cursus)</SelectItem>
+                          {classesCible.map((cc) => (
+                            <SelectItem key={cc.id} value={cc.id}>{cc.nom}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {[...basculeRows]
-                    .sort((a, b) => (a.etape.localeCompare(b.etape)) || (a.niveau.localeCompare(b.niveau)))
-                    .map((r, i) => (
-                      <TableRow key={i}>
-                        <TableCell className="font-mono text-xs">{r.etape}</TableCell>
-                        <TableCell>
-                          <Badge variant={r.niveau === "bloquant" ? "destructive" : "secondary"}>
-                            {r.niveau}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{r.element}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">{r.detail}</TableCell>
-                      </TableRow>
-                    ))}
-                  {basculeRows.length === 0 && (
-                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground text-sm">Aucune ligne retournée.</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
+                ))}
+                {classesSource.length === 0 && (
+                  <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground text-sm py-8">
+                    Aucune classe dans l'année source.
+                  </TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
-            {bloquants.length > 0 ? (
-              <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 space-y-2 text-sm">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-                  <div>
-                    <p className="font-medium">Bascule impossible : {bloquants.length} élément(s) bloquant(s).</p>
-                    <p className="text-muted-foreground">
-                      Chaque élève actif doit avoir une décision de fin d'année VALIDÉE. Rends-toi sur la page dédiée pour saisir et valider les décisions manquantes.
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <Button asChild variant="destructive" size="sm">
-                    <Link to="/examens/fin-annee">
-                      Ouvrir Examens → Fin d'année <ArrowRight className="h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ) : basculeApplied ? (
-              <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 shrink-0" />
-                <p>Bascule appliquée. L'année source est archivée et l'année cible est active.</p>
-              </div>
-            ) : target ? (
-              <div className="space-y-3">
-                <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm">
-                  Action irréversible. Saisis exactement <strong>{target.libelle}</strong> pour confirmer.
-                </div>
-                <FieldRow label="Confirmation">
-                  <Input value={confirmLib} onChange={(e) => setConfirmLib(e.target.value)} placeholder={target.libelle} />
-                </FieldRow>
-                <div className="flex justify-end">
-                  <Button
-                    variant="destructive"
-                    onClick={() => runBascule(false)}
-                    disabled={busy === "appliquer" || !canApply}
-                  >
-                    {busy === "appliquer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-                    Appliquer la bascule définitive
-                  </Button>
-                </div>
-              </div>
-            ) : null}
-          </>
-        )}
-      </SettingsSection>
+          <div className="flex flex-wrap justify-between gap-2 pt-2">
+            <p className="text-xs text-muted-foreground">
+              Le mapping automatique passe au niveau suivant (ex. CP1 → CP2, CM2 → 6ème). Ajuste manuellement au besoin.
+            </p>
+            <Button onClick={lancerPassage} disabled={busy === "passage" || classesSource.length === 0 || !cibleId}>
+              {busy === "passage" ? <Loader2 className="h-4 w-4 animate-spin" /> : <PlayCircle className="h-4 w-4" />}
+              Lancer le passage
+            </Button>
+          </div>
+        </SettingsSection>
+      )}
 
-      {/* Étape 6 — Récapitulatif */}
+      {/* Actions annuelles */}
+      {sourceAnnee && (
+        <SettingsSection
+          icon={<Lock className="h-5 w-5" />}
+          title="Clôture & activation"
+          description="Clôture définitivement l'année source (lecture seule) ou active l'année cible pour que toute l'application n'affiche que ses données."
+          hideSave
+        >
+          <div className="flex flex-wrap gap-2">
+            {cibleAnnee && cibleAnnee.statut !== "active" && (
+              <Button variant="default" onClick={async () => { setBusy("activer"); await activer(cibleId); setBusy(null); await reload(); }}
+                      disabled={busy === "activer"}>
+                {busy === "activer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                Activer {cibleAnnee.libelle}
+              </Button>
+            )}
+            {sourceAnnee.statut !== "cloturee" && (
+              <Button variant="outline" onClick={async () => {
+                if (!confirm(`Clôturer définitivement l'année ${sourceAnnee.libelle} ? Elle passera en lecture seule.`)) return;
+                setBusy("cloturer"); await cloturer(sourceAnnee.id); setBusy(null); await reload();
+              }} disabled={busy === "cloturer"}>
+                {busy === "cloturer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+                Clôturer {sourceAnnee.libelle}
+              </Button>
+            )}
+            {(sourceAnnee.statut === "cloturee" || sourceAnnee.statut === "archivee") && (
+              <Button variant="secondary" onClick={async () => {
+                setBusy("restaurer"); await restaurer(sourceAnnee.id); setBusy(null); await reload();
+              }} disabled={busy === "restaurer"}>
+                {busy === "restaurer" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlock className="h-4 w-4" />}
+                Restaurer {sourceAnnee.libelle}
+              </Button>
+            )}
+          </div>
+        </SettingsSection>
+      )}
+
+      {/* Historique des passages */}
       <SettingsSection
-        icon={<CheckCircle2 className="h-5 w-5" />}
-        title="Étape 6 — Récapitulatif"
-        description="L'activation de l'année cible et l'archivage de l'année source sont effectués automatiquement par la bascule de l'étape 3. Ce panneau récapitule l'état actuel."
+        icon={<RotateCcw className="h-5 w-5" />}
+        title="Historique des passages"
+        description="Chaque passage est journalisé et peut être annulé tant que l'année cible n'est pas clôturée."
         hideSave
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-          <div className="rounded-md border p-3">
-            <div className="text-muted-foreground text-xs uppercase">Année source</div>
-            <div className="font-medium">{source?.libelle ?? "—"}</div>
-            <Badge variant={source?.statut === "archivee" ? "secondary" : "outline"} className="mt-1">
-              {source?.statut ?? "—"}
-            </Badge>
+        {passages.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Aucun passage journalisé pour le moment.</p>
+        ) : (
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Source → Cible</TableHead>
+                  <TableHead>Résultat</TableHead>
+                  <TableHead>Statut</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {passages.map((p) => {
+                  const src = annees.find((a) => a.id === p.annee_source)?.libelle ?? "?";
+                  const tgt = annees.find((a) => a.id === p.annee_cible)?.libelle ?? "?";
+                  const r = p.resultat ?? {};
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-xs">
+                        {formatDistanceToNow(new Date(p.execute_le), { addSuffix: true, locale: fr })}
+                      </TableCell>
+                      <TableCell className="text-sm">{src} → {tgt}</TableCell>
+                      <TableCell className="text-xs">
+                        <Badge variant="secondary">{r.promus ?? 0} promus</Badge>{" "}
+                        <Badge variant="outline">{r.redoubles ?? 0} redoubl.</Badge>{" "}
+                        <Badge variant="outline">{r.sortants ?? 0} sort.</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {p.annule_le ? <Badge variant="destructive">Annulé</Badge> : <Badge>Actif</Badge>}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {!p.annule_le && (
+                          <Button size="sm" variant="ghost" onClick={async () => {
+                            if (!confirm("Annuler ce passage ? Les inscriptions créées dans l'année cible seront supprimées.")) return;
+                            await annuler(p.id); await reload();
+                          }}>
+                            <RotateCcw className="h-3.5 w-3.5" /> Annuler
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           </div>
-          <div className="rounded-md border p-3">
-            <div className="text-muted-foreground text-xs uppercase">Année cible</div>
-            <div className="font-medium">{target?.libelle ?? "—"}</div>
-            <Badge variant={target?.statut === "active" ? "default" : "outline"} className="mt-1">
-              {target?.statut ?? "—"}
-            </Badge>
-          </div>
-        </div>
-        {Object.keys(report).length > 0 && (
-          <>
-            <Separator />
-            <div className="text-xs space-y-1 font-mono">
-              <div className="text-muted-foreground">Récapitulatif :</div>
-              <pre className="bg-muted/30 p-2 rounded">{JSON.stringify(report, null, 2)}</pre>
-            </div>
-          </>
         )}
       </SettingsSection>
     </div>
