@@ -54,6 +54,18 @@ async function unregisterMatching() {
   }
 }
 
+/** Purge tout cache pouvant contenir des pages sensibles (auth/mfa). */
+export async function purgeSensitiveCaches() {
+  if (typeof caches === "undefined") return;
+  try {
+    await Promise.all([
+      caches.delete("html-navigations"),
+    ]);
+  } catch {
+    /* noop */
+  }
+}
+
 export function registerPWA() {
   if (shouldRefuse()) {
     if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
@@ -67,3 +79,4 @@ export function registerPWA() {
     });
   });
 }
+
