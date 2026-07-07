@@ -1,75 +1,104 @@
-## Assistant « Clôture & ouverture d'année »
+## Plan de correction — Priorité HAUTE
 
-Un nouvel écran dédié dans **Écoles → Années scolaires** qui guide l'utilisateur en 6 étapes pour clôturer proprement l'année en cours et préparer la suivante, avec actions sélectionnables et rapport final.
-
----
-
-### Étape 1 — Création de la nouvelle année
-- Formulaire : libellé, date début, date fin, découpage (trimestre/semestre).
-- Génération automatique des périodes.
-- Statut initial : `preparation`.
-
-### Étape 2 — Grille tarifaire
-- Choix : **Reconduire à l'identique** / **Reconduire puis modifier** / **Repartir de zéro**.
-- Appel à `dupliquer_grille_annee` si reconduction.
-
-### Étape 3 — Promotion des élèves
-- Tableau récapitulatif par classe avec compteurs (passage / redoublement / exclusion) basés sur `decisions_fin_annee`.
-- Bouton **Appliquer les décisions verrouillées** → appel de `appliquer_decisions_fin_annee` (existant).
-- Pour les élèves sans décision : règle par défaut configurable (passage automatique vers la classe N+1 selon le mapping ci-dessous).
-- Mapping de promotion : PS→MS, MS→GS, GS→CP, CP→CE1, CE1→CE2, CE2→CM1, CM1→CM2, CM2→6ème, etc.
-- Les élèves promus sont **rattachés à la nouvelle année** au statut `pre_inscrit` (nouvelle ligne dans `eleves` pour `annee_id = annee_cible`, ou réutilisation de la fiche en gardant l'historique via `parcours_scolaire`).
-
-### Étape 4 — Reconduction des affectations pédagogiques
-- Cases à cocher pour reconduire :
-  - **Affectations enseignants ↔ matières** (`enseignant_matieres`)
-  - **Affectations matières ↔ classes** (`classe_matieres` avec volumes horaires)
-  - **Emploi du temps** (`creneaux_emploi_temps`) — option proposée mais désactivée par défaut (recommandation : régénérer).
-- Copie ligne à ligne avec `annee_id = annee_cible`.
-
-### Étape 5 — Renouvellement des services
-- **Cartes scolaires** : redirection vers `CardsRenewal` (déjà existant) ou exécution directe.
-- **Abonnements cantine** : reconduire les abonnés actifs (`abonnements_cantine` avec nouveau `annee_id`).
-- **Abonnements transport** : idem (`abonnements_transport`).
-- Cases à cocher individuelles.
-
-### Étape 6 — Activation
-- Récapitulatif des actions effectuées (compteurs : X élèves promus, Y affectations copiées, Z abonnements renouvelés…).
-- Bouton **Activer la nouvelle année** : passe l'ancienne en `verrouillee`, la nouvelle en `active`.
-- Confirmation explicite avec saisie du libellé de l'année.
+Objectif : traiter les 4 points bloquants/critiques listés dans le rapport, sans toucher au reste de l'application.
 
 ---
 
-### Détails techniques
+### 1. Assistant de transition d'année — finaliser les RPC serveur
 
-**Migration SQL** — nouvelles fonctions SECURITY DEFINER (admin/directeur uniquement) :
+Créer les 4 fonctions SECURITY DEFINER manquantes (spécifiées dans `.lovable/plan.md`) et brancher l'UI existante (`SchoolsYearTransition.tsx` + `useYearTransition.ts`) dessus.
 
-```text
-promouvoir_eleves_annee(_ecole_id, _annee_source, _annee_cible, _mapping jsonb, _mode text)
-  → crée/met à jour les eleves pour annee_cible, statut pre_inscrit
-  → enregistre dans parcours_scolaire
-  → retourne {promus, redoubles, sans_decision}
+**Migration SQL** (une seule migration) :
 
-reconduire_affectations_pedagogiques(_ecole_id, _annee_source, _annee_cible, _options jsonb)
-  → copie classe_matieres et/ou enseignant_matieres
-  → optionnellement creneaux_emploi_temps
-  → retourne compteurs
+- `promouvoir_eleves_annee(_ecole_id uuid, _annee_source uuid, _annee_cible uuid, _mapping jsonb, _mode text)`
+  - Parcourt les élèves actifs de l'année source.
+  - Applique les décisions verrouillées de `decisions_fin_annee` (passage / redoublement / exclusion).
+  - Pour les élèves sans décision : applique `_mapping` (PS→MS, …, CM2→6ème) selon `_mode` ('auto' ou 'skip').
+  - Crée les nouvelles lignes `eleves` pour `annee_id = _annee_cible`, statut `pre_inscrit`, en réutilisant le matricule.
+  - Trace dans `parcours_scolaire`.
+  - Retourne `jsonb {promus, redoubles, exclus, sans_decision}`.
+- `reconduire_affectations_pedagogiques(_ecole_id, _annee_source, _annee_cible, _options jsonb)`
+  - Copie `classe_matieres` et/ou `enseignant_matieres` (et optionnellement `creneaux_emploi_temps` si `_options->>'emploi_du_temps' = 'true'`).
+  - Ignore les doublons via `ON CONFLICT DO NOTHING`.
+- `renouveler_abonnements(_ecole_id, _annee_source, _annee_cible, _types text[])`
+  - Duplique `abonnements_cantine` et/ou `abonnements_transport` actifs vers l'année cible.
+- `activer_annee_scolaire(_ecole_id, _annee_id)`
+  - Passe toutes les autres années de l'école à `verrouillee`, la cible à `active`.
 
-renouveler_abonnements(_ecole_id, _annee_source, _annee_cible, _types text[])
-  → duplique abonnements_cantine/transport actifs
-  → retourne compteurs
+**Sécurité** :
+- Chaque fonction vérifie `has_role(auth.uid(), 'admin')` OU `has_role(auth.uid(), 'directeur')` + `user_belongs_to_ecole(auth.uid(), _ecole_id)`.
+- `SET search_path = public`, `SECURITY DEFINER`, `REVOKE ALL FROM public` + `GRANT EXECUTE TO authenticated`.
 
-activer_annee_scolaire(_ecole_id, _annee_id)
-  → verrouille les autres années actives
-  → bascule annee_id en 'active'
+**Frontend** :
+- Mettre à jour `src/hooks/useYearTransition.ts` pour appeler les 4 RPC réelles au lieu des appels partiels actuels.
+- Ajouter toasts + rapport final (compteurs renvoyés par chaque RPC).
+
+---
+
+### 2. Empêcher les doublons d'année scolaire
+
+**Migration SQL** :
+
+```
+CREATE UNIQUE INDEX IF NOT EXISTS uniq_annees_scolaires_ecole_libelle
+  ON public.annees_scolaires (ecole_id, lower(libelle));
 ```
 
-**Fichiers UI à créer** :
-- `src/pages/ecoles/sections/SchoolsYearTransition.tsx` — écran assistant 6 étapes avec stepper.
-- `src/pages/ecoles/components/PromotionMappingEditor.tsx` — éditeur du mapping de promotion par défaut.
-- `src/hooks/useYearTransition.ts` — hook regroupant les appels RPC.
-- Route + entrée de menu dans `SchoolsLayout.tsx` : « Transition d'année ».
+- Contrainte insensible à la casse.
+- Pré-check : détecter les doublons existants avant migration ; si présents, la migration échoue proprement (le user devra nettoyer manuellement — sinon on peut ajouter un suffixe " (doublon)").
 
-**Aucune modification destructive** : toutes les données de l'année source restent intactes ; tout est duplication vers l'année cible.
+**Frontend** :
+- Dans le formulaire de création (`SchoolsYearTransition` étape 1 + éventuellement `SchoolsConfig`), intercepter l'erreur `23505` et afficher « Une année scolaire avec ce libellé existe déjà ».
 
-Estimation : 1 migration SQL + 4 fichiers TSX + 1 ajout de route.
+---
+
+### 3. Politique de rôles centralisée — audit RLS/GRANT
+
+Audit systématique des 90+ tables `public.*` pour garantir :
+- `ENABLE ROW LEVEL SECURITY` actif partout.
+- `GRANT SELECT, INSERT, UPDATE, DELETE ON <table> TO authenticated` (ou plus restreint) + `GRANT ALL ... TO service_role`.
+- Toutes les policies data scoped via `private.user_belongs_to_ecole(auth.uid(), ecole_id)` (ou `has_role` pour tables globales).
+
+**Méthode** :
+1. Requête d'audit via `supabase--read_query` sur `pg_tables` + `pg_policies` + `information_schema.role_table_grants` pour lister les tables :
+   - sans RLS,
+   - sans GRANT à `authenticated`/`service_role`,
+   - avec policy sans référence à `ecole_id`.
+2. Générer un **rapport CSV** (dans `/mnt/documents/`) listant chaque anomalie.
+3. Produire **une migration corrective** ajoutant les `GRANT`/`ENABLE RLS`/policies manquantes, table par table.
+4. Ne pas modifier les policies déjà correctes.
+
+**Livrable** : 1 rapport + 1 migration de mise en conformité.
+
+---
+
+### 4. Sécurité MFA — service worker PWA
+
+Le SW actuel (`vite.config.ts`) exclut déjà `supabase.co` et `/auth/` du fallback, mais :
+- La règle `runtimeCaching` sur Supabase est `NetworkOnly` (OK).
+- Ajouter explicitement dans `navigateFallbackDenylist` :
+  - `/mfa`, `/parametres/mfa`, `/auth/callback`, `/~oauth`.
+- Ajouter une règle `runtimeCaching` `NetworkOnly` pour les endpoints MFA edge functions :
+  - `/functions/v1/send-mfa-sms-otp`, `/functions/v1/verify-mfa-sms-otp`, `/functions/v1/admin-reset-password`.
+- Vérifier qu'aucun cache `html-navigations` ne stocke les pages `/auth/*` ni `/parametres/mfa` (ajouter un `denylist` sur la règle NetworkFirst).
+
+**Frontend** : ajouter en tête de `src/pwa/registerSW.ts` un `caches.delete('html-navigations')` au premier login réussi pour purger d'éventuels résidus.
+
+---
+
+### Ordre d'exécution recommandé
+
+1. Migration transitions d'année (point 1) + branchement UI.
+2. Migration contrainte unique `annees_scolaires` (point 2).
+3. Audit RLS/GRANT + migration corrective (point 3).
+4. Ajustement `vite.config.ts` + `registerSW.ts` (point 4).
+
+Chaque étape est indépendante et testable isolément. Aucune donnée existante n'est supprimée ; tout est additif ou dédupliqué.
+
+---
+
+### Détails techniques (résumé)
+
+- **Nouveaux fichiers** : 4 migrations SQL (1 par point sauf point 4).
+- **Fichiers modifiés** : `src/hooks/useYearTransition.ts`, `src/pages/ecoles/sections/SchoolsYearTransition.tsx` (câblage rapports), `vite.config.ts`, `src/pwa/registerSW.ts`.
+- **Aucun changement** sur les autres modules (élèves, finances, examens, etc.).
