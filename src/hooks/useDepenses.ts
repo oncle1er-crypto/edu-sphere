@@ -37,8 +37,8 @@ export function useDepenses(range?: { from?: string; to?: string }) {
       .from("depenses")
       .select("*, fournisseurs(nom)")
       .eq("ecole_id", ecoleId);
-    if (from) q = q.gte("created_at", from);
-    if (to) q = q.lte("created_at", `${to}T23:59:59`);
+    if (from) q = q.gte("date_depense", from);
+    if (to) q = q.lte("date_depense", to);
     const { data, error } = await q.order("date_depense", { ascending: false });
     if (!error && data) {
       setDepenses(data.map((d: any) => ({ ...d, montant: Number(d.montant), fournisseur_nom: d.fournisseurs?.nom })));

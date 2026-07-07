@@ -39,7 +39,7 @@ export default function Ledger() {
 
         Promise.all([
           supabase.from("paiements").select("montant, date_paiement, mode, reference, eleves(nom, prenom)").eq("ecole_id", ecoleId).in("tranche_id", safeIds).order("date_paiement", { ascending: false }).limit(30),
-          supabase.from("depenses").select("montant, date_depense, libelle, categorie").eq("ecole_id", ecoleId).eq("statut", "validee").gte("created_at", from).lte("created_at", to).order("date_depense", { ascending: false }).limit(30),
+          supabase.from("depenses").select("montant, date_depense, libelle, categorie").eq("ecole_id", ecoleId).eq("statut", "validee").gte("date_depense", from).lte("date_depense", to).order("date_depense", { ascending: false }).limit(30),
         ]).then(([pRes, dRes]) => {
           const entries: EcritureComptable[] = [];
 

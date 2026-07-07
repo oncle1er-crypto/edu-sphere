@@ -34,7 +34,7 @@ export default function StudentsDashboard() {
         .from("presences")
         .select("statut")
         .eq("ecole_id", ecoleId)
-        .gte("date", il30j.toISOString().slice(0, 10));
+        .gte("date_presence", il30j.toISOString().slice(0, 10));
       if (data && data.length > 0) {
         const presents = data.filter((p: any) => p.statut === "present").length;
         setTauxPresence(Math.round((presents / data.length) * 100));
