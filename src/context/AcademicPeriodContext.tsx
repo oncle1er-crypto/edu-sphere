@@ -182,13 +182,16 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
     fetchAll();
   }, [fetchAll]);
 
-  // Valide l'année active en fonction des données chargées
+  // Valide l'année active en fonction des données chargées.
+  // Si l'année stockée n'existe plus OU n'est plus « active » en base
+  // (cas typique après une transition de fin d'année), on retombe
+  // automatiquement sur l'année active courante côté serveur.
   useEffect(() => {
     if (loading || annees.length === 0) return;
-    const stillValid = activeAnneeId && annees.some((a) => a.id === activeAnneeId);
-    if (!stillValid) {
-      const fallback = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
-      setActiveAnneeIdState(fallback);
+    const dbActiveId = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
+    const stored = annees.find((a) => a.id === activeAnneeId);
+    if (!stored || (stored.statut !== "active" && dbActiveId && stored.id !== dbActiveId)) {
+      setActiveAnneeIdState(dbActiveId);
     }
   }, [loading, annees, activeAnneeId]);
 
