@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, VacEleve } from "../hooks/useVacances";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function VacancesInscriptions() {
   const { classes, eleves, loading, save, remove } = useVacancesData();
@@ -27,8 +28,15 @@ export default function VacancesInscriptions() {
   };
   const openEdit = (e: VacEleve) => { setEdit(e); setForm({ ...e }); setOpen(true); };
   const submit = async () => {
-    if (!form.nom?.trim() || !form.prenom?.trim() || !form.classe_id) return;
-    await save("vacances_eleves", {
+    if (!form.nom?.trim() || !form.prenom?.trim()) {
+      toast.error("Nom et prénoms sont obligatoires");
+      return;
+    }
+    if (!form.classe_id) {
+      toast.error("Sélectionnez une classe");
+      return;
+    }
+    const result = await save("vacances_eleves", {
       nom: form.nom.trim(), prenom: form.prenom.trim(),
       sexe: form.sexe || null,
       date_naissance: form.date_naissance || null,
@@ -38,7 +46,7 @@ export default function VacancesInscriptions() {
       observation: form.observation || null,
       date_inscription: form.date_inscription || new Date().toISOString().slice(0, 10),
     }, edit?.id);
-    setOpen(false);
+    if (result) setOpen(false);
   };
 
   const filtered = useMemo(() => eleves.filter((e) => {
@@ -52,6 +60,15 @@ export default function VacancesInscriptions() {
 
   return (
     <div className="space-y-4">
+      {classes.length === 0 && !loading && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Aucune classe disponible</p>
+            <p>Créez d'abord au moins une classe dans l'onglet <strong>Classes</strong> avant de pouvoir inscrire un élève.</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold">Inscriptions</h2>

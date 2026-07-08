@@ -1,4 +1,4 @@
-import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal } from "lucide-react";
+import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal, Sun, Pencil, Trash2 } from "lucide-react";
 import { PermissionsMatrixDialog } from "@/components/security/PermissionsMatrixDialog";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
@@ -40,21 +40,22 @@ const MODULES = [
   { key: "vie_scolaire", label: "Vie scolaire", icon: Shield },
   { key: "transport", label: "Transport", icon: Bus },
   { key: "cantine", label: "Cantine", icon: UtensilsCrossed },
+  { key: "cours_vacances", label: "Cours de vacances", icon: Sun },
   { key: "parametres", label: "Paramètres", icon: UserCog },
 ] as const;
 
 const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
   admin: MODULES.map(m => m.key),
-  directeur: ["eleves", "classes", "examens", "presences", "vie_scolaire", "parametres"],
+  directeur: ["eleves", "classes", "examens", "presences", "vie_scolaire", "cours_vacances", "parametres"],
   enseignant: ["examens", "presences", "classes"],
-  educateur: ["vie_scolaire", "presences", "eleves", "enseignants"],
-  comptable: ["finances", "eleves"],
+  educateur: ["vie_scolaire", "presences", "eleves"],
+  comptable: ["finances", "eleves", "cours_vacances"],
   surveillant: ["presences", "eleves"],
   parent: ["eleves", "examens"],
 };
 
 export default function UsersRoles() {
-  const { users, loading, addUserRole, removeUserRole, ecoleId, fetchUsers } = useUsersRoles();
+  const { users, loading, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId, fetchUsers } = useUsersRoles();
   const [search, setSearch] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
@@ -67,6 +68,15 @@ export default function UsersRoles() {
   const [resetMotif, setResetMotif] = useState("");
   const [resettingMfa, setResettingMfa] = useState(false);
   const [permsUser, setPermsUser] = useState<{ id: string; name: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [pwdUser, setPwdUser] = useState<{ id: string; name: string } | null>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [resettingPwd, setResettingPwd] = useState(false);
 
   const handleResetMfa = async () => {
     if (!resetMfaUser || !ecoleId) return;
@@ -95,6 +105,7 @@ export default function UsersRoles() {
 
   const filtered = users.filter((u) =>
     u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    (u.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
     u.role.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -114,41 +125,61 @@ export default function UsersRoles() {
       return;
     }
     setCreating(true);
-
-    const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email: newEmail,
+    const ok = await createUser({
+      email: newEmail.trim(),
       password: newPassword,
-      options: { data: { full_name: newName } },
+      full_name: newName.trim(),
+      roles: newRoles,
     });
+    setCreating(false);
+    if (ok) {
+      setNewEmail("");
+      setNewName("");
+      setNewRoles(["enseignant"]);
+      setNewPassword("");
+      setDialogOpen(false);
+    }
+  };
 
-    if (authErr || !authData.user) {
-      toast.error(authErr?.message || "Erreur création utilisateur");
-      setCreating(false);
+  const openEdit = (u: { user_id: string; full_name: string; email: string }) => {
+    setEditUser({ id: u.user_id, name: u.full_name, email: u.email });
+    setEditName(u.full_name);
+    setEditEmail(u.email);
+  };
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    setSavingEdit(true);
+    const ok = await updateUser(editUser.id, {
+      full_name: editName.trim(),
+      email: editEmail.trim() !== editUser.email ? editEmail.trim() : undefined,
+    });
+    setSavingEdit(false);
+    if (ok) setEditUser(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const ok = await deleteUser(deleteTarget.id);
+    setDeleting(false);
+    if (ok) setDeleteTarget(null);
+  };
+
+  const handleResetPwd = async () => {
+    if (!pwdUser) return;
+    if (!newPwd || newPwd.length < 8) {
+      toast.error("Le mot de passe doit comporter au moins 8 caractères");
       return;
     }
-
-    const userId = authData.user.id;
-    await supabase.from("profiles").update({ ecole_id: ecoleId, full_name: newName }).eq("id", userId);
-
-    for (const role of newRoles) {
-      await addUserRole(userId, role);
-    }
-
-    setNewEmail("");
-    setNewName("");
-    setNewRoles(["enseignant"]);
-    setNewPassword("");
-    setCreating(false);
-    setDialogOpen(false);
-    toast.success(`Utilisateur ${newName} créé avec ${newRoles.length} rôle(s)`);
+    setResettingPwd(true);
+    const ok = await resetPassword(pwdUser.id, newPwd);
+    setResettingPwd(false);
+    if (ok) { setPwdUser(null); setNewPwd(""); }
   };
 
   const handleToggleRole = async (userId: string, role: string, hasRole: boolean) => {
-    if (hasRole) {
-      await removeUserRole(userId, role);
-    } else {
-      await addUserRole(userId, role);
-    }
+    if (hasRole) await removeUserRole(userId, role);
+    else await addUserRole(userId, role);
   };
 
   const getInitials = (name: string) =>
@@ -273,14 +304,15 @@ export default function UsersRoles() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{u.full_name}</div>
+                    <div className="font-medium text-sm truncate">{u.full_name}</div>
+                    {u.email && <div className="text-xs text-muted-foreground truncate">{u.email}{u.email_confirmed === false && <span className="ml-2 text-amber-600">(non confirmé)</span>}</div>}
                     <div className="flex flex-wrap gap-1 mt-1">
                       {userRoles.map((r) => (
                         <Badge key={r} variant="outline" className={`text-[10px] ${roleColors[r] || ""}`}>{r}</Badge>
                       ))}
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{permissions.size} modules</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{permissions.size} modules</span>
                 </div>
 
                 {isExpanded && (
@@ -327,12 +359,16 @@ export default function UsersRoles() {
                         })}
                       </div>
                     </div>
-                    <div className="pt-2 border-t flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPermsUser({ id: u.user_id, name: u.full_name })}
-                      >
+                    <div className="pt-2 border-t flex flex-wrap justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(u)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                        Modifier
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPwdUser({ id: u.user_id, name: u.full_name })}>
+                        <KeyRound className="h-3.5 w-3.5" />
+                        Nouveau mot de passe
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPermsUser({ id: u.user_id, name: u.full_name })}>
                         <SlidersHorizontal className="h-3.5 w-3.5" />
                         Permissions détaillées
                       </Button>
@@ -344,6 +380,15 @@ export default function UsersRoles() {
                       >
                         <KeyRound className="h-3.5 w-3.5" />
                         Réinitialiser le MFA
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                        onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Supprimer
                       </Button>
                     </div>
                   </div>
@@ -403,6 +448,69 @@ export default function UsersRoles() {
         userId={permsUser?.id ?? null}
         userName={permsUser?.name}
       />
+
+      {/* ============ Dialog Édition utilisateur ============ */}
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5" /> Modifier l'utilisateur</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom complet</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
+            <div><Label>Email</Label><Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditUser(null)}>Annuler</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()}>
+              {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ Dialog Nouveau mot de passe ============ */}
+      <Dialog open={!!pwdUser} onOpenChange={(o) => !o && (setPwdUser(null), setNewPwd(""))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Nouveau mot de passe</DialogTitle>
+            <DialogDescription>
+              Définir un nouveau mot de passe pour <strong>{pwdUser?.name}</strong>. L'utilisateur pourra se connecter immédiatement avec ce mot de passe.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nouveau mot de passe (8 caractères min.)</Label>
+            <Input type="text" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="••••••••" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setPwdUser(null); setNewPwd(""); }}>Annuler</Button>
+            <Button onClick={handleResetPwd} disabled={resettingPwd || newPwd.length < 8}>
+              {resettingPwd && <Loader2 className="h-4 w-4 animate-spin" />}
+              Réinitialiser
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ Dialog Suppression utilisateur ============ */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><Trash2 className="h-5 w-5" /> Supprimer l'utilisateur</DialogTitle>
+            <DialogDescription>
+              Cette action est <strong>définitive</strong>. Le compte de <strong>{deleteTarget?.name}</strong> sera supprimé (rôles, permissions, profil et compte de connexion).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Supprimer définitivement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
 
 
 

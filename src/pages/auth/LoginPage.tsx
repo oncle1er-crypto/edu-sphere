@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   User,
   Lock,
-  LogIn,
-  UserPlus,
-  Chrome,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -30,10 +26,8 @@ const DEMO_PASSWORD = "Demo@2026!";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -50,41 +44,14 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        toast.success("Compte créé !", {
-          description: "Vérifiez votre email pour confirmer votre inscription.",
-        });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate("/");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate("/");
     } catch (err: any) {
       toast.error("Erreur", { description: err.message });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Erreur Google", { description: String(result.error) });
-      return;
-    }
-    if (result.redirected) return;
-    navigate("/");
   };
 
 
@@ -269,12 +236,10 @@ export default function LoginPage() {
                 className="text-3xl font-extrabold tracking-tight"
                 style={{ color: NAVY }}
               >
-                {isSignUp ? "Inscription" : "Connexion"}
+                Connexion
               </h2>
               <p className="text-sm text-slate-500 mt-1">
-                {isSignUp
-                  ? "Créez votre espace administrateur"
-                  : "Accédez à votre espace administrateur"}
+                Accédez à votre espace administrateur
               </p>
               <div className="mt-3 flex justify-center">
                 <span className="h-1 w-12 rounded-full" style={{ backgroundColor: GOLD }} />
@@ -282,25 +247,6 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleEmailAuth} className="mt-7 space-y-4">
-              {isSignUp && (
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold" style={{ color: NAVY }}>
-                    Nom complet
-                  </label>
-                  <div className="relative group">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-[color:var(--gold)]" style={{ ["--gold" as any]: GOLD }} />
-                    <Input
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Jean Kouassi"
-                      required
-                      className="pl-11 h-12 rounded-xl border-slate-200 bg-white focus-visible:ring-2 focus-visible:ring-offset-0 transition-all"
-                      style={{ ["--tw-ring-color" as any]: GOLD }}
-                    />
-                  </div>
-                </div>
-              )}
-
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold" style={{ color: NAVY }}>
                   Identifiant
@@ -345,16 +291,14 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              {!isSignUp && (
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors"
-                  >
-                    Mot de passe oublié ?
-                  </button>
-                </div>
-              )}
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="text-sm font-medium text-slate-600 hover:text-amber-600 transition-colors"
+                >
+                  Mot de passe oublié ?
+                </button>
+              </div>
 
               <Button
                 type="submit"
@@ -370,11 +314,6 @@ export default function LoginPage() {
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Connexion en cours...
                   </>
-                ) : isSignUp ? (
-                  <>
-                    <UserPlus className="h-4 w-4" />
-                    Créer le compte
-                  </>
                 ) : (
                   <>
                     <Lock className="h-4 w-4" />
@@ -383,69 +322,34 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              <div className="flex items-center gap-3 py-1">
-                <span className="h-px flex-1 bg-slate-200" />
-                <span className="text-xs uppercase tracking-wider text-slate-400">ou</span>
-                <span className="h-px flex-1 bg-slate-200" />
-              </div>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGoogleSignIn}
-                disabled={loading}
-                className="w-full h-12 rounded-xl border-slate-200 bg-white font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-all"
+              <div
+                className="rounded-xl border border-dashed p-3 text-xs"
+                style={{ borderColor: GOLD, backgroundColor: `${GOLD}0D` }}
               >
-                <Chrome className="h-4 w-4" />
-                Continuer avec Google
-              </Button>
-
-              {!isSignUp && (
-                <div
-                  className="rounded-xl border border-dashed p-3 text-xs"
-                  style={{ borderColor: GOLD, backgroundColor: `${GOLD}0D` }}
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="leading-tight">
-                      <div className="font-semibold" style={{ color: NAVY }}>
-                        Accès démo
-                      </div>
-                      <div className="text-slate-600 font-mono text-[11px] mt-0.5">
-                        {DEMO_EMAIL} / {DEMO_PASSWORD}
-                      </div>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="leading-tight">
+                    <div className="font-semibold" style={{ color: NAVY }}>
+                      Accès démo
                     </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={fillDemo}
-                      disabled={loading}
-                      className="h-8 rounded-lg text-xs font-semibold text-white"
-                      style={{ backgroundColor: NAVY }}
-                    >
-                      Remplir
-                    </Button>
+                    <div className="text-slate-600 font-mono text-[11px] mt-0.5">
+                      {DEMO_EMAIL} / {DEMO_PASSWORD}
+                    </div>
                   </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={fillDemo}
+                    disabled={loading}
+                    className="h-8 rounded-lg text-xs font-semibold text-white"
+                    style={{ backgroundColor: NAVY }}
+                  >
+                    Remplir
+                  </Button>
                 </div>
-              )}
-
-
-
-
-
+              </div>
             </form>
-
-            <p className="text-center text-sm text-slate-500 mt-6">
-              {isSignUp ? "Déjà inscrit ?" : "Pas encore de compte ?"}{" "}
-              <button
-                type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="font-semibold hover:underline transition-colors"
-                style={{ color: NAVY }}
-              >
-                {isSignUp ? "Se connecter" : "Créer un compte"}
-              </button>
-            </p>
           </div>
+
 
           {/* Footer info row */}
           <div className="mt-7 grid grid-cols-3 gap-2 text-center">
