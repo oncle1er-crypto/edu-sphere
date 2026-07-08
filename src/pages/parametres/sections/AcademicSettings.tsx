@@ -60,7 +60,7 @@ const mentions = [
 export default function AcademicSettings() {
   const {
     annees, activeAnneeId, setActiveAnneeId, activeAnnee,
-    upsertAnnee, setAnneeStatut, setPeriodeStatut,
+    upsertAnnee, setAnneeStatut, setPeriodeStatut, generatePeriodesForAnnee,
     lockedModules, setLockedModules,
   } = useAcademicPeriod();
 
