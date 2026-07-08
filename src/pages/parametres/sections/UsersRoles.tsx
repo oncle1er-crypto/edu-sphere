@@ -304,14 +304,15 @@ export default function UsersRoles() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-sm">{u.full_name}</div>
+                    <div className="font-medium text-sm truncate">{u.full_name}</div>
+                    {u.email && <div className="text-xs text-muted-foreground truncate">{u.email}{u.email_confirmed === false && <span className="ml-2 text-amber-600">(non confirmé)</span>}</div>}
                     <div className="flex flex-wrap gap-1 mt-1">
                       {userRoles.map((r) => (
                         <Badge key={r} variant="outline" className={`text-[10px] ${roleColors[r] || ""}`}>{r}</Badge>
                       ))}
                     </div>
                   </div>
-                  <span className="text-xs text-muted-foreground">{permissions.size} modules</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{permissions.size} modules</span>
                 </div>
 
                 {isExpanded && (
@@ -358,12 +359,16 @@ export default function UsersRoles() {
                         })}
                       </div>
                     </div>
-                    <div className="pt-2 border-t flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setPermsUser({ id: u.user_id, name: u.full_name })}
-                      >
+                    <div className="pt-2 border-t flex flex-wrap justify-end gap-2">
+                      <Button size="sm" variant="outline" onClick={() => openEdit(u)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                        Modifier
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPwdUser({ id: u.user_id, name: u.full_name })}>
+                        <KeyRound className="h-3.5 w-3.5" />
+                        Nouveau mot de passe
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setPermsUser({ id: u.user_id, name: u.full_name })}>
                         <SlidersHorizontal className="h-3.5 w-3.5" />
                         Permissions détaillées
                       </Button>
@@ -375,6 +380,15 @@ export default function UsersRoles() {
                       >
                         <KeyRound className="h-3.5 w-3.5" />
                         Réinitialiser le MFA
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                        onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Supprimer
                       </Button>
                     </div>
                   </div>
