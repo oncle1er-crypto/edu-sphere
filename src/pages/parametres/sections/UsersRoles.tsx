@@ -60,11 +60,13 @@ export default function UsersRoles() {
   const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
   const [newName, setNewName] = useState("");
   const [newRoles, setNewRoles] = useState<string[]>(["enseignant"]);
   const [newPassword, setNewPassword] = useState("");
   const [creating, setCreating] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+
   const [editingUser, setEditingUser] = useState<string | null>(null);
   const [resetMfaUser, setResetMfaUser] = useState<{ id: string; name: string } | null>(null);
   const [resetMotif, setResetMotif] = useState("");
@@ -118,30 +120,41 @@ export default function UsersRoles() {
   };
 
   const handleCreateUser = async () => {
-    if (!newEmail || !newName || !ecoleId || newRoles.length === 0) {
-      toast.error("Remplissez tous les champs et sélectionnez au moins un rôle");
+    if (!newName || !ecoleId || newRoles.length === 0) {
+      toast.error("Nom et au moins un rôle requis");
       return;
     }
-    if (!newPassword || newPassword.length < 8) {
-      toast.error("Le mot de passe doit comporter au moins 8 caractères");
+    if (!newEmail && !newPhone) {
+      toast.error("Renseignez un email OU un numéro à 10 chiffres");
+      return;
+    }
+    if (newPhone && !/^\d{10}$/.test(newPhone.trim())) {
+      toast.error("Le numéro de téléphone doit contenir exactement 10 chiffres");
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      toast.error("Le mot de passe doit comporter au moins 6 caractères");
       return;
     }
     setCreating(true);
     const ok = await createUser({
-      email: newEmail.trim(),
-      password: newPassword,
+      email: newEmail.trim() || undefined,
+      phone: newPhone.trim() || undefined,
+      password: newPassword || undefined,
       full_name: newName.trim(),
       roles: newRoles,
     });
     setCreating(false);
     if (ok) {
       setNewEmail("");
+      setNewPhone("");
       setNewName("");
       setNewRoles(["enseignant"]);
       setNewPassword("");
       setDialogOpen(false);
     }
   };
+
 
   const openEdit = (u: { user_id: string; full_name: string; email: string }) => {
     setEditUser({ id: u.user_id, name: u.full_name, email: u.email });
@@ -227,13 +240,26 @@ export default function UsersRoles() {
                 <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Jean Dupont" />
               </div>
               <div>
-                <Label>Email</Label>
+                <Label>Email (optionnel si téléphone renseigné)</Label>
                 <Input type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="jean@laprovidence.ci" />
               </div>
               <div>
-                <Label>Mot de passe initial</Label>
-                <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <Label>Téléphone — 10 chiffres (optionnel si email renseigné)</Label>
+                <Input
+                  type="tel"
+                  inputMode="numeric"
+                  maxLength={10}
+                  value={newPhone}
+                  onChange={(e) => setNewPhone(e.target.value.replace(/\D/g, ""))}
+                  placeholder="0700000000"
+                />
               </div>
+              <div>
+                <Label>Mot de passe initial (optionnel)</Label>
+                <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Laisser vide : l'utilisateur le choisira à la 1ère connexion" />
+                <p className="text-[11px] text-muted-foreground mt-1">Min. 6 caractères. Si vide, un mot de passe temporaire s'affichera et devra être changé à la 1ère connexion.</p>
+              </div>
+
               <div>
                 <Label className="mb-2 block">Rôles (multi-sélection)</Label>
                 <div className="flex flex-wrap gap-2">
