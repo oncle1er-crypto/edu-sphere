@@ -1,50 +1,53 @@
-## Constat
-`src/pages/enseignants/sections/StaffSchedule.tsx` est intégralement statique : liste d'enseignants, semaine et créneaux sont codés en dur. Aucun lien avec la base.
+## Lot 1.2 — Barèmes & Validation des examens
 
-Or les données existent déjà :
-- table `enseignants` (nom, prénom, matière principale)
-- table `creneaux_emploi_temps` (jour, heure_debut, heure_fin, classe_id, matiere_id, enseignant_id, salle_id/salle)
-- table `remplacements` (pour signaler les créneaux couverts par un remplaçant)
-- hook `useEnseignants` déjà utilisé ailleurs
+### Objectif
+Rendre 100 % fonctionnels :
+- `src/pages/examens/sections/GradingScales.tsx` : brancher sur `parametres_matieres` (règles d'évaluation par matière/niveau) au lieu des règles codées en dur.
+- `src/pages/examens/sections/Validation.tsx` : brancher les boutons de verrouillage/signature sur `bulletins_audit` + RPC `verrouiller_bulletin` existante.
 
-## Objectif
-Rendre l'onglet **Emploi du temps enseignant** 100% fonctionnel, aligné sur le module « Emploi du temps » existant.
+### Étapes
 
-## Plan d'implémentation
+**1. Explorer l'existant (lecture seule)**
+- Lire `GradingScales.tsx` et `Validation.tsx` en entier.
+- Vérifier le schéma `parametres_matieres` et `bulletins_audit`, et confirmer que `verrouiller_bulletin` existe (fonction RPC).
+- Vérifier s'il existe un hook `useParametresMatieres` — sinon en créer un.
 
-### 1. Sélecteur d'enseignant réel
-- Charger la liste depuis `enseignants` filtrée sur `ecole_id` et année active
-- Afficher `nom prénom — matière` (fallback : `nom prénom` si pas de matière principale)
-- Trier alphabétiquement, recherche par saisie
-- Présélectionner le premier enseignant de la liste
+**2. Migration (si nécessaire)**
+- Ajouter uniquement les colonnes manquantes à `parametres_matieres` si le stockage des barèmes en a besoin (ex: `note_max`, `bareme_json`, `regles_arrondi`). Sinon, aucune migration.
+- Aucun changement de schéma pour `bulletins_audit` : la table et la RPC existent.
 
-### 2. Navigation semaine
-- Remplacer le badge statique par un vrai sélecteur `‹ Semaine du JJ/MM/AAAA ›`
-- Boutons précédent / suivant / « aujourd'hui »
-- Aucune requête liée à la date (les créneaux sont hebdomadaires récurrents), la date sert juste d'affichage et pour les remplacements ponctuels
+**3. Hook barèmes**
+- Créer `src/hooks/useGradingScales.ts` : `fetchScales(ecoleId)`, `saveScale(scaleId, patch)`, `resetToDefault()`.
+- Filtrer par `ecole_id` + optionnellement `niveau` / `matiere_id`.
 
-### 3. Grille horaire dynamique
-- Récupérer `creneaux_emploi_temps` filtrés par `ecole_id`, `annee_id` (année active) et `enseignant_id = sélectionné`
-- Joindre `classes(nom)`, `matieres(nom, couleur)`, `salles(code)`
-- Générer dynamiquement les lignes d'heures à partir de la config de l'école (`parametres_classes.plage_horaire_debut/fin` ou par défaut 08:00 → 17:00 par tranches d'1h)
-- Colorer chaque case avec la couleur de la matière (fallback primary)
-- Superposer un badge « Remplacé » ou « Assuré par X » quand un `remplacements` actif recouvre le créneau à la date affichée
+**4. GradingScales.tsx**
+- Remplacer les 2 tableaux hardcodés par des données issues de `useGradingScales`.
+- Formulaire d'édition d'un barème → `saveScale`.
+- Bouton « Réinitialiser aux valeurs officielles MENA » (côte d'ivoirien) → `resetToDefault`.
+- Skeleton + toasts succès/erreur.
 
-### 4. Actions utiles
-- Bouton « Exporter PDF » réutilisant `generateEmploiDuTempsExports` (l'export enseignant existe déjà)
-- Bouton « Imprimer »
-- Compteur d'heures : total heures / semaine à droite du nom
+**5. Validation.tsx**
+- Charger via `useBulletinsAudit` (créer si absent) la liste des bulletins en attente de validation pour la période active.
+- Boutons :
+  - « Verrouiller » → RPC `verrouiller_bulletin(bulletin_id)`.
+  - « Signer » → mise à jour `bulletins_audit.signature_directeur`.
+  - « Ouvrir en override » → réutilise `BulletinOverrideDialog` déjà présent.
+- Compteurs : brouillons / verrouillés / signés.
 
-### 5. États et gardes
-- Skeleton pendant le chargement
-- Message « Aucun créneau planifié pour cet enseignant » si la grille est vide
-- Message « Aucun enseignant enregistré » si la table est vide, avec lien vers l'onglet Personnel
+**6. Tests avant validation utilisateur**
+- Compilation TS (auto via harness).
+- Test manuel Playwright sur `/examens/grading-scales` : chargement, édition d'un barème, sauvegarde persistante après rechargement.
+- Test manuel Playwright sur `/examens/validation` : affichage des bulletins, clic « Verrouiller », vérification que le badge change et que la ligne devient non-éditable.
+- Capture d'écran des 2 pages, lecture des logs console.
 
-### 6. Fichiers touchés
-- `src/pages/enseignants/sections/StaffSchedule.tsx` : réécriture complète
-- Réutilisation des hooks : `useEnseignants`, `useEcoleId`, `useAnneeId`
-- Nouveau petit hook local `useTeacherSchedule(enseignantId)` dans le même fichier (ou `src/hooks/useTeacherSchedule.ts` si réutilisé ailleurs)
+### Fichiers touchés
+- (peut-être) migration `parametres_matieres` — colonnes barème.
+- **Nouveaux** : `src/hooks/useGradingScales.ts`, `src/hooks/useBulletinsAudit.ts` (si absent).
+- **Modifiés** : `src/pages/examens/sections/GradingScales.tsx`, `src/pages/examens/sections/Validation.tsx`.
 
-## Hors périmètre
-- Édition inline des créneaux depuis cette page (ça reste dans le module « Emploi du temps »)
-- Gestion des indisponibilités (déjà couverte ailleurs)
+### Hors périmètre
+- Réécriture de la génération PDF des bulletins.
+- Notification automatique des parents après signature (sera fait dans un lot ultérieur).
+- Refonte du dashboard examens.
+
+Une fois le lot 1.2 validé par vos tests, on enchaîne sur le **lot 1.3 (Conseils de classe & Compositions)**.
