@@ -4232,6 +4232,7 @@ export type Database = {
           full_name: string | null
           id: string
           langue: string | null
+          must_change_password: boolean
           phone: string | null
           preferences: Json | null
           updated_at: string
@@ -4244,6 +4245,7 @@ export type Database = {
           full_name?: string | null
           id: string
           langue?: string | null
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
@@ -4256,6 +4258,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           langue?: string | null
+          must_change_password?: boolean
           phone?: string | null
           preferences?: Json | null
           updated_at?: string
