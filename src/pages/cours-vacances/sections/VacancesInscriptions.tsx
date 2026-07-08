@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,8 +9,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, VacEleve } from "../hooks/useVacances";
+import { useDraftForm } from "@/hooks/useDraftForm";
 import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+
+const emptyForm = {
+  nom: "", prenom: "", sexe: "M", date_naissance: "", contact_parent: "",
+  classe_id: "", etablissement_origine: "", observation: "",
+  date_inscription: "",
+};
 
 export default function VacancesInscriptions() {
   const { classes, eleves, loading, save, remove } = useVacancesData();
@@ -19,11 +26,31 @@ export default function VacancesInscriptions() {
   const [q, setQ] = useState("");
   const [fClasse, setFClasse] = useState<string>("all");
   const [fStatut, setFStatut] = useState<string>("all");
-  const [form, setForm] = useState<any>({});
+  // Brouillon persistant (sessionStorage) : uniquement pour la création.
+  const [form, setForm, clearDraft, resetForm] = useDraftForm<any>(
+    "vacances-inscription-new",
+    emptyForm,
+    { enabled: !edit }
+  );
+
+  // Réouvre le dialog automatiquement si un brouillon non vide existe au montage.
+  useEffect(() => {
+    if (!edit && (form?.nom || form?.prenom)) {
+      setOpen(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const openNew = () => {
     setEdit(null);
-    setForm({ nom: "", prenom: "", sexe: "M", date_naissance: "", contact_parent: "", classe_id: classes[0]?.id ?? "", etablissement_origine: "", observation: "", date_inscription: new Date().toISOString().slice(0, 10) });
+    // Ne pas écraser un brouillon existant : ne pré-remplit que si vide.
+    if (!form?.nom && !form?.prenom) {
+      resetForm({
+        ...emptyForm,
+        classe_id: classes[0]?.id ?? "",
+        date_inscription: new Date().toISOString().slice(0, 10),
+      });
+    }
     setOpen(true);
   };
   const openEdit = (e: VacEleve) => { setEdit(e); setForm({ ...e }); setOpen(true); };
@@ -46,7 +73,11 @@ export default function VacancesInscriptions() {
       observation: form.observation || null,
       date_inscription: form.date_inscription || new Date().toISOString().slice(0, 10),
     }, edit?.id);
-    if (result) setOpen(false);
+    if (result) {
+      setOpen(false);
+      if (!edit) clearDraft();
+      setEdit(null);
+    }
   };
 
   const filtered = useMemo(() => eleves.filter((e) => {

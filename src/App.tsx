@@ -244,7 +244,16 @@ const VacancesPaiements = lazy(() => import("@/pages/cours-vacances/sections/Vac
 const VacancesEnseignants = lazy(() => import("@/pages/cours-vacances/sections/VacancesEnseignants"));
 const VacancesHonoraires = lazy(() => import("@/pages/cours-vacances/sections/VacancesHonoraires"));
 const VacancesRapports = lazy(() => import("@/pages/cours-vacances/sections/VacancesRapports"));
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      staleTime: 30_000,
+      retry: 1,
+    },
+  },
+});
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { session, loading } = useAuth();

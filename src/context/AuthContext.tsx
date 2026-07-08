@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { purgeSensitiveCaches } from "@/pwa/registerSW";
+import { clearAllDrafts } from "@/hooks/useDraftForm";
 import { toast } from "sonner";
 
 
@@ -33,12 +34,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
+      (event, newSession) => {
+        // Ignore les TOKEN_REFRESHED (déclenchés à chaque retour d'onglet) :
+        // ils changent la référence session sans que rien ne change réellement
+        // et provoquent des re-rendus de toute l'app (flash "Vérification…").
+        setSession((prev) => {
+          if (event === "TOKEN_REFRESHED") {
+            // On garde la même référence si l'utilisateur est identique.
+            if (prev?.user?.id === newSession?.user?.id) return prev;
+          }
+          return newSession;
+        });
         setLoading(false);
-        // Purger tout cache navigation à la connexion/déconnexion pour éviter
-        // qu'une page d'auth/MFA stockée puisse être servie depuis le SW.
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "TOKEN_REFRESHED") {
+        // Purger le cache navigation uniquement lors d'une vraie transition
+        // d'authentification (jamais sur TOKEN_REFRESHED).
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
           void purgeSensitiveCaches();
         }
       }
@@ -86,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session?.user?.id]);
 
   const signOut = async () => {
+    clearAllDrafts();
     await supabase.auth.signOut();
   };
 
