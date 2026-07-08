@@ -74,7 +74,9 @@ export default function TimetableDashboard() {
         if (!overlaps(a.heure_debut, a.heure_fin, b.heure_debut, b.heure_fin)) continue;
         if (a.classe_id === b.classe_id) conflits++;
         else if (a.enseignant_id && a.enseignant_id === b.enseignant_id) conflits++;
-        else if (a.salle && b.salle && a.salle === b.salle) conflits++;
+        else if (a.salle_id && a.salle_id === b.salle_id) conflits++;
+        else if (!a.salle_id && !b.salle_id && a.salle && b.salle && a.salle === b.salle) conflits++;
+
       }
     }
 
