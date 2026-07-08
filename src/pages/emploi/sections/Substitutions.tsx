@@ -60,6 +60,8 @@ export default function Substitutions() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
   const { enseignants } = useEnseignants();
+  const { settings } = useTimetableSettings();
+
   const [rows, setRows] = useState<Remplacement[]>([]);
   const [classes, setClasses] = useState<{ id: string; nom: string }[]>([]);
   const [matieres, setMatieres] = useState<{ id: string; nom: string }[]>([]);
