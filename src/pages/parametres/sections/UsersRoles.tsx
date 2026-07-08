@@ -1,4 +1,4 @@
-import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal } from "lucide-react";
+import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal, Sun, Pencil, Trash2 } from "lucide-react";
 import { PermissionsMatrixDialog } from "@/components/security/PermissionsMatrixDialog";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
@@ -40,15 +40,16 @@ const MODULES = [
   { key: "vie_scolaire", label: "Vie scolaire", icon: Shield },
   { key: "transport", label: "Transport", icon: Bus },
   { key: "cantine", label: "Cantine", icon: UtensilsCrossed },
+  { key: "cours_vacances", label: "Cours de vacances", icon: Sun },
   { key: "parametres", label: "Paramètres", icon: UserCog },
 ] as const;
 
 const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
   admin: MODULES.map(m => m.key),
-  directeur: ["eleves", "classes", "examens", "presences", "vie_scolaire", "parametres"],
+  directeur: ["eleves", "classes", "examens", "presences", "vie_scolaire", "cours_vacances", "parametres"],
   enseignant: ["examens", "presences", "classes"],
-  educateur: ["vie_scolaire", "presences", "eleves", "enseignants"],
-  comptable: ["finances", "eleves"],
+  educateur: ["vie_scolaire", "presences", "eleves"],
+  comptable: ["finances", "eleves", "cours_vacances"],
   surveillant: ["presences", "eleves"],
   parent: ["eleves", "examens"],
 };
