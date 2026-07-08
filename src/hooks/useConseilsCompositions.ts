@@ -3,6 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
+import type { Database } from "@/integrations/supabase/types";
+
+type ConseilUpdate = Database["public"]["Tables"]["conseils_classe"]["Update"];
+type SessionUpdate = Database["public"]["Tables"]["sessions_compositions"]["Update"];
 
 export type ConseilRow = {
   id: string;
@@ -82,7 +86,7 @@ export function useConseilsClasse() {
     return true;
   };
 
-  const update = async (id: string, patch: Record<string, any>) => {
+  const update = async (id: string, patch: ConseilUpdate) => {
     const { error } = await supabase.from("conseils_classe").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -169,7 +173,7 @@ export function useSessionsCompositions() {
     return true;
   };
 
-  const update = async (id: string, patch: Record<string, any>) => {
+  const update = async (id: string, patch: SessionUpdate) => {
     const { error } = await supabase.from("sessions_compositions").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
