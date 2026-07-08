@@ -12,6 +12,7 @@ import {
   Send, Pencil, Lock, LockOpen,
 } from "lucide-react";
 import { useEffect, useState, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useClasses } from "@/hooks/useClasses";
