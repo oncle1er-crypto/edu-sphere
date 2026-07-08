@@ -36,7 +36,7 @@ export function useConseilsClasse() {
     setLoading(true);
     let q = supabase
       .from("conseils_classe")
-      .select("*, classes(nom), enseignants:president_id(nom, prenom)")
+      .select("*, classes(nom)")
       .eq("ecole_id", ecoleId)
       .order("date_conseil", { ascending: false });
     if (anneeId) q = q.eq("annee_id", anneeId);
@@ -46,17 +46,28 @@ export function useConseilsClasse() {
       setLoading(false);
       return;
     }
+    // Résolution des présidents en une requête séparée (pas de FK entre conseils_classe.president_id et enseignants).
+    const presidentIds = Array.from(
+      new Set((data ?? []).map((r: any) => r.president_id).filter(Boolean))
+    );
+    const nameMap = new Map<string, string>();
+    if (presidentIds.length > 0) {
+      const { data: ens } = await supabase
+        .from("enseignants")
+        .select("id, nom, prenom")
+        .in("id", presidentIds as string[]);
+      (ens ?? []).forEach((e: any) => nameMap.set(e.id, `${e.nom} ${e.prenom}`));
+    }
     setItems(
       (data ?? []).map((r: any) => ({
         ...r,
         classe_nom: r.classes?.nom ?? "—",
-        president_nom: r.enseignants
-          ? `${r.enseignants.nom} ${r.enseignants.prenom}`
-          : "",
+        president_nom: r.president_id ? nameMap.get(r.president_id) ?? "" : "",
       }))
     );
     setLoading(false);
   }, [ecoleId, anneeId]);
+
 
   useEffect(() => {
     fetchAll();
