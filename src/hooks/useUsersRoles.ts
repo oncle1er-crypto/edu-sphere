@@ -89,6 +89,10 @@ export function useUsersRoles() {
 
   const deleteUser = async (target_user_id: string) => {
     if (!ecoleId) return false;
+    if (currentUser?.id === target_user_id) {
+      toast.error("Vous ne pouvez pas supprimer votre propre compte");
+      return false;
+    }
     try {
       await call({ action: "delete", ecole_id: ecoleId, target_user_id });
       toast.success("Utilisateur supprimé");
