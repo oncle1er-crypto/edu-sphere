@@ -1400,6 +1400,97 @@ export type Database = {
           },
         ]
       }
+      contrats_enseignants: {
+        Row: {
+          created_at: string
+          cree_par: string | null
+          date_debut: string
+          date_fin: string | null
+          date_rupture: string | null
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          motif_rupture: string | null
+          notes: string | null
+          parent_contrat_id: string | null
+          periode_essai_fin: string | null
+          preavis_jours: number | null
+          primes: Json | null
+          quotite: number | null
+          salaire_base: number | null
+          signe_le: string | null
+          statut: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cree_par?: string | null
+          date_debut: string
+          date_fin?: string | null
+          date_rupture?: string | null
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          motif_rupture?: string | null
+          notes?: string | null
+          parent_contrat_id?: string | null
+          periode_essai_fin?: string | null
+          preavis_jours?: number | null
+          primes?: Json | null
+          quotite?: number | null
+          salaire_base?: number | null
+          signe_le?: string | null
+          statut?: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cree_par?: string | null
+          date_debut?: string
+          date_fin?: string | null
+          date_rupture?: string | null
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          motif_rupture?: string | null
+          notes?: string | null
+          parent_contrat_id?: string | null
+          periode_essai_fin?: string | null
+          preavis_jours?: number | null
+          primes?: Json | null
+          quotite?: number | null
+          salaire_base?: number | null
+          signe_le?: string | null
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contrats_enseignants_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrats_enseignants_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contrats_enseignants_parent_contrat_id_fkey"
+            columns: ["parent_contrat_id"]
+            isOneToOne: false
+            referencedRelation: "contrats_enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       creneaux_emploi_temps: {
         Row: {
           annee_id: string
@@ -2034,6 +2125,7 @@ export type Database = {
           enseignant_id: string
           id: string
           matiere_id: string
+          volume_horaire_hebdo: number | null
         }
         Insert: {
           annee_id?: string | null
@@ -2043,6 +2135,7 @@ export type Database = {
           enseignant_id: string
           id?: string
           matiere_id: string
+          volume_horaire_hebdo?: number | null
         }
         Update: {
           annee_id?: string | null
@@ -2052,6 +2145,7 @@ export type Database = {
           enseignant_id?: string
           id?: string
           matiere_id?: string
+          volume_horaire_hebdo?: number | null
         }
         Relationships: [
           {
@@ -5830,6 +5924,10 @@ export type Database = {
         Returns: Json
       }
       reset_failed_mfa: { Args: never; Returns: undefined }
+      resilier_contrat_enseignant: {
+        Args: { _contrat_id: string; _date_rupture?: string; _motif: string }
+        Returns: undefined
+      }
       resoudre_niveau_code: { Args: { _classe_nom: string }; Returns: string }
       restaurer_annee: {
         Args: { _annee_id: string; _ecole_id: string }
