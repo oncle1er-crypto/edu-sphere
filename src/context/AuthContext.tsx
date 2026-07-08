@@ -11,8 +11,11 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  mustChangePassword: boolean;
+  refreshMustChangePassword: () => Promise<void>;
   signOut: () => Promise<void>;
 }
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -28,6 +31,19 @@ const SUSPICIOUS_EVENTS = new Set([
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  const refreshMustChangePassword = async () => {
+    const uid = session?.user?.id;
+    if (!uid) { setMustChangePassword(false); return; }
+    const { data } = await supabase
+      .from("profiles")
+      .select("must_change_password")
+      .eq("id", uid)
+      .maybeSingle();
+    setMustChangePassword(!!(data as any)?.must_change_password);
+  };
+
 
   // Auto-logout sur inactivité (30 min)
   useSessionTimeout(30 * 60 * 1000);
@@ -95,17 +111,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [session?.user?.id]);
 
+  // Recharger le flag "must_change_password" à chaque changement d'utilisateur.
+  useEffect(() => {
+    const uid = session?.user?.id;
+    if (!uid) { setMustChangePassword(false); return; }
+    supabase
+      .from("profiles")
+      .select("must_change_password")
+      .eq("id", uid)
+      .maybeSingle()
+      .then(({ data }) => setMustChangePassword(!!(data as any)?.must_change_password));
+  }, [session?.user?.id]);
+
   const signOut = async () => {
     clearAllDrafts();
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, signOut }}>
+    <AuthContext.Provider value={{ session, user: session?.user ?? null, loading, mustChangePassword, refreshMustChangePassword, signOut }}>
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   const ctx = useContext(AuthContext);

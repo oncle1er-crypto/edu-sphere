@@ -10,6 +10,8 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const AcceptInvitationPage = lazy(() => import("@/pages/auth/AcceptInvitationPage"));
+const FirstPasswordPage = lazy(() => import("@/pages/auth/FirstPasswordPage"));
+
 const Home = lazy(() => import("@/pages/Home"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const StudentsLayout = lazy(() => import("@/pages/eleves/StudentsLayout"));
@@ -256,11 +258,13 @@ const queryClient = new QueryClient({
 });
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { session, loading } = useAuth();
+  const { session, loading, mustChangePassword } = useAuth();
   if (loading) return <AppLoader label="Vérification de votre session…" />;
   if (!session) return <Navigate to="/connexion" replace />;
+  if (mustChangePassword) return <Navigate to="/premier-mot-de-passe" replace />;
   return <MfaGuard>{children}</MfaGuard>;
 }
+
 
 
 const App = () => (
@@ -276,6 +280,8 @@ const App = () => (
           <Routes>
             <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
             <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/premier-mot-de-passe" element={<Suspense fallback={<AppLoader label="Chargement…" />}><FirstPasswordPage /></Suspense>} />
+
             <Route path="/invitation" element={<AcceptInvitationPage />} />
             <Route path="/carte-scolaire/verification/:token" element={<StudentCardVerificationPage />} />
             <Route path="/verify-student-card/:token" element={<StudentCardVerificationPage />} />

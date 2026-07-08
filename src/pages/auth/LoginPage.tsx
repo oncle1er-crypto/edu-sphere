@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import heroImg from "@/assets/login-hero.jpg";
 import logoImg from "@/assets/login-logo.png";
+import { resolveLoginEmail } from "@/lib/phoneAuth";
 
 const NAVY = "#071B3B";
 const GOLD = "#D4A017";
@@ -42,9 +43,14 @@ export default function LoginPage() {
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    const resolved = resolveLoginEmail(email);
+    if (!resolved) {
+      toast.error("Identifiant invalide", { description: "Entrez un email ou un numéro à 10 chiffres." });
+      return;
+    }
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.signInWithPassword({ email: resolved.email, password });
       if (error) throw error;
       navigate("/");
     } catch (err: any) {
@@ -53,6 +59,7 @@ export default function LoginPage() {
       setLoading(false);
     }
   };
+
 
 
 
@@ -254,14 +261,15 @@ export default function LoginPage() {
                 <div className="relative group">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 transition-colors group-focus-within:text-amber-500" />
                   <Input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Entrez votre identifiant"
+                    placeholder="Email ou téléphone (10 chiffres)"
                     required
                     className="pl-11 h-12 rounded-xl border-slate-200 bg-white shadow-sm focus-visible:border-amber-400 focus-visible:ring-2 focus-visible:ring-amber-200 focus-visible:ring-offset-0 transition-all"
                   />
                 </div>
+
               </div>
 
               <div className="space-y-1.5">
