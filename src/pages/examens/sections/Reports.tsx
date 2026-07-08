@@ -20,6 +20,7 @@ import {
   generateEvolutionMoyennes,
   generateDecisionsFinAnnee,
 } from "@/lib/reports/examensReports";
+import { enqueueReport } from "@/lib/reportQueue";
 
 type ReportKey =
   | "pv"
@@ -76,25 +77,25 @@ export default function Reports() {
     return true;
   })();
 
-  const run = async () => {
+  const run = () => {
     if (!activeReport || !ecoleId) return;
     setBusy(true);
-    try {
-      switch (activeReport.key) {
-        case "pv":        await generatePVDeliberation(ecoleId, filters.classe, filters.periode); break;
-        case "releve":    await generateReleveNotes(ecoleId, filters.eleve, filters.periode); break;
-        case "stats":     await generateStatsMatieres(ecoleId, filters.periode); break;
-        case "palmares":  await generatePalmares(ecoleId, filters.periode, filters.classe); break;
-        case "evolution": await generateEvolutionMoyennes(ecoleId, anneeId!, filters.classe); break;
-        case "decisions": await generateDecisionsFinAnnee(ecoleId, anneeId!, filters.classe); break;
+    const key = activeReport.key;
+    const label = activeReport.titre;
+    const task = async () => {
+      switch (key) {
+        case "pv":        return generatePVDeliberation(ecoleId, filters.classe, filters.periode);
+        case "releve":    return generateReleveNotes(ecoleId, filters.eleve, filters.periode);
+        case "stats":     return generateStatsMatieres(ecoleId, filters.periode);
+        case "palmares":  return generatePalmares(ecoleId, filters.periode, filters.classe);
+        case "evolution": return generateEvolutionMoyennes(ecoleId, anneeId!, filters.classe);
+        case "decisions": return generateDecisionsFinAnnee(ecoleId, anneeId!, filters.classe);
       }
-      toast.success("Rapport généré");
-      setActive(null);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Erreur génération");
-    } finally {
-      setBusy(false);
-    }
+    };
+    enqueueReport(label, task);
+    toast.success("Rapport ajouté à la file d'attente");
+    setActive(null);
+    setBusy(false);
   };
 
   return (
