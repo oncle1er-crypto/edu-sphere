@@ -17,7 +17,7 @@ import {
 export default function AutoGenerate() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
-  const { settings, loading: settingsLoading } = useTimetableSettings();
+  const { settings } = useTimetableSettings();
 
   const [heuresMax, setHeuresMax] = useState(6);
   const [respectDispo, setRespectDispo] = useState(true);
