@@ -64,11 +64,6 @@ export default function Reports() {
     return true;
   })();
 
-  const run = () => {
-    if (!activeReport || !ecoleId) return;
-    setBusy(true);
-    const key = activeReport.key;
-    const label = activeReport.titre;
   const run = async () => {
     if (!activeReport || !ecoleId) return;
     setBusy(true);
