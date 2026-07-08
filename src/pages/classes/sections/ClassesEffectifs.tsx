@@ -34,6 +34,7 @@ export default function ClassesEffectifs() {
               <TableHead>Cycle</TableHead>
               <TableHead>Effectif</TableHead>
               <TableHead className="min-w-[180px]">Remplissage</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -52,12 +53,15 @@ export default function ClassesEffectifs() {
                       <span className="text-xs font-semibold w-10">{pct}%</span>
                     </div>
                   </TableCell>
+                  <TableCell className="text-right">
+                    <ApplyScolariteButton classeId={c.id} classeNom={c.nom} />
+                  </TableCell>
                 </TableRow>
               );
             })}
             {classes.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                   Aucune classe trouvée.
                 </TableCell>
               </TableRow>
