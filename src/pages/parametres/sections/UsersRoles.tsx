@@ -57,6 +57,7 @@ const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
 
 export default function UsersRoles() {
   const { users, loading, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId, fetchUsers } = useUsersRoles();
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
