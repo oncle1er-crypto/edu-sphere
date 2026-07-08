@@ -8,6 +8,7 @@ export interface UserWithRole {
   email: string;
   full_name: string;
   role: string;
+  email_confirmed?: boolean;
   created_at: string;
 }
 
@@ -16,62 +17,27 @@ export function useUsersRoles() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const call = useCallback(async (body: any) => {
+    const { data, error } = await supabase.functions.invoke("admin-manage-users", { body });
+    if (error) throw new Error(error.message);
+    if ((data as any)?.error) throw new Error((data as any).error);
+    return data;
+  }, []);
+
   const fetchUsers = useCallback(async () => {
     if (!ecoleId) return;
     setLoading(true);
-
-    // Get roles for this school
-    const { data: roles, error: rolesErr } = await supabase
-      .from("user_roles")
-      .select("user_id, role, created_at")
-      .eq("ecole_id", ecoleId);
-
-    if (rolesErr) {
-      console.error(rolesErr);
-      toast.error("Erreur chargement rôles");
-      setLoading(false);
-      return;
-    }
-
-    if (!roles || roles.length === 0) {
+    try {
+      const data: any = await call({ action: "list", ecole_id: ecoleId });
+      setUsers((data?.users ?? []) as UserWithRole[]);
+    } catch (e: any) {
+      console.error("[useUsersRoles] list error:", e);
+      toast.error("Erreur chargement utilisateurs: " + e.message);
       setUsers([]);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Get profiles for those user_ids
-    const userIds = [...new Set(roles.map((r) => r.user_id))];
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", userIds);
-
-    const profileMap = new Map(
-      (profiles ?? []).map((p) => [p.id, p])
-    );
-
-    // Build combined list — group roles by user
-    const userMap = new Map<string, UserWithRole>();
-    for (const r of roles) {
-      const profile = profileMap.get(r.user_id);
-      if (userMap.has(r.user_id)) {
-        // Add role
-        const existing = userMap.get(r.user_id)!;
-        existing.role += `, ${r.role}`;
-      } else {
-        userMap.set(r.user_id, {
-          user_id: r.user_id,
-          email: "", // will fill from auth if needed
-          full_name: profile?.full_name || "Utilisateur",
-          role: r.role,
-          created_at: r.created_at,
-        });
-      }
-    }
-
-    setUsers(Array.from(userMap.values()));
-    setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, call]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchUsers();
@@ -81,9 +47,7 @@ export function useUsersRoles() {
   const addUserRole = async (userId: string, role: string) => {
     if (!ecoleId) return false;
     const { error } = await supabase.from("user_roles").insert({
-      user_id: userId,
-      ecole_id: ecoleId,
-      role: role as any,
+      user_id: userId, ecole_id: ecoleId, role: role as any,
     });
     if (error) { toast.error(error.message); return false; }
     toast.success("Rôle attribué");
@@ -93,17 +57,52 @@ export function useUsersRoles() {
 
   const removeUserRole = async (userId: string, role: string) => {
     if (!ecoleId) return false;
-    const { error } = await supabase
-      .from("user_roles")
-      .delete()
-      .eq("user_id", userId)
-      .eq("ecole_id", ecoleId)
-      .eq("role", role as any);
+    const { error } = await supabase.from("user_roles").delete()
+      .eq("user_id", userId).eq("ecole_id", ecoleId).eq("role", role as any);
     if (error) { toast.error(error.message); return false; }
     toast.success("Rôle retiré");
     await fetchUsers();
     return true;
   };
 
-  return { users, loading: loading || ecoleLoading, fetchUsers, addUserRole, removeUserRole, ecoleId };
+  const createUser = async (payload: { email: string; password: string; full_name: string; roles: string[] }) => {
+    if (!ecoleId) return false;
+    try {
+      await call({ action: "create", ecole_id: ecoleId, ...payload });
+      toast.success("Utilisateur créé — il peut se connecter immédiatement");
+      await fetchUsers();
+      return true;
+    } catch (e: any) { toast.error(e.message); return false; }
+  };
+
+  const updateUser = async (target_user_id: string, payload: { full_name?: string; email?: string }) => {
+    if (!ecoleId) return false;
+    try {
+      await call({ action: "update", ecole_id: ecoleId, target_user_id, ...payload });
+      toast.success("Utilisateur mis à jour");
+      await fetchUsers();
+      return true;
+    } catch (e: any) { toast.error(e.message); return false; }
+  };
+
+  const deleteUser = async (target_user_id: string) => {
+    if (!ecoleId) return false;
+    try {
+      await call({ action: "delete", ecole_id: ecoleId, target_user_id });
+      toast.success("Utilisateur supprimé");
+      await fetchUsers();
+      return true;
+    } catch (e: any) { toast.error(e.message); return false; }
+  };
+
+  const resetPassword = async (target_user_id: string, new_password: string) => {
+    if (!ecoleId) return false;
+    try {
+      await call({ action: "reset_password", ecole_id: ecoleId, target_user_id, new_password });
+      toast.success("Mot de passe réinitialisé");
+      return true;
+    } catch (e: any) { toast.error(e.message); return false; }
+  };
+
+  return { users, loading: loading || ecoleLoading, fetchUsers, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId };
 }
