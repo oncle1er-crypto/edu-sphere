@@ -1,82 +1,50 @@
-# Gestion complète — Contrats & affectations enseignants
+## Diagnostic
 
-Objectif : transformer la section actuelle (tableau lecture seule) en un vrai module RH couvrant les 4 volets demandés.
+Ce n'est pas un bug de données — c'est une **race condition** classique entre l'authentification et le chargement des hooks.
 
-## 1. CRUD complet des contrats
+**Ce qui se passe aujourd'hui :**
+1. Vous vous connectez → l'app démarre
+2. `useEcoleId` regarde `user` : au premier rendu, `user` est encore `null` (la session n'est pas encore restaurée depuis le stockage)
+3. Le hook conclut immédiatement « pas d'utilisateur » et met `loading = false` avec `ecoleId = null`
+4. Les hooks qui en dépendent (`useEleves`, KPIs du dashboard, etc.) reçoivent `ecoleId = null` → aucune requête déclenchée
+5. La session finit par se restaurer un instant plus tard, mais rien ne re-déclenche le fetch automatiquement dans certains composants
+6. Vous rafraîchissez → cette fois la session est déjà en cache → tout s'affiche
 
-Nouvelle table `contrats_enseignants` (multi-tenant, `ecole_id`) :
-- enseignant_id, type (CDD/CDI/vacation/stage), statut (brouillon/actif/suspendu/rompu/terminé)
-- date_debut, date_fin, periode_essai_fin, preavis_jours
-- salaire_base, primes (jsonb), quotite (temps plein / partiel %)
-- motif_rupture, date_rupture
-- notes, cree_par, signe_le
+**Preuve dans le code :** `useEcoleId` (src/hooks/useEcoleId.ts) ne différencie pas « pas d'utilisateur » de « auth en cours de chargement ».
 
-Actions UI :
-- Créer / modifier / renouveler (crée un nouveau contrat lié) / résilier (dialog avec motif obligatoire)
-- Historique par enseignant (drawer avec timeline des contrats successifs et avenants)
+## Correctif
 
-## 2. Affectations pédagogiques
+### 1. `useEcoleId` : attendre que l'auth soit prête
+Ne plus déclarer `loading = false` tant que `AuthContext.loading` est encore `true`. Rester en attente pendant l'hydratation de la session au lieu de renvoyer prématurément `ecoleId = null`.
 
-Réutilise la table existante `enseignant_matieres` (déjà présente : enseignant_id, matiere_id, classe_id, annee_id) + ajout colonne `volume_horaire_hebdo`.
+### 2. Hooks de données : lier `enabled` à l'état d'auth
+Pour chaque hook consommateur (`useEleves`, `useClasses`, `useEnseignants`, `useMatieres`, KPIs du dashboard Élèves, etc.), s'assurer que le `useEffect` de fetch attend :
+- `!authLoading`
+- `!ecoleLoading`
+- `ecoleId` défini
 
-UI dédiée dans "Contrats & affectations" :
-- Vue par enseignant : ses classes × matières × heures/semaine
-- Ajout/retrait rapide via combobox (matière, classe)
-- Total heures calculé automatiquement + alerte si > quotité contrat
+Aujourd'hui la condition existe mais est court-circuitée par le `loading=false` prématuré de `useEcoleId`.
 
-## 3. Documents & avenants
+### 3. Section « Vue d'ensemble » du module Élèves
+Vérifier le hook qui alimente les 6 KPIs (Total, Inscrits actifs, Classes, Présence, Nouveaux, Retard) pour qu'il applique la même garde et re-fetch quand `ecoleId` bascule de `null` à une valeur.
 
-Réutilise `enseignants_documents` (déjà en base) + nouveau bucket storage `contrats-enseignants` (privé, RLS par ecole_id).
-
-UI :
-- Upload PDF (contrat signé, avenants, pièces RH)
-- Liste chronologique avec type (contrat initial / avenant / rupture / autre)
-- Téléchargement sécurisé via URL signée
-
-## 4. Alertes fins de contrat
-
-Dashboard en tête de la section :
-- KPI : contrats actifs, CDD < 30j, périodes d'essai à valider, contrats sans documents
-- Tableau "À traiter" : contrats dont `date_fin` < today + 30j ou `periode_essai_fin` < today + 7j
-- Notifications parents inutiles ici — juste badge visuel + toast à l'ouverture
-
-## Structure UI
-
-Refonte de `src/pages/enseignants/sections/StaffContracts.tsx` :
-
-```text
-┌ Header (KPI + alertes fin de contrat)
-├ Onglets :
-│   • Liste des contrats  (tableau + filtres type/statut + recherche + export CSV)
-│   • Affectations pédago (par enseignant, classes × matières × heures)
-│   • Documents           (upload + liste par enseignant)
-└ Dialogs : NouveauContratDialog, ResilierDialog, RenouvelerDialog, AffectationDialog, UploadDocDialog
-```
+### 4. Périmètre étendu (même cause racine)
+Auditer d'un coup tous les hooks qui suivent le même pattern « `if (!ecoleId) return;` dans `useEffect` » pour appliquer la correction uniformément (Finances, Bibliothèque, Cantine, Transport, Vie scolaire, Cours de vacances, etc.).
 
 ## Détails techniques
 
-**Migrations SQL :**
-1. Créer `public.contrats_enseignants` + GRANT authenticated/service_role + RLS (has_ecole_role admin/directeur pour écrire, tous rôles école pour lire)
-2. `ALTER TABLE enseignant_matieres ADD COLUMN volume_horaire_hebdo numeric`
-3. Trigger `updated_at`
-4. Vue `v_contrats_alertes` (fin < 30j, essai < 7j) — optionnel, sinon calcul côté client
-5. Fonction `resilier_contrat(_id, _motif, _date)` en SECURITY DEFINER (audit + update)
+- Fichier pivot : `src/hooks/useEcoleId.ts` — ajouter la dépendance à `useAuth().loading` et ne quitter l'état de chargement qu'une fois l'auth stabilisée.
+- Pattern cible pour tous les hooks de données :
+  ```
+  useEffect(() => {
+    if (authLoading || ecoleLoading) return;   // attendre
+    if (!ecoleId) { setLoading(false); return; } // vraiment déconnecté
+    fetch();
+  }, [authLoading, ecoleLoading, ecoleId, ...]);
+  ```
+- Aucune modification de schéma DB, aucune politique RLS à toucher.
+- Aucun impact fonctionnel autre que « les données apparaissent dès la connexion ».
 
-**Storage :** bucket `contrats-enseignants` privé + policies RLS objects (path = `{ecole_id}/{enseignant_id}/{file}`)
+## Résultat attendu
 
-**Hooks nouveaux :**
-- `useContratsEnseignants(ecoleId)` — CRUD + alertes
-- `useAffectationsPedagogiques(enseignantId)` — via enseignant_matieres
-- `useContratsDocuments(enseignantId)` — upload/list/delete
-
-**Composants nouveaux (`src/pages/enseignants/components/`) :**
-- `ContractsDashboard.tsx`, `ContractsTable.tsx`, `AssignmentsPanel.tsx`, `DocumentsPanel.tsx`
-- `NewContractDialog.tsx`, `TerminateContractDialog.tsx`, `RenewContractDialog.tsx`, `AssignmentDialog.tsx`, `UploadContractDocDialog.tsx`
-
-**Sécurité :**
-- Contrats accessibles seulement à admin/directeur pour écrire; comptable en lecture (pour la paie); enseignant voit seulement les siens
-- Audit dans `security_audit_logs` sur création/résiliation
-
-**Périmètre exclu volontairement :**
-- Signature électronique (juste un statut "signé le" manuel)
-- Génération auto du PDF de contrat (upload manuel dans cette itération)
+Après login, les 227 élèves, les 17 classes et tous les KPIs s'affichent sans avoir besoin de rafraîchir la page.
