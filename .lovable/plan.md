@@ -1,83 +1,39 @@
-## Objectif
 
-Corriger uniquement l'**affichage** des effectifs à travers l'application, sans toucher aux données ni à la logique de promotion `pre_inscrit → inscrit` (déclenchée automatiquement au 1er versement). Aujourd'hui, plusieurs écrans filtrent trop strictement et cachent les 227 pré-inscrits de l'année active.
+## Comment appliquer la scolarité à une classe — état actuel
 
-## Règle métier confirmée
+Aujourd'hui, la scolarité n'est **pas** appliquée classe par classe, mais **par niveau/cycle** via une grille tarifaire. Voici la marche à suivre dans l'app actuelle :
 
-| Zone | Statuts affichés | Raison |
-|---|---|---|
-| Dashboards, Statistiques, Effectifs, Listes élèves, Recherche | `inscrit` **+** `pre_inscrit` | Ce sont de vrais élèves de l'école |
-| Finances, Recouvrement, Relances, Créances | `inscrit` **+** `pre_inscrit` | Un pré-inscrit doit une scolarité |
-| **Cartes scolaires, Bulletins, Diplômes, Attestations** | `inscrit` uniquement | Pas d'édition tant qu'aucun versement |
-| **Cantine, Transport, Bibliothèque (abonnements/prêts)** | `inscrit` uniquement | Réservé aux élèves ayant payé |
+1. **Finances → Configuration → Grille tarifaire (scolarité)**
+   - Créer une ligne par niveau (ex. CP1, CP2, 6ᵉ, 5ᵉ…) avec : frais d'inscription, montant total, et le découpage en tranches (T1/T2/T3 + échéances).
+2. **Générer les tranches** pour les élèves :
+   - Élève par élève : à l'inscription, le bouton « 1er paiement » appelle `generer_tranches_eleve` automatiquement.
+   - En masse : le bouton « Régénérer les tranches des pré-inscrits » (hook `useGrilleTarifs`) applique la grille à tous les pré-inscrits du niveau.
+3. Les tranches apparaissent alors dans **Finances → Recouvrement / Encaissements** pour chaque élève de la classe.
 
-## Plan d'implémentation
+➡️ Il n'existe donc **pas encore de bouton « Appliquer à cette classe »** : la grille se définit par niveau, pas par classe.
 
-### Étape 1 — Créer un helper commun
-Nouveau fichier `src/lib/eleveStatus.ts` avec deux constantes réutilisables :
-- `STATUTS_ACTIFS = ['inscrit', 'pre_inscrit']` (élève réellement dans l'école)
-- `STATUTS_PAYANTS = ['inscrit']` (a déjà payé au moins une tranche)
+## Ajout proposé : bouton « Appliquer la scolarité » par classe
 
-Ce fichier centralise la règle : toute future modification se fait à un seul endroit.
+Pour rendre l'opération plus intuitive côté **Classes**, ajout d'un bouton unique qui :
 
-### Étape 2 — Corriger les écrans qui doivent compter les deux statuts
+- Vérifie qu'une ligne de grille existe pour le **niveau/cycle de la classe**.
+- Appelle `generer_tranches_eleve` (RPC existante) pour **chaque élève actif de la classe** (statuts `inscrit` + `pre_inscrit`).
+- Affiche un résumé : X élèves traités, Y déjà à jour, Z erreurs (ex. grille manquante).
 
-Remplacer `.eq("statut", "inscrit")` par `.in("statut", STATUTS_ACTIFS)` dans :
+### Emplacement UI
+- Page **Classes → Effectifs** (`src/pages/classes/sections/ClassesEffectifs.tsx`) : bouton dans l'entête de chaque classe « Appliquer la scolarité ».
+- Ouvre une petite `Dialog` de confirmation listant : niveau détecté, nombre d'élèves concernés, montant total de la grille.
 
-**Statistiques & Dashboards**
-- `src/pages/statistiques/sections/GlobalDashboard.tsx` (compteur élèves + effectifs par classe)
-- `src/pages/statistiques/sections/StudentsStats.tsx` (total, garçons, filles, par cycle, par classe)
-- Autres sections `statistiques/sections/*` qui filtrent par statut
+### Détails techniques
+- Nouveau composant `ApplyScolariteButton.tsx` sous `src/pages/classes/components/`.
+- Requêtes :
+  - `SELECT id FROM eleves WHERE classe_id = ? AND statut IN (...STATUTS_ACTIFS)`.
+  - Boucle `supabase.rpc('generer_tranches_eleve', { _eleve_id })` avec `Promise.allSettled` pour ne pas s'arrêter à la 1ʳᵉ erreur.
+- Aucune migration SQL, aucun changement de schéma — on réutilise les RPC existantes.
+- Toast final : « Scolarité appliquée à 42 élèves (2 ignorés : grille manquante) ».
 
-**Effectifs & Classes**
-- `src/pages/classes/sections/ClassesEffectifs.tsx`
-- `src/pages/classes/sections/ClassesDashboard.tsx`
-- Toute vue « effectif » d'une classe
+### Fichiers touchés
+- **Nouveau** : `src/pages/classes/components/ApplyScolariteButton.tsx` (~120 lignes).
+- **Modifié** : `src/pages/classes/sections/ClassesEffectifs.tsx` — intégration du bouton par ligne de classe.
 
-**Finances**
-- Écrans de recouvrement, relances, créances, listes de payeurs dans `src/pages/finances/sections/*` et `src/pages/finances/useFinanceData.ts`
-
-**Dashboard principal**
-- `src/pages/Dashboard.tsx` (KPI élèves)
-
-**Ajout d'un badge visuel** : dans les listes d'élèves (StudentsLayout, StudentDetailDrawer), afficher un petit badge orange « Pré-inscrit » à côté du nom pour les distinguer, sans les cacher.
-
-### Étape 3 — Vérifier que les zones « payant seulement » filtrent bien sur `inscrit`
-
-Confirmer/laisser `.eq("statut", "inscrit")` dans :
-- `src/pages/cartes/*` (cartes scolaires)
-- Génération de bulletins (`src/lib/generateBulletinPDF.ts`, sections examens)
-- Attestations d'inscription (`src/lib/generateAttestationInscriptionPDF.ts`)
-- `src/pages/cantine/sections/CanteenSubscribers.tsx` (abonnés cantine)
-- `src/pages/transport/sections/*` (abonnements transport)
-- `src/pages/bibliotheque/sections/LibraryReaders.tsx` + `LibraryLoans.tsx` (lecteurs et prêts)
-
-### Étape 4 — Nettoyer la page fictive résiduelle
-
-`src/pages/Eleves.tsx` contient encore un tableau **codé en dur** (Diallo, Traoré…). Cette page racine n'est plus utilisée (le vrai module est `src/pages/eleves/StudentsLayout.tsx`) : supprimer le fichier ou le remplacer par une redirection vers `/eleves/tableau`.
-
-### Étape 5 — Vérification
-
-Après modifications :
-1. Recharger `/statistiques` → doit afficher **227** élèves (au lieu de 0)
-2. Recharger `/classes/effectifs` → chaque classe montre le vrai effectif
-3. Recharger `/finances/recouvrement` → les 227 apparaissent dans les créances
-4. Vérifier `/cartes` et `/bulletins` → **0** élève affiché (normal : aucun paiement encore)
-5. Vérifier `/cantine/abonnes`, `/transport`, `/bibliotheque/lecteurs` → **0** (normal)
-
-## Ce qui n'est PAS touché
-
-- ❌ Aucune donnée modifiée en base
-- ❌ Aucun changement sur `check_and_promote_eleve` ni les triggers
-- ❌ Aucun changement sur le passage de classe
-- ❌ Le statut `pre_inscrit` reste tel quel
-
-Dès qu'un pré-inscrit fera son 1er versement, il basculera automatiquement en `inscrit` et apparaîtra alors dans les cartes, bulletins, cantine, etc. — sans intervention manuelle.
-
-## Détails techniques
-
-- **Fichiers modifiés estimés** : ~15 fichiers (surtout des remplacements 1-ligne `.eq → .in`)
-- **Nouveau fichier** : `src/lib/eleveStatus.ts` (~10 lignes)
-- **Fichier supprimé** : `src/pages/Eleves.tsx` (page fictive obsolète)
-- **Aucune migration SQL**, aucun changement de schéma
-- **Aucun impact RLS** ni sécurité
+Rien d'autre n'est modifié : la grille tarifaire, les RPC, et le workflow d'inscription individuel restent identiques.
