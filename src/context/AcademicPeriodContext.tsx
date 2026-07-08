@@ -59,6 +59,7 @@ interface Ctx {
   upsertAnnee: (a: AnneeScolaire) => void;
   setAnneeStatut: (id: string, statut: AnneeStatut) => void;
   setPeriodeStatut: (anneeId: string, periodeId: string, statut: PeriodeStatut) => void;
+  generatePeriodesForAnnee: (anneeId: string) => Promise<void>;
   getLockState: (module: LockableModule, dateIso?: string) => LockState;
   isLocked: (module: LockableModule, dateIso?: string) => boolean;
 }
