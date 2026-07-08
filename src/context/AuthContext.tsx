@@ -11,8 +11,11 @@ interface AuthContextValue {
   session: Session | null;
   user: User | null;
   loading: boolean;
+  mustChangePassword: boolean;
+  refreshMustChangePassword: () => Promise<void>;
   signOut: () => Promise<void>;
 }
+
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
