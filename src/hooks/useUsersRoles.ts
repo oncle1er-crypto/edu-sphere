@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export interface UserWithRole {
@@ -14,6 +15,7 @@ export interface UserWithRole {
 
 export function useUsersRoles() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,6 +89,10 @@ export function useUsersRoles() {
 
   const deleteUser = async (target_user_id: string) => {
     if (!ecoleId) return false;
+    if (currentUser?.id === target_user_id) {
+      toast.error("Vous ne pouvez pas supprimer votre propre compte");
+      return false;
+    }
     try {
       await call({ action: "delete", ecole_id: ecoleId, target_user_id });
       toast.success("Utilisateur supprimé");
