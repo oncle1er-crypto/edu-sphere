@@ -1,53 +1,69 @@
-## Lot 1.2 — Barèmes & Validation des examens
+## Finalisation Examens & Notes — Lot A + Lot B
 
-### Objectif
-Rendre 100 % fonctionnels :
-- `src/pages/examens/sections/GradingScales.tsx` : brancher sur `parametres_matieres` (règles d'évaluation par matière/niveau) au lieu des règles codées en dur.
-- `src/pages/examens/sections/Validation.tsx` : brancher les boutons de verrouillage/signature sur `bulletins_audit` + RPC `verrouiller_bulletin` existante.
+### Lot A — Configuration (`ExamsConfig.tsx`)
 
-### Étapes
+**Migration** — étendre `parametres_matieres` avec les colonnes manquantes :
+- `systeme_notation` text default `'20'` (valeurs : `20`, `100`, `gpa`, `lettre`)
+- `decimales_affichees` int default `2`
+- `arrondi` text default `'arithmetique'` (`arithmetique`, `superieur`, `inferieur`)
+- `autoriser_notes_hors_bareme` boolean default `false`
+- `afficher_mentions` boolean default `true`
+- `afficher_rang` boolean default `true`
+- `afficher_appreciation` boolean default `true`
+- `texte_pied_bulletin` text nullable
+- `signature_directeur_url` text nullable
 
-**1. Explorer l'existant (lecture seule)**
-- Lire `GradingScales.tsx` et `Validation.tsx` en entier.
-- Vérifier le schéma `parametres_matieres` et `bulletins_audit`, et confirmer que `verrouiller_bulletin` existe (fonction RPC).
-- Vérifier s'il existe un hook `useParametresMatieres` — sinon en créer un.
+**Réécriture `ExamsConfig.tsx`** :
+- Utiliser le hook existant `useParametresMatieres` (déjà créé au lot 1.2).
+- Chaque champ (Select, Input, Switch, Textarea) branché avec sauvegarde onBlur/onCheckedChange.
+- Skeleton pendant chargement.
+- Retirer tous les `defaultValue` non branchés.
 
-**2. Migration (si nécessaire)**
-- Ajouter uniquement les colonnes manquantes à `parametres_matieres` si le stockage des barèmes en a besoin (ex: `note_max`, `bareme_json`, `regles_arrondi`). Sinon, aucune migration.
-- Aucun changement de schéma pour `bulletins_audit` : la table et la RPC existent.
+### Lot B — Rapports pédagogiques (`Reports.tsx`)
 
-**3. Hook barèmes**
-- Créer `src/hooks/useGradingScales.ts` : `fetchScales(ecoleId)`, `saveScale(scaleId, patch)`, `resetToDefault()`.
-- Filtrer par `ecole_id` + optionnellement `niveau` / `matiere_id`.
+**Réécriture complète** avec 6 générateurs réels branchés sur la base :
 
-**4. GradingScales.tsx**
-- Remplacer les 2 tableaux hardcodés par des données issues de `useGradingScales`.
-- Formulaire d'édition d'un barème → `saveScale`.
-- Bouton « Réinitialiser aux valeurs officielles MENA » (côte d'ivoirien) → `resetToDefault`.
-- Skeleton + toasts succès/erreur.
+| Rapport | Source données | Format | Filtres |
+|---|---|---|---|
+| PV de délibération | `bulletins_audit` + `classes` + `eleves` | PDF (jsPDF) | classe, période |
+| Relevés de notes | `notes` + `evaluations` + `matieres` + `eleves` | PDF | élève, période |
+| Statistiques par matière | agrégation SQL sur `notes` × `matieres` | Excel (xlsx) | période |
+| Palmarès trimestriel | top N `bulletins_audit.moyenne` | PDF | classe/niveau, période |
+| Rapport d'évolution | moyennes multi-périodes par élève | Excel | classe |
+| Liste admis/redoublants | `decisions_fin_annee` | PDF | classe |
 
-**5. Validation.tsx**
-- Charger via `useBulletinsAudit` (créer si absent) la liste des bulletins en attente de validation pour la période active.
-- Boutons :
-  - « Verrouiller » → RPC `verrouiller_bulletin(bulletin_id)`.
-  - « Signer » → mise à jour `bulletins_audit.signature_directeur`.
-  - « Ouvrir en override » → réutilise `BulletinOverrideDialog` déjà présent.
-- Compteurs : brouillons / verrouillés / signés.
-
-**6. Tests avant validation utilisateur**
-- Compilation TS (auto via harness).
-- Test manuel Playwright sur `/examens/grading-scales` : chargement, édition d'un barème, sauvegarde persistante après rechargement.
-- Test manuel Playwright sur `/examens/validation` : affichage des bulletins, clic « Verrouiller », vérification que le badge change et que la ligne devient non-éditable.
-- Capture d'écran des 2 pages, lecture des logs console.
+**Détails techniques** :
+- `jspdf` et `jspdf-autotable` déjà présents (`generateEmploiDuTempsExports`).
+- `xlsx` déjà présent dans le projet.
+- Chaque bouton "Générer" ouvre un dialog de filtres (classe + période via `useClasses` + `useAcademicPeriod`), puis lance la génération et déclenche le téléchargement.
+- Toast succès/erreur.
+- États : "Aucune donnée" si résultat vide.
 
 ### Fichiers touchés
-- (peut-être) migration `parametres_matieres` — colonnes barème.
-- **Nouveaux** : `src/hooks/useGradingScales.ts`, `src/hooks/useBulletinsAudit.ts` (si absent).
-- **Modifiés** : `src/pages/examens/sections/GradingScales.tsx`, `src/pages/examens/sections/Validation.tsx`.
+
+**Nouveaux** :
+- Migration `parametres_matieres` (ajout colonnes).
+- `src/lib/reports/pvDeliberation.ts`
+- `src/lib/reports/releveNotes.ts`
+- `src/lib/reports/statsMatiere.ts`
+- `src/lib/reports/palmares.ts`
+- `src/lib/reports/evolutionMoyennes.ts`
+- `src/lib/reports/decisionsFinAnnee.ts`
+
+**Modifiés** :
+- `src/hooks/useGradingScales.ts` (typing des nouvelles colonnes via Database types après migration).
+- `src/pages/examens/sections/ExamsConfig.tsx` (réécriture complète).
+- `src/pages/examens/sections/Reports.tsx` (réécriture complète avec dialog + boutons de génération).
+
+### Vérifications
+
+- Compilation TS.
+- Playwright : `/examens/configuration` (modifier un champ → recharger → valeur persistée) et `/examens/rapports` (cliquer un bouton, vérifier download déclenché via `page.expect_download()`).
+- Zéro erreur console.
 
 ### Hors périmètre
-- Réécriture de la génération PDF des bulletins.
-- Notification automatique des parents après signature (sera fait dans un lot ultérieur).
-- Refonte du dashboard examens.
 
-Une fois le lot 1.2 validé par vos tests, on enchaîne sur le **lot 1.3 (Conseils de classe & Compositions)**.
+- Refonte des maquettes PDF (mise en page minimale conforme MENA, pas de logos personnalisés).
+- Envoi automatique par email (existant via module Communication plus tard).
+
+Une fois validé, Examens & Notes = **100 % branché Cloud, zéro mock**.

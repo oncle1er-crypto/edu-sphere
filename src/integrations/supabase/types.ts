@@ -3929,41 +3929,68 @@ export type Database = {
       }
       parametres_matieres: {
         Row: {
+          afficher_appreciation: boolean
           afficher_code_bulletin: boolean
+          afficher_mentions: boolean
+          afficher_rang: boolean
+          arrondi: string
+          autoriser_notes_hors_bareme: boolean
           coefficient_defaut: number
           created_at: string
+          decimales_affichees: number
           echelle_defaut: number
           ecole_id: string
           education_religieuse: boolean
           id: string
           matieres_optionnelles: boolean
           note_passage_defaut: number
+          signature_directeur_url: string | null
+          systeme_notation: string
+          texte_pied_bulletin: string | null
           updated_at: string
           verrouiller_coefficients: boolean
         }
         Insert: {
+          afficher_appreciation?: boolean
           afficher_code_bulletin?: boolean
+          afficher_mentions?: boolean
+          afficher_rang?: boolean
+          arrondi?: string
+          autoriser_notes_hors_bareme?: boolean
           coefficient_defaut?: number
           created_at?: string
+          decimales_affichees?: number
           echelle_defaut?: number
           ecole_id: string
           education_religieuse?: boolean
           id?: string
           matieres_optionnelles?: boolean
           note_passage_defaut?: number
+          signature_directeur_url?: string | null
+          systeme_notation?: string
+          texte_pied_bulletin?: string | null
           updated_at?: string
           verrouiller_coefficients?: boolean
         }
         Update: {
+          afficher_appreciation?: boolean
           afficher_code_bulletin?: boolean
+          afficher_mentions?: boolean
+          afficher_rang?: boolean
+          arrondi?: string
+          autoriser_notes_hors_bareme?: boolean
           coefficient_defaut?: number
           created_at?: string
+          decimales_affichees?: number
           echelle_defaut?: number
           ecole_id?: string
           education_religieuse?: boolean
           id?: string
           matieres_optionnelles?: boolean
           note_passage_defaut?: number
+          signature_directeur_url?: string | null
+          systeme_notation?: string
+          texte_pied_bulletin?: string | null
           updated_at?: string
           verrouiller_coefficients?: boolean
         }
