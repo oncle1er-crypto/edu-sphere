@@ -10,9 +10,11 @@ export interface GenerateOptions {
   heuresParJourMax: number;       // ex: 6
   respectDispo: boolean;
   eviterTrous: boolean;
+  matinLourd?: boolean;           // Regrouper matières lourdes le matin (défaut: true)
   effacerAvant: boolean;
   dryRun: boolean;
 }
+
 
 export interface GenerateReport {
   placed: number;
