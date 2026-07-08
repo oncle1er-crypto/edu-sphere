@@ -196,6 +196,8 @@ export default function VacancesInscriptions() {
           )}
         </CardContent>
       </Card>
+
+      <VacancesEnrollmentWorkflow open={workflowOpen} onOpenChange={setWorkflowOpen} />
     </div>
   );
 }
