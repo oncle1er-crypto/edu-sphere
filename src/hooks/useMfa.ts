@@ -37,13 +37,14 @@ export function useMfa() {
   useEffect(() => {
     // Chargement initial uniquement avec loader plein écran
     refresh(true);
-    // Les events Supabase (TOKEN_REFRESHED, USER_UPDATED, etc.) se déclenchent
-    // en arrière-plan toutes les ~heures — on rafraîchit en silence pour ne PAS
-    // ré-afficher le splash "Vérification de sécurité…".
+    // On ne réagit qu'aux vraies transitions d'authentification.
+    // TOKEN_REFRESHED est ignoré car il se déclenche à chaque retour d'onglet
+    // et ne modifie jamais le niveau AAL — le rafraîchir provoque des re-rendus
+    // parasites (flash "Vérification de sécurité…") sans valeur ajoutée.
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
         refresh(true);
-      } else {
+      } else if (event === "USER_UPDATED" || event === "MFA_CHALLENGE_VERIFIED") {
         refresh(false);
       }
     });
