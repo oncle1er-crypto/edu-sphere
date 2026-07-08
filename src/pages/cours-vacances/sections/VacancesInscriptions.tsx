@@ -60,6 +60,15 @@ export default function VacancesInscriptions() {
 
   return (
     <div className="space-y-4">
+      {classes.length === 0 && !loading && (
+        <div className="flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Aucune classe disponible</p>
+            <p>Créez d'abord au moins une classe dans l'onglet <strong>Classes</strong> avant de pouvoir inscrire un élève.</p>
+          </div>
+        </div>
+      )}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h2 className="text-lg font-bold">Inscriptions</h2>
