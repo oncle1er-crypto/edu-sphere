@@ -82,7 +82,7 @@ export function useConseilsClasse() {
     return true;
   };
 
-  const update = async (id: string, patch: Partial<ConseilRow>) => {
+  const update = async (id: string, patch: Record<string, any>) => {
     const { error } = await supabase.from("conseils_classe").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
@@ -169,7 +169,7 @@ export function useSessionsCompositions() {
     return true;
   };
 
-  const update = async (id: string, patch: Partial<SessionCompoRow>) => {
+  const update = async (id: string, patch: Record<string, any>) => {
     const { error } = await supabase.from("sessions_compositions").update(patch).eq("id", id);
     if (error) {
       toast.error(error.message);
