@@ -96,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [session?.user?.id]);
 
   const signOut = async () => {
+    clearAllDrafts();
     await supabase.auth.signOut();
   };
 
