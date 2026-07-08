@@ -14,11 +14,13 @@ interface Creneau {
   classe_id: string;
   enseignant_id: string | null;
   salle: string | null;
+  salle_id: string | null;
   jour: number;
   heure_debut: string;
   heure_fin: string;
   classes?: { nom: string } | null;
 }
+
 
 const overlaps = (aD: string, aF: string, bD: string, bF: string) => aD < bF && bD < aF;
 const minutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
