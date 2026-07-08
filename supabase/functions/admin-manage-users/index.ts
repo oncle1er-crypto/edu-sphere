@@ -14,7 +14,7 @@ const json = (body: unknown, status = 200) =>
 
 // Domaine interne pour les comptes créés avec un numéro de téléphone.
 // Doit rester en synchro avec src/lib/phoneAuth.ts (côté client).
-const PHONE_EMAIL_DOMAIN = "phone.gsp.local";
+const PHONE_EMAIL_DOMAIN = "phone.laprovidence.ci";
 const phoneToEmail = (phone: string) => `${phone}@${PHONE_EMAIL_DOMAIN}`;
 const isValidPhone = (p: string) => /^\d{10}$/.test(p);
 const randomTempPassword = () => {
