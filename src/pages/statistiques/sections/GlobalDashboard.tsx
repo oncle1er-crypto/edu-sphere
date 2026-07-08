@@ -4,6 +4,7 @@ import { KpiCard, BarChart } from "../components/StatsPrimitives";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 export default function GlobalDashboard() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
@@ -14,7 +15,7 @@ export default function GlobalDashboard() {
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     Promise.all([
-      supabase.from("eleves").select("id, sexe", { count: "exact", head: false }).eq("ecole_id", ecoleId).eq("statut", "inscrit"),
+      supabase.from("eleves").select("id, sexe", { count: "exact", head: false }).eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]),
       supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
       supabase.from("classes").select("id, nom", { count: "exact", head: false }).eq("ecole_id", ecoleId),
       supabase.from("tranches").select("montant, paye").eq("ecole_id", ecoleId),
@@ -36,7 +37,7 @@ export default function GlobalDashboard() {
       if (cRes.data && elevesData.length > 0) {
         const classeCount: Record<string, number> = {};
         // We need classe_id from eleves - refetch light
-        supabase.from("eleves").select("classe_id, classes(nom)").eq("ecole_id", ecoleId).eq("statut", "inscrit").then(({ data: ed }) => {
+        supabase.from("eleves").select("classe_id, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]).then(({ data: ed }) => {
           (ed ?? []).forEach((e: any) => {
             const nom = e.classes?.nom ?? "Non affecté";
             classeCount[nom] = (classeCount[nom] ?? 0) + 1;

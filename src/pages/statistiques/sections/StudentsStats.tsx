@@ -4,6 +4,7 @@ import { KpiCard, BarChart } from "../components/StatsPrimitives";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 export default function StudentsStats() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
@@ -12,7 +13,7 @@ export default function StudentsStats() {
 
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
-    supabase.from("eleves").select("id, sexe, classe_id, classes(nom, cycles(nom))").eq("ecole_id", ecoleId).eq("statut", "inscrit").then(({ data: eleves }) => {
+    supabase.from("eleves").select("id, sexe, classe_id, classes(nom, cycles(nom))").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]).then(({ data: eleves }) => {
       const list = eleves ?? [];
       const garcons = list.filter((e: any) => e.sexe === "M").length;
       const filles = list.filter((e: any) => e.sexe === "F").length;
