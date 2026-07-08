@@ -55,7 +55,7 @@ const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
 };
 
 export default function UsersRoles() {
-  const { users, loading, addUserRole, removeUserRole, ecoleId, fetchUsers } = useUsersRoles();
+  const { users, loading, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId, fetchUsers } = useUsersRoles();
   const [search, setSearch] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
@@ -68,6 +68,15 @@ export default function UsersRoles() {
   const [resetMotif, setResetMotif] = useState("");
   const [resettingMfa, setResettingMfa] = useState(false);
   const [permsUser, setPermsUser] = useState<{ id: string; name: string } | null>(null);
+  const [editUser, setEditUser] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [pwdUser, setPwdUser] = useState<{ id: string; name: string } | null>(null);
+  const [newPwd, setNewPwd] = useState("");
+  const [resettingPwd, setResettingPwd] = useState(false);
 
   const handleResetMfa = async () => {
     if (!resetMfaUser || !ecoleId) return;
@@ -96,6 +105,7 @@ export default function UsersRoles() {
 
   const filtered = users.filter((u) =>
     u.full_name.toLowerCase().includes(search.toLowerCase()) ||
+    (u.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
     u.role.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -115,41 +125,61 @@ export default function UsersRoles() {
       return;
     }
     setCreating(true);
-
-    const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email: newEmail,
+    const ok = await createUser({
+      email: newEmail.trim(),
       password: newPassword,
-      options: { data: { full_name: newName } },
+      full_name: newName.trim(),
+      roles: newRoles,
     });
+    setCreating(false);
+    if (ok) {
+      setNewEmail("");
+      setNewName("");
+      setNewRoles(["enseignant"]);
+      setNewPassword("");
+      setDialogOpen(false);
+    }
+  };
 
-    if (authErr || !authData.user) {
-      toast.error(authErr?.message || "Erreur création utilisateur");
-      setCreating(false);
+  const openEdit = (u: { user_id: string; full_name: string; email: string }) => {
+    setEditUser({ id: u.user_id, name: u.full_name, email: u.email });
+    setEditName(u.full_name);
+    setEditEmail(u.email);
+  };
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    setSavingEdit(true);
+    const ok = await updateUser(editUser.id, {
+      full_name: editName.trim(),
+      email: editEmail.trim() !== editUser.email ? editEmail.trim() : undefined,
+    });
+    setSavingEdit(false);
+    if (ok) setEditUser(null);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    const ok = await deleteUser(deleteTarget.id);
+    setDeleting(false);
+    if (ok) setDeleteTarget(null);
+  };
+
+  const handleResetPwd = async () => {
+    if (!pwdUser) return;
+    if (!newPwd || newPwd.length < 8) {
+      toast.error("Le mot de passe doit comporter au moins 8 caractères");
       return;
     }
-
-    const userId = authData.user.id;
-    await supabase.from("profiles").update({ ecole_id: ecoleId, full_name: newName }).eq("id", userId);
-
-    for (const role of newRoles) {
-      await addUserRole(userId, role);
-    }
-
-    setNewEmail("");
-    setNewName("");
-    setNewRoles(["enseignant"]);
-    setNewPassword("");
-    setCreating(false);
-    setDialogOpen(false);
-    toast.success(`Utilisateur ${newName} créé avec ${newRoles.length} rôle(s)`);
+    setResettingPwd(true);
+    const ok = await resetPassword(pwdUser.id, newPwd);
+    setResettingPwd(false);
+    if (ok) { setPwdUser(null); setNewPwd(""); }
   };
 
   const handleToggleRole = async (userId: string, role: string, hasRole: boolean) => {
-    if (hasRole) {
-      await removeUserRole(userId, role);
-    } else {
-      await addUserRole(userId, role);
-    }
+    if (hasRole) await removeUserRole(userId, role);
+    else await addUserRole(userId, role);
   };
 
   const getInitials = (name: string) =>
