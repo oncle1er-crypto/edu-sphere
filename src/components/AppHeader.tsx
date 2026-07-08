@@ -175,13 +175,13 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>{userName}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate("/parametres?section=profile")}>
+              <DropdownMenuItem onClick={() => navigate("/parametres/profil")}>
                 <User className="mr-2 h-4 w-4" />
                 Mon profil
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/parametres")}>
+              <DropdownMenuItem onClick={() => navigate("/parametres/securite")}>
                 <Settings className="mr-2 h-4 w-4" />
-                Paramètres
+                Paramètres du compte
               </DropdownMenuItem>
               <InstallPWAMenuItem />
               <DropdownMenuSeparator />
