@@ -83,7 +83,7 @@ export default function Validation() {
                         confirmTitle={`Verrouiller ${totalBulletins - lockedBulletins} bulletin(s) ?`}
                         confirmDescription="Les bulletins verrouillés ne pourront plus être modifiés. Un hash PDF pourra être ajouté ultérieurement."
                         confirmLabel="Verrouiller les bulletins"
-                        onConfirm={() => verrouillerBulletinsDePeriode(p.id)}
+                        onConfirm={async () => { await verrouillerBulletinsDePeriode(p.id); }}
                       >
                         <FileCheck2 className="h-3.5 w-3.5" />
                         Verrouiller bulletins
@@ -104,9 +104,9 @@ export default function Validation() {
                           : "Plus aucune note ne pourra être saisie sur cette période. Les bulletins déjà émis restent valides."
                       }
                       confirmLabel={verrouillee ? "Rouvrir" : "Verrouiller"}
-                      onConfirm={() =>
-                        setPeriodeStatut(p.id, verrouillee ? "en_cours" : "verrouillee")
-                      }
+                      onConfirm={async () => {
+                        await setPeriodeStatut(p.id, verrouillee ? "en_cours" : "verrouillee");
+                      }}
                     >
                       {verrouillee ? (
                         <>
