@@ -59,7 +59,12 @@ export default function TimetableDashboard() {
   const stats = useMemo(() => {
     const classesPlanifiees = new Set(creneaux.map((c) => c.classe_id)).size;
     const enseignantsAssignes = new Set(creneaux.map((c) => c.enseignant_id).filter(Boolean)).size;
-    const sallesOccupees = new Set(creneaux.map((c) => c.salle).filter((s) => s && s.trim())).size;
+    // Utiliser salle_id (canonique) et fallback texte pour l'ancien contenu
+    const sallesOccupees = new Set(
+      creneaux.map((c) => c.salle_id ?? (c.salle && c.salle.trim() ? `txt:${c.salle.trim()}` : null))
+        .filter(Boolean)
+    ).size;
+
 
     let conflits = 0;
     for (let i = 0; i < creneaux.length; i++) {
