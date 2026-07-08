@@ -223,19 +223,58 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
           .eq("id", a.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("annees_scolaires").insert({
+        const { data: inserted, error } = await supabase.from("annees_scolaires").insert({
           ecole_id: currentEcoleId,
           libelle: a.libelle,
           debut: a.debut,
           fin: a.fin,
           decoupage: a.decoupage as any,
           statut: a.statut as any,
-        });
+        }).select("id").single();
         if (error) throw error;
+        // Insère aussi les périodes générées côté client (les IDs sont générés par la DB)
+        if (inserted && a.periodes.length > 0) {
+          const { error: pErr } = await supabase.from("periodes").insert(
+            a.periodes.map((p) => ({
+              ecole_id: currentEcoleId,
+              annee_id: inserted.id,
+              nom: p.nom,
+              debut: p.debut,
+              fin: p.fin,
+              statut: p.statut as any,
+            }))
+          );
+          if (pErr) throw pErr;
+        }
       }
       await fetchAll();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur enregistrement année");
+    }
+  };
+
+  const generatePeriodesForAnnee: Ctx["generatePeriodesForAnnee"] = async (anneeId) => {
+    if (!currentEcoleId) return;
+    const annee = annees.find((a) => a.id === anneeId);
+    if (!annee) { toast.error("Année introuvable"); return; }
+    if (annee.periodes.length > 0) { toast.error("Cette année a déjà des périodes"); return; }
+    try {
+      const periodes = genererPeriodes(annee.debut, annee.fin, annee.decoupage);
+      const { error } = await supabase.from("periodes").insert(
+        periodes.map((p) => ({
+          ecole_id: currentEcoleId,
+          annee_id: anneeId,
+          nom: p.nom,
+          debut: p.debut,
+          fin: p.fin,
+          statut: "a_venir" as any,
+        }))
+      );
+      if (error) throw error;
+      await fetchAll();
+      toast.success(`${periodes.length} période(s) créée(s)`);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur génération périodes");
     }
   };
 
