@@ -182,10 +182,11 @@ export default function UsersRoles() {
 
   const handleResetPwd = async () => {
     if (!pwdUser) return;
-    if (!newPwd || newPwd.length < 8) {
-      toast.error("Le mot de passe doit comporter au moins 8 caractères");
+    if (!newPwd || newPwd.length < 6) {
+      toast.error("Le mot de passe doit comporter au moins 6 caractères");
       return;
     }
+
     setResettingPwd(true);
     const ok = await resetPassword(pwdUser.id, newPwd);
     setResettingPwd(false);
