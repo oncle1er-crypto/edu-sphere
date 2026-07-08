@@ -25,15 +25,38 @@ Mot de passe temporaire : ${password}
 Vous devrez le changer à la 1ère connexion.`;
 
   const copy = async (value: string, key: string) => {
+    let ok = false;
     try {
-      await navigator.clipboard.writeText(value);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(value);
+        ok = true;
+      }
+    } catch { /* fallback */ }
+    if (!ok) {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = value;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.top = "0";
+        ta.style.left = "0";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+      } catch { ok = false; }
+    }
+    if (ok) {
       setCopied(key);
       toast.success("Copié");
       setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
-    } catch {
-      toast.error("Impossible de copier");
+    } else {
+      toast.error("Copie impossible — sélectionnez et copiez manuellement");
     }
   };
+
 
   const smsHref = channel === "phone" ? `sms:${identifier}?body=${encodeURIComponent(message)}` : "";
   const waHref = channel === "phone"
