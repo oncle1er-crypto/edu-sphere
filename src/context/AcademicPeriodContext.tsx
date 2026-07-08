@@ -183,17 +183,19 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
   }, [fetchAll]);
 
   // Valide l'année active en fonction des données chargées.
-  // Si l'année stockée n'existe plus OU n'est plus « active » en base
-  // (cas typique après une transition de fin d'année), on retombe
-  // automatiquement sur l'année active courante côté serveur.
+  // On ne réinitialise QUE si l'id stocké n'existe plus dans la liste
+  // (cas d'une année supprimée). Sélectionner volontairement une année
+  // archivée / verrouillée / clôturée / en préparation doit rester possible
+  // pour consulter l'historique.
   useEffect(() => {
     if (loading || annees.length === 0) return;
-    const dbActiveId = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
-    const stored = annees.find((a) => a.id === activeAnneeId);
-    if (!stored || (stored.statut !== "active" && dbActiveId && stored.id !== dbActiveId)) {
+    const stillValid = annees.some((a) => a.id === activeAnneeId);
+    if (!stillValid) {
+      const dbActiveId = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
       setActiveAnneeIdState(dbActiveId);
     }
   }, [loading, annees, activeAnneeId]);
+
 
   const activeAnnee = useMemo(
     () => annees.find((a) => a.id === activeAnneeId) ?? annees[0] ?? EMPTY_ANNEE,
