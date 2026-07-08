@@ -5799,6 +5799,10 @@ export type Database = {
         }
         Returns: Json
       }
+      recalc_vacances_eleve_statut: {
+        Args: { _eleve_id: string }
+        Returns: undefined
+      }
       reconduire_affectations_pedagogiques: {
         Args: {
           _annee_cible: string
