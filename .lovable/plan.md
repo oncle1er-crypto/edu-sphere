@@ -1,57 +1,82 @@
-## Diagnostic
+# Gestion complète — Contrats & affectations enseignants
 
-Deux causes se combinent pour donner l'impression que « la page se rafraîchit et le formulaire disparaît » :
+Objectif : transformer la section actuelle (tableau lecture seule) en un vrai module RH couvrant les 4 volets demandés.
 
-### 1. Re-rendus parasites du contexte d'authentification
-Dans `src/context/AuthContext.tsx`, `onAuthStateChange` appelle `setSession(session)` à **chaque** événement, y compris `TOKEN_REFRESHED`. Or Supabase rafraîchit automatiquement le token dès que l'onglet reprend le focus. Résultat : à chaque retour sur l'onglet, la référence `session` change → tout le sous-arbre (AuthProvider → EcoleProvider → AcademicPeriodProvider → Routes) se re-rend, ce qui déclenche :
-- un flash du splash « Vérification de votre session… » / « Vérification de sécurité… » (visible dans la session replay),
-- un `purgeSensitiveCaches()` inutile,
-- un `useMfa.refresh()` silencieux mais qui rappelle deux endpoints Supabase,
-- un `refetchOnWindowFocus` de TanStack Query (activé par défaut car le `QueryClient` est créé sans config).
+## 1. CRUD complet des contrats
 
-### 2. Perte de l'état local des dialogues d'inscription
-Les formulaires (ex. `VacancesInscriptions`, `Eleves`, etc.) stockent leur brouillon uniquement dans `useState` local. Dès que l'utilisateur navigue vers un autre onglet du menu, React Router démonte la page → l'état du dialog est perdu. Au retour, tout est vide.
+Nouvelle table `contrats_enseignants` (multi-tenant, `ecole_id`) :
+- enseignant_id, type (CDD/CDI/vacation/stage), statut (brouillon/actif/suspendu/rompu/terminé)
+- date_debut, date_fin, periode_essai_fin, preavis_jours
+- salaire_base, primes (jsonb), quotite (temps plein / partiel %)
+- motif_rupture, date_rupture
+- notes, cree_par, signe_le
 
----
+Actions UI :
+- Créer / modifier / renouveler (crée un nouveau contrat lié) / résilier (dialog avec motif obligatoire)
+- Historique par enseignant (drawer avec timeline des contrats successifs et avenants)
 
-## Correctifs proposés
+## 2. Affectations pédagogiques
 
-### A. Stabiliser `AuthContext.tsx`
-- Ne mettre à jour `session` que si l'`access_token` ou l'`user.id` a réellement changé (comparaison avec la valeur précédente).
-- Restreindre `purgeSensitiveCaches()` aux seuls événements `SIGNED_IN` et `SIGNED_OUT` (retirer `TOKEN_REFRESHED`).
-- Garantir que `loading` ne passe à `false` qu'une seule fois (initial), plus jamais remis à `true`.
+Réutilise la table existante `enseignant_matieres` (déjà présente : enseignant_id, matiere_id, classe_id, annee_id) + ajout colonne `volume_horaire_hebdo`.
 
-### B. Alléger `useMfa`
-- Ignorer `TOKEN_REFRESHED` : le niveau AAL ne change pas sur un refresh silencieux.
-- Ne rafraîchir que sur `SIGNED_IN`, `SIGNED_OUT`, `USER_UPDATED`, `MFA_CHALLENGE_VERIFIED`.
+UI dédiée dans "Contrats & affectations" :
+- Vue par enseignant : ses classes × matières × heures/semaine
+- Ajout/retrait rapide via combobox (matière, classe)
+- Total heures calculé automatiquement + alerte si > quotité contrat
 
-### C. Désactiver le refetch au focus dans TanStack Query
-- Configurer le `QueryClient` (dans `src/App.tsx`) avec :
-  - `refetchOnWindowFocus: false`
-  - `refetchOnReconnect: false`
-  - `staleTime: 30_000` (30 s) pour éviter les rappels inutiles.
+## 3. Documents & avenants
 
-### D. Persister le brouillon des formulaires longs
-- Ajouter un petit hook générique `useDraftForm(key, initialValue)` qui synchronise l'état d'un formulaire avec `sessionStorage` (auto-clear à la soumission ou après signOut).
-- L'appliquer en priorité au dialog **« Nouvelle inscription » de Cours de vacances** (`VacancesInscriptions.tsx`) : brouillon conservé même après navigation, restauré à la réouverture du dialog.
-- Extensible ensuite aux autres formulaires longs (inscription élève, création enseignant, dépenses, etc.) sans refactor lourd.
+Réutilise `enseignants_documents` (déjà en base) + nouveau bucket storage `contrats-enseignants` (privé, RLS par ecole_id).
 
-### E. Vérification
-- Après build : ouvrir Cours de vacances → Inscriptions → commencer un enregistrement → naviguer vers un autre onglet → revenir → confirmer via Playwright que :
-  1. Aucun splash « Vérification… » n'apparaît,
-  2. Le dialog rouvert affiche les valeurs déjà saisies.
+UI :
+- Upload PDF (contrat signé, avenants, pièces RH)
+- Liste chronologique avec type (contrat initial / avenant / rupture / autre)
+- Téléchargement sécurisé via URL signée
 
----
+## 4. Alertes fins de contrat
 
-## Fichiers concernés
+Dashboard en tête de la section :
+- KPI : contrats actifs, CDD < 30j, périodes d'essai à valider, contrats sans documents
+- Tableau "À traiter" : contrats dont `date_fin` < today + 30j ou `periode_essai_fin` < today + 7j
+- Notifications parents inutiles ici — juste badge visuel + toast à l'ouverture
 
-**Modifiés :**
-- `src/context/AuthContext.tsx` — comparaison session, purge conditionnelle.
-- `src/hooks/useMfa.ts` — filtrer les events pertinents.
-- `src/App.tsx` — options `QueryClient`.
-- `src/pages/cours-vacances/sections/VacancesInscriptions.tsx` — brouillon persistant.
+## Structure UI
 
-**Créés :**
-- `src/hooks/useDraftForm.ts` — hook réutilisable (sessionStorage, clear à la soumission / au sign-out).
+Refonte de `src/pages/enseignants/sections/StaffContracts.tsx` :
 
-**Aucune migration SQL.**
+```text
+┌ Header (KPI + alertes fin de contrat)
+├ Onglets :
+│   • Liste des contrats  (tableau + filtres type/statut + recherche + export CSV)
+│   • Affectations pédago (par enseignant, classes × matières × heures)
+│   • Documents           (upload + liste par enseignant)
+└ Dialogs : NouveauContratDialog, ResilierDialog, RenouvelerDialog, AffectationDialog, UploadDocDialog
+```
+
+## Détails techniques
+
+**Migrations SQL :**
+1. Créer `public.contrats_enseignants` + GRANT authenticated/service_role + RLS (has_ecole_role admin/directeur pour écrire, tous rôles école pour lire)
+2. `ALTER TABLE enseignant_matieres ADD COLUMN volume_horaire_hebdo numeric`
+3. Trigger `updated_at`
+4. Vue `v_contrats_alertes` (fin < 30j, essai < 7j) — optionnel, sinon calcul côté client
+5. Fonction `resilier_contrat(_id, _motif, _date)` en SECURITY DEFINER (audit + update)
+
+**Storage :** bucket `contrats-enseignants` privé + policies RLS objects (path = `{ecole_id}/{enseignant_id}/{file}`)
+
+**Hooks nouveaux :**
+- `useContratsEnseignants(ecoleId)` — CRUD + alertes
+- `useAffectationsPedagogiques(enseignantId)` — via enseignant_matieres
+- `useContratsDocuments(enseignantId)` — upload/list/delete
+
+**Composants nouveaux (`src/pages/enseignants/components/`) :**
+- `ContractsDashboard.tsx`, `ContractsTable.tsx`, `AssignmentsPanel.tsx`, `DocumentsPanel.tsx`
+- `NewContractDialog.tsx`, `TerminateContractDialog.tsx`, `RenewContractDialog.tsx`, `AssignmentDialog.tsx`, `UploadContractDocDialog.tsx`
+
+**Sécurité :**
+- Contrats accessibles seulement à admin/directeur pour écrire; comptable en lecture (pour la paie); enseignant voit seulement les siens
+- Audit dans `security_audit_logs` sur création/résiliation
+
+**Périmètre exclu volontairement :**
+- Signature électronique (juste un statut "signé le" manuel)
+- Génération auto du PDF de contrat (upload manuel dans cette itération)
