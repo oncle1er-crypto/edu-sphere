@@ -1,83 +1,156 @@
-import { useSyncExternalStore } from "react";
-
-export type ReportJobStatus = "queued" | "running" | "done" | "error";
+import { useEffect, useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { reportRegistry, type ReportType } from "@/lib/reports/registry";
 
 export interface ReportJob {
   id: string;
+  ecole_id: string;
+  user_id: string;
+  type: ReportType;
   label: string;
-  status: ReportJobStatus;
-  createdAt: number;
-  startedAt?: number;
-  finishedAt?: number;
-  error?: string;
-  run: () => Promise<void>;
+  params: Record<string, any>;
+  status: "queued" | "running" | "done" | "error";
+  error: string | null;
+  created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
 }
 
 type Listener = () => void;
-
-const jobs: ReportJob[] = [];
+let jobs: ReportJob[] = [];
 const listeners = new Set<Listener>();
 let running = false;
+let started = false;
+let currentUserId: string | null = null;
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
 
-function emit() {
-  for (const l of listeners) l();
+function emit() { for (const l of listeners) l(); }
+function subscribe(l: Listener) { listeners.add(l); return () => listeners.delete(l); }
+function getSnapshot() { return jobs; }
+
+async function loadJobs() {
+  if (!currentUserId) return;
+  const { data } = await supabase
+    .from("report_jobs")
+    .select("*")
+    .eq("user_id", currentUserId)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  jobs = (data ?? []) as ReportJob[];
+  emit();
 }
 
-function subscribe(l: Listener) {
-  listeners.add(l);
-  return () => listeners.delete(l);
+async function requeueOrphans() {
+  if (!currentUserId) return;
+  await supabase
+    .from("report_jobs")
+    .update({ status: "queued", started_at: null })
+    .eq("user_id", currentUserId)
+    .eq("status", "running");
 }
 
-function getSnapshot() {
-  return jobs;
-}
-
-async function tick() {
-  if (running) return;
-  const next = jobs.find((j) => j.status === "queued");
-  if (!next) return;
+async function processNext() {
+  if (running || !currentUserId) return;
+  const { data } = await supabase
+    .from("report_jobs")
+    .select("*")
+    .eq("user_id", currentUserId)
+    .eq("status", "queued")
+    .order("created_at", { ascending: true })
+    .limit(1);
+  const job = (data?.[0] as ReportJob | undefined) ?? null;
+  if (!job) return;
   running = true;
-  next.status = "running";
-  next.startedAt = Date.now();
-  emit();
+
+  await supabase
+    .from("report_jobs")
+    .update({ status: "running", started_at: new Date().toISOString() })
+    .eq("id", job.id);
+  await loadJobs();
+
   try {
-    await next.run();
-    next.status = "done";
+    const runner = reportRegistry[job.type];
+    if (!runner) throw new Error(`Type de rapport inconnu : ${job.type}`);
+    await runner(job.ecole_id, job.params);
+    await supabase
+      .from("report_jobs")
+      .update({ status: "done", finished_at: new Date().toISOString(), error: null })
+      .eq("id", job.id);
   } catch (e: any) {
-    next.status = "error";
-    next.error = e?.message ?? String(e);
+    await supabase
+      .from("report_jobs")
+      .update({ status: "error", finished_at: new Date().toISOString(), error: e?.message ?? String(e) })
+      .eq("id", job.id);
   } finally {
-    next.finishedAt = Date.now();
     running = false;
-    emit();
-    // schedule next micro-task so UI paints between jobs
-    setTimeout(tick, 50);
+    await loadJobs();
+    setTimeout(processNext, 100);
   }
 }
 
-export function enqueueReport(label: string, run: () => Promise<void>): string {
-  const id = crypto.randomUUID();
-  jobs.push({ id, label, status: "queued", createdAt: Date.now(), run });
-  emit();
-  setTimeout(tick, 0);
-  return id;
+export async function enqueueReport(input: {
+  ecoleId: string;
+  type: ReportType;
+  label: string;
+  params: Record<string, any>;
+}) {
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id;
+  if (!uid) throw new Error("Non authentifié");
+  const { error } = await supabase.from("report_jobs").insert({
+    ecole_id: input.ecoleId,
+    user_id: uid,
+    type: input.type,
+    label: input.label,
+    params: input.params,
+    status: "queued",
+  });
+  if (error) throw error;
+  await loadJobs();
+  processNext();
 }
 
-export function clearFinishedJobs() {
-  for (let i = jobs.length - 1; i >= 0; i--) {
-    if (jobs[i].status === "done" || jobs[i].status === "error") jobs.splice(i, 1);
-  }
-  emit();
+export async function removeJob(id: string) {
+  await supabase.from("report_jobs").delete().eq("id", id).neq("status", "running");
+  await loadJobs();
 }
 
-export function removeJob(id: string) {
-  const i = jobs.findIndex((j) => j.id === id);
-  if (i >= 0 && jobs[i].status !== "running") {
-    jobs.splice(i, 1);
-    emit();
-  }
+export async function clearFinishedJobs() {
+  if (!currentUserId) return;
+  await supabase
+    .from("report_jobs")
+    .delete()
+    .eq("user_id", currentUserId)
+    .in("status", ["done", "error"]);
+  await loadJobs();
+}
+
+async function startWorker() {
+  if (started) return;
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth.user?.id;
+  if (!uid) return;
+  started = true;
+  currentUserId = uid;
+  await requeueOrphans();
+  await loadJobs();
+
+  realtimeChannel = supabase
+    .channel(`report_jobs_${uid}`)
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "report_jobs", filter: `user_id=eq.${uid}` },
+      () => {
+        loadJobs();
+        processNext();
+      },
+    )
+    .subscribe();
+
+  processNext();
 }
 
 export function useReportQueue(): ReportJob[] {
+  useEffect(() => { startWorker(); }, []);
   return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }
