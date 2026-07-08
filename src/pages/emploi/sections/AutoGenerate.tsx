@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Wand2, Play, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
+import { useTimetableSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
 import {
   generateEmploiDuTemps,
   type GenerateOptions,
@@ -16,10 +17,9 @@ import {
 export default function AutoGenerate() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
+  const { settings, loading: settingsLoading } = useTimetableSettings();
 
   const [heuresMax, setHeuresMax] = useState(6);
-  const [dureeMin, setDureeMin] = useState(60);
-  const [pauseDej, setPauseDej] = useState(true);
   const [respectDispo, setRespectDispo] = useState(true);
   const [eviterTrous, setEviterTrous] = useState(true);
   const [matinLourd, setMatinLourd] = useState(true);
@@ -33,17 +33,19 @@ export default function AutoGenerate() {
     return {
       ecoleId,
       anneeId,
-      jours: [1, 2, 3, 4, 5],
-      plageMatin: ["08:00", pauseDej ? "12:00" : "13:00"],
-      plageAprem: [pauseDej ? "14:00" : "13:00", "17:00"],
-      dureeCreneauMin: dureeMin,
+      jours: joursFromSettings(settings),
+      plageMatin: [settings.heure_debut, settings.pause_dej_debut],
+      plageAprem: [settings.pause_dej_fin, settings.heure_fin],
+      dureeCreneauMin: settings.duree_creneau_min,
       heuresParJourMax: heuresMax,
       respectDispo,
       eviterTrous,
+      matinLourd,
       effacerAvant: effacer,
       dryRun,
     };
   };
+
 
   const run = async (dryRun: boolean) => {
     const opts = buildOptions(dryRun);
