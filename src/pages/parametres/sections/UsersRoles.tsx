@@ -17,6 +17,7 @@ import { useUsersRoles } from "@/hooks/useUsersRoles";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 
 const ROLES = ["admin", "directeur", "enseignant", "educateur", "comptable", "surveillant", "parent"] as const;
@@ -56,6 +57,7 @@ const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
 
 export default function UsersRoles() {
   const { users, loading, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId, fetchUsers } = useUsersRoles();
+  const { user: currentUser } = useAuth();
   const [search, setSearch] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [newName, setNewName] = useState("");
@@ -381,15 +383,17 @@ export default function UsersRoles() {
                         <KeyRound className="h-3.5 w-3.5" />
                         Réinitialiser le MFA
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                        onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Supprimer
-                      </Button>
+                      {currentUser?.id !== u.user_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                          onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
