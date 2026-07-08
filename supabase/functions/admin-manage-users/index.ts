@@ -17,8 +17,13 @@ const json = (body: unknown, status = 200) =>
 const PHONE_EMAIL_DOMAIN = "phone.gsp.local";
 const phoneToEmail = (phone: string) => `${phone}@${PHONE_EMAIL_DOMAIN}`;
 const isValidPhone = (p: string) => /^\d{10}$/.test(p);
-const randomTempPassword = () =>
-  "Tmp" + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+const randomTempPassword = () => {
+  // Code numérique à 6 chiffres (100000–999999), sûr côté crypto.
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return String(100000 + (buf[0] % 900000));
+};
+
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -154,7 +159,10 @@ Deno.serve(async (req) => {
         user_id: newUserId,
         temp_password: mustChange ? pwd : undefined,
         login_email: loginEmail,
+        login_identifier: phone ? String(phone) : loginEmail,
+        channel: phone ? "phone" : "email",
       });
+
     }
 
     // Helper: ensure the target user belongs to this school (multi-tenant isolation)

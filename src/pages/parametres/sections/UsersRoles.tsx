@@ -18,6 +18,8 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
+import { CredentialsPreviewDialog } from "./CredentialsPreviewDialog";
+
 
 
 const ROLES = ["admin", "directeur", "enseignant", "educateur", "comptable", "secretaire", "surveillant", "parent"] as const;
@@ -83,6 +85,8 @@ export default function UsersRoles() {
   const [pwdUser, setPwdUser] = useState<{ id: string; name: string } | null>(null);
   const [newPwd, setNewPwd] = useState("");
   const [resettingPwd, setResettingPwd] = useState(false);
+  const [credsPreview, setCredsPreview] = useState<{ fullName: string; identifier: string; password: string; channel: "email" | "phone" } | null>(null);
+
 
   const handleResetMfa = async () => {
     if (!resetMfaUser || !ecoleId) return;
@@ -139,7 +143,7 @@ export default function UsersRoles() {
       return;
     }
     setCreating(true);
-    const ok = await createUser({
+    const res = await createUser({
       email: newEmail.trim() || undefined,
       phone: newPhone.trim() || undefined,
       password: newPassword || undefined,
@@ -147,15 +151,25 @@ export default function UsersRoles() {
       roles: newRoles,
     });
     setCreating(false);
-    if (ok) {
+    if (res.ok) {
+      const savedName = newName.trim();
       setNewEmail("");
       setNewPhone("");
       setNewName("");
       setNewRoles(["enseignant"]);
       setNewPassword("");
       setDialogOpen(false);
+      if (res.temp_password) {
+        setCredsPreview({
+          fullName: savedName,
+          identifier: res.login_identifier,
+          password: res.temp_password,
+          channel: res.channel,
+        });
+      }
     }
   };
+
 
 
   const openEdit = (u: { user_id: string; full_name: string; email: string }) => {
@@ -543,6 +557,18 @@ export default function UsersRoles() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {credsPreview && (
+        <CredentialsPreviewDialog
+          open={!!credsPreview}
+          onClose={() => setCredsPreview(null)}
+          fullName={credsPreview.fullName}
+          identifier={credsPreview.identifier}
+          password={credsPreview.password}
+          channel={credsPreview.channel}
+        />
+      )}
+
 
 
 
