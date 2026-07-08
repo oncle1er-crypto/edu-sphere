@@ -502,8 +502,12 @@ export default function Bulletins() {
   };
 
   const handleOpenSend = async (row: BulletinRow) => {
-    if (!scolariteStatus[row.eleve_id]?.aJour) {
-      toast.error("Élève non à jour : envoi désactivé."); return;
+    const s = scolariteStatus[row.eleve_id];
+    if (!s?.aJour) {
+      toast.error(s?.nonConfiguree
+        ? "Scolarité non configurée pour cet élève : envoi désactivé."
+        : "Élève non à jour : envoi désactivé.");
+      return;
     }
     setGeneratingId(row.eleve_id);
     try {
