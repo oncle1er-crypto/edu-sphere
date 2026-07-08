@@ -4605,6 +4605,56 @@ export type Database = {
           },
         ]
       }
+      report_jobs: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          label: string
+          params: Json
+          started_at: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          label: string
+          params?: Json
+          started_at?: string | null
+          status?: string
+          type: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          label?: string
+          params?: Json
+          started_at?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_jobs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       retards: {
         Row: {
           annee_id: string | null
