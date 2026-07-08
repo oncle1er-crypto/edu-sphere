@@ -383,15 +383,17 @@ export default function UsersRoles() {
                         <KeyRound className="h-3.5 w-3.5" />
                         Réinitialiser le MFA
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-destructive border-destructive/30 hover:bg-destructive/5"
-                        onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Supprimer
-                      </Button>
+                      {currentUser?.id !== u.user_id && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-destructive border-destructive/30 hover:bg-destructive/5"
+                          onClick={() => setDeleteTarget({ id: u.user_id, name: u.full_name })}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Supprimer
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}
