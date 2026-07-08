@@ -1,7 +1,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { Copy, Check, Mail, MessageCircle, Send, ShieldAlert, KeyRound, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface Props {
@@ -15,6 +16,8 @@ interface Props {
 
 export function CredentialsPreviewDialog({ open, onClose, fullName, identifier, password, channel }: Props) {
   const [copied, setCopied] = useState<string | null>(null);
+  const [manualCopy, setManualCopy] = useState<{ key: string; label: string; value: string } | null>(null);
+  const manualCopyRef = useRef<HTMLTextAreaElement>(null);
 
   const message = `Bonjour ${fullName},
 
@@ -24,37 +27,60 @@ Mot de passe temporaire : ${password}
 
 Vous devrez le changer à la 1ère connexion.`;
 
-  const copy = async (value: string, key: string) => {
-    let ok = false;
+  useEffect(() => {
+    if (!manualCopy) return;
+
+    const frame = window.requestAnimationFrame(() => {
+      manualCopyRef.current?.focus();
+      manualCopyRef.current?.select();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [manualCopy]);
+
+  const selectManualCopy = (value: string, key: string, label: string) => {
+    setCopied(null);
+    setManualCopy({ key, label, value });
+
+    window.setTimeout(() => {
+      const textarea = manualCopyRef.current;
+      if (!textarea) return;
+
+      textarea.focus();
+      textarea.select();
+
+      try {
+        document.execCommand("copy");
+      } catch {
+        // Clipboard access can be blocked in embedded previews.
+      }
+    }, 0);
+
+    toast.info("Texte sélectionné — appuyez sur Ctrl+C ou Cmd+C");
+  };
+
+  const copy = async (value: string, key: string, label: string) => {
+    const isEmbeddedPreview = window.self !== window.top;
+
+    if (isEmbeddedPreview) {
+      selectManualCopy(value, key, label);
+      return;
+    }
+
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(value);
-        ok = true;
+        setManualCopy(null);
+        setCopied(key);
+        toast.success("Copié");
+        setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
+        return;
       }
-    } catch { /* fallback */ }
-    if (!ok) {
-      try {
-        const ta = document.createElement("textarea");
-        ta.value = value;
-        ta.setAttribute("readonly", "");
-        ta.style.position = "fixed";
-        ta.style.top = "0";
-        ta.style.left = "0";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        ok = document.execCommand("copy");
-        document.body.removeChild(ta);
-      } catch { ok = false; }
+    } catch {
+      // Fall back below to manual selection when native clipboard is denied.
     }
-    if (ok) {
-      setCopied(key);
-      toast.success("Copié");
-      setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500);
-    } else {
-      toast.error("Copie impossible — sélectionnez et copiez manuellement");
-    }
+
+    selectManualCopy(value, key, label);
   };
 
 
@@ -97,7 +123,7 @@ Vous devrez le changer à la 1ère connexion.`;
             </div>
             <div className="flex items-center gap-2">
               <code className="flex-1 font-mono text-sm break-all">{identifier}</code>
-              <Button size="sm" variant="outline" onClick={() => copy(identifier, "id")}>
+              <Button size="sm" variant="outline" onClick={() => copy(identifier, "id", "identifiant")}>
                 {copied === "id" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
@@ -109,7 +135,7 @@ Vous devrez le changer à la 1ère connexion.`;
               <code className="flex-1 font-mono text-2xl tracking-[0.35em] text-primary font-bold text-center py-1">
                 {password}
               </code>
-              <Button size="sm" variant="outline" onClick={() => copy(password, "pwd")}>
+              <Button size="sm" variant="outline" onClick={() => copy(password, "pwd", "mot de passe")}>
                 {copied === "pwd" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
@@ -121,7 +147,7 @@ Vous devrez le changer à la 1ère connexion.`;
           </div>
 
           <div className="grid grid-cols-2 gap-2">
-            <Button variant="outline" onClick={() => copy(message, "all")} className="col-span-2">
+            <Button variant="outline" onClick={() => copy(message, "all", "message complet")} className="col-span-2">
               {copied === "all" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               Copier tout le message
             </Button>
@@ -143,6 +169,25 @@ Vous devrez le changer à la 1ère connexion.`;
               </Button>
             )}
           </div>
+
+          {manualCopy && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="text-xs font-semibold text-muted-foreground">
+                Copie manuelle — {manualCopy.label}
+              </div>
+              <Textarea
+                ref={manualCopyRef}
+                readOnly
+                value={manualCopy.value}
+                onFocus={(event) => event.currentTarget.select()}
+                onClick={(event) => event.currentTarget.select()}
+                className="min-h-20 resize-none font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                Si le collage reste vide, le navigateur bloque le presse-papiers : le texte ci-dessus est sélectionné pour une copie clavier.
+              </p>
+            </div>
+          )}
 
           <Button onClick={onClose} className="w-full">J'ai transmis les identifiants</Button>
         </div>
