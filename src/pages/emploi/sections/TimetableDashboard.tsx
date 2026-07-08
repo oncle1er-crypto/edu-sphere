@@ -39,9 +39,10 @@ export default function TimetableDashboard() {
       const [crRes, clRes] = await Promise.all([
         supabase
           .from("creneaux_emploi_temps" as any)
-          .select("classe_id, enseignant_id, salle, jour, heure_debut, heure_fin, classes(nom)")
+          .select("classe_id, enseignant_id, salle, salle_id, jour, heure_debut, heure_fin, classes(nom)")
           .eq("ecole_id", ecoleId)
           .eq("annee_id", anneeId),
+
         supabase
           .from("classes")
           .select("id", { count: "exact", head: true })
