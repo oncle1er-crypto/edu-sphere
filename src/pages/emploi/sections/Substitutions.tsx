@@ -17,7 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useEnseignants } from "@/hooks/useEnseignants";
+import { useTimetableSettings } from "@/hooks/useTimetableSettings";
+import { renderTemplate, normalizeSmsText } from "@/lib/smsText";
 import { toast } from "sonner";
+
 
 type Statut = "a_pourvoir" | "en_attente" | "confirme" | "annule";
 
