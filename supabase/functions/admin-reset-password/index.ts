@@ -9,9 +9,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { email, new_password } = await req.json();
-    if (!email || !new_password || String(new_password).length < 6) {
-      return new Response(JSON.stringify({ error: "email et new_password (>=6) requis" }), {
+    const { email, new_password, ecole_id } = await req.json();
+    if (!email || !new_password || String(new_password).length < 6 || !ecole_id) {
+      return new Response(JSON.stringify({ error: "email, ecole_id et new_password (>=6) requis" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -23,6 +23,7 @@ Deno.serve(async (req) => {
     );
 
     // Auth : soit token bootstrap admin (header x-bootstrap-token), soit JWT d'un admin
+    // de l'école ciblée (isolation multi-tenant).
     const bootstrap = req.headers.get("x-bootstrap-token");
     const bootstrapExpected = Deno.env.get("ADMIN_RESET_BOOTSTRAP_TOKEN");
     let authorized = !!bootstrap && !!bootstrapExpected && bootstrap === bootstrapExpected;
@@ -37,13 +38,15 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+      // Doit être admin de l'école ciblée (pas admin "global")
       const { data: roles } = await admin
         .from("user_roles")
         .select("role")
-        .eq("user_id", userRes.user.id);
+        .eq("user_id", userRes.user.id)
+        .eq("ecole_id", ecole_id);
       authorized = (roles ?? []).some((r: any) => r.role === "admin");
       if (!authorized) {
-        return new Response(JSON.stringify({ error: "Rôle admin requis" }), {
+        return new Response(JSON.stringify({ error: "Rôle admin requis pour cette école" }), {
           status: 403,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -60,6 +63,21 @@ Deno.serve(async (req) => {
     if (!target) {
       return new Response(JSON.stringify({ error: "Utilisateur introuvable" }), {
         status: 404,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // La cible doit appartenir à l'école indiquée
+    const { data: targetMembership } = await admin
+      .from("user_roles")
+      .select("user_id")
+      .eq("user_id", target.id)
+      .eq("ecole_id", ecole_id)
+      .limit(1)
+      .maybeSingle();
+    if (!targetMembership) {
+      return new Response(JSON.stringify({ error: "Utilisateur cible hors de votre école" }), {
+        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }

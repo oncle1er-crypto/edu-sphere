@@ -157,10 +157,25 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Helper: ensure the target user belongs to this school (multi-tenant isolation)
+    const assertTargetInEcole = async (target_user_id: string) => {
+      const { data: targetRole } = await admin
+        .from("user_roles")
+        .select("user_id")
+        .eq("user_id", target_user_id)
+        .eq("ecole_id", ecole_id)
+        .limit(1)
+        .maybeSingle();
+      return !!targetRole;
+    };
+
     // ============= UPDATE =============
     if (action === "update") {
       const { target_user_id, full_name, email } = body;
       if (!target_user_id) return json({ error: "target_user_id requis" }, 400);
+      if (!(await assertTargetInEcole(target_user_id))) {
+        return json({ error: "Utilisateur cible hors de votre école" }, 403);
+      }
 
       if (full_name !== undefined) {
         await admin.from("profiles").update({ full_name }).eq("id", target_user_id);
@@ -179,12 +194,22 @@ Deno.serve(async (req) => {
       const { target_user_id } = body;
       if (!target_user_id) return json({ error: "target_user_id requis" }, 400);
       if (target_user_id === user.id) return json({ error: "Impossible de supprimer son propre compte" }, 400);
+      if (!(await assertTargetInEcole(target_user_id))) {
+        return json({ error: "Utilisateur cible hors de votre école" }, 403);
+      }
 
-      await admin.from("user_roles").delete().eq("user_id", target_user_id);
-      await admin.from("user_permissions").delete().eq("user_id", target_user_id);
-      await admin.from("profiles").delete().eq("id", target_user_id);
-      const { error: dErr } = await admin.auth.admin.deleteUser(target_user_id);
-      if (dErr) return json({ error: dErr.message }, 400);
+      // Scope deletions to this school only, to preserve memberships in other tenants
+      await admin.from("user_roles").delete().eq("user_id", target_user_id).eq("ecole_id", ecole_id);
+      await admin.from("user_permissions").delete().eq("user_id", target_user_id).eq("ecole_id", ecole_id);
+
+      // Only remove the auth user + profile if they no longer belong to any other school
+      const { data: remainingRoles } = await admin
+        .from("user_roles").select("ecole_id").eq("user_id", target_user_id).limit(1);
+      if (!remainingRoles || remainingRoles.length === 0) {
+        await admin.from("profiles").delete().eq("id", target_user_id);
+        const { error: dErr } = await admin.auth.admin.deleteUser(target_user_id);
+        if (dErr) return json({ error: dErr.message }, 400);
+      }
       return json({ ok: true });
     }
 
@@ -193,6 +218,9 @@ Deno.serve(async (req) => {
       const { target_user_id, new_password } = body;
       if (!target_user_id || !new_password || String(new_password).length < 6) {
         return json({ error: "target_user_id et new_password (6+ car.) requis" }, 400);
+      }
+      if (!(await assertTargetInEcole(target_user_id))) {
+        return json({ error: "Utilisateur cible hors de votre école" }, 403);
       }
       const { error: pErr } = await admin.auth.admin.updateUserById(target_user_id, {
         password: new_password,
