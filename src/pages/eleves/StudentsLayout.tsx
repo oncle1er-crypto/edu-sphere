@@ -8,9 +8,9 @@ import { motion } from "framer-motion";
 
 const sections = [
   { to: "tableau", label: "Tableau de bord", icon: LayoutDashboard, group: "Vue d'ensemble" },
-  { to: "liste", label: "Liste des élèves", icon: Users, group: "Vue d'ensemble" },
 
   { to: "inscription", label: "Inscriptions", icon: UserPlus, group: "Gestion" },
+  { to: "liste", label: "Liste des élèves", icon: Users, group: "Gestion" },
   { to: "reinscription", label: "Réinscriptions", icon: FileText, group: "Gestion" },
   { to: "affectation", label: "Affectation aux classes", icon: GraduationCap, group: "Gestion" },
 
