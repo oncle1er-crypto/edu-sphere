@@ -1,34 +1,31 @@
+## Diagnostic
 
-## Objectif
+Le combo « Trimestre » est vide parce que l'année scolaire **active** dans la base est **2026‑2027**, mais **aucun trimestre n'a encore été créé** pour cette année.
 
-Après la création d'un utilisateur, afficher une boîte de dialogue persistante avec **l'identifiant** (email ou téléphone) et un **mot de passe temporaire à 6 chiffres**, avec boutons **Copier** (chaque champ + tout en bloc) et **Envoyer** (SMS/WhatsApp/Email selon l'identifiant). L'utilisateur devra changer ce mot de passe à la 1ère connexion (flux `must_change_password` déjà en place).
+Les 3 trimestres existants (Trimestre 1/2/3) appartiennent à l'année **2025‑2026**, qui est **verrouillée** et donc pas sélectionnée par défaut. La page Bulletins ne charge que les périodes de l'année active → liste vide → combo qui n'affiche rien à l'ouverture.
 
-## Changements
+Ce n'est pas un bug de rendu du Select : c'est un état de données. Il faut le rendre visible à l'utilisateur et lui proposer une action.
 
-### 1. Edge function `supabase/functions/admin-manage-users/index.ts`
-- Sur `action: "create"` : si `password` non fourni, générer un code à **6 chiffres** (`100000–999999`) au lieu du mot de passe aléatoire long actuel.
-- Toujours forcer `must_change_password = true` quand le mot de passe est généré côté serveur.
-- Réponse: `{ user_id, temp_password, login_identifier, channel: "email" | "phone" }` (channel dérivé du domaine `phone.gsp.local`).
+## Plan
 
-### 2. `src/hooks/useUsersRoles.ts`
-- `createUser` renvoie l'objet `{ temp_password, login_identifier, channel }` au lieu d'un simple booléen, pour que l'appelant puisse ouvrir le dialog.
-- Retirer le toast 15 s « mot de passe temporaire : … » (remplacé par le dialog).
+### 1. Améliorer le combo Trimestre (Bulletins.tsx)
 
-### 3. Nouveau composant `src/pages/parametres/sections/CredentialsPreviewDialog.tsx`
-- Props: `open`, `onOpenChange`, `fullName`, `identifier`, `password`, `channel`.
-- Affiche :
-  - Nom complet.
-  - Identifiant (email/téléphone) + bouton **Copier**.
-  - Mot de passe à 6 chiffres en gros, monospace + bouton **Copier**.
-  - Bouton **Copier tout** (bloc formaté prêt à coller).
-  - Bouton **Envoyer par SMS/WhatsApp** (si `channel === "phone"`, `tel:` / `https://wa.me/…?text=`) ou **Envoyer par email** (`mailto:?subject=&body=`).
-  - Avertissement : « ce mot de passe ne sera plus affiché après fermeture ».
-- Fermeture uniquement par bouton explicite (pas de clic extérieur) pour éviter perte accidentelle.
+- Si `periodes.length === 0` après chargement : afficher dans le `SelectContent` un item désactivé « Aucun trimestre créé pour cette année ».
+- Sous le Select, afficher une petite ligne d'aide (texte muted) quand la liste est vide :
+  « L'année active *2026‑2027* n'a pas encore de trimestres. »
+- Ajouter à droite un bouton « Créer les trimestres » qui redirige vers `/parametres` (section Périodes académiques) où la génération existe déjà.
 
-### 4. `src/pages/parametres/sections/UsersRoles.tsx`
-- Après un `createUser` réussi renvoyant un `temp_password`, stocker le résultat dans un state local et ouvrir `CredentialsPreviewDialog`.
+### 2. Alerte informative en haut de la page
 
-## Hors périmètre
-- Envoi SMS/WhatsApp automatisé côté serveur (on utilise les liens `sms:`/`wa.me`/`mailto:` du device).
-- Réémission d'identifiants pour comptes existants (déjà couvert par `resetPassword`).
-- Modification du flux d'invitation par magic link (débat précédent non tranché).
+Quand `periodes.length === 0`, remplacer le message actuel « Sélectionnez un trimestre et une classe. » par une `Alert` claire expliquant que l'année active n'a pas de découpage et pointant vers la création dans Paramètres → Année scolaire.
+
+### 3. Aucune modification backend / contexte
+
+On ne change pas la logique de sélection de l'année active ni la structure des périodes. Il s'agit uniquement d'UX sur la page Bulletins.
+
+## Détails techniques
+
+- Fichier modifié : `src/pages/examens/sections/Bulletins.tsx`
+- Rendu conditionnel basé sur `periodes.length` (déjà chargé par l'effet existant).
+- Utiliser `useNavigate` de react-router pour le bouton « Créer les trimestres » → route existante des paramètres.
+- Aucun nouveau composant, aucune requête supplémentaire.
