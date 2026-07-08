@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type MatiereRow = Database["public"]["Tables"]["matieres"]["Row"];
+type MatiereUpdate = Database["public"]["Tables"]["matieres"]["Update"];
 
 export function useMatieres() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
@@ -38,5 +39,54 @@ export function useMatieres() {
     return data;
   };
 
-  return { matieres, loading: loading || ecoleLoading, fetchMatieres, addMatiere, ecoleId };
+  const updateMatiere = async (id: string, updates: MatiereUpdate) => {
+    const { error } = await supabase.from("matieres").update(updates).eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    toast.success("Matière mise à jour");
+    await fetchMatieres();
+    return true;
+  };
+
+  const toggleActive = async (id: string, active: boolean) => {
+    const { error } = await supabase.from("matieres").update({ active }).eq("id", id);
+    if (error) { toast.error(error.message); return false; }
+    toast.success(active ? "Matière restaurée" : "Matière archivée");
+    await fetchMatieres();
+    return true;
+  };
+
+  const renameCategorie = async (ancien: string, nouveau: string) => {
+    if (!ecoleId) return false;
+    const cible = nouveau.trim();
+    if (!cible) { toast.error("Nom obligatoire"); return false; }
+    if (cible === ancien) return true;
+    const { error } = await supabase
+      .from("matieres")
+      .update({ categorie: cible })
+      .eq("ecole_id", ecoleId)
+      .eq("categorie", ancien);
+    if (error) { toast.error(error.message); return false; }
+    toast.success(`Catégorie renommée en « ${cible} »`);
+    await fetchMatieres();
+    return true;
+  };
+
+  const deleteCategorie = async (nom: string) => {
+    if (!ecoleId) return false;
+    const { error } = await supabase
+      .from("matieres")
+      .update({ categorie: null })
+      .eq("ecole_id", ecoleId)
+      .eq("categorie", nom);
+    if (error) { toast.error(error.message); return false; }
+    toast.success(`Catégorie « ${nom} » supprimée`);
+    await fetchMatieres();
+    return true;
+  };
+
+  return {
+    matieres, loading: loading || ecoleLoading,
+    fetchMatieres, addMatiere, updateMatiere, toggleActive,
+    renameCategorie, deleteCategorie, ecoleId,
+  };
 }
