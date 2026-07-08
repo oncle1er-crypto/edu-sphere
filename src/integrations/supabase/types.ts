@@ -5892,6 +5892,7 @@ export type Database = {
         | "surveillant"
         | "parent"
         | "educateur"
+        | "secretaire"
       carte_statut: "active" | "perdue" | "expiree" | "annulee" | "revoquee"
       carte_type:
         | "eleve"
@@ -6062,6 +6063,7 @@ export const Constants = {
         "surveillant",
         "parent",
         "educateur",
+        "secretaire",
       ],
       carte_statut: ["active", "perdue", "expiree", "annulee", "revoquee"],
       carte_type: [
