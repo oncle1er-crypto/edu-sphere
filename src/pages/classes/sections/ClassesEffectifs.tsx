@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
+import ApplyScolariteButton from "../components/ApplyScolariteButton";
 
 export default function ClassesEffectifs() {
   const { activeAnnee } = useAcademicPeriod();
