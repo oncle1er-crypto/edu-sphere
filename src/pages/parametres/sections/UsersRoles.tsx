@@ -558,6 +558,18 @@ export default function UsersRoles() {
         </DialogContent>
       </Dialog>
 
+      {credsPreview && (
+        <CredentialsPreviewDialog
+          open={!!credsPreview}
+          onClose={() => setCredsPreview(null)}
+          fullName={credsPreview.fullName}
+          identifier={credsPreview.identifier}
+          password={credsPreview.password}
+          channel={credsPreview.channel}
+        />
+      )}
+
+
 
 
 
