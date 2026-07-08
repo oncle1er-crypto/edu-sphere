@@ -65,7 +65,10 @@ export function useVacancesData() {
   return { ecoleId, anneeId, classes, eleves, paiements, enseignants, honoraires, loading, reload: load,
     save: async (table: string, row: any, id?: string) => {
       if (!ecoleId) { toast.error("École introuvable"); return null; }
-      const payload = { ...row, ecole_id: ecoleId, annee_id: anneeId ?? null };
+      // Certaines tables vacances n'ont pas de colonne annee_id.
+      const tablesWithoutAnnee = new Set(["vacances_paiements", "vacances_honoraires"]);
+      const payload: any = { ...row, ecole_id: ecoleId };
+      if (!tablesWithoutAnnee.has(table)) payload.annee_id = anneeId ?? null;
       const q = id
         ? supabase.from(table as any).update(payload).eq("id", id).select().single()
         : supabase.from(table as any).insert(payload).select().single();
