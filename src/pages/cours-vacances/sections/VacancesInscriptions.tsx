@@ -107,10 +107,14 @@ export default function VacancesInscriptions() {
           <h2 className="text-lg font-bold">Inscriptions</h2>
           <p className="text-sm text-muted-foreground">Élèves inscrits aux cours de vacances (indépendants de la liste principale).</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button onClick={openNew} disabled={classes.length === 0}><Plus className="h-4 w-4 mr-1" /> Nouvelle inscription</Button></DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>{edit ? "Modifier" : "Nouvelle inscription"}</DialogTitle></DialogHeader>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="default" onClick={() => setWorkflowOpen(true)} disabled={classes.length === 0} className="gap-2 bg-gradient-to-r from-primary to-primary/80">
+            <Sparkles className="h-4 w-4" /> Parcours complet (Inscription + Paiement + Reçu A5)
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button variant="outline" onClick={openNew} disabled={classes.length === 0}><Plus className="h-4 w-4 mr-1" /> Inscription seule</Button></DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>{edit ? "Modifier" : "Nouvelle inscription"}</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Nom *</Label><Input value={form.nom || ""} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
               <div><Label>Prénoms *</Label><Input value={form.prenom || ""} onChange={(e) => setForm({ ...form, prenom: e.target.value })} /></div>
