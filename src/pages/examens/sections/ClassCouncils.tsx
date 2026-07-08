@@ -64,7 +64,9 @@ export default function ClassCouncils() {
       icon={<Users className="h-5 w-5" />}
       title="Conseils de classe"
       description="Planifiez et suivez les conseils de classe trimestriels."
-      actions={
+      hideSave
+    >
+      <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="sm"><Plus className="h-4 w-4" />Nouveau conseil</Button>
@@ -115,8 +117,7 @@ export default function ClassCouncils() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      }
-    >
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {loading ? (
           <><Skeleton className="h-40" /><Skeleton className="h-40" /></>
