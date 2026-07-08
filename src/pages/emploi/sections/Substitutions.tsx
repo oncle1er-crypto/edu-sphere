@@ -149,8 +149,8 @@ export default function Substitutions() {
   };
 
   const notifyRemplacement = async (r: Remplacement, statut: Statut) => {
-    if (!settings.notif_remplacements || !r.classe_id) return;
-    if (!settings.canal_sms && !settings.canal_email) return;
+    if (!settings.notif_remplacements || !r.classe_id || !ecoleId) return;
+    if (!settings.canal_sms) return;
     const action = statut === "confirme" ? "confirmé" : statut === "annule" ? "annulé" : "modifié";
     const heure = r.heure_debut && r.heure_fin
       ? `${r.heure_debut.slice(0,5)}-${r.heure_fin.slice(0,5)}`
@@ -162,14 +162,29 @@ export default function Substitutions() {
       classe: r.classes?.nom ?? "",
       action: `${action} (remplacement)`,
     }));
-    if (settings.canal_sms) {
-      try {
-        await supabase.functions.invoke("send-sms", {
-          body: { classe_id: r.classe_id, message },
-        });
-      } catch (e) { console.error("SMS notif:", e); }
-    }
+    // Récupère les téléphones des parents de la classe
+    const { data: eleves } = await supabase
+      .from("eleves").select("id").eq("classe_id", r.classe_id).eq("statut", "actif");
+    const eleveIds = (eleves ?? []).map((e: any) => e.id);
+    if (eleveIds.length === 0) return;
+    const { data: liens } = await supabase
+      .from("eleve_parents").select("parent_id, est_contact_principal").in("eleve_id", eleveIds);
+    const parentIds = [...new Set((liens ?? []).map((l: any) => l.parent_id))];
+    if (parentIds.length === 0) return;
+    const { data: parents } = await supabase
+      .from("parents").select("telephone").in("id", parentIds);
+    const destinataires = [...new Set(
+      (parents ?? []).map((p: any) => p.telephone).filter(Boolean)
+    )];
+    if (destinataires.length === 0) return;
+    try {
+      await supabase.functions.invoke("send-sms", {
+        body: { ecole_id: ecoleId, destinataires, message },
+      });
+    } catch (e) { console.error("SMS notif:", e); }
   };
+
+
 
   const updateStatut = async (id: string, statut: Statut) => {
     const { error } = await supabase.from("remplacements" as any).update({ statut }).eq("id", id);
