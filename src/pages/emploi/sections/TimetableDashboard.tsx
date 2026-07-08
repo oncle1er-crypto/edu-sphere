@@ -14,11 +14,13 @@ interface Creneau {
   classe_id: string;
   enseignant_id: string | null;
   salle: string | null;
+  salle_id: string | null;
   jour: number;
   heure_debut: string;
   heure_fin: string;
   classes?: { nom: string } | null;
 }
+
 
 const overlaps = (aD: string, aF: string, bD: string, bF: string) => aD < bF && bD < aF;
 const minutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
@@ -37,9 +39,10 @@ export default function TimetableDashboard() {
       const [crRes, clRes] = await Promise.all([
         supabase
           .from("creneaux_emploi_temps" as any)
-          .select("classe_id, enseignant_id, salle, jour, heure_debut, heure_fin, classes(nom)")
+          .select("classe_id, enseignant_id, salle, salle_id, jour, heure_debut, heure_fin, classes(nom)")
           .eq("ecole_id", ecoleId)
           .eq("annee_id", anneeId),
+
         supabase
           .from("classes")
           .select("id", { count: "exact", head: true })
@@ -56,7 +59,12 @@ export default function TimetableDashboard() {
   const stats = useMemo(() => {
     const classesPlanifiees = new Set(creneaux.map((c) => c.classe_id)).size;
     const enseignantsAssignes = new Set(creneaux.map((c) => c.enseignant_id).filter(Boolean)).size;
-    const sallesOccupees = new Set(creneaux.map((c) => c.salle).filter((s) => s && s.trim())).size;
+    // Utiliser salle_id (canonique) et fallback texte pour l'ancien contenu
+    const sallesOccupees = new Set(
+      creneaux.map((c) => c.salle_id ?? (c.salle && c.salle.trim() ? `txt:${c.salle.trim()}` : null))
+        .filter(Boolean)
+    ).size;
+
 
     let conflits = 0;
     for (let i = 0; i < creneaux.length; i++) {
@@ -66,7 +74,9 @@ export default function TimetableDashboard() {
         if (!overlaps(a.heure_debut, a.heure_fin, b.heure_debut, b.heure_fin)) continue;
         if (a.classe_id === b.classe_id) conflits++;
         else if (a.enseignant_id && a.enseignant_id === b.enseignant_id) conflits++;
-        else if (a.salle && b.salle && a.salle === b.salle) conflits++;
+        else if (a.salle_id && a.salle_id === b.salle_id) conflits++;
+        else if (!a.salle_id && !b.salle_id && a.salle && b.salle && a.salle === b.salle) conflits++;
+
       }
     }
 

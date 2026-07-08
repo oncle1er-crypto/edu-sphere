@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
+import { useTimetableSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
 import {
   generateEmploiDuTemps,
   type GenerateOptions,
@@ -16,10 +17,9 @@ import {
 export default function AutoGenerate() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
+  const { settings } = useTimetableSettings();
 
   const [heuresMax, setHeuresMax] = useState(6);
-  const [dureeMin, setDureeMin] = useState(60);
-  const [pauseDej, setPauseDej] = useState(true);
   const [respectDispo, setRespectDispo] = useState(true);
   const [eviterTrous, setEviterTrous] = useState(true);
   const [matinLourd, setMatinLourd] = useState(true);
@@ -33,17 +33,19 @@ export default function AutoGenerate() {
     return {
       ecoleId,
       anneeId,
-      jours: [1, 2, 3, 4, 5],
-      plageMatin: ["08:00", pauseDej ? "12:00" : "13:00"],
-      plageAprem: [pauseDej ? "14:00" : "13:00", "17:00"],
-      dureeCreneauMin: dureeMin,
+      jours: joursFromSettings(settings),
+      plageMatin: [settings.heure_debut, settings.pause_dej_debut],
+      plageAprem: [settings.pause_dej_fin, settings.heure_fin],
+      dureeCreneauMin: settings.duree_creneau_min,
       heuresParJourMax: heuresMax,
       respectDispo,
       eviterTrous,
+      matinLourd,
       effacerAvant: effacer,
       dryRun,
     };
   };
+
 
   const run = async (dryRun: boolean) => {
     const opts = buildOptions(dryRun);
@@ -88,23 +90,28 @@ export default function AutoGenerate() {
         />
       </FieldRow>
 
-      <FieldRow label="Durée d'un créneau (min)" hint="50, 55 ou 60 min.">
+      <FieldRow label="Durée d'un créneau (min)" hint="Configurable dans l'onglet Configuration.">
         <Input
           type="number"
-          min={30}
-          max={120}
-          step={5}
-          value={dureeMin}
-          onChange={(e) => setDureeMin(parseInt(e.target.value) || 60)}
+          value={settings.duree_creneau_min}
+          disabled
+          readOnly
         />
       </FieldRow>
 
-      <FieldRow label="Pause déjeuner obligatoire">
-        <div className="flex items-center gap-3">
-          <Switch checked={pauseDej} onCheckedChange={setPauseDej} />
-          <span className="text-sm text-muted-foreground">12h - 14h</span>
+      <FieldRow label="Pause déjeuner" hint="Configurable dans l'onglet Configuration.">
+        <div className="text-sm text-muted-foreground">
+          {settings.pause_dej_debut.slice(0,5)} → {settings.pause_dej_fin.slice(0,5)}
         </div>
       </FieldRow>
+
+      <FieldRow label="Jours ouvrés" hint="Configurable dans l'onglet Configuration.">
+        <div className="text-sm text-muted-foreground">
+          {settings.jours_ouvres === "lun-sam" ? "Lundi → Samedi" : "Lundi → Vendredi"}
+        </div>
+      </FieldRow>
+
+
 
       <FieldRow label="Respecter disponibilités profs">
         <Switch checked={respectDispo} onCheckedChange={setRespectDispo} />

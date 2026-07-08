@@ -17,7 +17,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useEnseignants } from "@/hooks/useEnseignants";
+import { useTimetableSettings } from "@/hooks/useTimetableSettings";
+import { renderTemplate, normalizeSmsText } from "@/lib/smsText";
 import { toast } from "sonner";
+
 
 type Statut = "a_pourvoir" | "en_attente" | "confirme" | "annule";
 
@@ -57,6 +60,8 @@ export default function Substitutions() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
   const { enseignants } = useEnseignants();
+  const { settings } = useTimetableSettings();
+
   const [rows, setRows] = useState<Remplacement[]>([]);
   const [classes, setClasses] = useState<{ id: string; nom: string }[]>([]);
   const [matieres, setMatieres] = useState<{ id: string; nom: string }[]>([]);
@@ -143,12 +148,56 @@ export default function Substitutions() {
     fetch();
   };
 
+  const notifyRemplacement = async (r: Remplacement, statut: Statut) => {
+    if (!settings.notif_remplacements || !r.classe_id || !ecoleId) return;
+    if (!settings.canal_sms) return;
+    const action = statut === "confirme" ? "confirmé" : statut === "annule" ? "annulé" : "modifié";
+    const heure = r.heure_debut && r.heure_fin
+      ? `${r.heure_debut.slice(0,5)}-${r.heure_fin.slice(0,5)}`
+      : "toute la journée";
+    const message = normalizeSmsText(renderTemplate(settings.modele_message, {
+      matiere: r.matieres?.nom ?? "cours",
+      date: new Date(r.date).toLocaleDateString("fr-FR"),
+      heure,
+      classe: r.classes?.nom ?? "",
+      action: `${action} (remplacement)`,
+    }));
+    // Récupère les téléphones des parents de la classe
+    const { data: eleves } = await supabase
+      .from("eleves").select("id").eq("classe_id", r.classe_id).eq("statut", "actif");
+    const eleveIds = (eleves ?? []).map((e: any) => e.id);
+    if (eleveIds.length === 0) return;
+    const { data: liens } = await supabase
+      .from("eleve_parents").select("parent_id, est_contact_principal").in("eleve_id", eleveIds);
+    const parentIds = [...new Set((liens ?? []).map((l: any) => l.parent_id))];
+    if (parentIds.length === 0) return;
+    const { data: parents } = await supabase
+      .from("parents").select("telephone").in("id", parentIds);
+    const destinataires = [...new Set(
+      (parents ?? []).map((p: any) => p.telephone).filter(Boolean)
+    )];
+    if (destinataires.length === 0) return;
+    try {
+      await supabase.functions.invoke("send-sms", {
+        body: { ecole_id: ecoleId, destinataires, message },
+      });
+    } catch (e) { console.error("SMS notif:", e); }
+  };
+
+
+
   const updateStatut = async (id: string, statut: Statut) => {
     const { error } = await supabase.from("remplacements" as any).update({ statut }).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Statut mis à jour");
+    const r = rows.find((x) => x.id === id);
+    if (r && (statut === "confirme" || statut === "annule")) {
+      notifyRemplacement({ ...r, statut }, statut).catch(() => {});
+    }
     fetch();
   };
+
+
 
   const remove = async (id: string) => {
     if (!confirm("Supprimer ce remplacement ?")) return;

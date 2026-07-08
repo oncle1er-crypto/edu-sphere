@@ -10,9 +10,11 @@ export interface GenerateOptions {
   heuresParJourMax: number;       // ex: 6
   respectDispo: boolean;
   eviterTrous: boolean;
+  matinLourd?: boolean;           // Regrouper matières lourdes le matin (défaut: true)
   effacerAvant: boolean;
   dryRun: boolean;
 }
+
 
 export interface GenerateReport {
   placed: number;
@@ -179,12 +181,14 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
       raison = "aucun enseignant affecté à la matière";
     }
 
-    // Ordre des slots : matin d'abord
+    // Ordre des slots : matières lourdes le matin si activé, sinon ordre naturel
+    const matinLourd = opts.matinLourd !== false;
     const slotsOrdonnes = [...slotsTpl].sort((a, b) => {
-      if (a.plage !== b.plage) return a.plage === "matin" ? -1 : 1;
+      if (matinLourd && a.plage !== b.plage) return a.plage === "matin" ? -1 : 1;
       if (a.jour !== b.jour) return a.jour - b.jour;
       return a.debut.localeCompare(b.debut);
     });
+
 
     for (const slot of slotsOrdonnes) {
       if (placed >= need) break;

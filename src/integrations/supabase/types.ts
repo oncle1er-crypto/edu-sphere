@@ -3888,6 +3888,83 @@ export type Database = {
         }
         Relationships: []
       }
+      parametres_emploi_temps: {
+        Row: {
+          auto_generer_remplacements: boolean
+          canal_email: boolean
+          canal_push: boolean
+          canal_sms: boolean
+          created_at: string
+          duree_creneau_min: number
+          duree_recreation_min: number
+          ecole_id: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jours_ouvres: string
+          modele_message: string
+          notif_annulations: boolean
+          notif_modifications: boolean
+          notif_remplacements: boolean
+          pause_dej_debut: string
+          pause_dej_fin: string
+          updated_at: string
+          verrouiller_apres_publication: boolean
+        }
+        Insert: {
+          auto_generer_remplacements?: boolean
+          canal_email?: boolean
+          canal_push?: boolean
+          canal_sms?: boolean
+          created_at?: string
+          duree_creneau_min?: number
+          duree_recreation_min?: number
+          ecole_id: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jours_ouvres?: string
+          modele_message?: string
+          notif_annulations?: boolean
+          notif_modifications?: boolean
+          notif_remplacements?: boolean
+          pause_dej_debut?: string
+          pause_dej_fin?: string
+          updated_at?: string
+          verrouiller_apres_publication?: boolean
+        }
+        Update: {
+          auto_generer_remplacements?: boolean
+          canal_email?: boolean
+          canal_push?: boolean
+          canal_sms?: boolean
+          created_at?: string
+          duree_creneau_min?: number
+          duree_recreation_min?: number
+          ecole_id?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jours_ouvres?: string
+          modele_message?: string
+          notif_annulations?: boolean
+          notif_modifications?: boolean
+          notif_remplacements?: boolean
+          pause_dej_debut?: string
+          pause_dej_fin?: string
+          updated_at?: string
+          verrouiller_apres_publication?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametres_emploi_temps_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parametres_localisation: {
         Row: {
           created_at: string
@@ -5834,6 +5911,20 @@ export type Database = {
       check_and_promote_eleve: {
         Args: { _eleve_id: string }
         Returns: undefined
+      }
+      check_creneau_feasibility: {
+        Args: {
+          _annee_id: string
+          _classe_id: string
+          _ecole_id: string
+          _enseignant_id: string
+          _exclude_id?: string
+          _heure_debut: string
+          _heure_fin: string
+          _jour: number
+          _salle_id: string
+        }
+        Returns: Json
       }
       check_creneau_overlap: {
         Args: {
