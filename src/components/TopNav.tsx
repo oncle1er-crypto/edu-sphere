@@ -1,4 +1,4 @@
-import { Home, BarChart3, Settings, School } from "lucide-react";
+import { Home, BarChart3, Settings, School, Sun } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
@@ -6,6 +6,7 @@ const navItems = [
   { label: "Tableau de bord", to: "/", icon: Home, end: true },
   { label: "Écoles", to: "/ecoles", icon: School },
   { label: "Statistiques", to: "/statistiques", icon: BarChart3 },
+  { label: "Cours de vacances", to: "/cours-vacances", icon: Sun },
   { label: "Paramètres", to: "/parametres", icon: Settings },
 ];
 
