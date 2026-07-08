@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData } from "../hooks/useVacances";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Printer } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
+import { toast } from "sonner";
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
