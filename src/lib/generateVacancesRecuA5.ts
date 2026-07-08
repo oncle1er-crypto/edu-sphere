@@ -41,162 +41,186 @@ async function loadImage(url: string): Promise<{ data: string; w: number; h: num
   } catch { return null; }
 }
 
-const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
+// IMPORTANT : `toLocaleString("fr-FR")` insère des espaces insécables fines (U+202F)
+// et jsPDF les rend comme un caractère "/" ou une barre — on les remplace par un espace ASCII.
+const fmt = (n: number) =>
+  `${Math.round(n).toLocaleString("fr-FR").replace(/[\u202F\u00A0]/g, " ")} FCFA`;
+
 const modeLabel = (m: string) =>
   ({ especes: "Espèces", mobile_money: "Mobile money", virement: "Virement", autre: "Autre" }[m] ?? m);
 
 /**
- * Génère un reçu A5 paysage (210x148 mm) avec :
- *  - Moitié gauche  = SOUCHE (à conserver par l'école)
- *  - Moitié droite  = REÇU  (à remettre à la famille)
- * Séparateur pointillé au centre pour découpe.
+ * Génère un reçu A4 portrait (210×297 mm) avec :
+ *  - Moitié haute = SOUCHE (à conserver par l'école)
+ *  - Moitié basse = REÇU (à remettre à la famille)
+ * Séparateur pointillé horizontal au centre pour découpe.
  */
 export async function generateVacancesRecuA5(data: VacancesRecuData): Promise<jsPDF> {
-  const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a5" });
+  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const W = 210;
-  const H = 148;
-  const half = W / 2;
+  const H = 297;
+  const halfH = H / 2;
 
   const logo = data.ecole.logoUrl ? await loadImage(data.ecole.logoUrl) : null;
 
-  const drawHalf = (xOffset: number, kind: "souche" | "recu") => {
-    const pad = 6;
-    const x0 = xOffset + pad;
-    const innerW = half - pad * 2;
+  const drawHalf = (yOffset: number, kind: "souche" | "recu") => {
+    const pad = 12;
+    const x0 = pad;
+    const innerW = W - pad * 2;
 
     // Bandeau titre
     pdf.setFillColor(110, 26, 44); // bordeaux
-    pdf.rect(xOffset, 0, half, 18, "F");
+    pdf.rect(0, yOffset, W, 24, "F");
     pdf.setFillColor(252, 227, 77); // accent jaune
-    pdf.rect(xOffset, 18, half, 2, "F");
+    pdf.rect(0, yOffset + 24, W, 2.5, "F");
 
-    // Logo
+    // Logo à gauche
+    let logoRight = pad;
     if (logo) {
       try {
         const ratio = logo.w / logo.h;
-        const h = 12;
+        const h = 16;
         const w = h * ratio;
-        pdf.addImage(logo.data, "PNG", x0, 3, w, h);
+        pdf.addImage(logo.data, "PNG", pad, yOffset + 4, w, h);
+        logoRight = pad + w + 4;
       } catch { /* noop */ }
     }
 
+    // Texte titre — décalé pour ne pas chevaucher le logo
+    const textCenter = (W + logoRight) / 2;
+    const textMaxW = W - logoRight - pad;
     pdf.setTextColor(255, 255, 255);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(11);
-    pdf.text(data.ecole.nom.toUpperCase(), xOffset + half / 2, 8, { align: "center", maxWidth: innerW - 20 });
+    pdf.setFontSize(14);
+    pdf.text(data.ecole.nom.toUpperCase(), textCenter, yOffset + 10, {
+      align: "center", maxWidth: textMaxW,
+    });
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7);
-    if (data.ecole.devise) pdf.text(data.ecole.devise, xOffset + half / 2, 12, { align: "center" });
-    pdf.setFontSize(6.5);
-    const contact = [data.ecole.adresse, data.ecole.telephone].filter(Boolean).join(" • ");
-    if (contact) pdf.text(contact, xOffset + half / 2, 16, { align: "center", maxWidth: innerW });
+    pdf.setFontSize(8);
+    if (data.ecole.devise) {
+      pdf.text(data.ecole.devise, textCenter, yOffset + 15, { align: "center", maxWidth: textMaxW });
+    }
+    pdf.setFontSize(7.5);
+    const contact = [data.ecole.adresse, data.ecole.telephone, data.ecole.email].filter(Boolean).join("  •  ");
+    if (contact) pdf.text(contact, textCenter, yOffset + 20, { align: "center", maxWidth: textMaxW });
 
     // Titre document
     pdf.setTextColor(30, 30, 30);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(12);
-    pdf.text("REÇU — COURS DE VACANCES", xOffset + half / 2, 27, { align: "center" });
-    pdf.setFontSize(8);
+    pdf.setFontSize(16);
+    pdf.text("REÇU — COURS DE VACANCES", W / 2, yOffset + 36, { align: "center" });
+    pdf.setFontSize(10);
     pdf.setTextColor(110, 26, 44);
-    pdf.text(kind === "souche" ? "◆ SOUCHE ÉCOLE ◆" : "◆ EXEMPLAIRE FAMILLE ◆", xOffset + half / 2, 32, { align: "center" });
+    pdf.text(
+      kind === "souche" ? "— SOUCHE (à conserver par l'école) —" : "— EXEMPLAIRE FAMILLE —",
+      W / 2, yOffset + 43, { align: "center" }
+    );
 
-    // Bloc infos
-    let y = 40;
+    // Ligne réf / date
+    let y = yOffset + 52;
     pdf.setTextColor(60, 60, 60);
-    pdf.setFontSize(8);
+    pdf.setFontSize(10);
     pdf.setFont("helvetica", "normal");
     pdf.text(`N° ${data.reference}`, x0, y);
     pdf.text(
       `Date : ${new Date(data.date_paiement).toLocaleDateString("fr-FR")}`,
-      xOffset + half - pad, y, { align: "right" }
+      W - pad, y, { align: "right" }
     );
-    y += 6;
+    y += 5;
 
     // Cadre élève
+    const eleveH = 24;
     pdf.setDrawColor(200, 200, 200);
-    pdf.setLineWidth(0.2);
-    pdf.roundedRect(x0, y, innerW, 26, 1.5, 1.5);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(x0, y, innerW, eleveH, 2, 2);
     pdf.setTextColor(120, 120, 120);
-    pdf.setFontSize(6.5);
-    pdf.text("ÉLÈVE", x0 + 2, y + 4);
+    pdf.setFontSize(8);
+    pdf.text("ÉLÈVE", x0 + 3, y + 5);
     pdf.setTextColor(20, 20, 20);
     pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(10);
-    pdf.text(`${data.eleve.nom} ${data.eleve.prenom}`, x0 + 2, y + 10, { maxWidth: innerW - 4 });
+    pdf.setFontSize(12);
+    pdf.text(`${data.eleve.nom} ${data.eleve.prenom}`, x0 + 3, y + 12, { maxWidth: innerW - 6 });
     pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.text(`Classe : ${data.classe}`, x0 + 2, y + 16);
+    pdf.setFontSize(10);
+    pdf.text(`Classe : ${data.classe}`, x0 + 3, y + 18);
     if (data.eleve.contact_parent) {
-      pdf.text(`Contact : ${data.eleve.contact_parent}`, x0 + 2, y + 22);
+      pdf.text(`Contact : ${data.eleve.contact_parent}`, W - pad - 3, y + 18, { align: "right" });
     }
-    y += 30;
+    y += eleveH + 4;
 
     // Bloc paiement
+    const payH = 38;
     pdf.setFillColor(248, 244, 236);
-    pdf.roundedRect(x0, y, innerW, 32, 1.5, 1.5, "F");
+    pdf.roundedRect(x0, y, innerW, payH, 2, 2, "F");
     pdf.setTextColor(120, 120, 120);
-    pdf.setFontSize(6.5);
-    pdf.text("PAIEMENT", x0 + 2, y + 4);
+    pdf.setFontSize(8);
+    pdf.text("PAIEMENT", x0 + 3, y + 5);
+
+    const labelX = x0 + 4;
+    const valX = W - pad - 4;
 
     pdf.setTextColor(20, 20, 20);
-    pdf.setFontSize(8);
-    pdf.text("Frais dus :", x0 + 3, y + 10);
-    pdf.text(fmt(data.montant_attendu), xOffset + half - pad - 2, y + 10, { align: "right" });
+    pdf.setFontSize(10);
+    pdf.text("Frais dus :", labelX, y + 12);
+    pdf.text(fmt(data.montant_attendu), valX, y + 12, { align: "right" });
 
     pdf.setFont("helvetica", "bold");
     pdf.setTextColor(110, 26, 44);
-    pdf.setFontSize(10);
-    pdf.text("Montant payé :", x0 + 3, y + 17);
-    pdf.text(fmt(data.montant_paye), xOffset + half - pad - 2, y + 17, { align: "right" });
+    pdf.setFontSize(12);
+    pdf.text("Montant payé :", labelX, y + 20);
+    pdf.text(fmt(data.montant_paye), valX, y + 20, { align: "right" });
 
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(20, 20, 20);
-    pdf.setFontSize(8);
-    pdf.text("Reste à payer :", x0 + 3, y + 23);
+    pdf.setFontSize(10);
+    pdf.text("Reste à payer :", labelX, y + 28);
     const restColor: [number, number, number] = data.reste > 0 ? [200, 50, 50] : [20, 130, 60];
     pdf.setTextColor(...restColor);
     pdf.setFont("helvetica", "bold");
-    pdf.text(fmt(data.reste), xOffset + half - pad - 2, y + 23, { align: "right" });
+    pdf.text(fmt(data.reste), valX, y + 28, { align: "right" });
 
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(60, 60, 60);
-    pdf.setFontSize(7.5);
-    pdf.text(`Mode : ${modeLabel(data.mode)}`, x0 + 3, y + 29);
-    y += 36;
+    pdf.setFontSize(9);
+    pdf.text(`Mode de paiement : ${modeLabel(data.mode)}`, labelX, y + 34);
+    y += payH + 4;
 
     if (data.observation) {
-      pdf.setFontSize(7);
+      pdf.setFontSize(9);
       pdf.setTextColor(90, 90, 90);
-      pdf.text("Obs. : " + data.observation, x0, y, { maxWidth: innerW });
+      pdf.text("Observation : " + data.observation, x0, y, { maxWidth: innerW });
       y += 6;
     }
 
-    // Signature
-    const sigY = H - 14;
+    // Signatures
+    const sigY = yOffset + halfH - 18;
     pdf.setDrawColor(150, 150, 150);
-    pdf.line(x0, sigY, x0 + 35, sigY);
-    pdf.line(xOffset + half - pad - 35, sigY, xOffset + half - pad, sigY);
-    pdf.setFontSize(6.5);
+    pdf.setLineWidth(0.2);
+    pdf.line(x0, sigY, x0 + 55, sigY);
+    pdf.line(W - pad - 55, sigY, W - pad, sigY);
+    pdf.setFontSize(8);
     pdf.setTextColor(120, 120, 120);
-    pdf.text("Caissier / Cachet", x0, sigY + 3);
-    pdf.text(kind === "souche" ? "Signature élève/parent" : "Cachet école", xOffset + half - pad, sigY + 3, { align: "right" });
+    pdf.text("Caissier / Cachet école", x0, sigY + 4);
+    pdf.text(
+      kind === "souche" ? "Signature élève / parent" : "Reçu par la famille",
+      W - pad, sigY + 4, { align: "right" }
+    );
   };
 
   drawHalf(0, "souche");
-  drawHalf(half, "recu");
+  drawHalf(halfH, "recu");
 
-  // Séparateur pointillé central
+  // Séparateur pointillé horizontal central
   pdf.setDrawColor(120, 120, 120);
-  pdf.setLineDashPattern([1.5, 1.5], 0);
-  pdf.setLineWidth(0.3);
-  pdf.line(half, 4, half, H - 4);
+  pdf.setLineDashPattern([2, 2], 0);
+  pdf.setLineWidth(0.4);
+  pdf.line(6, halfH, W - 6, halfH);
   pdf.setLineDashPattern([], 0);
 
-  // Petits ciseaux (symbole)
-  pdf.setFontSize(6);
+  // Repère de découpe (texte ASCII compatible helvetica)
+  pdf.setFontSize(7);
   pdf.setTextColor(120, 120, 120);
-  pdf.text("✂", half, 3, { align: "center" });
-  pdf.text("✂", half, H - 1, { align: "center" });
+  pdf.text("- - - - -  découper ici  - - - - -", W / 2, halfH - 1, { align: "center" });
 
   return pdf;
 }
