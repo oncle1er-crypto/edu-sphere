@@ -560,12 +560,23 @@ export default function Bulletins() {
       <div className="mb-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <div>
           <Label className="text-xs">Trimestre</Label>
-          <Select value={selectedPeriode} onValueChange={setSelectedPeriode}>
+          <Select value={selectedPeriode} onValueChange={setSelectedPeriode} disabled={periodes.length === 0}>
             <SelectTrigger><SelectValue placeholder="Sélectionner un trimestre" /></SelectTrigger>
             <SelectContent>
-              {periodes.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nom}</SelectItem>))}
+              {periodes.length === 0 ? (
+                <div className="px-2 py-2 text-xs text-muted-foreground">
+                  Aucun trimestre créé pour cette année
+                </div>
+              ) : (
+                periodes.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nom}</SelectItem>))
+              )}
             </SelectContent>
           </Select>
+          {periodes.length === 0 && !periodLoading && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              L'année active {activeAnnee?.libelle ? `« ${activeAnnee.libelle} »` : ""} n'a pas encore de trimestres.
+            </p>
+          )}
         </div>
         <div>
           <Label className="text-xs">Classe</Label>
@@ -577,7 +588,11 @@ export default function Bulletins() {
           </Select>
         </div>
         <div className="flex items-end">
-          {rows.length > 0 && (
+          {periodes.length === 0 && !periodLoading ? (
+            <Button variant="outline" className="w-full gap-2" onClick={() => navigate("/parametres/academique")}>
+              Créer les trimestres
+            </Button>
+          ) : rows.length > 0 && (
             <Button variant="default" className="w-full gap-2" disabled={generatingAll} onClick={handleDownloadAll}>
               {generatingAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
               Télécharger toute la classe ({rows.length})
