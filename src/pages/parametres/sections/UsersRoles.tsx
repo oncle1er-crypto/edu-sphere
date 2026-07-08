@@ -449,6 +449,69 @@ export default function UsersRoles() {
         userName={permsUser?.name}
       />
 
+      {/* ============ Dialog Édition utilisateur ============ */}
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Pencil className="h-5 w-5" /> Modifier l'utilisateur</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div><Label>Nom complet</Label><Input value={editName} onChange={(e) => setEditName(e.target.value)} /></div>
+            <div><Label>Email</Label><Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} /></div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setEditUser(null)}>Annuler</Button>
+            <Button onClick={handleSaveEdit} disabled={savingEdit || !editName.trim()}>
+              {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />}
+              Enregistrer
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ Dialog Nouveau mot de passe ============ */}
+      <Dialog open={!!pwdUser} onOpenChange={(o) => !o && (setPwdUser(null), setNewPwd(""))}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5" /> Nouveau mot de passe</DialogTitle>
+            <DialogDescription>
+              Définir un nouveau mot de passe pour <strong>{pwdUser?.name}</strong>. L'utilisateur pourra se connecter immédiatement avec ce mot de passe.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Nouveau mot de passe (8 caractères min.)</Label>
+            <Input type="text" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} placeholder="••••••••" />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => { setPwdUser(null); setNewPwd(""); }}>Annuler</Button>
+            <Button onClick={handleResetPwd} disabled={resettingPwd || newPwd.length < 8}>
+              {resettingPwd && <Loader2 className="h-4 w-4 animate-spin" />}
+              Réinitialiser
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============ Dialog Suppression utilisateur ============ */}
+      <Dialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive"><Trash2 className="h-5 w-5" /> Supprimer l'utilisateur</DialogTitle>
+            <DialogDescription>
+              Cette action est <strong>définitive</strong>. Le compte de <strong>{deleteTarget?.name}</strong> sera supprimé (rôles, permissions, profil et compte de connexion).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting && <Loader2 className="h-4 w-4 animate-spin" />}
+              Supprimer définitivement
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
 
 
 
