@@ -1,50 +1,50 @@
-## Diagnostic
+## Constat
+`src/pages/enseignants/sections/StaffSchedule.tsx` est intégralement statique : liste d'enseignants, semaine et créneaux sont codés en dur. Aucun lien avec la base.
 
-Ce n'est pas un bug de données — c'est une **race condition** classique entre l'authentification et le chargement des hooks.
+Or les données existent déjà :
+- table `enseignants` (nom, prénom, matière principale)
+- table `creneaux_emploi_temps` (jour, heure_debut, heure_fin, classe_id, matiere_id, enseignant_id, salle_id/salle)
+- table `remplacements` (pour signaler les créneaux couverts par un remplaçant)
+- hook `useEnseignants` déjà utilisé ailleurs
 
-**Ce qui se passe aujourd'hui :**
-1. Vous vous connectez → l'app démarre
-2. `useEcoleId` regarde `user` : au premier rendu, `user` est encore `null` (la session n'est pas encore restaurée depuis le stockage)
-3. Le hook conclut immédiatement « pas d'utilisateur » et met `loading = false` avec `ecoleId = null`
-4. Les hooks qui en dépendent (`useEleves`, KPIs du dashboard, etc.) reçoivent `ecoleId = null` → aucune requête déclenchée
-5. La session finit par se restaurer un instant plus tard, mais rien ne re-déclenche le fetch automatiquement dans certains composants
-6. Vous rafraîchissez → cette fois la session est déjà en cache → tout s'affiche
+## Objectif
+Rendre l'onglet **Emploi du temps enseignant** 100% fonctionnel, aligné sur le module « Emploi du temps » existant.
 
-**Preuve dans le code :** `useEcoleId` (src/hooks/useEcoleId.ts) ne différencie pas « pas d'utilisateur » de « auth en cours de chargement ».
+## Plan d'implémentation
 
-## Correctif
+### 1. Sélecteur d'enseignant réel
+- Charger la liste depuis `enseignants` filtrée sur `ecole_id` et année active
+- Afficher `nom prénom — matière` (fallback : `nom prénom` si pas de matière principale)
+- Trier alphabétiquement, recherche par saisie
+- Présélectionner le premier enseignant de la liste
 
-### 1. `useEcoleId` : attendre que l'auth soit prête
-Ne plus déclarer `loading = false` tant que `AuthContext.loading` est encore `true`. Rester en attente pendant l'hydratation de la session au lieu de renvoyer prématurément `ecoleId = null`.
+### 2. Navigation semaine
+- Remplacer le badge statique par un vrai sélecteur `‹ Semaine du JJ/MM/AAAA ›`
+- Boutons précédent / suivant / « aujourd'hui »
+- Aucune requête liée à la date (les créneaux sont hebdomadaires récurrents), la date sert juste d'affichage et pour les remplacements ponctuels
 
-### 2. Hooks de données : lier `enabled` à l'état d'auth
-Pour chaque hook consommateur (`useEleves`, `useClasses`, `useEnseignants`, `useMatieres`, KPIs du dashboard Élèves, etc.), s'assurer que le `useEffect` de fetch attend :
-- `!authLoading`
-- `!ecoleLoading`
-- `ecoleId` défini
+### 3. Grille horaire dynamique
+- Récupérer `creneaux_emploi_temps` filtrés par `ecole_id`, `annee_id` (année active) et `enseignant_id = sélectionné`
+- Joindre `classes(nom)`, `matieres(nom, couleur)`, `salles(code)`
+- Générer dynamiquement les lignes d'heures à partir de la config de l'école (`parametres_classes.plage_horaire_debut/fin` ou par défaut 08:00 → 17:00 par tranches d'1h)
+- Colorer chaque case avec la couleur de la matière (fallback primary)
+- Superposer un badge « Remplacé » ou « Assuré par X » quand un `remplacements` actif recouvre le créneau à la date affichée
 
-Aujourd'hui la condition existe mais est court-circuitée par le `loading=false` prématuré de `useEcoleId`.
+### 4. Actions utiles
+- Bouton « Exporter PDF » réutilisant `generateEmploiDuTempsExports` (l'export enseignant existe déjà)
+- Bouton « Imprimer »
+- Compteur d'heures : total heures / semaine à droite du nom
 
-### 3. Section « Vue d'ensemble » du module Élèves
-Vérifier le hook qui alimente les 6 KPIs (Total, Inscrits actifs, Classes, Présence, Nouveaux, Retard) pour qu'il applique la même garde et re-fetch quand `ecoleId` bascule de `null` à une valeur.
+### 5. États et gardes
+- Skeleton pendant le chargement
+- Message « Aucun créneau planifié pour cet enseignant » si la grille est vide
+- Message « Aucun enseignant enregistré » si la table est vide, avec lien vers l'onglet Personnel
 
-### 4. Périmètre étendu (même cause racine)
-Auditer d'un coup tous les hooks qui suivent le même pattern « `if (!ecoleId) return;` dans `useEffect` » pour appliquer la correction uniformément (Finances, Bibliothèque, Cantine, Transport, Vie scolaire, Cours de vacances, etc.).
+### 6. Fichiers touchés
+- `src/pages/enseignants/sections/StaffSchedule.tsx` : réécriture complète
+- Réutilisation des hooks : `useEnseignants`, `useEcoleId`, `useAnneeId`
+- Nouveau petit hook local `useTeacherSchedule(enseignantId)` dans le même fichier (ou `src/hooks/useTeacherSchedule.ts` si réutilisé ailleurs)
 
-## Détails techniques
-
-- Fichier pivot : `src/hooks/useEcoleId.ts` — ajouter la dépendance à `useAuth().loading` et ne quitter l'état de chargement qu'une fois l'auth stabilisée.
-- Pattern cible pour tous les hooks de données :
-  ```
-  useEffect(() => {
-    if (authLoading || ecoleLoading) return;   // attendre
-    if (!ecoleId) { setLoading(false); return; } // vraiment déconnecté
-    fetch();
-  }, [authLoading, ecoleLoading, ecoleId, ...]);
-  ```
-- Aucune modification de schéma DB, aucune politique RLS à toucher.
-- Aucun impact fonctionnel autre que « les données apparaissent dès la connexion ».
-
-## Résultat attendu
-
-Après login, les 227 élèves, les 17 classes et tous les KPIs s'affichent sans avoir besoin de rafraîchir la page.
+## Hors périmètre
+- Édition inline des créneaux depuis cette page (ça reste dans le module « Emploi du temps »)
+- Gestion des indisponibilités (déjà couverte ailleurs)
