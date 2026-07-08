@@ -15,6 +15,7 @@ export interface UserWithRole {
 
 export function useUsersRoles() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
 
