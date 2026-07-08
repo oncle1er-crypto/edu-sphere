@@ -28,6 +28,32 @@ async function checkOverlap(
   return (data as string) ?? null;
 }
 
+async function checkFeasibility(
+  ecoleId: string,
+  anneeId: string,
+  classeId: string,
+  enseignantId: string | null,
+  salleId: string | null,
+  jour: number,
+  heureDebut: string,
+  heureFin: string,
+  excludeId?: string
+): Promise<{ ok: boolean; errors: string[]; warnings: string[] } | null> {
+  const { data, error } = await supabase.rpc("check_creneau_feasibility" as any, {
+    _ecole_id: ecoleId,
+    _annee_id: anneeId,
+    _classe_id: classeId,
+    _enseignant_id: enseignantId,
+    _salle_id: salleId,
+    _jour: jour,
+    _heure_debut: heureDebut,
+    _heure_fin: heureFin,
+    _exclude_id: excludeId ?? null,
+  });
+  if (error) { console.error(error); return null; }
+  return data as any;
+}
+
 export interface Creneau {
   id: string;
   ecole_id: string;
@@ -39,12 +65,15 @@ export interface Creneau {
   heure_debut: string;
   heure_fin: string;
   salle: string | null;
+  salle_id: string | null;
   created_at: string;
   updated_at: string;
   // joined
   matiere_nom?: string;
   enseignant_nom?: string;
+  salle_code?: string;
 }
+
 
 export function useEmploiDuTemps() {
   const { ecoleId } = useEcoleId();
