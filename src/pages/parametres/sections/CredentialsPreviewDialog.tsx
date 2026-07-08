@@ -60,6 +60,13 @@ Vous devrez le changer à la 1ère connexion.`;
   };
 
   const copy = async (value: string, key: string, label: string) => {
+    const isEmbeddedPreview = window.self !== window.top;
+
+    if (isEmbeddedPreview) {
+      selectManualCopy(value, key, label);
+      return;
+    }
+
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(value);
