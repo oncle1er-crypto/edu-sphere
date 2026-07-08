@@ -1,16 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   User,
   Lock,
-  LogIn,
-  UserPlus,
-  Chrome,
   Eye,
   EyeOff,
   ShieldCheck,
@@ -30,10 +26,8 @@ const DEMO_PASSWORD = "Demo@2026!";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -50,41 +44,14 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { full_name: fullName },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        toast.success("Compte créé !", {
-          description: "Vérifiez votre email pour confirmer votre inscription.",
-        });
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate("/");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate("/");
     } catch (err: any) {
       toast.error("Erreur", { description: err.message });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
-    });
-    if (result.error) {
-      toast.error("Erreur Google", { description: String(result.error) });
-      return;
-    }
-    if (result.redirected) return;
-    navigate("/");
   };
 
 
