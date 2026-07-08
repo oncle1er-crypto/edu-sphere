@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { purgeSensitiveCaches } from "@/pwa/registerSW";
+import { clearAllDrafts } from "@/hooks/useDraftForm";
 import { toast } from "sonner";
 
 
