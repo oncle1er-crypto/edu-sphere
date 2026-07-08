@@ -23,6 +23,7 @@ const emptyForm = {
 export default function VacancesInscriptions() {
   const { classes, eleves, loading, save, remove } = useVacancesData();
   const [open, setOpen] = useState(false);
+  const [workflowOpen, setWorkflowOpen] = useState(false);
   const [edit, setEdit] = useState<VacEleve | null>(null);
   const [q, setQ] = useState("");
   const [fClasse, setFClasse] = useState<string>("all");
