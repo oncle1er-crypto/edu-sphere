@@ -90,23 +90,28 @@ export default function AutoGenerate() {
         />
       </FieldRow>
 
-      <FieldRow label="Durée d'un créneau (min)" hint="50, 55 ou 60 min.">
+      <FieldRow label="Durée d'un créneau (min)" hint="Configurable dans l'onglet Configuration.">
         <Input
           type="number"
-          min={30}
-          max={120}
-          step={5}
-          value={dureeMin}
-          onChange={(e) => setDureeMin(parseInt(e.target.value) || 60)}
+          value={settings.duree_creneau_min}
+          disabled
+          readOnly
         />
       </FieldRow>
 
-      <FieldRow label="Pause déjeuner obligatoire">
-        <div className="flex items-center gap-3">
-          <Switch checked={pauseDej} onCheckedChange={setPauseDej} />
-          <span className="text-sm text-muted-foreground">12h - 14h</span>
+      <FieldRow label="Pause déjeuner" hint="Configurable dans l'onglet Configuration.">
+        <div className="text-sm text-muted-foreground">
+          {settings.pause_dej_debut.slice(0,5)} → {settings.pause_dej_fin.slice(0,5)}
         </div>
       </FieldRow>
+
+      <FieldRow label="Jours ouvrés" hint="Configurable dans l'onglet Configuration.">
+        <div className="text-sm text-muted-foreground">
+          {settings.jours_ouvres === "lun-sam" ? "Lundi → Samedi" : "Lundi → Vendredi"}
+        </div>
+      </FieldRow>
+
+
 
       <FieldRow label="Respecter disponibilités profs">
         <Switch checked={respectDispo} onCheckedChange={setRespectDispo} />
