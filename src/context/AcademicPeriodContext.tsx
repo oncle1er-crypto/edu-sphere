@@ -371,6 +371,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
     upsertAnnee,
     setAnneeStatut,
     setPeriodeStatut,
+    generatePeriodesForAnnee,
     getLockState,
     isLocked,
   };
