@@ -626,6 +626,15 @@ export default function Bulletins() {
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+      ) : periodes.length === 0 && !periodLoading ? (
+        <Alert className="border-orange-500/50">
+          <AlertTriangle className="h-4 w-4 text-orange-500" />
+          <AlertTitle>Aucun trimestre défini</AlertTitle>
+          <AlertDescription>
+            L'année scolaire active {activeAnnee?.libelle ? `« ${activeAnnee.libelle} »` : ""} n'a pas encore de découpage
+            (trimestres ou semestres). Rendez-vous dans <strong>Paramètres → Année scolaire</strong> pour les créer.
+          </AlertDescription>
+        </Alert>
       ) : !selectedClasse || !selectedPeriode ? (
         <p className="text-center text-muted-foreground py-8">Sélectionnez un trimestre et une classe.</p>
       ) : rows.length === 0 ? (
