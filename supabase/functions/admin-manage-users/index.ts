@@ -12,6 +12,14 @@ const json = (body: unknown, status = 200) =>
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
+// Domaine interne pour les comptes créés avec un numéro de téléphone.
+// Doit rester en synchro avec src/lib/phoneAuth.ts (côté client).
+const PHONE_EMAIL_DOMAIN = "phone.gsp.local";
+const phoneToEmail = (phone: string) => `${phone}@${PHONE_EMAIL_DOMAIN}`;
+const isValidPhone = (p: string) => /^\d{10}$/.test(p);
+const randomTempPassword = () =>
+  "Tmp" + Math.random().toString(36).slice(2, 8) + Math.floor(Math.random() * 90 + 10);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -53,16 +61,13 @@ Deno.serve(async (req) => {
 
       const { data: profiles } = await admin
         .from("profiles")
-        .select("id, full_name")
+        .select("id, full_name, phone")
         .in("id", userIds);
       const profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
 
-      // auth.users via admin API
       const emailMap = new Map<string, { email: string | null; confirmed: boolean; created_at: string }>();
-      // paginate
       let page = 1;
       const perPage = 200;
-      // We fetch up to 5 pages (1000 users) — enough for schools
       for (let i = 0; i < 5; i++) {
         const { data: list } = await admin.auth.admin.listUsers({ page, perPage });
         if (!list || list.users.length === 0) break;
@@ -83,13 +88,16 @@ Deno.serve(async (req) => {
       for (const r of schoolRoles ?? []) {
         const p = profileMap.get(r.user_id) as any;
         const authInfo = emailMap.get(r.user_id);
+        const rawEmail = authInfo?.email ?? "";
+        const isPhoneAcct = rawEmail.endsWith("@" + PHONE_EMAIL_DOMAIN);
         if (userMap.has(r.user_id)) {
           userMap.get(r.user_id).role += `, ${r.role}`;
         } else {
           userMap.set(r.user_id, {
             user_id: r.user_id,
             full_name: p?.full_name || "Utilisateur",
-            email: authInfo?.email ?? "",
+            email: isPhoneAcct ? "" : rawEmail,
+            phone: p?.phone ?? (isPhoneAcct ? rawEmail.split("@")[0] : ""),
             email_confirmed: authInfo?.confirmed ?? false,
             role: r.role,
             created_at: r.created_at,
@@ -101,15 +109,31 @@ Deno.serve(async (req) => {
 
     // ============= CREATE =============
     if (action === "create") {
-      const { email, password, full_name, roles: newRoles } = body;
-      if (!email || !password || !full_name || !Array.isArray(newRoles) || newRoles.length === 0) {
-        return json({ error: "email, password, full_name et roles requis" }, 400);
+      const { email, phone, password, full_name, roles: newRoles } = body;
+      if (!full_name || !Array.isArray(newRoles) || newRoles.length === 0) {
+        return json({ error: "full_name et roles requis" }, 400);
       }
+      if (!email && !phone) {
+        return json({ error: "Email ou numéro de téléphone requis" }, 400);
+      }
+      if (phone && !isValidPhone(String(phone))) {
+        return json({ error: "Le numéro de téléphone doit contenir 10 chiffres" }, 400);
+      }
+      // Mot de passe : si fourni, min 6 caractères. Sinon on génère un temporaire.
+      let pwd = password ? String(password) : "";
+      const mustChange = !password;
+      if (pwd && pwd.length < 6) {
+        return json({ error: "Le mot de passe doit comporter au moins 6 caractères" }, 400);
+      }
+      if (!pwd) pwd = randomTempPassword();
+
+      const loginEmail = email ? String(email).trim() : phoneToEmail(String(phone));
+
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true, // ← pas besoin de confirmation
-        user_metadata: { full_name },
+        email: loginEmail,
+        password: pwd,
+        email_confirm: true,
+        user_metadata: { full_name, phone: phone ?? null },
       });
       if (cErr || !created.user) return json({ error: cErr?.message ?? "Erreur création" }, 400);
 
@@ -118,13 +142,19 @@ Deno.serve(async (req) => {
         id: newUserId,
         ecole_id,
         full_name,
+        phone: phone ?? null,
+        must_change_password: mustChange,
       });
       for (const role of newRoles) {
         await admin.from("user_roles").insert({
           user_id: newUserId, ecole_id, role,
         });
       }
-      return json({ user_id: newUserId });
+      return json({
+        user_id: newUserId,
+        temp_password: mustChange ? pwd : undefined,
+        login_email: loginEmail,
+      });
     }
 
     // ============= UPDATE =============
@@ -161,13 +191,15 @@ Deno.serve(async (req) => {
     // ============= RESET PASSWORD =============
     if (action === "reset_password") {
       const { target_user_id, new_password } = body;
-      if (!target_user_id || !new_password || new_password.length < 8) {
-        return json({ error: "target_user_id et new_password (8+ car.) requis" }, 400);
+      if (!target_user_id || !new_password || String(new_password).length < 6) {
+        return json({ error: "target_user_id et new_password (6+ car.) requis" }, 400);
       }
       const { error: pErr } = await admin.auth.admin.updateUserById(target_user_id, {
         password: new_password,
       });
       if (pErr) return json({ error: pErr.message }, 400);
+      // Forcer un nouveau mot de passe à la prochaine connexion
+      await admin.from("profiles").update({ must_change_password: true }).eq("id", target_user_id);
       return json({ ok: true });
     }
 
