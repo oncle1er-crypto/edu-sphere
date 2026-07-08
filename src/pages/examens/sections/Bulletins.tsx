@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import {
   GraduationCap, Download, Loader2, FileDown, Eye, Printer, AlertTriangle, CheckCircle2,
   Send, Pencil, Lock, LockOpen,
@@ -501,8 +502,12 @@ export default function Bulletins() {
   };
 
   const handleOpenSend = async (row: BulletinRow) => {
-    if (!scolariteStatus[row.eleve_id]?.aJour) {
-      toast.error("Élève non à jour : envoi désactivé."); return;
+    const s = scolariteStatus[row.eleve_id];
+    if (!s?.aJour) {
+      toast.error(s?.nonConfiguree
+        ? "Scolarité non configurée pour cet élève : envoi désactivé."
+        : "Élève non à jour : envoi désactivé.");
+      return;
     }
     setGeneratingId(row.eleve_id);
     try {
@@ -691,13 +696,42 @@ export default function Bulletins() {
                     )}
                   </TableCell>
                   <TableCell>
-                    {aJour ? (
-                      <Badge variant="outline" className="border-primary/40 text-primary text-[10px]">à jour</Badge>
-                    ) : (
-                      <span className="text-[10px] text-destructive" title={`Reste dû : ${Math.round(scol?.resteDu ?? 0).toLocaleString("fr-FR")} FCFA`}>
-                        en retard
-                      </span>
-                    )}
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex">
+                            {scol?.nonConfiguree ? (
+                              <Badge variant="outline" className="border-orange-500/50 text-orange-600 text-[10px] cursor-help">
+                                non configurée
+                              </Badge>
+                            ) : aJour ? (
+                              <Badge variant="outline" className="border-primary/40 text-primary text-[10px] cursor-help">à jour</Badge>
+                            ) : (
+                              <span className="text-[10px] text-destructive cursor-help">en retard</span>
+                            )}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-xs text-xs">
+                          {scol?.nonConfiguree ? (
+                            <>
+                              Aucune tranche de scolarité n'a été créée pour cet élève.
+                              Appliquez la grille tarifaire dans <strong>Finances → Scolarité</strong> pour activer l'envoi du bulletin.
+                            </>
+                          ) : aJour ? (
+                            <>
+                              L'élève n'a aucune tranche échue impayée.
+                              Les tranches à échéance future ne bloquent pas l'envoi.
+                            </>
+                          ) : (
+                            <>
+                              Tranche(s) échue(s) impayée(s). Reste dû :{" "}
+                              <strong>{Math.round(scol?.resteDu ?? 0).toLocaleString("fr-FR")} FCFA</strong>.
+                              L'envoi du bulletin est bloqué tant que la situation n'est pas régularisée.
+                            </>
+                          )}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
