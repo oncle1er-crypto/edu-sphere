@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 export interface UserWithRole {
