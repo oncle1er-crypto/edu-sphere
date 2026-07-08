@@ -25,7 +25,7 @@ export default function StudentsAssignment() {
   const [transferring, setTransferring] = useState(false);
 
   // Unassigned students
-  const unassigned = eleves.filter((e) => !e.classe_id && (e.statut === "inscrit" || e.statut === "actif"));
+  const unassigned = eleves.filter((e) => !e.classe_id && (e.statut === "inscrit" || e.statut === "actif" || e.statut === "pre_inscrit"));
 
   const sourceEleves = sourceClasseId === "__unassigned"
     ? unassigned

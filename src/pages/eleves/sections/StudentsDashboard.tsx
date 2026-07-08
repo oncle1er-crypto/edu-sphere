@@ -61,7 +61,7 @@ export default function StudentsDashboard() {
         frais.forEach((f: any) => fraisByCycle.set(f.cycle_id, Number(f.montant_annuel)));
 
         let count = 0;
-        for (const e of eleves.filter((e) => e.statut === "inscrit" && e.classe_id)) {
+        for (const e of eleves.filter((e) => (e.statut === "inscrit" || e.statut === "pre_inscrit" || e.statut === "actif") && e.classe_id)) {
           const cl = classes.find((c) => c.id === e.classe_id);
           if (!cl) continue;
           const total = fraisByCycle.get(cl.cycle_id) ?? 0;
@@ -84,10 +84,11 @@ export default function StudentsDashboard() {
     );
   }
 
+  const isActif = (s?: string | null) => s === "inscrit" || s === "pre_inscrit" || s === "actif";
   const total = eleves.length;
-  const inscrits = eleves.filter((e) => e.statut === "inscrit").length;
-  const garcons = eleves.filter((e) => e.sexe === "M" && e.statut === "inscrit").length;
-  const filles = eleves.filter((e) => e.sexe === "F" && e.statut === "inscrit").length;
+  const inscrits = eleves.filter((e) => isActif(e.statut)).length;
+  const garcons = eleves.filter((e) => e.sexe === "M" && isActif(e.statut)).length;
+  const filles = eleves.filter((e) => e.sexe === "F" && isActif(e.statut)).length;
 
   // Nouveaux inscrits ce mois
   const now = new Date();
@@ -96,7 +97,7 @@ export default function StudentsDashboard() {
 
   const repartition = cycles.map((cy) => {
     const classeIds = classes.filter((c) => c.cycle_id === cy.id).map((c) => c.id);
-    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id) && e.statut === "inscrit").length;
+    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id) && isActif(e.statut)).length;
     const capacite = classes
       .filter((c) => c.cycle_id === cy.id)
       .reduce((sum, c) => sum + (c.capacite ?? 50), 0);
