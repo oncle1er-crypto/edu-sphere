@@ -181,7 +181,10 @@ export default function VacancesPaiements() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("Supprimer ce paiement ?")) remove("vacances_paiements", p.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" title="Imprimer reçu A5 avec souche" disabled={printing === p.id} onClick={() => printRecu(p)}><Printer className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("Supprimer ce paiement ?")) remove("vacances_paiements", p.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
