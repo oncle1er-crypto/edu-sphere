@@ -67,19 +67,27 @@ export function useUsersRoles() {
     return true;
   };
 
-  const createUser = async (payload: { email?: string; phone?: string; password?: string; full_name: string; roles: string[] }) => {
-    if (!ecoleId) return false;
+  const createUser = async (payload: { email?: string; phone?: string; password?: string; full_name: string; roles: string[] }): Promise<
+    | { ok: true; temp_password?: string; login_identifier: string; channel: "email" | "phone"; full_name: string }
+    | { ok: false }
+  > => {
+    if (!ecoleId) return { ok: false };
     try {
       const res: any = await call({ action: "create", ecole_id: ecoleId, ...payload });
-      if (res?.temp_password) {
-        toast.success(`Utilisateur créé — mot de passe temporaire : ${res.temp_password}`, { duration: 15000 });
-      } else {
+      if (!res?.temp_password) {
         toast.success("Utilisateur créé — il peut se connecter immédiatement");
       }
       await fetchUsers();
-      return true;
-    } catch (e: any) { toast.error(e.message); return false; }
+      return {
+        ok: true,
+        temp_password: res?.temp_password,
+        login_identifier: res?.login_identifier ?? payload.email ?? payload.phone ?? "",
+        channel: res?.channel ?? (payload.phone ? "phone" : "email"),
+        full_name: payload.full_name,
+      };
+    } catch (e: any) { toast.error(e.message); return { ok: false }; }
   };
+
 
 
   const updateUser = async (target_user_id: string, payload: { full_name?: string; email?: string }) => {
