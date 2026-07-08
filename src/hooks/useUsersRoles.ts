@@ -67,15 +67,20 @@ export function useUsersRoles() {
     return true;
   };
 
-  const createUser = async (payload: { email: string; password: string; full_name: string; roles: string[] }) => {
+  const createUser = async (payload: { email?: string; phone?: string; password?: string; full_name: string; roles: string[] }) => {
     if (!ecoleId) return false;
     try {
-      await call({ action: "create", ecole_id: ecoleId, ...payload });
-      toast.success("Utilisateur créé — il peut se connecter immédiatement");
+      const res: any = await call({ action: "create", ecole_id: ecoleId, ...payload });
+      if (res?.temp_password) {
+        toast.success(`Utilisateur créé — mot de passe temporaire : ${res.temp_password}`, { duration: 15000 });
+      } else {
+        toast.success("Utilisateur créé — il peut se connecter immédiatement");
+      }
       await fetchUsers();
       return true;
     } catch (e: any) { toast.error(e.message); return false; }
   };
+
 
   const updateUser = async (target_user_id: string, payload: { full_name?: string; email?: string }) => {
     if (!ecoleId) return false;
