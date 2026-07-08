@@ -1,123 +1,86 @@
-## Module « Cours de vacances » — Plan d'intégration
+## Objectif
 
-Module **totalement indépendant** des élèves réguliers. Nouvelles tables préfixées `vacances_*`, nouvelles pages sous `/cours-vacances`, aucune modification des tables ou modules existants (`eleves`, `classes`, `paiements`, etc.).
+Trois chantiers indépendants dans la même livraison :
 
-### 1. Base de données (migration unique)
+1. **Rendre le module « Utilisateurs & rôles » vraiment opérationnel** (voir email/nom, modifier, supprimer, réinitialiser mot de passe, création sans confirmation email).
+2. **Nettoyer la page de connexion** (retirer Google + « Créer un compte »).
+3. **Rendre 100 % fonctionnelle la nouvelle inscription du module Cours de vacances**.
 
-Toutes les tables sont scopées par `ecole_id` + `annee_id` (multi-tenant, cohérent avec l'existant). RLS activée, GRANT explicites, policies basées sur `has_ecole_role` / `has_permission`.
+---
 
-**Tables créées :**
+## 1. Module « Utilisateurs & rôles »
 
-- **`vacances_sessions`** — une session = une édition (ex. « Vacances 2026 »)
-  - `libelle`, `date_debut`, `date_fin`, `statut` (preparation/active/cloturee), `ecole_id`, `annee_id`
-  - Permet de séparer les éditions d'une année à l'autre.
+### Problèmes constatés
+- La liste affiche « Utilisateur » partout et pas d'email → `useUsersRoles` ne récupère jamais `auth.users.email`.
+- Pas de bouton **Modifier / Supprimer / Réinitialiser mot de passe** utilisateur.
+- La création utilise `supabase.auth.signUp` côté client → exige la confirmation email (« Email not confirmed » au login).
+- L'admin ne peut pas voir/agir sur un compte car il n'a pas accès à `auth.users`.
 
-- **`vacances_classes`**
-  - `session_id`, `nom` (CP1, 6e…), `montant` (numeric), `capacite` (nullable), `actif` (bool)
+### Correctifs
 
-- **`vacances_eleves`** — indépendante de `eleves`
-  - `session_id`, `classe_id` (→ vacances_classes), `nom`, `prenom`, `sexe`, `date_naissance`, `contact_parent`, `etablissement_origine` (nullable), `observation`, `date_inscription`, `statut_paiement` (payé/non_payé, calculé au fil des paiements)
+**a) Nouvelle Edge Function `admin-manage-users`** (service role, vérifie que l'appelant est admin de l'école) avec 4 actions :
+- `list` → renvoie `[{ user_id, email, full_name, created_at, email_confirmed_at }]` pour l'école.
+- `create` → `admin.createUser({ email, password, email_confirm: true, user_metadata })` puis crée `profiles` (ecole_id, full_name) + `user_roles` pour chaque rôle. **email_confirm: true** = pas besoin de confirmation, connexion immédiate possible.
+- `update` → change `full_name` (table `profiles`) et, si fourni, l'email (`admin.updateUserById`).
+- `delete` → supprime `user_roles`, `user_permissions`, `profiles` puis `admin.deleteUser`.
 
-- **`vacances_paiements`**
-  - `eleve_id` (→ vacances_eleves), `classe_id`, `montant_attendu`, `montant_paye`, `date_paiement`, `mode` (especes/mobile_money/virement/autre), `statut`, `observation`
-  - Trigger : recalcule `statut_paiement` de l'élève.
+Une Edge Function `admin-reset-password` existe déjà : on la réutilise telle quelle (ou on ajoute l'action `reset_password` dans la nouvelle fonction pour tout centraliser — au choix, on ré-utilise l'existante).
 
-- **`vacances_enseignants`**
-  - `session_id`, `nom`, `prenom`, `telephone`, `classe_id` (nullable), `matiere`, `honoraire_prevu`, `observation`
-  - Colonnes calculées via vue : `montant_paye`, `reste_a_payer`.
+**b) Refonte de `src/hooks/useUsersRoles.ts`**
+- `fetchUsers` appelle l'edge function `admin-manage-users` (action `list`) au lieu de lire seulement `user_roles` + `profiles`.
+- Ajout de `email` et `email_confirmed_at` dans `UserWithRole`.
+- Nouvelles méthodes : `createUser`, `updateUser`, `deleteUser`, `resetPassword`.
 
-- **`vacances_honoraires`** — paiements versés aux enseignants
-  - `enseignant_id`, `montant`, `date_paiement`, `mode`, `observation`
+**c) Refonte de `src/pages/parametres/sections/UsersRoles.tsx`**
+- Chaque ligne affiche **nom complet + email** (au lieu de « Utilisateur »).
+- Dans la zone dépliée, ajout des boutons :
+  - **Modifier** (dialog : nom, email) → `updateUser`.
+  - **Réinitialiser mot de passe** (dialog : nouveau mot de passe) → `resetPassword` via edge function existante.
+  - **Supprimer l'utilisateur** (confirm + dialog rouge) → `deleteUser`.
+- La création (dialog existant) passe désormais par l'edge function → **le compte est immédiatement utilisable pour se connecter, aucun email à confirmer**.
 
-**Grants + RLS** : `authenticated` (SELECT/INSERT/UPDATE/DELETE via policies), `service_role` (ALL). Policies :
-- Lecture/écriture : `has_ecole_role(auth.uid(), ecole_id, 'admin'|'directeur'|'comptable')` OU `has_permission(auth.uid(), ecole_id, 'cours_vacances', 'view'|'create'|…)`.
+**d) Ajout dans le module `parametres` de la matrice permissions par défaut** du module `cours_vacances` (déjà en base, on l'ajoute dans la constante `MODULES` pour qu'il apparaisse dans la liste des accès — c'est déjà fait dans `app_modules`, il faut juste l'ajouter dans le tableau `MODULES` du fichier `UsersRoles.tsx` avec l'icône Sun).
 
-**Module ajouté à `app_modules`** avec `module_key = 'cours_vacances'` pour intégration à la matrice de permissions existante.
+---
 
-### 2. Architecture front
+## 2. Page de connexion (`src/pages/auth/LoginPage.tsx`)
 
-Suivre exactement le pattern des modules existants (`/pages/cantine`, `/pages/bibliotheque`) :
+- Retirer entièrement le bouton **« Continuer avec Google »** (+ import `Chrome`, fonction `handleGoogleSignIn`, séparateur « ou »).
+- Retirer le lien **« Pas encore de compte ? Créer un compte »** en bas de la carte + tout le mode `isSignUp` (state, champ nom complet, texte alternatif du bouton, branche `signUp` dans `handleEmailAuth`).
+- Conserver : email/mot de passe, mot de passe oublié, bloc démo, tout le branding.
 
-```
-src/pages/cours-vacances/
-  VacancesLayout.tsx              ← sidebar + Outlet (comme CanteenLayout)
-  sections/
-    VacancesDashboard.tsx
-    VacancesInscriptions.tsx
-    VacancesClasses.tsx           ← Classes / Tarifs
-    VacancesPaiements.tsx
-    VacancesEnseignants.tsx
-    VacancesHonoraires.tsx
-    VacancesRapports.tsx
-  hooks/
-    useVacancesSessions.ts
-    useVacancesClasses.ts
-    useVacancesEleves.ts
-    useVacancesPaiements.ts
-    useVacancesEnseignants.ts
-    useVacancesHonoraires.ts
-  lib/
-    exportVacancesPDF.ts          ← jsPDF (déjà utilisé)
-    exportVacancesExcel.ts        ← xlsx (déjà utilisé)
-```
+---
 
-**Routing** — ajout dans `src/App.tsx` :
-```
-/cours-vacances → VacancesLayout
-  ├── tableau
-  ├── inscriptions
-  ├── classes
-  ├── paiements
-  ├── enseignants
-  ├── honoraires
-  └── rapports
-```
+## 3. Cours de vacances — nouvelle inscription
 
-**Navigation** — ajout d'une entrée « Cours de vacances » dans `AppSidebar.tsx` (section « Autres ») avec icône `Sun` ou `Palmtree` (lucide-react). Aucune modification du `TopNav` (top-level items existants conservés).
+### Diagnostic
+Le schéma de `vacances_eleves` est correct (`annee_id` nullable, RLS ouverte aux `admin/directeur/comptable`). Le formulaire fonctionne **si** au moins une classe existe et est active.
 
-### 3. Fonctionnalités par page
+### Correctifs (UX + robustesse)
+- Dans `VacancesInscriptions.tsx` :
+  - Si `classes.length === 0`, afficher un **message explicite** au-dessus du bouton (« Créez d'abord une classe dans l'onglet Classes ») au lieu du simple bouton désactivé silencieux.
+  - Rendre la validation plus explicite : si `nom/prenom/classe_id` manquent, afficher un toast d'erreur (au lieu du `return` silencieux ligne 30).
+  - `save()` de `useVacances` retourne déjà `null` en cas d'erreur — on capture ça pour **ne pas fermer le dialog** si la sauvegarde échoue et afficher l'erreur.
+- Dans `useVacances.ts` :
+  - `save()` retourne l'erreur exacte (déjà via `toast.error(error.message)`) — vérifier qu'on renvoie bien `null` sur erreur et l'objet sur succès afin que le composant sache si fermer le dialog.
+  - Ajouter un log console explicite en cas d'échec insert pour futur debug.
 
-**Tableau de bord** — `KpiCard` (composant existant) :
-Total élèves inscrits · Élèves par classe (BarChart) · Total encaissé · Impayés · Total maîtres · Honoraires prévus · Honoraires payés · **Résultat net = encaissé − honoraires payés**.
+### Vérification finale
+- Après build : reproduire l'inscription via Playwright sur `/cours-vacances` → onglet Inscriptions → créer un élève, screenshot pour valider.
 
-**Inscriptions** : formulaire (Dialog shadcn) + tableau avec recherche, filtre classe, filtre statut paiement, actions (voir/éditer/supprimer). Montant attendu auto-rempli depuis la classe.
+---
 
-**Classes / Tarifs** : CRUD avec toggle actif/inactif.
+## Détails techniques (récap fichiers touchés)
 
-**Paiements** : formulaire (élève auto-complété → classe & montant auto-remplis), tableau avec filtres, totaux par classe et global affichés en pied de tableau.
+**Créés :**
+- `supabase/functions/admin-manage-users/index.ts`
+- Migration : ajouter la fonction au `config.toml` (verify_jwt = true).
 
-**Maîtres/Enseignants** : CRUD + colonnes calculées (montant payé, reste à payer).
+**Modifiés :**
+- `src/hooks/useUsersRoles.ts` — passage par edge function, ajout email + CRUD complet.
+- `src/pages/parametres/sections/UsersRoles.tsx` — boutons Modifier / Supprimer / Reset password, affichage email, module `cours_vacances`.
+- `src/pages/auth/LoginPage.tsx` — retrait Google + signup.
+- `src/pages/cours-vacances/sections/VacancesInscriptions.tsx` — feedback erreurs, message si aucune classe.
+- `src/pages/cours-vacances/hooks/useVacances.ts` — retour explicite pour `save`.
 
-**Honoraires** : tableau récap par maître + Dialog « enregistrer un paiement d'honoraire ».
-
-**Rapports** : 7 rapports (Liste inscrits · Par classe · Payés · Non payés · Maîtres · Situation honoraires · Résumé financier) avec boutons **Imprimer** (window.print stylé) + **PDF** (jsPDF) + **Excel** (xlsx).
-
-### 4. Permissions
-
-Utilise `Can` (composant existant) et `usePermissions` avec `module = 'cours_vacances'`.
-- Admin/Directeur : accès total.
-- Comptable : voir + gérer paiements/honoraires.
-- Autres rôles : selon `user_permissions` (matrice existante — la nouvelle clé apparaît automatiquement).
-
-### 5. Design
-
-- Réutilise tokens sémantiques existants (rouge bordeaux/jaune poussin) définis dans `index.css`.
-- Composants shadcn (`Card`, `Table`, `Dialog`, `Input`, `Select`, `Badge`).
-- Layout responsive (grille `grid-cols-1 md:grid-cols-2 lg:grid-cols-4` pour les KPI, tableaux avec scroll horizontal sur mobile).
-- Icônes `lucide-react` : `Sun`, `Users`, `BookOpen`, `Wallet`, `GraduationCap`, `Receipt`, `FileText`.
-
-### 6. Garanties
-
-- Aucune table existante modifiée.
-- Aucun code des modules `Élèves`, `Classes`, `Finances` touché.
-- Toutes les nouvelles tables préfixées `vacances_` → zéro collision.
-- Module isolable/désinstallable en supprimant les 6 tables + le dossier `src/pages/cours-vacances/`.
-
-### Ordre d'implémentation
-
-1. Migration SQL (tables + RLS + grants + entrée app_modules)
-2. Hooks Supabase
-3. Layout + routing + entrée sidebar
-4. 7 sections (Dashboard → Rapports)
-5. Exports PDF/Excel
-6. Test manuel du parcours complet (créer session → classe → inscription → paiement → maître → honoraire → rapport)
+**Aucune migration SQL** : le schéma actuel gère déjà tout ce dont on a besoin (RLS admin, `app_modules.cours_vacances`, `email_confirm=true` via service role).
