@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, VacEleve } from "../hooks/useVacances";
 import { useDraftForm } from "@/hooks/useDraftForm";
-import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import VacancesEnrollmentWorkflow from "../components/VacancesEnrollmentWorkflow";
 
 const emptyForm = {
   nom: "", prenom: "", sexe: "M", date_naissance: "", contact_parent: "",
@@ -22,6 +23,7 @@ const emptyForm = {
 export default function VacancesInscriptions() {
   const { classes, eleves, loading, save, remove } = useVacancesData();
   const [open, setOpen] = useState(false);
+  const [workflowOpen, setWorkflowOpen] = useState(false);
   const [edit, setEdit] = useState<VacEleve | null>(null);
   const [q, setQ] = useState("");
   const [fClasse, setFClasse] = useState<string>("all");
@@ -105,10 +107,14 @@ export default function VacancesInscriptions() {
           <h2 className="text-lg font-bold">Inscriptions</h2>
           <p className="text-sm text-muted-foreground">Élèves inscrits aux cours de vacances (indépendants de la liste principale).</p>
         </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button onClick={openNew} disabled={classes.length === 0}><Plus className="h-4 w-4 mr-1" /> Nouvelle inscription</Button></DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader><DialogTitle>{edit ? "Modifier" : "Nouvelle inscription"}</DialogTitle></DialogHeader>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button variant="default" onClick={() => setWorkflowOpen(true)} disabled={classes.length === 0} className="gap-2 bg-gradient-to-r from-primary to-primary/80">
+            <Sparkles className="h-4 w-4" /> Parcours complet (Inscription + Paiement + Reçu A5)
+          </Button>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button variant="outline" onClick={openNew} disabled={classes.length === 0}><Plus className="h-4 w-4 mr-1" /> Inscription seule</Button></DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>{edit ? "Modifier" : "Nouvelle inscription"}</DialogTitle></DialogHeader>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Nom *</Label><Input value={form.nom || ""} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
               <div><Label>Prénoms *</Label><Input value={form.prenom || ""} onChange={(e) => setForm({ ...form, prenom: e.target.value })} /></div>
@@ -133,8 +139,9 @@ export default function VacancesInscriptions() {
               <div className="col-span-2"><Label>Observation</Label><Textarea value={form.observation || ""} onChange={(e) => setForm({ ...form, observation: e.target.value })} rows={2} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button onClick={submit}>{edit ? "Enregistrer" : "Inscrire"}</Button></DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="flex flex-col md:flex-row gap-2">
@@ -189,6 +196,8 @@ export default function VacancesInscriptions() {
           )}
         </CardContent>
       </Card>
+
+      <VacancesEnrollmentWorkflow open={workflowOpen} onOpenChange={setWorkflowOpen} />
     </div>
   );
 }

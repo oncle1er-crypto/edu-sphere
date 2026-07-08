@@ -9,12 +9,45 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData } from "../hooks/useVacances";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Printer } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
+import { toast } from "sonner";
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
 export default function VacancesPaiements() {
-  const { classes, eleves, paiements, loading, save, remove } = useVacancesData();
+  const { ecoleId, classes, eleves, paiements, loading, save, remove } = useVacancesData();
+  const [printing, setPrinting] = useState<string | null>(null);
+
+  const printRecu = async (p: any) => {
+    const eleve = eleves.find((x) => x.id === p.eleve_id);
+    const classe = classes.find((c) => c.id === p.classe_id);
+    if (!eleve || !classe || !ecoleId) { toast.error("Données introuvables"); return; }
+    setPrinting(p.id);
+    try {
+      const { data: ecole } = await supabase.from("ecoles")
+        .select("nom, sigle, devise, adresse, telephone, email, logo_url")
+        .eq("id", ecoleId).maybeSingle();
+      const attendu = Number(p.montant_attendu);
+      const paye = Number(p.montant_paye);
+      const pdf = await generateVacancesRecuA5({
+        ecole: {
+          nom: ecole?.nom ?? "École", sigle: ecole?.sigle, devise: ecole?.devise,
+          adresse: ecole?.adresse, telephone: ecole?.telephone, email: ecole?.email, logoUrl: ecole?.logo_url,
+        },
+        reference: `CV-${p.id.slice(0, 8).toUpperCase()}`,
+        eleve: { nom: eleve.nom, prenom: eleve.prenom, sexe: eleve.sexe, contact_parent: eleve.contact_parent },
+        classe: classe.nom,
+        montant_attendu: attendu, montant_paye: paye, reste: Math.max(0, attendu - paye),
+        mode: p.mode, date_paiement: p.date_paiement, observation: p.observation,
+      });
+      pdf.autoPrint();
+      window.open(pdf.output("bloburl"), "_blank");
+    } catch (e: any) { toast.error(e.message ?? "Erreur d'impression"); }
+    finally { setPrinting(null); }
+  };
+
   const [open, setOpen] = useState(false);
   const [fClasse, setFClasse] = useState<string>("all");
   const [fStatut, setFStatut] = useState<string>("all");
@@ -148,7 +181,10 @@ export default function VacancesPaiements() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" onClick={() => { if (confirm("Supprimer ce paiement ?")) remove("vacances_paiements", p.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" title="Imprimer reçu A5 avec souche" disabled={printing === p.id} onClick={() => printRecu(p)}><Printer className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" onClick={() => { if (confirm("Supprimer ce paiement ?")) remove("vacances_paiements", p.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
