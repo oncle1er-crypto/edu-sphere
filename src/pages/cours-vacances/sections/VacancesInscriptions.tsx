@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, VacEleve } from "../hooks/useVacances";
 import { useDraftForm } from "@/hooks/useDraftForm";
-import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertCircle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import VacancesEnrollmentWorkflow from "../components/VacancesEnrollmentWorkflow";
 
 const emptyForm = {
   nom: "", prenom: "", sexe: "M", date_naissance: "", contact_parent: "",
