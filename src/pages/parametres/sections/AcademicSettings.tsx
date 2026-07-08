@@ -60,7 +60,7 @@ const mentions = [
 export default function AcademicSettings() {
   const {
     annees, activeAnneeId, setActiveAnneeId, activeAnnee,
-    upsertAnnee, setAnneeStatut, setPeriodeStatut,
+    upsertAnnee, setAnneeStatut, setPeriodeStatut, generatePeriodesForAnnee,
     lockedModules, setLockedModules,
   } = useAcademicPeriod();
 
@@ -275,46 +275,62 @@ export default function AcademicSettings() {
         icon={<GraduationCap className="h-5 w-5" />}
         hideSave
       >
-        <div className="border rounded-lg overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Période</TableHead><TableHead>Début</TableHead>
-                <TableHead>Fin</TableHead><TableHead>État</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeAnnee.periodes.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="font-medium">{p.nom}</TableCell>
-                  <TableCell>{fmt(p.debut)}</TableCell>
-                  <TableCell>{fmt(p.fin)}</TableCell>
-                  <TableCell>{periodeStatutBadge(p.statut)}</TableCell>
-                  <TableCell className="text-right">
-                    <ConfirmButton
-                      size="sm" variant="outline"
-                      disabled={verrouAnnee}
-                      tone={p.statut === "verrouillee" ? "warning" : "danger"}
-                      confirmTitle={p.statut === "verrouillee" ? `Déverrouiller « ${p.nom} » ?` : `Verrouiller « ${p.nom} » ?`}
-                      confirmDescription={
-                        p.statut === "verrouillee"
-                          ? "Les modules concernés (notes, présences, paiements…) redeviendront modifiables pour les dates de cette période."
-                          : "Plus aucune modification ne sera possible sur les modules concernés (notes, présences, paiements…) pour les dates de cette période."
-                      }
-                      confirmLabel={p.statut === "verrouillee" ? "Déverrouiller" : "Verrouiller"}
-                      onConfirm={() => togglePeriode(p.id)}
-                    >
-                      {p.statut === "verrouillee"
-                        ? (<><Unlock className="h-3.5 w-3.5" />Déverrouiller</>)
-                        : (<><Lock className="h-3.5 w-3.5" />Verrouiller</>)}
-                    </ConfirmButton>
-                  </TableCell>
+        {activeAnnee.periodes.length === 0 ? (
+          <div className="rounded-lg border border-dashed p-6 text-center space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Aucune période n'a encore été créée pour <strong>{activeAnnee.libelle}</strong>.
+            </p>
+            <Button
+              size="sm"
+              disabled={verrouAnnee || !activeAnnee.id}
+              onClick={() => generatePeriodesForAnnee(activeAnnee.id)}
+            >
+              <Plus className="h-4 w-4" />
+              Générer les {activeAnnee.decoupage === "trimestre" ? "3 trimestres" : "2 semestres"}
+            </Button>
+          </div>
+        ) : (
+          <div className="border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Période</TableHead><TableHead>Début</TableHead>
+                  <TableHead>Fin</TableHead><TableHead>État</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+              </TableHeader>
+              <TableBody>
+                {activeAnnee.periodes.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-medium">{p.nom}</TableCell>
+                    <TableCell>{fmt(p.debut)}</TableCell>
+                    <TableCell>{fmt(p.fin)}</TableCell>
+                    <TableCell>{periodeStatutBadge(p.statut)}</TableCell>
+                    <TableCell className="text-right">
+                      <ConfirmButton
+                        size="sm" variant="outline"
+                        disabled={verrouAnnee}
+                        tone={p.statut === "verrouillee" ? "warning" : "danger"}
+                        confirmTitle={p.statut === "verrouillee" ? `Déverrouiller « ${p.nom} » ?` : `Verrouiller « ${p.nom} » ?`}
+                        confirmDescription={
+                          p.statut === "verrouillee"
+                            ? "Les modules concernés (notes, présences, paiements…) redeviendront modifiables pour les dates de cette période."
+                            : "Plus aucune modification ne sera possible sur les modules concernés (notes, présences, paiements…) pour les dates de cette période."
+                        }
+                        confirmLabel={p.statut === "verrouillee" ? "Déverrouiller" : "Verrouiller"}
+                        onConfirm={() => togglePeriode(p.id)}
+                      >
+                        {p.statut === "verrouillee"
+                          ? (<><Unlock className="h-3.5 w-3.5" />Déverrouiller</>)
+                          : (<><Lock className="h-3.5 w-3.5" />Verrouiller</>)}
+                      </ConfirmButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
         <FieldRow label="Verrouillage automatique" hint="Verrouille la période 7 jours après sa date de fin.">
           <Switch defaultChecked />
