@@ -17,6 +17,7 @@ import { useUsersRoles } from "@/hooks/useUsersRoles";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useAuth } from "@/context/AuthContext";
 
 
 const ROLES = ["admin", "directeur", "enseignant", "educateur", "comptable", "surveillant", "parent"] as const;
