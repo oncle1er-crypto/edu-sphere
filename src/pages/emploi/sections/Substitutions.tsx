@@ -148,12 +148,41 @@ export default function Substitutions() {
     fetch();
   };
 
+  const notifyRemplacement = async (r: Remplacement, statut: Statut) => {
+    if (!settings.notif_remplacements || !r.classe_id) return;
+    if (!settings.canal_sms && !settings.canal_email) return;
+    const action = statut === "confirme" ? "confirmé" : statut === "annule" ? "annulé" : "modifié";
+    const heure = r.heure_debut && r.heure_fin
+      ? `${r.heure_debut.slice(0,5)}-${r.heure_fin.slice(0,5)}`
+      : "toute la journée";
+    const message = normalizeSmsText(renderTemplate(settings.modele_message, {
+      matiere: r.matieres?.nom ?? "cours",
+      date: new Date(r.date).toLocaleDateString("fr-FR"),
+      heure,
+      classe: r.classes?.nom ?? "",
+      action: `${action} (remplacement)`,
+    }));
+    if (settings.canal_sms) {
+      try {
+        await supabase.functions.invoke("send-sms", {
+          body: { classe_id: r.classe_id, message },
+        });
+      } catch (e) { console.error("SMS notif:", e); }
+    }
+  };
+
   const updateStatut = async (id: string, statut: Statut) => {
     const { error } = await supabase.from("remplacements" as any).update({ statut }).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success("Statut mis à jour");
+    const r = rows.find((x) => x.id === id);
+    if (r && (statut === "confirme" || statut === "annule")) {
+      notifyRemplacement({ ...r, statut }, statut).catch(() => {});
+    }
     fetch();
   };
+
+
 
   const remove = async (id: string) => {
     if (!confirm("Supprimer ce remplacement ?")) return;
