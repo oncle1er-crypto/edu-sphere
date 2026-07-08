@@ -12,23 +12,10 @@ import { useAnneeId } from "@/hooks/useAnneeId";
 import { useClasses } from "@/hooks/useClasses";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  generatePVDeliberation,
-  generateReleveNotes,
-  generateStatsMatieres,
-  generatePalmares,
-  generateEvolutionMoyennes,
-  generateDecisionsFinAnnee,
-} from "@/lib/reports/examensReports";
 import { enqueueReport } from "@/lib/reportQueue";
+import type { ReportType } from "@/lib/reports/registry";
 
-type ReportKey =
-  | "pv"
-  | "releve"
-  | "stats"
-  | "palmares"
-  | "evolution"
-  | "decisions";
+type ReportKey = ReportType;
 
 const REPORTS: { key: ReportKey; titre: string; desc: string; format: string; needs: ("classe" | "periode" | "eleve" | "annee")[] }[] = [
   { key: "pv",        titre: "Procès-verbal de délibération", desc: "PV complet par classe et période",     format: "PDF",   needs: ["classe", "periode"] },
@@ -82,20 +69,31 @@ export default function Reports() {
     setBusy(true);
     const key = activeReport.key;
     const label = activeReport.titre;
-    const task = async () => {
-      switch (key) {
-        case "pv":        return generatePVDeliberation(ecoleId, filters.classe, filters.periode);
-        case "releve":    return generateReleveNotes(ecoleId, filters.eleve, filters.periode);
-        case "stats":     return generateStatsMatieres(ecoleId, filters.periode);
-        case "palmares":  return generatePalmares(ecoleId, filters.periode, filters.classe);
-        case "evolution": return generateEvolutionMoyennes(ecoleId, anneeId!, filters.classe);
-        case "decisions": return generateDecisionsFinAnnee(ecoleId, anneeId!, filters.classe);
-      }
-    };
-    enqueueReport(label, task);
-    toast.success("Rapport ajouté à la file d'attente");
-    setActive(null);
-    setBusy(false);
+  const run = async () => {
+    if (!activeReport || !ecoleId) return;
+    setBusy(true);
+    try {
+      const paramsMap: Record<ReportKey, Record<string, any>> = {
+        pv:        { classeId: filters.classe, periodeId: filters.periode },
+        releve:    { eleveId: filters.eleve, periodeId: filters.periode },
+        stats:     { periodeId: filters.periode },
+        palmares:  { periodeId: filters.periode, classeId: filters.classe },
+        evolution: { anneeId, classeId: filters.classe },
+        decisions: { anneeId, classeId: filters.classe },
+      };
+      await enqueueReport({
+        ecoleId,
+        type: activeReport.key,
+        label: activeReport.titre,
+        params: paramsMap[activeReport.key],
+      });
+      toast.success("Rapport ajouté à la file d'attente");
+      setActive(null);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
