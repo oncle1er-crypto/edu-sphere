@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, VacEleve } from "../hooks/useVacances";
-import { Plus, Pencil, Trash2, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function VacancesInscriptions() {
   const { classes, eleves, loading, save, remove } = useVacancesData();
@@ -27,8 +28,15 @@ export default function VacancesInscriptions() {
   };
   const openEdit = (e: VacEleve) => { setEdit(e); setForm({ ...e }); setOpen(true); };
   const submit = async () => {
-    if (!form.nom?.trim() || !form.prenom?.trim() || !form.classe_id) return;
-    await save("vacances_eleves", {
+    if (!form.nom?.trim() || !form.prenom?.trim()) {
+      toast.error("Nom et prénoms sont obligatoires");
+      return;
+    }
+    if (!form.classe_id) {
+      toast.error("Sélectionnez une classe");
+      return;
+    }
+    const result = await save("vacances_eleves", {
       nom: form.nom.trim(), prenom: form.prenom.trim(),
       sexe: form.sexe || null,
       date_naissance: form.date_naissance || null,
@@ -38,7 +46,7 @@ export default function VacancesInscriptions() {
       observation: form.observation || null,
       date_inscription: form.date_inscription || new Date().toISOString().slice(0, 10),
     }, edit?.id);
-    setOpen(false);
+    if (result) setOpen(false);
   };
 
   const filtered = useMemo(() => eleves.filter((e) => {
