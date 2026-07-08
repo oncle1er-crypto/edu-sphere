@@ -1,6 +1,6 @@
 // Domaine interne pour les comptes créés avec un numéro de téléphone.
 // Doit rester en synchro avec supabase/functions/admin-manage-users/index.ts.
-export const PHONE_EMAIL_DOMAIN = "phone.gsp.local";
+export const PHONE_EMAIL_DOMAIN = "phone.laprovidence.ci";
 
 export const isValidPhone10 = (p: string) => /^\d{10}$/.test(p);
 
