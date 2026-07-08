@@ -6,6 +6,7 @@ import { AIAssistant } from "@/components/AIAssistant";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
 import MfaEnforcementBanner from "@/components/security/MfaEnforcementBanner";
 import OfflineIndicator from "@/components/OfflineIndicator";
+import { ReportQueuePanel } from "@/components/reports/ReportQueuePanel";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -42,6 +43,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <AIAssistant />
       <ScrollToTopButton />
       <OfflineIndicator />
+      <ReportQueuePanel />
     </div>
   );
 }
