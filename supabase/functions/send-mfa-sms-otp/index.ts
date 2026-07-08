@@ -114,7 +114,27 @@ Deno.serve(async (req) => {
       `GSP - Code de verification: ${code}. Valide 10 minutes. Ne le partagez avec personne.`
     );
 
-    const resp = await fetch(cfg.base_url, {
+    // SSRF protection: allowlist SMS provider hosts
+    const ALLOWED_SMS_HOSTS = new Set([
+      "panel.yellikasms.com",
+      "api.yellikasms.com",
+      "yellikasms.com",
+    ]);
+    let smsUrl: URL;
+    try {
+      smsUrl = new URL(cfg.base_url);
+    } catch {
+      return new Response(JSON.stringify({ error: "URL SMS invalide." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    if (smsUrl.protocol !== "https:" || !ALLOWED_SMS_HOSTS.has(smsUrl.hostname)) {
+      return new Response(JSON.stringify({ error: "Endpoint SMS non autorisé." }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const resp = await fetch(smsUrl.toString(), {
       method: "POST",
       headers: {
         "Accept": "application/json",
