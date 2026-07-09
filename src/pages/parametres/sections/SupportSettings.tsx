@@ -1,8 +1,10 @@
-import { LifeBuoy, BookOpen, MessageCircle, Bug, Lightbulb, FileCode } from "lucide-react";
+import { LifeBuoy, BookOpen, MessageCircle, Bug, Lightbulb, FileCode, Download } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
+
 
 const helpItems = [
   { icon: BookOpen, title: "Centre d'aide", desc: "Articles et tutoriels pour bien démarrer" },
