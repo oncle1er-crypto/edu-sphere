@@ -28,10 +28,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
 
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldown > 0) {
+      toast.warning(`Veuillez patienter ${cooldown}s avant de réessayer.`);
+      return;
+    }
     const resolved = resolveLoginEmail(email);
     if (!resolved) {
       toast.error("Identifiant invalide", { description: "Entrez un email ou un numéro à 10 chiffres." });
@@ -43,7 +48,25 @@ export default function LoginPage() {
       if (error) throw error;
       navigate("/");
     } catch (err: any) {
-      toast.error("Erreur", { description: err.message });
+      const msg = String(err?.message || "");
+      const isRateLimit = /rate limit|too many/i.test(msg);
+      if (isRateLimit) {
+        const wait = 60;
+        setCooldown(wait);
+        const iv = setInterval(() => {
+          setCooldown((c) => {
+            if (c <= 1) { clearInterval(iv); return 0; }
+            return c - 1;
+          });
+        }, 1000);
+        toast.error("Trop de tentatives", {
+          description: "Vous avez essayé de vous connecter trop de fois. Patientez environ 1 minute puis réessayez.",
+        });
+      } else if (/invalid login credentials/i.test(msg)) {
+        toast.error("Identifiants incorrects", { description: "Vérifiez votre email/téléphone et votre mot de passe." });
+      } else {
+        toast.error("Erreur", { description: msg || "Connexion impossible." });
+      }
     } finally {
       setLoading(false);
     }
