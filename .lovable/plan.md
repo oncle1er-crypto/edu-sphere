@@ -1,39 +1,109 @@
+# Audit responsive & plan de correction progressive
 
-## Comment appliquer la scolarité à une classe — état actuel
+## 1. Résumé de l'audit (état actuel)
 
-Aujourd'hui, la scolarité n'est **pas** appliquée classe par classe, mais **par niveau/cycle** via une grille tarifaire. Voici la marche à suivre dans l'app actuelle :
+L'application est conçue **desktop-first**. Après scan du code, voici les catégories de problèmes détectées :
 
-1. **Finances → Configuration → Grille tarifaire (scolarité)**
-   - Créer une ligne par niveau (ex. CP1, CP2, 6ᵉ, 5ᵉ…) avec : frais d'inscription, montant total, et le découpage en tranches (T1/T2/T3 + échéances).
-2. **Générer les tranches** pour les élèves :
-   - Élève par élève : à l'inscription, le bouton « 1er paiement » appelle `generer_tranches_eleve` automatiquement.
-   - En masse : le bouton « Régénérer les tranches des pré-inscrits » (hook `useGrilleTarifs`) applique la grille à tous les pré-inscrits du niveau.
-3. Les tranches apparaissent alors dans **Finances → Recouvrement / Encaissements** pour chaque élève de la classe.
+### A. Navigation & Chrome global
+- `TopNav` (barre principale) : liens en `overflow-x-auto` mais **titre de l'école caché < md**, aucun bouton hamburger, pas de drawer mobile.
+- `AppLayout` : padding correct, mais pas de menu mobile latéral.
+- `AppSidebar` existe mais **n'est pas monté** dans `AppLayout` — sidebar orpheline.
 
-➡️ Il n'existe donc **pas encore de bouton « Appliquer à cette classe »** : la grille se définit par niveau, pas par classe.
+### B. Tableaux (le plus gros problème)
+Tableaux larges sans wrapper `overflow-x-auto` ou avec largeur mini forcée :
+- `finances/Payments.tsx`, `Unpaid.tsx`, `ClassSummary.tsx`, `StudentSummary.tsx`
+- `classes/ClassesEffectifs.tsx`, `ClassesSchedule.tsx`
+- `enseignants/StaffContracts.tsx`, `StaffSchedule.tsx`
+- `emploi/WeeklyView.tsx` (`min-w-[750px]`), `TeacherAvailability.tsx`
+- `examens/FinAnnee.tsx`, `GradingScales.tsx`, `QuickGradeEntry.tsx`
+- `statistiques/SchoolsCompare.tsx`
+- Bulletins/paiements/parents : mêmes patterns
 
-## Ajout proposé : bouton « Appliquer la scolarité » par classe
+→ Sur mobile : soit débordement, soit tableau illisible.
 
-Pour rendre l'opération plus intuitive côté **Classes**, ajout d'un bouton unique qui :
+### C. Grilles fixes non-responsive (`grid-cols-3` sans breakpoint)
+17 occurrences relevées, notamment :
+- Dialogs financiers : `PaymentDialog`, `SettleDialog`, `DiscountDialog`
+- `InscriptionWorkflowDialog`, `StudentDetailDrawer` (élèves + finances)
+- `FinanceDashboard`, `Treasury`, `StudentSummary`
+- `CanteenStock`, `VieScolaireBillets`, `QuickGradeEntry`
+- `SubjectEditDialog`, `AppearanceSettings`
 
-- Vérifie qu'une ligne de grille existe pour le **niveau/cycle de la classe**.
-- Appelle `generer_tranches_eleve` (RPC existante) pour **chaque élève actif de la classe** (statuts `inscrit` + `pre_inscrit`).
-- Affiche un résumé : X élèves traités, Y déjà à jour, Z erreurs (ex. grille manquante).
+### D. Filtres & barres de recherche
+Nombreuses barres de filtres en `flex` sans `flex-wrap`, avec `min-w-[220px]` → débordement < 480px.
 
-### Emplacement UI
-- Page **Classes → Effectifs** (`src/pages/classes/sections/ClassesEffectifs.tsx`) : bouton dans l'entête de chaque classe « Appliquer la scolarité ».
-- Ouvre une petite `Dialog` de confirmation listant : niveau détecté, nombre d'élèves concernés, montant total de la grille.
+### E. Modales (Dialog) — 339 occurrences
+`DialogContent` shadcn par défaut a `max-h-[90vh]` mais **peu de dialogs custom ajoutent `overflow-y-auto`** sur leur contenu interne. Formulaires longs coupés sur mobile.
 
-### Détails techniques
-- Nouveau composant `ApplyScolariteButton.tsx` sous `src/pages/classes/components/`.
-- Requêtes :
-  - `SELECT id FROM eleves WHERE classe_id = ? AND statut IN (...STATUTS_ACTIFS)`.
-  - Boucle `supabase.rpc('generer_tranches_eleve', { _eleve_id })` avec `Promise.allSettled` pour ne pas s'arrêter à la 1ʳᵉ erreur.
-- Aucune migration SQL, aucun changement de schéma — on réutilise les RPC existantes.
-- Toast final : « Scolarité appliquée à 42 élèves (2 ignorés : grille manquante) ».
+### F. Cibles tactiles
+Boutons `h-8`, icônes `h-3 w-3` cliquables dans tableaux → < 44px minimum tactile.
 
-### Fichiers touchés
-- **Nouveau** : `src/pages/classes/components/ApplyScolariteButton.tsx` (~120 lignes).
-- **Modifié** : `src/pages/classes/sections/ClassesEffectifs.tsx` — intégration du bouton par ligne de classe.
+### G. Home / Modules
+`Home.tsx` utilise `lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1.4fr)]` : OK. Mais `ModulesGrid` non vérifié.
 
-Rien d'autre n'est modifié : la grille tarifaire, les RPC, et le workflow d'inscription individuel restent identiques.
+### H. Cartes PDF / impressions
+`SchoolCard`, `StudentIdCard` : dimensions physiques (format carte) — à laisser tel quel, non impacté par le responsive écran.
+
+---
+
+## 2. Stratégie de correction (progressive, non destructive)
+
+**Principe** : aucune logique métier touchée. Uniquement classes Tailwind, wrappers layout, et 2-3 primitives utilitaires nouvelles.
+
+### Phase 1 — Fondations partagées (petit effort, gros impact)
+1. **`src/components/ui/table.tsx`** : envelopper le `<table>` dans un `div` avec `overflow-x-auto -mx-4 sm:mx-0` par défaut → corrige *tous* les tableaux d'un coup.
+2. **Nouveau `src/components/ui/responsive-table.tsx`** : helper `<ResponsiveTable>` optionnel pour cas complexes.
+3. **`DialogContent`** (`src/components/ui/dialog.tsx`) : ajouter `max-h-[90vh] overflow-y-auto` + `w-[calc(100vw-2rem)] sm:w-full` sur le wrapper.
+4. **`TopNav`** : ajouter un bouton hamburger < md ouvrant un `Sheet` (drawer) listant les mêmes liens + section école.
+5. **`AppLayout`** : baisser `px` mobile (`px-3`), `py-4`.
+6. **`index.css`** : ajouter utilitaires `.touch-target` (min 44px), `.table-scroll`.
+
+### Phase 2 — Grilles fixes → responsive
+Remplacement mécanique `grid-cols-3` → `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` (ou `grid-cols-2 md:grid-cols-3` pour KPI compacts) dans les 17 fichiers listés en C.
+
+### Phase 3 — Barres de filtres
+Ajout de `flex-wrap gap-2 w-full` et `w-full sm:w-auto sm:min-w-[220px]` sur les inputs concernés (fichiers listés en D).
+
+### Phase 4 — Pages sensibles (revue ciblée)
+Revue visuelle + retouches sur :
+- Finances (Payments, Unpaid, ClassSummary, Dashboard, Treasury)
+- Élèves (Dashboard, Assignment, StudentDetailDrawer)
+- Classes (Effectifs, Schedule, ClassesLayout tabs)
+- Présences (DailyCall, StudentAbsences)
+- Bulletins (BulletinSendDialog, BulletinOverrideDialog)
+- Enseignants (StaffContracts, AssignmentsPanel)
+- Paramètres (SettingsLayout tabs)
+
+Pour chaque : vérifier tabs (`overflow-x-auto`), en-têtes de section, KPI cards.
+
+### Phase 5 — Boutons tactiles
+Passer les boutons d'action tableau de `h-8` à `h-9 sm:h-8`, icônes à `h-4 w-4`.
+
+### Phase 6 — Vérification navigateur (Playwright)
+Captures à 320, 375, 768, 1024, 1280 sur : Home, Élèves, Finances, Classes, Bulletins, Paramètres. Contrôle absence de scroll horizontal, lisibilité, tap targets.
+
+---
+
+## 3. Ce qui ne sera PAS modifié
+
+- Aucune migration SQL, aucun hook Supabase, aucune permission.
+- Aucun composant PDF (cartes physiques, bulletins imprimés).
+- Le design system (couleurs bordeaux/or, typographie, cartes) reste identique.
+- Aucune suppression de fonctionnalité.
+
+---
+
+## 4. Livrables
+
+- Diff Tailwind sur ~30-40 fichiers.
+- 1 nouveau composant (drawer mobile TopNav via `Sheet`).
+- Modifs primitives : `table.tsx`, `dialog.tsx`.
+- Rapport final : problèmes détectés / corrigés / à surveiller.
+
+---
+
+## 5. Ordre d'exécution recommandé
+
+Je propose d'exécuter **Phases 1 → 2 → 3** dans un premier passage (impact maximal, faible risque), puis **Phase 4 → 5** dans un second passage, et enfin **Phase 6** (tests visuels). Cela vous laisse valider entre chaque passage.
+
+**Confirmez-vous ce plan ?** Je peux aussi démarrer directement par la Phase 1 si vous préférez itérer plus vite.
