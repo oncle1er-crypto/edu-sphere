@@ -64,6 +64,24 @@ export default function SupportSettings() {
         </div>
         <Button variant="outline" className="mt-4">Voir le changelog complet</Button>
       </SettingsSection>
+
+      <SettingsSection
+        title="Installation"
+        description="Installez l'application sur votre ordinateur ou votre téléphone pour y accéder rapidement depuis votre écran d'accueil."
+        icon={<Download className="h-5 w-5" />}
+        hideSave
+      >
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 border rounded-xl bg-muted/30">
+          <div>
+            <h3 className="font-semibold text-sm text-primary">Application installable</h3>
+            <p className="text-xs text-muted-foreground mt-0.5 max-w-md">
+              Ajoutez un raccourci sur votre bureau ou votre écran d'accueil. Aucune installation depuis un store n'est nécessaire.
+            </p>
+          </div>
+          <InstallPWAButton hideWhenUnsupported />
+        </div>
+      </SettingsSection>
     </div>
   );
 }
+
