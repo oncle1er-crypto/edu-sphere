@@ -211,7 +211,7 @@
       overflow-y: auto;
     }
   }
-  .menu-aside-ignored {
+  
   .dark .menu-aside {
     background:
       radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.18) 0%, transparent 55%),
