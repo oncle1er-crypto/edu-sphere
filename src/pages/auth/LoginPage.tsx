@@ -322,7 +322,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || cooldown > 0}
                 className="w-full h-12 rounded-xl text-white font-semibold text-base shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-80 disabled:translate-y-0"
                 style={{
                   background: `linear-gradient(110deg, ${NAVY} 0%, #0F2952 55%, ${GOLD} 180%)`,
@@ -333,6 +333,11 @@ export default function LoginPage() {
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Connexion en cours...
+                  </>
+                ) : cooldown > 0 ? (
+                  <>
+                    <Lock className="h-4 w-4" />
+                    Réessayez dans {cooldown}s
                   </>
                 ) : (
                   <>
