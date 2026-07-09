@@ -6,7 +6,7 @@ import { useEnseignants } from "@/hooks/useEnseignants";
 export default function TeachersStats() {
   const { enseignants, loading } = useEnseignants();
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   const actifs = enseignants.filter((e) => e.statut === "actif").length;
   const hommes = enseignants.filter((e) => e.sexe === "M").length;

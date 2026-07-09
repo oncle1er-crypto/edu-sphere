@@ -34,7 +34,7 @@ export default function VieScolaireDashboard() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground">{k.label}</p>
                   <p className="text-3xl font-bold mt-2">{k.value}</p>
                 </div>
-                <k.icon className={`h-8 w-8 ${k.color}`} />
+                <k.icon className={`h-9 w-9 sm:h-8 sm:w-8 ${k.color}`} />
               </div>
             </CardContent>
           </Card>

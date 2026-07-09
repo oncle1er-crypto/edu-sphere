@@ -83,7 +83,7 @@ export default function MfaChallenge({ onSuccess, onSignOut }: Props) {
       >
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center">
-            <ShieldCheck className="h-7 w-7 text-primary" />
+            <ShieldCheck className="h-9 w-9 sm:h-7 sm:w-7 text-primary" />
           </div>
           <h1 className="text-2xl font-bold font-display">Vérification en deux étapes</h1>
           <p className="text-sm text-muted-foreground">

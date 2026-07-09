@@ -159,7 +159,7 @@ export function AIAssistant() {
           </div>
           <button
             onClick={() => setOpen(false)}
-            className="h-8 w-8 rounded-full hover:bg-white/10 flex items-center justify-center"
+            className="h-9 w-9 sm:h-8 sm:w-8 rounded-full hover:bg-white/10 flex items-center justify-center"
             aria-label="Fermer"
           >
             <X className="h-4 w-4" />
@@ -172,7 +172,7 @@ export function AIAssistant() {
             <div key={i} className={cn("flex gap-2", m.role === "user" ? "flex-row-reverse" : "")}>
               <div
                 className={cn(
-                  "h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs",
+                  "h-9 w-9 sm:h-7 sm:w-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs",
                   m.role === "user" ? "bg-accent text-accent-foreground" : "bg-primary text-primary-foreground",
                 )}
               >
@@ -218,7 +218,7 @@ export function AIAssistant() {
           ))}
           {loading && messages[messages.length - 1]?.role === "user" && (
             <div className="flex gap-2">
-              <div className="h-7 w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
+              <div className="h-9 w-9 sm:h-7 sm:w-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
                 <Bot className="h-3.5 w-3.5" />
               </div>
               <div className="rounded-2xl px-4 py-2.5 bg-card border text-sm">

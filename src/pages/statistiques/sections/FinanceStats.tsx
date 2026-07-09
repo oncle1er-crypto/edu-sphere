@@ -6,7 +6,7 @@ import { useFinanceData, fcfa } from "@/pages/finances/useFinanceData";
 export default function FinanceStats() {
   const { data: ELEVES, loading } = useFinanceData();
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
   const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);

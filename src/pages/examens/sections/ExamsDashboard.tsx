@@ -30,7 +30,7 @@ export default function ExamsDashboard() {
   }, [evaluations]);
 
   if (loading) {
-    return <div className="flex justify-center py-16"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex justify-center py-16"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   return (

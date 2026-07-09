@@ -27,7 +27,7 @@ export default function CanteenDashboard() {
     })();
   }, [ecoleId]);
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   const kpis = [
     { label: "Abonnés actifs", value: stats.abonnes.toString(), icon: Users, color: "text-primary" },

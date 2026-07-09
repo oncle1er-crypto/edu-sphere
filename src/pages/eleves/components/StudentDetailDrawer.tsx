@@ -539,7 +539,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7"
+                              className="h-9 w-9 sm:h-7 sm:w-7"
                               title="Modifier"
                               onClick={() => { setEditingParent(p); setParentDialogOpen(true); }}
                             >
@@ -548,7 +548,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                             <ConfirmButton
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              className="h-9 w-9 sm:h-7 sm:w-7 text-destructive hover:text-destructive"
                               tone="danger"
                               confirmTitle="Détacher ce parent ?"
                               confirmDescription={`Retirer ${(p as any).parents?.prenom ?? ""} ${(p as any).parents?.nom ?? ""} de la fiche de cet élève ? La fiche parent reste conservée.`}

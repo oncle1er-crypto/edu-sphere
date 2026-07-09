@@ -56,7 +56,7 @@ export default function CanteenTeam() {
               <TableRow key={t.id}>
                 <TableCell>
                   <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
+                    <Avatar className="h-9 w-9 sm:h-8 sm:w-8">
                       <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{getInitials(t.nom, t.prenom)}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium">{t.prenom} {t.nom}</span>

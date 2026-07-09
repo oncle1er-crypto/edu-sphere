@@ -234,7 +234,7 @@ export default function LoginPage() {
                   boxShadow: `0 10px 30px -10px ${NAVY}`,
                 }}
               >
-                <User className="h-7 w-7" style={{ color: GOLD }} strokeWidth={2.2} />
+                <User className="h-9 w-9 sm:h-7 sm:w-7" style={{ color: GOLD }} strokeWidth={2.2} />
               </div>
             </div>
 

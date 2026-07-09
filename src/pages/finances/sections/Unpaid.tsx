@@ -198,7 +198,7 @@ export default function Unpaid() {
                             ? `Soldez d'abord la tranche précédente avant d'encaisser T${t.num}.`
                             : `${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance}`}
                           className={
-                            "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition " +
+                            "h-9 w-9 sm:h-7 sm:w-7 rounded flex items-center justify-center text-[10px] font-bold border transition " +
                             (locked ? "opacity-50 cursor-not-allowed " : "hover:scale-110 hover:shadow cursor-pointer ") +
                             (t.statut === "payee" ? "bg-green-500/20 text-green-700 border-green-500/40 hover:bg-green-500/30" :
                              t.statut === "partielle" ? "bg-yellow-400/25 text-yellow-700 border-yellow-500/40 hover:bg-yellow-400/35" :
@@ -243,11 +243,11 @@ export default function Unpaid() {
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-1 flex-wrap">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Voir fiche complète" onClick={() => openFiche(e)}>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Voir fiche complète" onClick={() => openFiche(e)}>
                       <Eye className="h-4 w-4" />
                     </Button>
                     <ConfirmButton
-                      size="icon" variant="outline" className="h-8 w-8"
+                      size="icon" variant="outline" className="h-9 w-9 sm:h-8 sm:w-8"
                       title="Enregistrer un encaissement"
                       confirmTitle="Ouvrir l'encaissement ?"
                       confirmDescription={`Saisir un nouveau paiement pour ${e.nom} ${e.prenom} ?`}
@@ -257,7 +257,7 @@ export default function Unpaid() {
                       <Wallet className="h-4 w-4" />
                     </ConfirmButton>
                     <ConfirmButton
-                      size="icon" variant="outline" className="h-8 w-8"
+                      size="icon" variant="outline" className="h-9 w-9 sm:h-8 sm:w-8"
                       title="Mettre à jour le statut"
                       confirmTitle="Modifier le statut ?"
                       confirmDescription={`Mettre à jour le statut de scolarité de ${e.nom} ${e.prenom} ?`}
@@ -267,7 +267,7 @@ export default function Unpaid() {
                       <Tag className="h-4 w-4" />
                     </ConfirmButton>
                     <ConfirmButton
-                      size="icon" variant="outline" className="h-8 w-8"
+                      size="icon" variant="outline" className="h-9 w-9 sm:h-8 sm:w-8"
                       title="SMS avec aperçu (modèle T1/T2/T3)"
                       confirmTitle="Préparer le SMS de relance ?"
                       confirmDescription={`Ouvrir l'aperçu du SMS de relance pour ${e.parent} ?`}
@@ -301,7 +301,7 @@ export default function Unpaid() {
   );
 
   if (finLoading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   return (

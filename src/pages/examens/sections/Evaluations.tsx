@@ -270,10 +270,10 @@ export default function Evaluations() {
                   <TableCell className="font-mono text-xs">{e.nb_notes ?? 0}</TableCell>
                   <TableCell>
                     <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => openEdit(e)}>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7" onClick={() => openEdit(e)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7 text-destructive" onClick={() => handleDelete(e.id)}>
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7 text-destructive" onClick={() => handleDelete(e.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>

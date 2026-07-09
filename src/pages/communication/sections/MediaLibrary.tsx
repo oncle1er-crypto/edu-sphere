@@ -24,7 +24,7 @@ export default function MediaLibrary() {
         {medias.map((m) => (
           <Card key={m.id} className="border shadow-[var(--shadow-card)] overflow-hidden">
             <div className="aspect-square bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center">
-              <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+              <ImageIcon className="h-9 w-9 sm:h-8 sm:w-8 text-muted-foreground/40" />
             </div>
             <CardContent className="p-2">
               <p className="text-xs font-medium truncate">{m.name}</p>

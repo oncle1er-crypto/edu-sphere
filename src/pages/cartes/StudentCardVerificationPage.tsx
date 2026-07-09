@@ -55,7 +55,7 @@ export default function StudentCardVerificationPage() {
       <div className="max-w-md mx-auto">
         <div className="text-center mb-6">
           <div className="inline-flex items-center justify-center h-14 w-14 rounded-full bg-[#6E1A2C] text-white shadow-lg">
-            <GraduationCap className="h-7 w-7" />
+            <GraduationCap className="h-9 w-9 sm:h-7 sm:w-7" />
           </div>
           <h1 className="mt-3 font-serif text-2xl font-bold text-[#6E1A2C]">
             Vérification de carte scolaire

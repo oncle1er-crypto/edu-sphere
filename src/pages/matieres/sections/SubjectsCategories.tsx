@@ -60,12 +60,12 @@ export default function SubjectsCategories() {
                   <h3 className="font-bold text-primary truncate">{c.nom}</h3>
                   <div className="flex items-center gap-1">
                     <Badge variant="secondary">{c.matieres.length}</Badge>
-                    <Button variant="ghost" size="icon" className="h-8 w-8"
+                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8"
                       onClick={() => { setRenameOpen(c.nom); setRenameValue(c.nom); }}
                       aria-label="Renommer">
                       <Pencil className="h-3.5 w-3.5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive"
+                    <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8 text-destructive"
                       onClick={() => setDeleteOpen(c.nom)}
                       aria-label="Supprimer">
                       <Trash2 className="h-3.5 w-3.5" />

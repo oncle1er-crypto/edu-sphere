@@ -56,7 +56,7 @@ export default function CardsDashboard() {
         {TYPE_CARDS.map((t) => (
           <Card key={t.key} className="border shadow-[var(--shadow-card)]">
             <CardContent className="p-3">
-              <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${t.color}`}>
+              <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-lg flex items-center justify-center ${t.color}`}>
                 <t.icon className="h-4 w-4" />
               </div>
               <p className="text-[10px] text-muted-foreground mt-2 uppercase tracking-wide">{t.label}</p>

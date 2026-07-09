@@ -187,7 +187,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       {eleve.paiements.map((p) => (
                         <div key={p.id} className="p-3 flex items-start gap-3">
                           <div className={cn(
-                            "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                            "h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shrink-0",
                             p.kind === "remise" ? "bg-orange-500/15 text-orange-600" : "bg-green-500/15 text-green-700",
                           )}>
                             {p.kind === "remise" ? <Tag className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
@@ -213,7 +213,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7"
+                              className="h-9 w-9 sm:h-7 sm:w-7"
                               title="Télécharger le reçu PDF (avec souche)"
                               onClick={() => ecoleId && downloadReceiptFor({
                                 ecoleId, eleveId: eleve.id, paiementId: p.id,
@@ -227,7 +227,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="h-7 w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
+                              className="h-9 w-9 sm:h-7 sm:w-7 text-green-600 hover:text-green-700 hover:bg-green-500/10"
                               title="Envoyer le reçu par WhatsApp (sans souche)"
                               onClick={async () => {
                                 if (!ecoleId) return;
@@ -350,7 +350,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                         return (
                           <div key={r.id} className="p-3 flex items-start gap-3">
                             <div className={cn(
-                              "h-8 w-8 rounded-full flex items-center justify-center shrink-0",
+                              "h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shrink-0",
                               canal === "SMS" ? "bg-primary/15 text-primary" :
                               canal === "Email" ? "bg-accent/15 text-primary" :
                               "bg-orange-500/15 text-orange-600"

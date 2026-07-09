@@ -62,7 +62,7 @@ export default function Ledger() {
       });
   }, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id, activeAnnee?.debut, activeAnnee?.fin]);
 
-  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection title={`Grand livre comptable (${ecritures.length} écritures)`} description="Écritures comptables générées automatiquement (plan OHADA)." icon={<FileSpreadsheet className="h-5 w-5" />} hideSave>

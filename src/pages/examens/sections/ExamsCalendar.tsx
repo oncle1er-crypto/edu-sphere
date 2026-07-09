@@ -33,7 +33,7 @@ export default function ExamsCalendar() {
       .sort((a, b) => `${a.mois}${a.jour}`.localeCompare(`${b.mois}${b.jour}`));
   }, [evaluations]);
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection icon={<CalendarRange className='h-5 w-5' />} title={`Calendrier des évaluations (${events.length})`} description="Planning des compositions, devoirs et examens.">

@@ -291,7 +291,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
             {/* Étape 1 : Documents (facultatif) */}
             <div className={`rounded-lg border p-3 ${cDocs ? "bg-green-50/60 border-green-200" : "bg-muted/40 border-muted"}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${cDocs ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center ${cDocs ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
                   {cDocs ? <Check className="h-4 w-4" /> : <Files className="h-4 w-4" />}
                 </div>
                 <p className={`font-medium text-sm ${cDocs ? "text-green-800" : "text-foreground"}`}>
@@ -330,7 +330,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
             {/* Étape 2 : Paiement */}
             <div className={`rounded-lg border p-3 ${cPaie ? "bg-green-50/60 border-green-200" : "bg-amber-50/60 border-amber-200"}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${cPaie ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center ${cPaie ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
                   {cPaie ? <Check className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
                 </div>
                 <p className={`font-medium text-sm ${cPaie ? "text-green-800" : "text-amber-900"}`}>
@@ -409,7 +409,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
             {/* Étape 3 : Classe */}
             <div className={`rounded-lg border p-3 ${cClasse ? "bg-green-50/60 border-green-200" : "bg-amber-50/60 border-amber-200"}`}>
               <div className="flex items-center gap-2 mb-2">
-                <div className={`h-8 w-8 rounded-full flex items-center justify-center ${cClasse ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
+                <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center ${cClasse ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-800"}`}>
                   {cClasse ? <Check className="h-4 w-4" /> : <GraduationCap className="h-4 w-4" />}
                 </div>
                 <p className={`font-medium text-sm ${cClasse ? "text-green-800" : "text-amber-900"}`}>

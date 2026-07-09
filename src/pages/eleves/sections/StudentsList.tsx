@@ -118,7 +118,7 @@ export default function StudentsList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -148,7 +148,7 @@ export default function StudentsList() {
     ) : null
   );
 
-  const studentAvatar = (s: typeof eleves[0], size: string = "h-8 w-8", textSize: string = "text-xs") => (
+  const studentAvatar = (s: typeof eleves[0], size: string = "h-9 w-9 sm:h-8 sm:w-8", textSize: string = "text-xs") => (
     <Avatar className={`${size} ring-2 ring-primary/20 ring-offset-2 ring-offset-background shadow-sm`}>
       {s.photo_url ? <AvatarImage src={s.photo_url} alt={`${s.nom} ${s.prenom}`} /> : null}
       <AvatarFallback className={`${textSize} bg-accent/20 text-accent-foreground font-semibold`}>
@@ -160,7 +160,7 @@ export default function StudentsList() {
   const studentActions = (s: typeof eleves[0]) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
+        <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8">
           <MoreHorizontal className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>

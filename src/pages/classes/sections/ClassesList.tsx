@@ -176,7 +176,7 @@ export default function ClassesList() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -248,7 +248,7 @@ export default function ClassesList() {
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => setViewElevesClass(c)}>Voir les élèves</DropdownMenuItem>

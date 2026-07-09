@@ -85,7 +85,7 @@ export default function SchoolProfile() {
       <FieldRow label="Logo de l'école" hint="PNG ou JPG, 512x512px recommandé">
         <div className="flex items-center gap-4">
           <div className="h-20 w-20 rounded-xl bg-muted border-2 border-dashed flex items-center justify-center text-muted-foreground overflow-hidden">
-            {data.logo_url ? <img src={data.logo_url} alt="Logo" className="h-full w-full object-contain" /> : <Building2 className="h-8 w-8" />}
+            {data.logo_url ? <img src={data.logo_url} alt="Logo" className="h-full w-full object-contain" /> : <Building2 className="h-9 w-9 sm:h-8 sm:w-8" />}
           </div>
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
           <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>

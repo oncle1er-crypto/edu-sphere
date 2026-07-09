@@ -9,7 +9,7 @@ export default function StaffDashboard() {
   const { enseignants, loading } = useEnseignants();
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   const total = enseignants.length;
@@ -49,7 +49,7 @@ export default function StaffDashboard() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs text-muted-foreground">{k.label}</span>
-                <span className="stat-icon h-8 w-8">
+                <span className="stat-icon h-9 w-9 sm:h-8 sm:w-8">
                   <k.icon className={`h-4 w-4 ${k.iconColor}`} />
                 </span>
               </div>
