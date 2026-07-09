@@ -385,7 +385,7 @@ export default function Unpaid() {
         </HelpBanner>
         <StatusLegend title="Légende des tranches" items={STATUTS_TRANCHE} />
         <div className="flex flex-wrap gap-2 items-center">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 w-full sm:w-auto sm:min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher (nom, classe, parent, téléphone…)" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>

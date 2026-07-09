@@ -115,7 +115,7 @@ export default function Payments() {
           Sélectionnez la tranche concernée, saisissez le montant et le mode (espèces, Wave, virement, Mobile Money…). Un <strong>reçu PDF</strong> est généré automatiquement et envoyable au parent par SMS ou e-mail.
         </HelpBanner>
         <div className="flex flex-wrap gap-2">
-          <div className="relative flex-1 min-w-[220px]">
+          <div className="relative flex-1 w-full sm:w-auto sm:min-w-[220px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Rechercher (nom, matricule, classe, parent, téléphone…)"
