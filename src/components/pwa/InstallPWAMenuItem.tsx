@@ -22,13 +22,12 @@ export function InstallPWAMenuItem() {
       }}
       disabled={!canInstall}
     >
-      {status === "installed" ? (
-        <Check className="mr-2 h-4 w-4" />
-      ) : (
-        <Download className="mr-2 h-4 w-4" />
-      )}
-      <span className="flex-1">Installer l'application</span>
+      <Download className="mr-2 h-4 w-4" />
+      <span className="flex-1">
+        {status === "prompting" ? "Installation en cours…" : "Installer l'application"}
+      </span>
       <Monitor className="ml-2 h-3.5 w-3.5 opacity-60" />
     </DropdownMenuItem>
   );
+
 }
