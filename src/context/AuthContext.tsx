@@ -45,8 +45,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
 
-  // Auto-logout sur inactivité (30 min)
-  useSessionTimeout(30 * 60 * 1000);
+  // Auto-logout sur inactivité (8 h) — évite les déconnexions intempestives
+  // lorsqu'on change d'onglet ou qu'on met l'écran en veille brièvement.
+  useSessionTimeout(8 * 60 * 60 * 1000);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
