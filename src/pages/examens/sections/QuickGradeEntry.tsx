@@ -262,7 +262,7 @@ export default function QuickGradeEntry() {
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               <div>
                 <Label>Date</Label>
                 <Input type="date" value={newEvalForm.date_eval} onChange={(e) => setNewEvalForm({ ...newEvalForm, date_eval: e.target.value })} />

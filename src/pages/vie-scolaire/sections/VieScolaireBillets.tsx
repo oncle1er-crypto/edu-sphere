@@ -174,7 +174,7 @@ export default function VieScolaireBillets() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                   <div className="space-y-1.5">
                     <Label>Date</Label>
                     <Input type="date" value={form.date_sortie} onChange={e => setForm({ ...form, date_sortie: e.target.value })} />

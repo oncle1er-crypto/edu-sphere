@@ -187,7 +187,7 @@ export default function FinanceDashboard() {
               <div className="bg-destructive" style={{ width: `${(retard / ELEVES.length) * 100}%` }} />
             </div>
           )}
-          <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
             <div className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-accent" /><div><p className="text-sm font-bold">{ajour}</p><p className="text-[11px] text-muted-foreground">À jour</p></div></div>
             <div className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-orange-500" /><div><p className="text-sm font-bold">{partiel}</p><p className="text-[11px] text-muted-foreground">Partiel</p></div></div>
             <div className="flex items-center gap-2"><div className="h-2.5 w-2.5 rounded-full bg-destructive" /><div><p className="text-sm font-bold">{retard}</p><p className="text-[11px] text-muted-foreground">En retard</p></div></div>

@@ -204,6 +204,14 @@
     backdrop-filter: blur(8px);
     overflow: hidden;
   }
+  /* Mobile: aside scrollable pour ne pas manger toute la hauteur */
+  @media (max-width: 1023px) {
+    .menu-aside {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+  }
+  
   .dark .menu-aside {
     background:
       radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.18) 0%, transparent 55%),
@@ -370,4 +378,13 @@
     background: linear-gradient(135deg, hsl(var(--muted) / 0.9), hsl(var(--muted) / 0.6));
     box-shadow: 0 4px 12px -6px hsl(0 0% 0% / 0.5), inset 0 1px 0 hsl(var(--foreground) / 0.08);
   }
+}
+
+@layer utilities {
+  /* Cible tactile minimale (WCAG 44px) */
+  .touch-target { min-height: 2.75rem; min-width: 2.75rem; }
+  /* Empêche les grilles/flex enfants de créer un scroll horizontal */
+  .no-x-overflow { min-width: 0; max-width: 100%; }
+  /* Wrapper standard pour tableaux larges */
+  .table-scroll { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }

@@ -30,13 +30,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
       <MfaEnforcementBanner />
       <div className="sticky top-0 z-40 shadow-md">
         <AppHeader userName={displayName || user?.email || "Utilisateur"} />
         <TopNav schoolName="COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" />
       </div>
-      <main className="flex-1 px-4 md:px-6 lg:px-8 py-5 md:py-8 animate-fade-in">
+      <main className="flex-1 px-3 sm:px-4 md:px-6 lg:px-8 py-4 md:py-8 animate-fade-in min-w-0">
         {children}
       </main>
       <AppFooter />

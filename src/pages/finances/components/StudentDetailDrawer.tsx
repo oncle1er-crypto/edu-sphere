@@ -125,7 +125,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                     <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-2">Parent / Tuteur</p>
                     <p className="font-semibold">{eleve.parent}</p>
                     <p className="text-sm text-muted-foreground">{eleve.telephone}</p>
-                    <div className="grid grid-cols-3 gap-2 mt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-3">
                       <ConfirmButton
                         size="sm"
                         variant="outline"

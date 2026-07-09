@@ -56,7 +56,7 @@ export default function CanteenStock() {
             <DialogHeader><DialogTitle>Nouveau produit en stock</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div><Label>Produit *</Label><Input value={form.produit} onChange={(e) => setForm({ ...form, produit: e.target.value })} /></div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 <div><Label>Quantité</Label><Input type="number" value={form.quantite} onChange={(e) => setForm({ ...form, quantite: e.target.value })} /></div>
                 <div><Label>Unité</Label><Input value={form.unite} onChange={(e) => setForm({ ...form, unite: e.target.value })} /></div>
                 <div><Label>Seuil alerte</Label><Input type="number" value={form.seuil_alerte} onChange={(e) => setForm({ ...form, seuil_alerte: e.target.value })} /></div>

@@ -140,7 +140,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
 
           {tranche && (
             <Card className="border bg-muted/30">
-              <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
+              <CardContent className="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-center">
                 <div><p className="text-[10px] text-muted-foreground uppercase">Tranche</p><p className="text-xs font-bold">{fcfa(tranche.montant)}</p></div>
                 <div><p className="text-[10px] text-muted-foreground uppercase">Déjà couvert</p><p className="text-xs font-bold text-primary">{fcfa(tranche.paye)}</p></div>
                 <div><p className="text-[10px] text-muted-foreground uppercase">Restant</p><p className="text-xs font-bold text-destructive">{fcfa(restantTranche)}</p></div>

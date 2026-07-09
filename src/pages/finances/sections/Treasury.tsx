@@ -80,7 +80,7 @@ export default function Treasury() {
                     </Select>
                   </div>
                   <div><Label>Libellé *</Label><Input value={formM.libelle} onChange={(e) => setFormM({ ...formM, libelle: e.target.value })} /></div>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <div><Label>Montant *</Label><Input type="number" value={formM.montant} onChange={(e) => setFormM({ ...formM, montant: e.target.value })} /></div>
                     <div><Label>Type</Label>
                       <Select value={formM.type} onValueChange={(v) => setFormM({ ...formM, type: v })}>

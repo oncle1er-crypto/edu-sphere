@@ -164,7 +164,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
 
         <div className="space-y-4 py-2">
           <Card className="border bg-muted/30">
-            <CardContent className="p-3 grid grid-cols-3 gap-2 text-center">
+            <CardContent className="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-center">
               <div><p className="text-[10px] text-muted-foreground uppercase">Élèves</p><p className="text-xs font-bold">{cibles.length}</p></div>
               <div><p className="text-[10px] text-muted-foreground uppercase">Tranches</p><p className="text-xs font-bold">{totalTranches}</p></div>
               <div><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-xs font-bold text-destructive">{fcfa(totalReste)}</p></div>
