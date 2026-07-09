@@ -22,9 +22,6 @@ import { resolveLoginEmail } from "@/lib/phoneAuth";
 const NAVY = "#071B3B";
 const GOLD = "#D4A017";
 
-const DEMO_EMAIL = "admin@gsp.ci";
-const DEMO_PASSWORD = "Demo@2026!";
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -32,14 +29,6 @@ export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const fillDemo = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
-    setShowPwd(true);
-    toast.info("Identifiants de démo remplis", {
-      description: `${DEMO_EMAIL} / ${DEMO_PASSWORD}`,
-    });
-  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,31 +319,6 @@ export default function LoginPage() {
                 )}
               </Button>
 
-              <div
-                className="rounded-xl border border-dashed p-3 text-xs"
-                style={{ borderColor: GOLD, backgroundColor: `${GOLD}0D` }}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="leading-tight">
-                    <div className="font-semibold" style={{ color: NAVY }}>
-                      Accès démo
-                    </div>
-                    <div className="text-slate-600 font-mono text-[11px] mt-0.5">
-                      {DEMO_EMAIL} / {DEMO_PASSWORD}
-                    </div>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={fillDemo}
-                    disabled={loading}
-                    className="h-8 rounded-lg text-xs font-semibold text-white"
-                    style={{ backgroundColor: NAVY }}
-                  >
-                    Remplir
-                  </Button>
-                </div>
-              </div>
             </form>
           </div>
 
