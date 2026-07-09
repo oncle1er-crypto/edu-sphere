@@ -360,7 +360,7 @@ export default function LoginPage() {
 
 
           {/* Footer info row */}
-          <div className="mt-7 grid grid-cols-3 gap-2 text-center">
+          <div className="mt-7 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-center">
             {[
               { icon: GraduationCap, t: "Plateforme éducative", s: "Moderne et intuitive" },
               { icon: ShieldCheck, t: "100% Sécurisé", s: "Données protégées" },

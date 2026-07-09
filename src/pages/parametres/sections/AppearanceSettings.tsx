@@ -188,7 +188,7 @@ export default function AppearanceSettings() {
         onSave={handleSave}
       >
         <FieldRow label="Mode d'affichage">
-          <RadioGroup value={prefs.theme} onValueChange={v => update({ theme: v as Prefs["theme"] })} className="grid grid-cols-3 gap-3 max-w-md">
+          <RadioGroup value={prefs.theme} onValueChange={v => update({ theme: v as Prefs["theme"] })} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 max-w-md">
             {[
               { value: "light", label: "Clair", icon: Sun },
               { value: "dark", label: "Sombre", icon: Moon },
