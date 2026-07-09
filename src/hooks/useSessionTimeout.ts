@@ -35,14 +35,21 @@ export function useSessionTimeout(timeoutMs = 30 * 60 * 1000) {
       timer.current = setTimeout(expire, timeoutMs);
     };
 
-    const events = ["mousemove", "keydown", "click", "touchstart", "scroll"];
+    const events = ["mousemove", "keydown", "click", "touchstart", "scroll", "pointerdown", "wheel"];
     events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    // Réinitialiser aussi quand l'onglet redevient visible (retour depuis
+    // une autre app / veille écran) pour éviter une déconnexion surprise.
+    const onVisibility = () => { if (document.visibilityState === "visible") reset(); };
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", reset);
     reset();
 
     return () => {
       if (timer.current) clearTimeout(timer.current);
       if (warnTimer.current) clearTimeout(warnTimer.current);
       events.forEach((e) => window.removeEventListener(e, reset));
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", reset);
     };
   }, [timeoutMs]);
 }
