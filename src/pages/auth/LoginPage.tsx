@@ -22,9 +22,6 @@ import { resolveLoginEmail } from "@/lib/phoneAuth";
 const NAVY = "#071B3B";
 const GOLD = "#D4A017";
 
-const DEMO_EMAIL = "admin@gsp.ci";
-const DEMO_PASSWORD = "Demo@2026!";
-
 export default function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -32,14 +29,6 @@ export default function LoginPage() {
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const fillDemo = () => {
-    setEmail(DEMO_EMAIL);
-    setPassword(DEMO_PASSWORD);
-    setShowPwd(true);
-    toast.info("Identifiants de démo remplis", {
-      description: `${DEMO_EMAIL} / ${DEMO_PASSWORD}`,
-    });
-  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
