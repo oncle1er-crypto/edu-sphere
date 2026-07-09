@@ -204,6 +204,14 @@
     backdrop-filter: blur(8px);
     overflow: hidden;
   }
+  /* Mobile: aside scrollable pour ne pas manger toute la hauteur */
+  @media (max-width: 1023px) {
+    .menu-aside {
+      max-height: 60vh;
+      overflow-y: auto;
+    }
+  }
+  .menu-aside-ignored {
   .dark .menu-aside {
     background:
       radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.18) 0%, transparent 55%),
