@@ -104,7 +104,7 @@ export default function StudentsAttendance() {
 
         {classeId && (
           <>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {[
                 { label: "Présents", value: counts.present, color: "text-emerald-600", icon: Check },
                 { label: "Absents", value: counts.absent, color: "text-destructive", icon: X },

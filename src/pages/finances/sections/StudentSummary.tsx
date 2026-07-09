@@ -215,7 +215,7 @@ export default function StudentSummary() {
                           {t.statut === "payee" ? "✓ Payée" : t.statut === "partielle" ? "◐ Partielle" : t.statut === "retard" ? "⚠ En retard" : "À échoir"}
                         </Badge>
                       </div>
-                      <div className="mt-3 grid grid-cols-3 gap-3 text-xs">
+                      <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 text-xs">
                         <div><p className="text-muted-foreground">Dû</p><p className="font-bold">{fcfa(t.montant)}</p></div>
                         <div><p className="text-muted-foreground">Payé</p><p className="font-bold text-success">{fcfa(t.paye)}</p></div>
                         <div><p className="text-muted-foreground">Reste</p><p className="font-bold text-destructive">{fcfa(t.montant - t.paye)}</p></div>

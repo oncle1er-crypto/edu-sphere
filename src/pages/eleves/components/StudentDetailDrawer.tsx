@@ -569,7 +569,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
 
             {/* PRÉSENCES */}
             <TabsContent value="presences" className="space-y-4 mt-3">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 <StatMini icon={Check} label="Présent" value={nbPresent} color="text-emerald-600" />
                 <StatMini icon={X} label="Absent" value={nbAbsent} color="text-destructive" />
                 <StatMini icon={Clock} label="Retard" value={nbRetard} color="text-amber-600" />

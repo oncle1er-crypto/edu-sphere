@@ -342,7 +342,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 <p className="text-xs text-muted-foreground">{fmt(totalPaye)} FCFA déjà encaissé.</p>
               ) : nextTranche ? (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
                     <div><p className="text-[9px] uppercase text-muted-foreground">Tranche</p><p className="text-xs font-semibold">T{nextTranche.numero}</p></div>
                     <div><p className="text-[9px] uppercase text-muted-foreground">Montant</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant))}</p></div>
                     <div><p className="text-[9px] uppercase text-muted-foreground">Reste</p><p className="text-xs font-semibold text-destructive">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
