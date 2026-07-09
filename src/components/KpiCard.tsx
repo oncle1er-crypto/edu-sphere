@@ -56,7 +56,7 @@ export function KpiCard({ label, value, sub, icon: Icon, variant, index = 0 }: K
     >
       <div className="flex items-center justify-between mb-2">
         <span className="text-xs text-muted-foreground">{label}</span>
-        <span className="stat-icon h-8 w-8">
+        <span className="stat-icon h-9 w-9 sm:h-8 sm:w-8">
           <Icon className={`h-4 w-4 ${iconClass[v]}`} />
         </span>
       </div>

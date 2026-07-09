@@ -105,9 +105,9 @@ function CardRecto({ data }: { data: CardData }) {
         style={{ background: `linear-gradient(135deg, ${primary}, ${primary}cc)` }}
       >
         {data.ecoleLogo ? (
-          <img src={data.ecoleLogo} alt="" className="h-7 w-7 rounded bg-white/20 object-contain p-0.5" />
+          <img src={data.ecoleLogo} alt="" className="h-9 w-9 sm:h-7 sm:w-7 rounded bg-white/20 object-contain p-0.5" />
         ) : (
-          <div className="h-7 w-7 rounded bg-white/20 flex items-center justify-center">
+          <div className="h-9 w-9 sm:h-7 sm:w-7 rounded bg-white/20 flex items-center justify-center">
             <Icon className="h-4 w-4" />
           </div>
         )}
@@ -141,7 +141,7 @@ function CardRecto({ data }: { data: CardData }) {
             {data.photo ? (
               <img src={data.photo} alt="" className="w-full h-full object-cover" />
             ) : (
-              <Icon className="h-8 w-8 text-slate-300" />
+              <Icon className="h-9 w-9 sm:h-8 sm:w-8 text-slate-300" />
             )}
           </div>
           <p className="text-[7px] text-center mt-1 font-mono text-slate-500">{data.matricule}</p>

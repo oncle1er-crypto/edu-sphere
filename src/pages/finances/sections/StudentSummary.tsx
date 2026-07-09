@@ -39,7 +39,7 @@ export default function StudentSummary() {
   const eleve = ELEVES_SCOLARITE.find((e) => e.id === (selectedId || ELEVES_SCOLARITE[0]?.id)) ?? ELEVES_SCOLARITE[0];
 
   if (finLoading || !eleve) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   const st = statutEleve(eleve);

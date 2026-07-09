@@ -185,7 +185,7 @@ export default function VacancesEnrollmentWorkflow({ open, onOpenChange }: Props
             { n: 3, label: "Reçu A5", icon: Printer },
           ].map((s, i) => (
             <div key={s.n} className="flex items-center gap-2 flex-1">
-              <div className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ${step >= (s.n as Step) ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"}`}>
+              <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-xs font-bold border-2 ${step >= (s.n as Step) ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-border"}`}>
                 {step > s.n ? <CheckCircle2 className="h-4 w-4" /> : <s.icon className="h-4 w-4" />}
               </div>
               <span className={`text-sm ${step === s.n ? "font-bold text-primary" : "text-muted-foreground"}`}>{s.label}</span>
@@ -255,7 +255,7 @@ export default function VacancesEnrollmentWorkflow({ open, onOpenChange }: Props
         {step === 3 && createdPaiement && (
           <div className="space-y-4 text-center py-4">
             <div className="mx-auto h-14 w-14 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 className="h-8 w-8 text-emerald-600" />
+              <CheckCircle2 className="h-9 w-9 sm:h-8 sm:w-8 text-emerald-600" />
             </div>
             <div>
               <div className="text-lg font-bold">Inscription & paiement enregistrés</div>

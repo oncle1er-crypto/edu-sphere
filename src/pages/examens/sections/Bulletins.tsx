@@ -735,27 +735,27 @@ export default function Bulletins() {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-1">
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePreview(b)} title="Aperçu">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7" onClick={() => handlePreview(b)} title="Aperçu">
                         <Eye className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7"
                         disabled={!!audit?.locked}
                         onClick={() => setOverrideRow(b)} title="Override conseil de classe">
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handlePrint(b)} title="Imprimer">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7" onClick={() => handlePrint(b)} title="Imprimer">
                         <Printer className="h-3.5 w-3.5" />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" disabled={generatingId === b.eleve_id} onClick={() => handleDownloadPDF(b)} title="Télécharger PDF">
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7" disabled={generatingId === b.eleve_id} onClick={() => handleDownloadPDF(b)} title="Télécharger PDF">
                         {generatingId === b.eleve_id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7"
                         disabled={!aJour || generatingId === b.eleve_id}
                         title={aJour ? "Envoyer aux parents" : "Élève non à jour"}
                         onClick={() => handleOpenSend(b)}>
                         <Send className={`h-3.5 w-3.5 ${aJour ? "text-primary" : ""}`} />
                       </Button>
-                      <Button size="icon" variant="ghost" className="h-7 w-7"
+                      <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7"
                         disabled={lockingId === b.eleve_id || !!audit?.locked}
                         title={audit?.locked ? "Verrouillé" : "Verrouiller la version"}
                         onClick={() => handleLockToggle(b)}>

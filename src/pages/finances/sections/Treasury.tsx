@@ -17,7 +17,7 @@ export default function Treasury() {
   const [formC, setFormC] = useState({ nom: "", numero: "", type: "banque", solde: "" });
   const [formM, setFormM] = useState({ compte_id: "", libelle: "", montant: "", type: "entree", date_mouvement: new Date().toISOString().slice(0, 10) });
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   const soldeTotal = comptes.reduce((s, c) => s + c.solde, 0);
 

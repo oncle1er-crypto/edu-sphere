@@ -37,7 +37,7 @@ export default function ExamsStats() {
     });
   }, [ecoleId]);
 
-  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection title="Statistiques — Examens & notes" description="Moyennes, évaluations et résultats." icon={<ClipboardList className="h-5 w-5" />} hideSave>

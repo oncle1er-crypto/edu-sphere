@@ -289,7 +289,7 @@ export default function GradeEntry() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-7 w-7"
+                                className="h-9 w-9 sm:h-7 sm:w-7"
                                 onClick={() => handleSaveSingle(e.id)}
                                 disabled={savingId === e.id}
                               >

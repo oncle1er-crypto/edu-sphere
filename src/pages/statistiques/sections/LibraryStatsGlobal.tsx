@@ -8,7 +8,7 @@ export default function LibraryStats() {
   const { livres, loading: lLoading } = useLivres();
   const { emprunts, loading: eLoading } = useEmprunts();
 
-  if (lLoading || eLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (lLoading || eLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   const totalLivres = livres.reduce((s, l) => s + l.quantite, 0);
   const enCours = emprunts.filter((e) => e.statut === "en_cours").length;

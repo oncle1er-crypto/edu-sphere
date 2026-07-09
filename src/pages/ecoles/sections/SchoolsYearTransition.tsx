@@ -181,7 +181,7 @@ export default function SchoolsYearTransition() {
   const cibleAnnee = annees.find((a) => a.id === cibleId);
   const sourceAnnee = annees.find((a) => a.id === sourceId);
 
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading) return <div className="flex justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">

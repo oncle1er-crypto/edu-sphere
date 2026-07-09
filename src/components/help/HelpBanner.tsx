@@ -45,7 +45,7 @@ export function HelpBanner({
       )}
       role="note"
     >
-      <div className="h-8 w-8 rounded-md bg-accent/20 text-primary flex items-center justify-center shrink-0">
+      <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-md bg-accent/20 text-primary flex items-center justify-center shrink-0">
         <Icon className="h-4 w-4" />
       </div>
       <div className="flex-1 text-sm leading-relaxed space-y-1">
@@ -58,7 +58,7 @@ export function HelpBanner({
         <Button
           variant="ghost"
           size="icon"
-          className="h-7 w-7 shrink-0 -mr-1 -mt-1"
+          className="h-9 w-9 sm:h-7 sm:w-7 shrink-0 -mr-1 -mt-1"
           aria-label="Masquer cette aide"
           onClick={() => {
             try {

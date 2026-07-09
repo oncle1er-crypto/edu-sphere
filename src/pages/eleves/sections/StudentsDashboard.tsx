@@ -79,7 +79,7 @@ export default function StudentsDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" />
       </div>
     );
   }

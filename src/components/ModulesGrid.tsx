@@ -91,7 +91,7 @@ export function ModulesGrid() {
                 style={{ background: `linear-gradient(135deg, hsl(${m.hue} / 0.18), hsl(${m.hue2} / 0.28))` }}
               />
               <m.icon
-                className="relative h-7 w-7 md:h-8 md:w-8 transition-transform duration-300"
+                className="relative h-9 w-9 sm:h-7 sm:w-7 md:h-8 md:w-8 transition-transform duration-300"
                 strokeWidth={2.2}
                 style={{ color: `hsl(${m.hue})` }}
               />

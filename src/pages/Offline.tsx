@@ -25,7 +25,7 @@ export default function OfflinePage() {
     <div className="min-h-[70vh] flex items-center justify-center px-4">
       <div className="max-w-md w-full text-center rounded-2xl border border-border/60 bg-card p-8 shadow-[var(--shadow-card)]">
         <div className="mx-auto mb-5 h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <WifiOff className="h-8 w-8 text-primary" aria-hidden />
+          <WifiOff className="h-9 w-9 sm:h-8 sm:w-8 text-primary" aria-hidden />
         </div>
         <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary mb-3">
           <span className="h-2 w-2 rounded-full bg-destructive animate-pulse" />

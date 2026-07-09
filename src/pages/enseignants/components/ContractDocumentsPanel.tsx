@@ -98,7 +98,7 @@ export function ContractDocumentsPanel() {
 
       {files.length === 0 ? (
         <Card className="p-8 text-center text-sm text-muted-foreground flex flex-col items-center gap-2">
-          <Upload className="h-8 w-8 opacity-40" />
+          <Upload className="h-9 w-9 sm:h-8 sm:w-8 opacity-40" />
           Aucun document. Téléversez le contrat signé, les avenants ou les pièces RH.
         </Card>
       ) : (

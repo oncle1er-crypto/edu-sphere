@@ -89,7 +89,7 @@ export default function Payments() {
   };
 
   if (finLoading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -258,7 +258,7 @@ export default function Payments() {
                                 ? `Soldez d'abord la tranche précédente avant d'encaisser T${t.num}.`
                                 : `${t.label} — ${fcfa(t.paye)}/${fcfa(t.montant)} FCFA · échéance ${t.echeance}`}
                               className={
-                                "h-7 w-7 rounded flex items-center justify-center text-[10px] font-bold border transition " +
+                                "h-9 w-9 sm:h-7 sm:w-7 rounded flex items-center justify-center text-[10px] font-bold border transition " +
                                 (locked ? "opacity-50 cursor-not-allowed " : "hover:scale-110 hover:shadow cursor-pointer ") +
                                 (t.statut === "payee" ? "bg-green-500/20 text-green-700 border-green-500/40 hover:bg-green-500/30" :
                                  t.statut === "partielle" ? "bg-yellow-400/25 text-yellow-700 border-yellow-500/40 hover:bg-yellow-400/35" :

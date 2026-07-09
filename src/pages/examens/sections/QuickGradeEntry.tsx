@@ -430,7 +430,7 @@ export default function QuickGradeEntry() {
               <button
                 key={e.id}
                 onClick={() => goTo(idx)}
-                className={`h-7 w-7 rounded text-[10px] font-mono transition-colors ${
+                className={`h-9 w-9 sm:h-7 sm:w-7 rounded text-[10px] font-mono transition-colors ${
                   idx === currentIndex
                     ? "bg-primary text-primary-foreground ring-2 ring-primary/30"
                     : savedSet.has(e.id)

@@ -192,7 +192,7 @@ export default function StaffList() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
   return (
@@ -330,7 +330,7 @@ export default function StaffList() {
                   <TableCell className="font-mono text-xs text-muted-foreground">{s.matricule ?? "—"}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-9 w-9 sm:h-8 sm:w-8">
                         <AvatarFallback className="text-xs bg-accent/20 text-accent-foreground">{initials(s.nom, s.prenom)}</AvatarFallback>
                       </Avatar>
                       <p className="font-medium">{s.nom} {s.prenom}</p>
@@ -348,7 +348,7 @@ export default function StaffList() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 sm:h-8 sm:w-8"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => setViewEnseignant(s)}>Voir la fiche</DropdownMenuItem>

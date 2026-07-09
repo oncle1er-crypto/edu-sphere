@@ -117,7 +117,7 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
           <Card className="border-2 border-dashed border-primary/30 bg-primary/5">
             <CardContent className="p-4">
               <div className="flex items-start gap-2">
-                <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
+                <div className="h-9 w-9 sm:h-8 sm:w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0">
                   <MessageSquare className="h-4 w-4" />
                 </div>
                 <div className="flex-1">

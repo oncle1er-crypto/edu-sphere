@@ -279,7 +279,7 @@ export default function Averages() {
                     const eligible = t.moyenne >= threshold;
                     return (
                       <li key={t.eleve_id} className="flex items-center gap-3 px-6 py-3">
-                        <div className={`h-8 w-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                        <div className={`h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-sm font-bold ${
                           t.rang <= 3 ? "bg-accent/20 text-primary" : "bg-primary/10 text-primary"
                         }`}>
                           {t.rang}

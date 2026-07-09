@@ -167,7 +167,7 @@ export default function Receipts() {
     setPreviewRecu(null);
   };
 
-  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection title={`Reçus & quittances (${recus.length})`} description="Documents générés après chaque paiement enregistré." icon={<Receipt className="h-5 w-5" />} hideSave>
@@ -193,10 +193,10 @@ export default function Receipts() {
                 <TableCell className="text-muted-foreground">{new Date(r.date_paiement).toLocaleDateString("fr-FR")}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Prévisualiser" onClick={() => handlePreview(r)} disabled={busy}>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Prévisualiser" onClick={() => handlePreview(r)} disabled={busy}>
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button size="icon" variant="ghost" className="h-8 w-8" title="Télécharger le reçu PDF" onClick={() => handleDownload(r)} disabled={busy}>
+                    <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Télécharger le reçu PDF" onClick={() => handleDownload(r)} disabled={busy}>
                       <Download className="h-4 w-4" />
                     </Button>
                   </div>
