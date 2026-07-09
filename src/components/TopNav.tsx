@@ -1,6 +1,9 @@
-import { Home, BarChart3, Settings, School, Sun } from "lucide-react";
+import { Home, BarChart3, Settings, School, Sun, Menu } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
 
 const navItems = [
   { label: "Tableau de bord", to: "/", icon: Home, end: true },
@@ -15,8 +18,10 @@ interface TopNavProps {
 }
 
 export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" }: TopNavProps) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <nav className="px-3 md:px-6 pt-3 pb-2">
+    <nav className="px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 pb-2">
       <div
         className="relative overflow-hidden rounded-2xl border border-accent/30 shadow-[0_10px_30px_-12px_hsl(var(--primary)/0.45)]"
         style={{
@@ -24,7 +29,6 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
             "linear-gradient(95deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.92) 35%, hsl(var(--primary)) 65%, hsl(var(--accent) / 0.85) 100%)",
         }}
       >
-        {/* Glow accents */}
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -32,12 +36,53 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
               "radial-gradient(60% 120% at 0% 50%, hsl(var(--accent) / 0.18) 0%, transparent 60%), radial-gradient(50% 120% at 100% 50%, hsl(var(--accent) / 0.22) 0%, transparent 60%)",
           }}
         />
-        {/* Top sheen */}
         <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-accent/60 to-transparent" />
 
+        <div className="relative flex items-center justify-between gap-2 px-2 sm:px-3 md:px-5">
+          {/* Mobile hamburger */}
+          <div className="md:hidden">
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-primary-foreground hover:bg-white/15 hover:text-white touch-target"
+                  aria-label="Ouvrir le menu"
+                >
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] max-w-xs p-0">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle className="text-left text-sm">{schoolName}</SheetTitle>
+                </SheetHeader>
+                <div className="p-2">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.end}
+                      onClick={() => setOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors touch-target",
+                          isActive
+                            ? "bg-primary/10 text-primary"
+                            : "text-foreground hover:bg-muted"
+                        )
+                      }
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
-        <div className="relative flex items-center justify-between px-3 md:px-5 overflow-x-auto">
-          <div className="flex items-center gap-1 md:gap-2">
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-1 md:gap-2 overflow-x-auto">
             {navItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -65,7 +110,15 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
             ))}
           </div>
 
-          <div className="hidden md:block py-3 pr-2 text-xs font-bold uppercase tracking-widest text-primary-foreground/95 drop-shadow">
+          {/* Mobile: titre école tronqué */}
+          <div className="md:hidden flex-1 min-w-0 text-right">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-primary-foreground/95 truncate">
+              {schoolName}
+            </div>
+          </div>
+
+          {/* Desktop: titre école complet */}
+          <div className="hidden md:block py-3 pr-2 text-xs font-bold uppercase tracking-widest text-primary-foreground/95 drop-shadow truncate max-w-[45%]">
             {schoolName}
           </div>
         </div>
