@@ -168,19 +168,67 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     } catch {/* silencieux */}
   };
 
+  const printGlobalReceipt = async (opts: {
+    reference: string;
+    montantTotal: number;
+    mode: string;
+    repartition: { numero: number; label: string; montant: number }[];
+    totalDu: number;
+    totalPayeApres: number;
+  }) => {
+    try {
+      const [{ data: ecole }, { data: eleveFull }] = await Promise.all([
+        supabase.from("ecoles")
+          .select("nom, sigle, devise, adresse, telephone, email, logo_url")
+          .eq("id", ecoleId!).maybeSingle(),
+        supabase.from("eleves")
+          .select("nom, prenom, matricule, photo_url, classes(nom)")
+          .eq("id", eleve.id).maybeSingle(),
+      ]);
+      if (!ecole || !eleveFull) return;
+      const motif = "Répartition automatique : " +
+        opts.repartition.map(r => `T${r.numero} = ${r.montant.toLocaleString("fr-FR")} FCFA`).join(" • ");
+      const pdf = await generateRecuPDF({
+        ecole: {
+          nom: ecole.nom || "École", sigle: ecole.sigle || "",
+          devise: ecole.devise || "", adresse: ecole.adresse || "",
+          telephone: ecole.telephone || "", email: ecole.email || "",
+          logoUrl: ecole.logo_url || null,
+        },
+        reference: opts.reference,
+        eleve: {
+          nom: eleveFull.nom, prenom: eleveFull.prenom,
+          matricule: eleveFull.matricule ?? "",
+          classe: (eleveFull as any).classes?.nom ?? "",
+          photo_url: eleveFull.photo_url ?? null,
+        },
+        montant: opts.montantTotal,
+        mode: opts.mode,
+        date_paiement: new Date().toISOString().slice(0, 10),
+        total_du: opts.totalDu,
+        total_paye: opts.totalPayeApres,
+        type: "encaissement",
+        motif,
+        souche: true,
+      });
+      pdf.autoPrint();
+      window.open(pdf.output("bloburl"), "_blank");
+    } catch (e) { console.error("printGlobalReceipt", e); }
+  };
+
   const handlePayInline = async () => {
     if (!ecoleId) return;
-    const montant = Number(payMontant) || 0;
-    if (montant <= 0) {
+    const montantSaisi = Number(payMontant) || 0;
+    if (montantSaisi <= 0) {
       toast.error("Montant invalide");
       return;
     }
 
     setPayLoading(true);
 
-    // 1) S'assurer qu'une tranche existe (sinon, générer l'échéancier)
-    let tranche = nextTranche;
-    if (!tranche) {
+    // 1) S'assurer qu'un échéancier existe
+    let currentTranches = tranches;
+    if (currentTranches.length === 0 || !currentTranches.some((t) => Number(t.paye) < Number(t.montant))) {
       const { error: genErr } = await supabase.rpc("generer_tranches_eleve" as any, { _eleve_id: eleve.id });
       if (genErr) {
         setPayLoading(false);
@@ -192,40 +240,74 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         .select("id,numero,label,montant,paye,echeance,statut")
         .eq("eleve_id", eleve.id)
         .order("numero");
-      const rows = (trs as any[]) ?? [];
-      setTranches(rows);
-      tranche = rows.find((t) => Number(t.paye) < Number(t.montant)) as any;
-      if (!tranche) {
-        setPayLoading(false);
-        toast.error("Aucune tranche disponible après génération. Configurez les frais de scolarité.");
-        return;
-      }
+      currentTranches = ((trs as any[]) ?? []) as TrancheRow[];
+      setTranches(currentTranches);
     }
 
-    const reste = Number(tranche.montant) - Number(tranche.paye);
-    const montantFinal = Math.min(montant, reste);
-
-    // 2) Encaisser
-    const { error } = await supabase.rpc("enregistrer_paiement", {
-      _ecole_id: ecoleId,
-      _eleve_id: eleve.id,
-      _tranche_id: tranche.id,
-      _montant: montantFinal,
-      _mode: payMode,
-      _reference: payRef || null,
-      _recu_par: user?.id ?? null,
-    });
-    if (error) {
+    // 2) Répartir le montant sur les tranches successives
+    const unpaid = currentTranches
+      .filter((t) => Number(t.paye) < Number(t.montant))
+      .sort((a, b) => a.numero - b.numero);
+    if (unpaid.length === 0) {
       setPayLoading(false);
-      toast.error("Encaissement refusé", { description: error.message });
+      toast.error("Aucune tranche à régler.");
       return;
     }
 
-    // 3) Notifier les parents
-    await notifyParentsPayment(montantFinal);
+    let restant = montantSaisi;
+    const reference = payRef || `PAY-${Date.now().toString(36).toUpperCase()}`;
+    const repartition: { numero: number; label: string; montant: number }[] = [];
+    let totalEncaisse = 0;
+
+    for (const tr of unpaid) {
+      if (restant <= 0) break;
+      const resteTranche = Number(tr.montant) - Number(tr.paye);
+      if (resteTranche <= 0) continue;
+      const part = Math.min(restant, resteTranche);
+      const { error } = await supabase.rpc("enregistrer_paiement", {
+        _ecole_id: ecoleId,
+        _eleve_id: eleve.id,
+        _tranche_id: tr.id,
+        _montant: part,
+        _mode: payMode,
+        _reference: reference,
+        _recu_par: user?.id ?? null,
+      });
+      if (error) {
+        setPayLoading(false);
+        toast.error(`Encaissement refusé sur T${tr.numero}`, { description: error.message });
+        if (totalEncaisse > 0) {
+          toast.warning(`${totalEncaisse.toLocaleString("fr-FR")} FCFA déjà encaissés sur les tranches précédentes.`);
+        }
+        return;
+      }
+      repartition.push({ numero: tr.numero, label: tr.label, montant: part });
+      totalEncaisse += part;
+      restant -= part;
+    }
+
+    if (restant > 0) {
+      toast.info(`${restant.toLocaleString("fr-FR")} FCFA non affectés (échéancier soldé).`);
+    }
+
+    // 3) SMS parents + reçu global
+    await notifyParentsPayment(totalEncaisse);
+    const totalDu = currentTranches.reduce((s, t) => s + Number(t.montant), 0);
+    const totalPayeAvant = currentTranches.reduce((s, t) => s + Number(t.paye), 0);
+    await printGlobalReceipt({
+      reference,
+      montantTotal: totalEncaisse,
+      mode: payMode,
+      repartition,
+      totalDu,
+      totalPayeApres: totalPayeAvant + totalEncaisse,
+    });
 
     setPayLoading(false);
-    toast.success(`1er paiement enregistré (${montantFinal.toLocaleString("fr-FR")} FCFA) — SMS envoyé aux parents`);
+    toast.success(
+      `Encaissé ${totalEncaisse.toLocaleString("fr-FR")} FCFA` +
+      (repartition.length > 1 ? ` — réparti sur ${repartition.length} tranches` : "")
+    );
     setPayRef("");
     onUpdated?.();
     fetchData();
