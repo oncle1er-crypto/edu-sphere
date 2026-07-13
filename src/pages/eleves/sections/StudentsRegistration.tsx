@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
+import { ScolaritePreview } from "@/pages/eleves/components/ScolaritePreview";
 
 
 const IMPORT_COLUMNS: ImportColumn[] = [
@@ -327,7 +328,14 @@ export default function StudentsRegistration() {
               </FieldRow>
             );
           })()}
+          <ScolaritePreview
+            ecoleId={ecoleId ?? null}
+            anneeId={anneeId ?? null}
+            classeNom={classes.find((c) => c.id === form.classe_id)?.nom ?? null}
+            estNouveau={form.est_nouveau}
+          />
         </TabsContent>
+
       </Tabs>
 
       <ImportDialog
