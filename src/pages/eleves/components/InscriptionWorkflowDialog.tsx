@@ -417,7 +417,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                   {cPaie ? <Check className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
                 </div>
                 <p className={`font-medium text-sm ${cPaie ? "text-green-800" : "text-amber-900"}`}>
-                  Paiement de la 1ʳᵉ tranche
+                  Paiement (réparti automatiquement sur les tranches)
                 </p>
                 {cPaie && <Badge variant="outline" className="text-[10px] bg-green-100 border-green-300 text-green-800 ml-auto">Validé</Badge>}
               </div>
