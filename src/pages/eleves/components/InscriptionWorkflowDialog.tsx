@@ -75,6 +75,8 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
   const [payMode, setPayMode] = useState<string>("wave");
   const [payRef, setPayRef] = useState<string>("");
   const [payLoading, setPayLoading] = useState(false);
+  const [receiptMode, setReceiptMode] = useState<"unique" | "tranche">("unique");
+
 
   const fetchData = useCallback(async () => {
     if (!eleve) return;
@@ -290,18 +292,35 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       toast.info(`${restant.toLocaleString("fr-FR")} FCFA non affectés (échéancier soldé).`);
     }
 
-    // 3) SMS parents + reçu global
+    // 3) SMS parents + reçu(s)
     await notifyParentsPayment(totalEncaisse);
     const totalDu = currentTranches.reduce((s, t) => s + Number(t.montant), 0);
     const totalPayeAvant = currentTranches.reduce((s, t) => s + Number(t.paye), 0);
-    await printGlobalReceipt({
-      reference,
-      montantTotal: totalEncaisse,
-      mode: payMode,
-      repartition,
-      totalDu,
-      totalPayeApres: totalPayeAvant + totalEncaisse,
-    });
+
+    if (receiptMode === "tranche" && repartition.length > 0) {
+      let cumule = totalPayeAvant;
+      for (const r of repartition) {
+        cumule += r.montant;
+        await printGlobalReceipt({
+          reference: `${reference}-T${r.numero}`,
+          montantTotal: r.montant,
+          mode: payMode,
+          repartition: [r],
+          totalDu,
+          totalPayeApres: cumule,
+        });
+      }
+    } else {
+      await printGlobalReceipt({
+        reference,
+        montantTotal: totalEncaisse,
+        mode: payMode,
+        repartition,
+        totalDu,
+        totalPayeApres: totalPayeAvant + totalEncaisse,
+      });
+    }
+
 
     setPayLoading(false);
     toast.success(
@@ -481,10 +500,22 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                             )}
                           </div>
                         )}
+                        <div className="flex items-center gap-3 rounded border bg-background/60 p-2">
+                          <span className="text-[10px] uppercase text-muted-foreground shrink-0">Reçu :</span>
+                          <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                            <input type="radio" className="accent-primary" checked={receiptMode === "unique"} onChange={() => setReceiptMode("unique")} />
+                            Global (1 PDF)
+                          </label>
+                          <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                            <input type="radio" className="accent-primary" checked={receiptMode === "tranche"} onChange={() => setReceiptMode("tranche")} />
+                            Par tranche (1 PDF/tranche)
+                          </label>
+                        </div>
                         <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
                           {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
                           Enregistrer l'encaissement & imprimer le reçu
                         </Button>
+
                       </>
                     );
                   })()}

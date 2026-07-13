@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { UserPlus, Upload, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { UserPlus, Upload, Loader2, Wallet, Clock } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
@@ -15,6 +16,8 @@ import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { supabase } from "@/integrations/supabase/client";
+import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
+
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -44,6 +47,10 @@ export default function StudentsRegistration() {
 
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [createdEleve, setCreatedEleve] = useState<any | null>(null);
+  const [showPayPrompt, setShowPayPrompt] = useState(false);
+  const [showPayWorkflow, setShowPayWorkflow] = useState(false);
+
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
@@ -132,10 +139,16 @@ export default function StudentsRegistration() {
       }
     }
 
+    if (eleve) {
+      setCreatedEleve({ ...eleve, classe_id: form.classe_id || null, ecole_id: ecoleId });
+      setShowPayPrompt(true);
+    }
+
     setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "", est_nouveau: false });
     setParent({ nom: "", prenom: "", telephone: "", telephone2: "", email: "", profession: "", lien: "père" });
     setSaving(false);
   };
+
 
   const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
     if (!ecoleId) return { success: 0, errors: 0, skipped: 0, updated: 0 };
@@ -327,6 +340,33 @@ export default function StudentsRegistration() {
         onImport={handleImport}
         dedupDescription="nom + prénom + classe"
       />
+
+      <Dialog open={showPayPrompt} onOpenChange={setShowPayPrompt}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" /> Élève enregistré</DialogTitle>
+            <DialogDescription>
+              {createdEleve ? <><strong>{createdEleve.nom} {createdEleve.prenom}</strong> ({createdEleve.matricule}) a été créé(e) en statut « Pré-inscrit ».<br />Souhaitez-vous encaisser un paiement maintenant ? Le montant sera automatiquement réparti sur les tranches, avec un reçu global ou un reçu par tranche.</> : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setShowPayPrompt(false)}>
+              <Clock className="h-4 w-4 mr-1" /> Plus tard
+            </Button>
+            <Button onClick={() => { setShowPayPrompt(false); setShowPayWorkflow(true); }}>
+              <Wallet className="h-4 w-4 mr-1" /> Payer maintenant
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <InscriptionWorkflowDialog
+        eleve={createdEleve}
+        open={showPayWorkflow}
+        onClose={() => setShowPayWorkflow(false)}
+        onUpdated={() => { /* no list to refresh here */ }}
+      />
     </SettingsSection>
   );
+
 }
