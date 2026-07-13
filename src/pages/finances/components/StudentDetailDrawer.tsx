@@ -14,6 +14,8 @@ import { DiscountDialog } from "./DiscountDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
+import { CustomFeeOverride } from "./CustomFeeOverride";
+
 
 interface Props {
   eleve: EleveScolarite | null;
@@ -257,11 +259,20 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                 )}
 
 
+                {ecoleId && (
+                  <CustomFeeOverride
+                    eleveId={eleve.id}
+                    ecoleId={ecoleId}
+                    onChanged={onPaymentRecorded}
+                  />
+                )}
+
                 {/* Détail tranches */}
                 <div>
                   <h4 className="text-sm font-bold mb-3 flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-primary" />Détail des tranches
                   </h4>
+
                   <div className="space-y-3">
                     {eleve.tranches.map((t) => {
                       const isHighlighted = openTrancheNum === t.num;
