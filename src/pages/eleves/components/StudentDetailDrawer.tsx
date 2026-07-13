@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
   Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail, History, IdCard,
+  Eye, Upload,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
@@ -73,6 +74,54 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     if (error) { toast.error(error.message); return; }
     toast.success("Parent détaché de l'élève");
     reloadParents();
+  };
+
+  const reloadDocuments = useCallback(async () => {
+    if (!eleve) return;
+    const { data } = await supabase
+      .from("documents_eleves")
+      .select("*")
+      .eq("eleve_id", eleve.id)
+      .eq("ecole_id", eleve.ecole_id);
+    setDocuments((data as any[]) ?? []);
+  }, [eleve]);
+
+  const handleViewDocument = async (doc: any) => {
+    const { data, error } = await supabase.storage
+      .from("documents-eleves")
+      .createSignedUrl(doc.chemin_stockage, 300);
+    if (error || !data?.signedUrl) { toast.error("Impossible d'ouvrir le fichier"); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
+  const handleDeleteDocument = async (doc: any) => {
+    const { error: sErr } = await supabase.storage
+      .from("documents-eleves").remove([doc.chemin_stockage]);
+    if (sErr) { toast.error(sErr.message); return; }
+    const { error: dErr } = await supabase.from("documents_eleves").delete().eq("id", doc.id);
+    if (dErr) { toast.error(dErr.message); return; }
+    toast.success("Document supprimé");
+    reloadDocuments();
+  };
+
+  const handleReplaceDocument = async (doc: any, file: File) => {
+    if (!eleve) return;
+    const ext = file.name.split(".").pop();
+    const path = `${eleve.ecole_id}/${eleve.id}/${doc.type_document}_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("documents-eleves").upload(path, file, { upsert: false });
+    if (upErr) { toast.error(upErr.message); return; }
+    // remove old file (best-effort)
+    await supabase.storage.from("documents-eleves").remove([doc.chemin_stockage]);
+    const { error: uErr } = await supabase.from("documents_eleves").update({
+      chemin_stockage: path,
+      nom_fichier: file.name,
+      taille: file.size,
+      mime_type: file.type,
+    }).eq("id", doc.id);
+    if (uErr) { toast.error(uErr.message); return; }
+    toast.success("Document remplacé");
+    reloadDocuments();
   };
 
   // Edit mode
@@ -682,7 +731,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                 <div className="space-y-2">
                   {documents.map((doc) => (
                     <Card key={doc.id} className="border">
-                      <CardContent className="p-3 flex items-center gap-3">
+                      <CardContent className="p-3 flex items-center gap-3 flex-wrap">
                         <BookOpen className="h-5 w-5 text-primary shrink-0" />
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">{doc.nom_fichier}</p>
@@ -693,6 +742,39 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                         <Badge variant="secondary" className="text-[10px] shrink-0">
                           {doc.mime_type?.split("/")[1] ?? "fichier"}
                         </Badge>
+                        <div className="flex gap-1 shrink-0">
+                          <Button
+                            size="sm" variant="outline" className="h-8 gap-1"
+                            onClick={() => handleViewDocument(doc)}
+                            title="Voir / télécharger"
+                          >
+                            <Eye className="h-3.5 w-3.5" /> Voir
+                          </Button>
+                          <label className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-input bg-background hover:bg-accent text-xs font-medium cursor-pointer">
+                            <Upload className="h-3.5 w-3.5" /> Remplacer
+                            <input
+                              type="file"
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                if (f) handleReplaceDocument(doc, f);
+                                e.target.value = "";
+                              }}
+                            />
+                          </label>
+
+                          <ConfirmButton
+                            size="sm" variant="outline"
+                            className="h-8 gap-1 text-destructive hover:text-destructive"
+                            tone="danger"
+                            confirmTitle="Supprimer ce document ?"
+                            confirmDescription={`Le fichier « ${doc.nom_fichier} » sera définitivement supprimé.`}
+                            confirmLabel="Supprimer"
+                            onConfirm={() => handleDeleteDocument(doc)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" /> Suppr.
+                          </ConfirmButton>
+                        </div>
                       </CardContent>
                     </Card>
                   ))}
@@ -701,6 +783,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                 <Empty text="Aucun document téléversé" />
               )}
             </TabsContent>
+
 
             {/* HISTORIQUE / AUDIT */}
             <TabsContent value="historique" className="space-y-2 mt-3">
