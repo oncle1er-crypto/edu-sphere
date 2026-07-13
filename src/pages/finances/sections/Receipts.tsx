@@ -275,7 +275,7 @@ export default function Receipts() {
   const saveEdit = async () => {
     if (!editing || !editMode || editMode === editing.mode) { setEditing(null); return; }
     setSaving(true);
-    const { error } = await supabase.from("paiements").update({ mode: editMode }).eq("id", editing.id);
+    const { error } = await supabase.from("paiements").update({ mode: editMode as any }).eq("id", editing.id);
     setSaving(false);
     if (error) { toast.error("Impossible de modifier : " + error.message); return; }
     toast.success("Mode de paiement mis à jour");
