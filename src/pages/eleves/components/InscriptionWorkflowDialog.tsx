@@ -500,10 +500,22 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                             )}
                           </div>
                         )}
+                        <div className="flex items-center gap-3 rounded border bg-background/60 p-2">
+                          <span className="text-[10px] uppercase text-muted-foreground shrink-0">Reçu :</span>
+                          <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                            <input type="radio" className="accent-primary" checked={receiptMode === "unique"} onChange={() => setReceiptMode("unique")} />
+                            Global (1 PDF)
+                          </label>
+                          <label className="flex items-center gap-1 text-[11px] cursor-pointer">
+                            <input type="radio" className="accent-primary" checked={receiptMode === "tranche"} onChange={() => setReceiptMode("tranche")} />
+                            Par tranche (1 PDF/tranche)
+                          </label>
+                        </div>
                         <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
                           {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
                           Enregistrer l'encaissement & imprimer le reçu
                         </Button>
+
                       </>
                     );
                   })()}
