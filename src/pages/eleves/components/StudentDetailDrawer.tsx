@@ -769,13 +769,19 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                     <Select value={uploadType} onValueChange={setUploadType}>
                       <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                       <SelectContent>
+                        <SelectItem value="fiche_inscription">Fiche d'inscription</SelectItem>
                         <SelectItem value="acte_naissance">Acte de naissance</SelectItem>
                         <SelectItem value="photo_identite">Photo d'identité</SelectItem>
                         <SelectItem value="bulletin">Bulletin scolaire</SelectItem>
                         <SelectItem value="certificat_scolarite">Certificat de scolarité</SelectItem>
                         <SelectItem value="carnet_vaccination">Carnet de vaccination</SelectItem>
+                        <SelectItem value="certificat_medical">Certificat médical</SelectItem>
                         <SelectItem value="carte_tuteur">Carte d'identité tuteur</SelectItem>
-                        <SelectItem value="autre">Autre</SelectItem>
+                        <SelectItem value="autorisation_parentale">Autorisation parentale</SelectItem>
+                        <SelectItem value="justificatif_domicile">Justificatif de domicile</SelectItem>
+                        <SelectItem value="reglement_interieur">Règlement intérieur signé</SelectItem>
+                        <SelectItem value="assurance">Attestation d'assurance</SelectItem>
+                        <SelectItem value="autre">Autre document</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
