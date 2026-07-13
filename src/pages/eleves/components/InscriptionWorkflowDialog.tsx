@@ -75,6 +75,8 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
   const [payMode, setPayMode] = useState<string>("wave");
   const [payRef, setPayRef] = useState<string>("");
   const [payLoading, setPayLoading] = useState(false);
+  const [receiptMode, setReceiptMode] = useState<"unique" | "tranche">("unique");
+
 
   const fetchData = useCallback(async () => {
     if (!eleve) return;
