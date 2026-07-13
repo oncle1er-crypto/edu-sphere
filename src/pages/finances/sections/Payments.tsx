@@ -78,9 +78,10 @@ export default function Payments() {
   const stats = useMemo(() => {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
     const pay = filtered.reduce((s, e) => s + e.totalPaye, 0);
-    const enc = filtered.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
     const rem = filtered.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
-    return { att, pay, enc, rem, du: att - pay, count: filtered.length };
+    // Aligné avec la Synthèse par classe : Encaissé = total couvert sur les tranches
+    // (inclut tout règlement appliqué, y compris ceux sans ligne "paiements" détaillée).
+    return { att, pay, enc: pay, rem, du: att - pay, count: filtered.length };
   }, [filtered]);
 
   const openFiche = (e: EleveScolarite, trancheNum?: number) => {
