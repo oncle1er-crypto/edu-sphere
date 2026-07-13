@@ -15,6 +15,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import { finalizeInscription } from "@/lib/finalizeInscription";
 import { useAuth } from "@/context/AuthContext";
+import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface Props {
   eleve: any | null;
@@ -167,19 +168,67 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     } catch {/* silencieux */}
   };
 
+  const printGlobalReceipt = async (opts: {
+    reference: string;
+    montantTotal: number;
+    mode: string;
+    repartition: { numero: number; label: string; montant: number }[];
+    totalDu: number;
+    totalPayeApres: number;
+  }) => {
+    try {
+      const [{ data: ecole }, { data: eleveFull }] = await Promise.all([
+        supabase.from("ecoles")
+          .select("nom, sigle, devise, adresse, telephone, email, logo_url")
+          .eq("id", ecoleId!).maybeSingle(),
+        supabase.from("eleves")
+          .select("nom, prenom, matricule, photo_url, classes(nom)")
+          .eq("id", eleve.id).maybeSingle(),
+      ]);
+      if (!ecole || !eleveFull) return;
+      const motif = "Répartition automatique : " +
+        opts.repartition.map(r => `T${r.numero} = ${r.montant.toLocaleString("fr-FR")} FCFA`).join(" • ");
+      const pdf = await generateRecuPDF({
+        ecole: {
+          nom: ecole.nom || "École", sigle: ecole.sigle || "",
+          devise: ecole.devise || "", adresse: ecole.adresse || "",
+          telephone: ecole.telephone || "", email: ecole.email || "",
+          logoUrl: ecole.logo_url || null,
+        },
+        reference: opts.reference,
+        eleve: {
+          nom: eleveFull.nom, prenom: eleveFull.prenom,
+          matricule: eleveFull.matricule ?? "",
+          classe: (eleveFull as any).classes?.nom ?? "",
+          photo_url: eleveFull.photo_url ?? null,
+        },
+        montant: opts.montantTotal,
+        mode: opts.mode,
+        date_paiement: new Date().toISOString().slice(0, 10),
+        total_du: opts.totalDu,
+        total_paye: opts.totalPayeApres,
+        type: "encaissement",
+        motif,
+        souche: true,
+      });
+      pdf.autoPrint();
+      window.open(pdf.output("bloburl"), "_blank");
+    } catch (e) { console.error("printGlobalReceipt", e); }
+  };
+
   const handlePayInline = async () => {
     if (!ecoleId) return;
-    const montant = Number(payMontant) || 0;
-    if (montant <= 0) {
+    const montantSaisi = Number(payMontant) || 0;
+    if (montantSaisi <= 0) {
       toast.error("Montant invalide");
       return;
     }
 
     setPayLoading(true);
 
-    // 1) S'assurer qu'une tranche existe (sinon, générer l'échéancier)
-    let tranche = nextTranche;
-    if (!tranche) {
+    // 1) S'assurer qu'un échéancier existe
+    let currentTranches = tranches;
+    if (currentTranches.length === 0 || !currentTranches.some((t) => Number(t.paye) < Number(t.montant))) {
       const { error: genErr } = await supabase.rpc("generer_tranches_eleve" as any, { _eleve_id: eleve.id });
       if (genErr) {
         setPayLoading(false);
@@ -191,40 +240,74 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         .select("id,numero,label,montant,paye,echeance,statut")
         .eq("eleve_id", eleve.id)
         .order("numero");
-      const rows = (trs as any[]) ?? [];
-      setTranches(rows);
-      tranche = rows.find((t) => Number(t.paye) < Number(t.montant)) as any;
-      if (!tranche) {
-        setPayLoading(false);
-        toast.error("Aucune tranche disponible après génération. Configurez les frais de scolarité.");
-        return;
-      }
+      currentTranches = ((trs as any[]) ?? []) as TrancheRow[];
+      setTranches(currentTranches);
     }
 
-    const reste = Number(tranche.montant) - Number(tranche.paye);
-    const montantFinal = Math.min(montant, reste);
-
-    // 2) Encaisser
-    const { error } = await supabase.rpc("enregistrer_paiement", {
-      _ecole_id: ecoleId,
-      _eleve_id: eleve.id,
-      _tranche_id: tranche.id,
-      _montant: montantFinal,
-      _mode: payMode,
-      _reference: payRef || null,
-      _recu_par: user?.id ?? null,
-    });
-    if (error) {
+    // 2) Répartir le montant sur les tranches successives
+    const unpaid = currentTranches
+      .filter((t) => Number(t.paye) < Number(t.montant))
+      .sort((a, b) => a.numero - b.numero);
+    if (unpaid.length === 0) {
       setPayLoading(false);
-      toast.error("Encaissement refusé", { description: error.message });
+      toast.error("Aucune tranche à régler.");
       return;
     }
 
-    // 3) Notifier les parents
-    await notifyParentsPayment(montantFinal);
+    let restant = montantSaisi;
+    const reference = payRef || `PAY-${Date.now().toString(36).toUpperCase()}`;
+    const repartition: { numero: number; label: string; montant: number }[] = [];
+    let totalEncaisse = 0;
+
+    for (const tr of unpaid) {
+      if (restant <= 0) break;
+      const resteTranche = Number(tr.montant) - Number(tr.paye);
+      if (resteTranche <= 0) continue;
+      const part = Math.min(restant, resteTranche);
+      const { error } = await supabase.rpc("enregistrer_paiement", {
+        _ecole_id: ecoleId,
+        _eleve_id: eleve.id,
+        _tranche_id: tr.id,
+        _montant: part,
+        _mode: payMode,
+        _reference: reference,
+        _recu_par: user?.id ?? null,
+      });
+      if (error) {
+        setPayLoading(false);
+        toast.error(`Encaissement refusé sur T${tr.numero}`, { description: error.message });
+        if (totalEncaisse > 0) {
+          toast.warning(`${totalEncaisse.toLocaleString("fr-FR")} FCFA déjà encaissés sur les tranches précédentes.`);
+        }
+        return;
+      }
+      repartition.push({ numero: tr.numero, label: tr.label, montant: part });
+      totalEncaisse += part;
+      restant -= part;
+    }
+
+    if (restant > 0) {
+      toast.info(`${restant.toLocaleString("fr-FR")} FCFA non affectés (échéancier soldé).`);
+    }
+
+    // 3) SMS parents + reçu global
+    await notifyParentsPayment(totalEncaisse);
+    const totalDu = currentTranches.reduce((s, t) => s + Number(t.montant), 0);
+    const totalPayeAvant = currentTranches.reduce((s, t) => s + Number(t.paye), 0);
+    await printGlobalReceipt({
+      reference,
+      montantTotal: totalEncaisse,
+      mode: payMode,
+      repartition,
+      totalDu,
+      totalPayeApres: totalPayeAvant + totalEncaisse,
+    });
 
     setPayLoading(false);
-    toast.success(`1er paiement enregistré (${montantFinal.toLocaleString("fr-FR")} FCFA) — SMS envoyé aux parents`);
+    toast.success(
+      `Encaissé ${totalEncaisse.toLocaleString("fr-FR")} FCFA` +
+      (repartition.length > 1 ? ` — réparti sur ${repartition.length} tranches` : "")
+    );
     setPayRef("");
     onUpdated?.();
     fetchData();
@@ -334,7 +417,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                   {cPaie ? <Check className="h-4 w-4" /> : <Wallet className="h-4 w-4" />}
                 </div>
                 <p className={`font-medium text-sm ${cPaie ? "text-green-800" : "text-amber-900"}`}>
-                  Paiement de la 1ʳᵉ tranche
+                  Paiement (réparti automatiquement sur les tranches)
                 </p>
                 {cPaie && <Badge variant="outline" className="text-[10px] bg-green-100 border-green-300 text-green-800 ml-auto">Validé</Badge>}
               </div>
@@ -342,35 +425,71 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 <p className="text-xs text-muted-foreground">{fmt(totalPaye)} FCFA déjà encaissé.</p>
               ) : nextTranche ? (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Tranche</p><p className="text-xs font-semibold">T{nextTranche.numero}</p></div>
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Montant</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant))}</p></div>
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Reste</p><p className="text-xs font-semibold text-destructive">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-[10px]">Montant (FCFA)</Label>
-                      <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Moyen</Label>
-                      <Select value={payMode} onValueChange={setPayMode}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Référence (optionnel)</Label>
-                    <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
-                  </div>
-                  <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
-                    {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
-                    Enregistrer l'encaissement
-                  </Button>
+                  {(() => {
+                    const unpaid = tranches.filter(t => Number(t.paye) < Number(t.montant));
+                    const totalReste = unpaid.reduce((s, t) => s + (Number(t.montant) - Number(t.paye)), 0);
+                    const saisi = Number(payMontant) || 0;
+                    // preview de la répartition
+                    const preview: { numero: number; part: number }[] = [];
+                    let restant = saisi;
+                    for (const t of unpaid) {
+                      if (restant <= 0) break;
+                      const r = Number(t.montant) - Number(t.paye);
+                      const p = Math.min(restant, r);
+                      preview.push({ numero: t.numero, part: p });
+                      restant -= p;
+                    }
+                    return (
+                      <>
+                        <div className="grid grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Prochaine</p><p className="text-xs font-semibold">T{nextTranche.numero}</p></div>
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Reste T{nextTranche.numero}</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Reste total</p><p className="text-xs font-semibold text-destructive">{fmt(totalReste)}</p></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[10px]">Montant (FCFA)</Label>
+                            <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Moyen</Label>
+                            <Select value={payMode} onValueChange={setPayMode}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Référence (optionnel)</Label>
+                          <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+                        </div>
+                        {saisi > 0 && preview.length > 0 && (
+                          <div className="rounded border bg-primary/5 p-2 text-[10.5px] space-y-0.5">
+                            <p className="font-semibold text-primary">Répartition automatique :</p>
+                            {preview.map(p => (
+                              <div key={p.numero} className="flex justify-between">
+                                <span>Tranche T{p.numero}</span>
+                                <span className="font-medium tabular-nums">{fmt(p.part)} FCFA</span>
+                              </div>
+                            ))}
+                            {saisi > totalReste && (
+                              <p className="text-amber-700 pt-1">
+                                ⚠ {fmt(saisi - totalReste)} FCFA au-dessus du solde — non affectés.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
+                          {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
+                          Enregistrer l'encaissement & imprimer le reçu
+                        </Button>
+                      </>
+                    );
+                  })()}
                 </div>
+
               ) : (
                 <div className="space-y-2">
                   <p className="text-[11px] text-amber-900">
