@@ -139,10 +139,16 @@ export default function StudentsRegistration() {
       }
     }
 
+    if (eleve) {
+      setCreatedEleve({ ...eleve, classe_id: form.classe_id || null, ecole_id: ecoleId });
+      setShowPayPrompt(true);
+    }
+
     setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "", est_nouveau: false });
     setParent({ nom: "", prenom: "", telephone: "", telephone2: "", email: "", profession: "", lien: "père" });
     setSaving(false);
   };
+
 
   const handleImport = async (rows: Record<string, string>[], dedupMode: DedupMode): Promise<ImportResult> => {
     if (!ecoleId) return { success: 0, errors: 0, skipped: 0, updated: 0 };
