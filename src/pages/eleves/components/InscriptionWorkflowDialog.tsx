@@ -213,8 +213,8 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         motif,
         souche: true,
       });
-      pdf.autoPrint();
-      window.open(pdf.output("bloburl"), "_blank");
+      const filename = `recu-${opts.reference}.pdf`;
+      pdf.save(filename);
     } catch (e) { console.error("printGlobalReceipt", e); }
   };
 
