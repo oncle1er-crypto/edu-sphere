@@ -214,8 +214,12 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         motif,
         souche: true,
       });
-      const filename = `recu-${opts.reference}.pdf`;
-      pdf.save(filename);
+      if (opts.forceDownload) {
+        pdf.save(`recu-${opts.reference}.pdf`);
+      } else {
+        pdf.autoPrint();
+        window.open(pdf.output("bloburl"), "_blank");
+      }
     } catch (e) { console.error("printGlobalReceipt", e); }
   };
 
