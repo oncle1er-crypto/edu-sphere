@@ -292,18 +292,35 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       toast.info(`${restant.toLocaleString("fr-FR")} FCFA non affectés (échéancier soldé).`);
     }
 
-    // 3) SMS parents + reçu global
+    // 3) SMS parents + reçu(s)
     await notifyParentsPayment(totalEncaisse);
     const totalDu = currentTranches.reduce((s, t) => s + Number(t.montant), 0);
     const totalPayeAvant = currentTranches.reduce((s, t) => s + Number(t.paye), 0);
-    await printGlobalReceipt({
-      reference,
-      montantTotal: totalEncaisse,
-      mode: payMode,
-      repartition,
-      totalDu,
-      totalPayeApres: totalPayeAvant + totalEncaisse,
-    });
+
+    if (receiptMode === "tranche" && repartition.length > 0) {
+      let cumule = totalPayeAvant;
+      for (const r of repartition) {
+        cumule += r.montant;
+        await printGlobalReceipt({
+          reference: `${reference}-T${r.numero}`,
+          montantTotal: r.montant,
+          mode: payMode,
+          repartition: [r],
+          totalDu,
+          totalPayeApres: cumule,
+        });
+      }
+    } else {
+      await printGlobalReceipt({
+        reference,
+        montantTotal: totalEncaisse,
+        mode: payMode,
+        repartition,
+        totalDu,
+        totalPayeApres: totalPayeAvant + totalEncaisse,
+      });
+    }
+
 
     setPayLoading(false);
     toast.success(
