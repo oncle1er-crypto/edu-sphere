@@ -124,6 +124,40 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     reloadDocuments();
   };
 
+  const [uploadType, setUploadType] = useState<string>("acte_naissance");
+  const [uploadingDoc, setUploadingDoc] = useState(false);
+
+  const handleUploadNewDocument = async (file: File) => {
+    if (!eleve || !file) return;
+    if (file.size > 10 * 1024 * 1024) { toast.error("Fichier > 10 Mo"); return; }
+    // Empêcher les doublons de type
+    if (documents.some((d) => d.type_document === uploadType)) {
+      toast.error("Un document de ce type existe déjà. Utilisez « Remplacer ».");
+      return;
+    }
+    setUploadingDoc(true);
+    const ext = file.name.split(".").pop();
+    const path = `${eleve.ecole_id}/${eleve.id}/${uploadType}_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("documents-eleves").upload(path, file, { upsert: false });
+    if (upErr) { toast.error(upErr.message); setUploadingDoc(false); return; }
+    const { data: userData } = await supabase.auth.getUser();
+    const { error: insErr } = await supabase.from("documents_eleves").insert({
+      ecole_id: eleve.ecole_id,
+      eleve_id: eleve.id,
+      type_document: uploadType,
+      nom_fichier: file.name,
+      chemin_stockage: path,
+      taille: file.size,
+      mime_type: file.type,
+      uploade_par: userData.user?.id ?? null,
+    } as any);
+    setUploadingDoc(false);
+    if (insErr) { toast.error(insErr.message); return; }
+    toast.success("Document ajouté");
+    reloadDocuments();
+  };
+
   // Edit mode
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
