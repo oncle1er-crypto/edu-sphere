@@ -1951,6 +1951,7 @@ export type Database = {
           date_naissance: string | null
           ecole_id: string
           est_nouveau: boolean
+          frais_id_override: string | null
           id: string
           lieu_naissance: string | null
           matricule: string
@@ -1976,6 +1977,7 @@ export type Database = {
           date_naissance?: string | null
           ecole_id: string
           est_nouveau?: boolean
+          frais_id_override?: string | null
           id?: string
           lieu_naissance?: string | null
           matricule: string
@@ -2001,6 +2003,7 @@ export type Database = {
           date_naissance?: string | null
           ecole_id?: string
           est_nouveau?: boolean
+          frais_id_override?: string | null
           id?: string
           lieu_naissance?: string | null
           matricule?: string
@@ -2037,6 +2040,13 @@ export type Database = {
             columns: ["ecole_id"]
             isOneToOne: false
             referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_frais_id_override_fkey"
+            columns: ["frais_id_override"]
+            isOneToOne: false
+            referencedRelation: "frais_scolarite"
             referencedColumns: ["id"]
           },
         ]
