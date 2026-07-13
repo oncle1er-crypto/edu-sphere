@@ -71,6 +71,10 @@ export default function Receipts() {
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<ViewMode>("detail");
 
+  // Récap journalier
+  const [recapDate, setRecapDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [recapBusy, setRecapBusy] = useState(false);
+
   // Édition du mode
   const [editing, setEditing] = useState<PaiementRecu | null>(null);
   const [editMode, setEditMode] = useState<string>("");
