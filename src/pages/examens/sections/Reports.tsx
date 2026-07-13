@@ -57,7 +57,7 @@ export default function Reports() {
   const canRun = (() => {
     if (!activeReport || !ecoleId) return false;
     const need = activeReport.needs;
-    if (need.includes("classe") && !filters.classe) return false;
+    if (need.includes("classe") && !filters.classe && activeReport.key !== "palmares") return false;
     if (need.includes("periode") && !filters.periode) return false;
     if (need.includes("eleve") && !filters.eleve) return false;
     if (need.includes("annee") && !anneeId) return false;

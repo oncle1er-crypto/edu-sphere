@@ -177,6 +177,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     repartition: { numero: number; label: string; montant: number }[];
     totalDu: number;
     totalPayeApres: number;
+    forceDownload?: boolean;
   }) => {
     try {
       const [{ data: ecole }, { data: eleveFull }] = await Promise.all([
@@ -213,8 +214,12 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         motif,
         souche: true,
       });
-      pdf.autoPrint();
-      window.open(pdf.output("bloburl"), "_blank");
+      if (opts.forceDownload) {
+        pdf.save(`recu-${opts.reference}.pdf`);
+      } else {
+        pdf.autoPrint();
+        window.open(pdf.output("bloburl"), "_blank");
+      }
     } catch (e) { console.error("printGlobalReceipt", e); }
   };
 
@@ -299,6 +304,11 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
 
     if (receiptMode === "tranche" && repartition.length > 0) {
       let cumule = totalPayeAvant;
+      // Plusieurs reçus : téléchargement (les popups multiples sont bloqués par le navigateur).
+      const multiple = repartition.length > 1;
+      if (multiple) {
+        toast.info(`${repartition.length} reçus téléchargés (un par tranche).`);
+      }
       for (const r of repartition) {
         cumule += r.montant;
         await printGlobalReceipt({
@@ -308,6 +318,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
           repartition: [r],
           totalDu,
           totalPayeApres: cumule,
+          forceDownload: multiple,
         });
       }
     } else {
