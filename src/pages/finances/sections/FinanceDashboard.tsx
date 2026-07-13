@@ -134,8 +134,9 @@ export default function FinanceDashboard() {
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-success" /> Encaissé</div>
-          <p className="text-xl md:text-2xl font-bold font-display text-success mt-2">{fcfa(totalEncaisse)}</p>
+          <p className="text-xl md:text-2xl font-bold font-display text-success mt-2">{fcfa(totalPaye)}</p>
           <p className="text-[11px] text-muted-foreground mt-1">+ {fcfa(totalRemises)} remises · {tauxRecouvrement}%</p>
+
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><Wallet className="h-3.5 w-3.5 text-destructive" /> Reste à recouvrer</div>
