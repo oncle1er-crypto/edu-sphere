@@ -328,7 +328,14 @@ export default function StudentsRegistration() {
               </FieldRow>
             );
           })()}
+          <ScolaritePreview
+            ecoleId={ecoleId ?? null}
+            anneeId={anneeId ?? null}
+            classeNom={classes.find((c) => c.id === form.classe_id)?.nom ?? null}
+            estNouveau={form.est_nouveau}
+          />
         </TabsContent>
+
       </Tabs>
 
       <ImportDialog
