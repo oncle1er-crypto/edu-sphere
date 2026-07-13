@@ -76,6 +76,54 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     reloadParents();
   };
 
+  const reloadDocuments = useCallback(async () => {
+    if (!eleve) return;
+    const { data } = await supabase
+      .from("documents_eleves")
+      .select("*")
+      .eq("eleve_id", eleve.id)
+      .eq("ecole_id", eleve.ecole_id);
+    setDocuments((data as any[]) ?? []);
+  }, [eleve]);
+
+  const handleViewDocument = async (doc: any) => {
+    const { data, error } = await supabase.storage
+      .from("documents-eleves")
+      .createSignedUrl(doc.chemin_stockage, 300);
+    if (error || !data?.signedUrl) { toast.error("Impossible d'ouvrir le fichier"); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
+  const handleDeleteDocument = async (doc: any) => {
+    const { error: sErr } = await supabase.storage
+      .from("documents-eleves").remove([doc.chemin_stockage]);
+    if (sErr) { toast.error(sErr.message); return; }
+    const { error: dErr } = await supabase.from("documents_eleves").delete().eq("id", doc.id);
+    if (dErr) { toast.error(dErr.message); return; }
+    toast.success("Document supprimé");
+    reloadDocuments();
+  };
+
+  const handleReplaceDocument = async (doc: any, file: File) => {
+    if (!eleve) return;
+    const ext = file.name.split(".").pop();
+    const path = `${eleve.ecole_id}/${eleve.id}/${doc.type_document}_${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage
+      .from("documents-eleves").upload(path, file, { upsert: false });
+    if (upErr) { toast.error(upErr.message); return; }
+    // remove old file (best-effort)
+    await supabase.storage.from("documents-eleves").remove([doc.chemin_stockage]);
+    const { error: uErr } = await supabase.from("documents_eleves").update({
+      chemin_stockage: path,
+      nom_fichier: file.name,
+      taille: file.size,
+      mime_type: file.type,
+    }).eq("id", doc.id);
+    if (uErr) { toast.error(uErr.message); return; }
+    toast.success("Document remplacé");
+    reloadDocuments();
+  };
+
   // Edit mode
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
