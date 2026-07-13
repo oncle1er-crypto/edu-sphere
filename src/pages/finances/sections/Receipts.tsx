@@ -292,10 +292,113 @@ export default function Receipts() {
     fetchRecus();
   };
 
+  // ── Récap journalier PDF ──
+  const genererRecapJournalier = async (previewOnly: boolean) => {
+    if (!ecoleId || !recapDate) return;
+    setRecapBusy(true);
+    try {
+      const start = `${recapDate}T00:00:00`;
+      const end = `${recapDate}T23:59:59`;
+      const { data, error } = await supabase
+        .from("paiements")
+        .select(
+          "id, reference, montant, date_paiement, mode, " +
+          "tranches(numero), " +
+          "eleves(nom, prenom, matricule, classes(nom))"
+        )
+        .eq("ecole_id", ecoleId)
+        .gte("date_paiement", start)
+        .lte("date_paiement", end)
+        .order("date_paiement", { ascending: true });
+      if (error) throw error;
+      const paiements = (data ?? []).map((p: any) => {
+        const d = new Date(p.date_paiement);
+        return {
+          heure: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
+          reference: p.reference ?? p.id.slice(0, 8).toUpperCase(),
+          eleve: `${p.eleves?.nom ?? ""} ${p.eleves?.prenom ?? ""}`.trim() || "—",
+          matricule: p.eleves?.matricule ?? "",
+          classe: p.eleves?.classes?.nom ?? "—",
+          tranche: p.tranches?.numero ? `T${p.tranches.numero}` : "—",
+          mode: modeMeta(p.mode).label,
+          montant: Number(p.montant),
+        };
+      });
+      if (paiements.length === 0) {
+        toast.info("Aucun paiement enregistré ce jour-là.");
+        return;
+      }
+      const modeMap = new Map<string, { total: number; nb: number }>();
+      const classeMap = new Map<string, { total: number; nb: number }>();
+      for (const p of paiements) {
+        const m = modeMap.get(p.mode) ?? { total: 0, nb: 0 };
+        m.total += p.montant; m.nb += 1; modeMap.set(p.mode, m);
+        const c = classeMap.get(p.classe) ?? { total: 0, nb: 0 };
+        c.total += p.montant; c.nb += 1; classeMap.set(p.classe, c);
+      }
+      const ventilationModes = Array.from(modeMap.entries()).map(([mode, v]) => ({ mode, ...v })).sort((a, b) => b.total - a.total);
+      const ventilationClasses = Array.from(classeMap.entries()).map(([classe, v]) => ({ classe, ...v })).sort((a, b) => b.total - a.total);
+
+      const meta = {
+        nom: ecole.nom,
+        devise: ecole.devise,
+        adresse: ecole.adresse,
+        telephone: ecole.telephone,
+        email: ecole.email,
+        logoUrl: ecole.logo_url,
+      };
+      if (previewOnly) {
+        const pdf = await generateRecapPaiementsJournalier(meta, recapDate, { paiements, ventilationModes, ventilationClasses }, true);
+        if (pdf) {
+          const url = URL.createObjectURL((pdf as any).output("blob"));
+          setPreviewTitle(`Récap paiements — ${new Date(recapDate).toLocaleDateString("fr-FR")}`);
+          setPdfUrl(url);
+        }
+      } else {
+        await generateRecapPaiementsJournalier(meta, recapDate, { paiements, ventilationModes, ventilationClasses });
+        toast.success("Récapitulatif journalier téléchargé");
+      }
+    } catch (e: any) {
+      toast.error("Erreur : " + (e?.message ?? e));
+    } finally {
+      setRecapBusy(false);
+    }
+  };
+
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
+      {/* Récap journalier PDF */}
+      <SettingsSection
+        title="Récapitulatif journalier des paiements"
+        description="Éditez la liste détaillée des encaissements du jour (heure, référence, élève, classe, tranche, mode et montant) avec ventilations et zone de signature."
+        icon={<FileText className="h-5 w-5" />}
+        hideSave
+      >
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1">
+            <Label className="text-xs">Date</Label>
+            <Input
+              type="date"
+              value={recapDate}
+              onChange={(e) => setRecapDate(e.target.value)}
+              max={new Date().toISOString().slice(0, 10)}
+              className="w-[180px]"
+            />
+          </div>
+          <Button variant="outline" onClick={() => genererRecapJournalier(true)} disabled={recapBusy || !recapDate}>
+            {recapBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
+            Aperçu
+          </Button>
+          <Button onClick={() => genererRecapJournalier(false)} disabled={recapBusy || !recapDate}>
+            {recapBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Printer className="h-4 w-4 mr-2" />}
+            Imprimer / Télécharger PDF
+          </Button>
+        </div>
+      </SettingsSection>
+
+
       {/* Récapitulatif par mode de paiement */}
       <SettingsSection
         title="Récapitulatif par mode de paiement"
