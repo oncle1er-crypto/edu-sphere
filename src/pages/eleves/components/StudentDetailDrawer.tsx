@@ -761,6 +761,42 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
 
             {/* DOCUMENTS */}
             <TabsContent value="documents" className="space-y-4 mt-3">
+              {/* Ajout d'un nouveau document */}
+              <Card className="border-dashed">
+                <CardContent className="p-3 flex flex-col sm:flex-row gap-2 sm:items-end">
+                  <div className="flex-1 min-w-0">
+                    <Label className="text-[11px] text-muted-foreground">Type de pièce</Label>
+                    <Select value={uploadType} onValueChange={setUploadType}>
+                      <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="acte_naissance">Acte de naissance</SelectItem>
+                        <SelectItem value="photo_identite">Photo d'identité</SelectItem>
+                        <SelectItem value="bulletin">Bulletin scolaire</SelectItem>
+                        <SelectItem value="certificat_scolarite">Certificat de scolarité</SelectItem>
+                        <SelectItem value="carnet_vaccination">Carnet de vaccination</SelectItem>
+                        <SelectItem value="carte_tuteur">Carte d'identité tuteur</SelectItem>
+                        <SelectItem value="autre">Autre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <label className={`inline-flex items-center justify-center gap-1.5 h-9 px-4 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium ${uploadingDoc ? "opacity-60 pointer-events-none" : "cursor-pointer"}`}>
+                    {uploadingDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    Joindre un document
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx"
+                      disabled={uploadingDoc}
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) handleUploadNewDocument(f);
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </CardContent>
+              </Card>
+
               {documents.length > 0 ? (
                 <div className="space-y-2">
                   {documents.map((doc) => (
