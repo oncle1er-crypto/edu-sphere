@@ -750,13 +750,8 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                           >
                             <Eye className="h-3.5 w-3.5" /> Voir
                           </Button>
-                          <label className="cursor-pointer">
-                            <Button
-                              size="sm" variant="outline" className="h-8 gap-1 pointer-events-none"
-                              type="button" asChild
-                            >
-                              <span><Upload className="h-3.5 w-3.5" /> Remplacer</span>
-                            </Button>
+                          <label className="inline-flex items-center gap-1 h-8 px-3 rounded-md border border-input bg-background hover:bg-accent text-xs font-medium cursor-pointer">
+                            <Upload className="h-3.5 w-3.5" /> Remplacer
                             <input
                               type="file"
                               className="hidden"
@@ -767,6 +762,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                               }}
                             />
                           </label>
+
                           <ConfirmButton
                             size="sm" variant="outline"
                             className="h-8 gap-1 text-destructive hover:text-destructive"
