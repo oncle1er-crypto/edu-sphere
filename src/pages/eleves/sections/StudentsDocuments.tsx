@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import {
   Files, FileText, Image as ImageIcon, FileBadge, ScrollText,
   Search, Loader2, Upload, Download, Trash2, Eye, CheckCircle2,
+  ClipboardList, ShieldCheck, HeartPulse, Home, BookOpen, FilePlus,
 } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useDocumentsEleves, DocumentEleve } from "@/hooks/useDocumentsEleves";
@@ -21,12 +22,19 @@ import { toast } from "sonner";
 import ExigencesTemplatesPanel from "../components/ExigencesTemplatesPanel";
 
 const DOC_TYPES = [
+  { key: "fiche_inscription", label: "Fiche d'inscription", icon: ClipboardList },
   { key: "acte_naissance", label: "Acte de naissance", icon: FileText },
   { key: "photo_identite", label: "Photo d'identité", icon: ImageIcon },
   { key: "bulletin", label: "Bulletin scolaire", icon: ScrollText },
   { key: "certificat_scolarite", label: "Certificat de scolarité", icon: FileBadge },
   { key: "carnet_vaccination", label: "Carnet de vaccination", icon: FileText },
+  { key: "certificat_medical", label: "Certificat médical", icon: HeartPulse },
   { key: "carte_tuteur", label: "Carte d'identité tuteur", icon: FileBadge },
+  { key: "autorisation_parentale", label: "Autorisation parentale", icon: ShieldCheck },
+  { key: "justificatif_domicile", label: "Justificatif de domicile", icon: Home },
+  { key: "reglement_interieur", label: "Règlement intérieur signé", icon: BookOpen },
+  { key: "assurance", label: "Attestation d'assurance", icon: ShieldCheck },
+  { key: "autre", label: "Autre document", icon: FilePlus },
 ];
 
 function formatFileSize(bytes: number | null) {
