@@ -304,6 +304,11 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
 
     if (receiptMode === "tranche" && repartition.length > 0) {
       let cumule = totalPayeAvant;
+      // Plusieurs reçus : téléchargement (les popups multiples sont bloqués par le navigateur).
+      const multiple = repartition.length > 1;
+      if (multiple) {
+        toast.info(`${repartition.length} reçus téléchargés (un par tranche).`);
+      }
       for (const r of repartition) {
         cumule += r.montant;
         await printGlobalReceipt({
@@ -313,6 +318,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
           repartition: [r],
           totalDu,
           totalPayeApres: cumule,
+          forceDownload: multiple,
         });
       }
     } else {
