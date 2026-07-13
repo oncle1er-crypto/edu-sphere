@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoles } from "@/context/EcoleContext";
 import { toast } from "sonner";
@@ -184,16 +184,28 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
   }, [fetchAll]);
 
   // Valide l'année active en fonction des données chargées.
-  // On ne réinitialise QUE si l'id stocké n'existe plus dans la liste
-  // (cas d'une année supprimée). Sélectionner volontairement une année
-  // archivée / verrouillée / clôturée / en préparation doit rester possible
-  // pour consulter l'historique.
+  // - Si l'id stocké n'existe plus : bascule sur l'active DB.
+  // - À la 1re hydratation, si l'id stocké pointe sur une année NON-active alors
+  //   qu'une année active existe, on force la bascule (évite qu'un cache
+  //   localStorage pointant sur une année verrouillée/archivée masque le
+  //   module finances de l'année en cours). L'utilisateur peut ensuite
+  //   sélectionner une autre année manuellement pour consulter l'historique.
+  const initialSyncDone = useRef(false);
   useEffect(() => {
     if (loading || annees.length === 0) return;
     const stillValid = annees.some((a) => a.id === activeAnneeId);
+    const dbActiveId = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
     if (!stillValid) {
-      const dbActiveId = annees.find((a) => a.statut === "active")?.id ?? annees[0].id;
       setActiveAnneeIdState(dbActiveId);
+      initialSyncDone.current = true;
+      return;
+    }
+    if (!initialSyncDone.current) {
+      initialSyncDone.current = true;
+      const current = annees.find((a) => a.id === activeAnneeId);
+      if (current && current.statut !== "active" && dbActiveId !== activeAnneeId) {
+        setActiveAnneeIdState(dbActiveId);
+      }
     }
   }, [loading, annees, activeAnneeId]);
 
