@@ -340,6 +340,33 @@ export default function StudentsRegistration() {
         onImport={handleImport}
         dedupDescription="nom + prénom + classe"
       />
+
+      <Dialog open={showPayPrompt} onOpenChange={setShowPayPrompt}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Wallet className="h-5 w-5 text-primary" /> Élève enregistré</DialogTitle>
+            <DialogDescription>
+              {createdEleve ? <><strong>{createdEleve.nom} {createdEleve.prenom}</strong> ({createdEleve.matricule}) a été créé(e) en statut « Pré-inscrit ».<br />Souhaitez-vous encaisser un paiement maintenant ? Le montant sera automatiquement réparti sur les tranches, avec un reçu global ou un reçu par tranche.</> : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setShowPayPrompt(false)}>
+              <Clock className="h-4 w-4 mr-1" /> Plus tard
+            </Button>
+            <Button onClick={() => { setShowPayPrompt(false); setShowPayWorkflow(true); }}>
+              <Wallet className="h-4 w-4 mr-1" /> Payer maintenant
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <InscriptionWorkflowDialog
+        eleve={createdEleve}
+        open={showPayWorkflow}
+        onClose={() => setShowPayWorkflow(false)}
+        onUpdated={() => { /* no list to refresh here */ }}
+      />
     </SettingsSection>
   );
+
 }
