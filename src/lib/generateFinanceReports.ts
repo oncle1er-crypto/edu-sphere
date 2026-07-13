@@ -491,3 +491,134 @@ export async function generateBudgetExecution(
   addFooter(doc, meta.nom);
   doc.save(`Budget_execution_${periode.replace(/\s/g, "_")}.pdf`);
 }
+
+// ── Récapitulatif journalier des paiements ──
+export interface RecapJournalierPaiement {
+  heure: string;
+  reference: string;
+  eleve: string;
+  matricule: string;
+  classe: string;
+  tranche: string;
+  mode: string;
+  montant: number;
+}
+
+export interface RecapJournalierData {
+  paiements: RecapJournalierPaiement[];
+  ventilationModes: { mode: string; total: number; nb: number }[];
+  ventilationClasses: { classe: string; total: number; nb: number }[];
+  caissier?: string | null;
+}
+
+export async function generateRecapPaiementsJournalier(
+  ecole: string | EcoleMeta,
+  dateISO: string,
+  data: RecapJournalierData,
+  returnDoc = false,
+): Promise<jsPDF | void> {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
+  const doc = new jsPDF();
+  const dateLabel = new Date(dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Récapitulatif des paiements — Journée",
+    periode: dateLabel,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
+
+  const total = data.paiements.reduce((s, p) => s + p.montant, 0);
+  const nb = data.paiements.length;
+  const w = doc.internal.pageSize.getWidth();
+
+  // Bandeau synthèse
+  doc.setFillColor(250, 246, 247);
+  doc.rect(15, startY, w - 30, 16, "F");
+  doc.setFontSize(9);
+  doc.setTextColor(90);
+  doc.text("Encaissements du jour", 20, startY + 6);
+  doc.text("Nombre d'opérations", w / 2, startY + 6);
+  doc.setFontSize(13);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(110, 26, 44);
+  doc.text(FCFA(total), 20, startY + 13);
+  doc.text(String(nb), w / 2, startY + 13);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0);
+
+  let y = startY + 22;
+
+  autoTable(doc, {
+    startY: y,
+    head: [["Heure", "Référence", "Élève", "Matricule", "Classe", "Tr.", "Mode", "Montant"]],
+    body: data.paiements.map((p) => [
+      p.heure, p.reference, p.eleve, p.matricule, p.classe, p.tranche, p.mode, FCFA(p.montant),
+    ]),
+    foot: [[
+      { content: "TOTAL", colSpan: 7, styles: { halign: "right", fontStyle: "bold" } },
+      { content: FCFA(total), styles: { halign: "right", fontStyle: "bold", fillColor: [245, 235, 238] } },
+    ]],
+    columnStyles: {
+      0: { cellWidth: 14 },
+      1: { cellWidth: 22 },
+      5: { halign: "center", cellWidth: 10 },
+      7: { halign: "right" },
+    },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 7.8 },
+  });
+
+  y = (doc as any).lastAutoTable?.finalY ?? y;
+
+  autoTable(doc, {
+    startY: y + 8,
+    head: [["Mode de règlement", "Nb", "Total"]],
+    body: data.ventilationModes.map((m) => [m.mode, String(m.nb), FCFA(m.total)]),
+    foot: [[
+      { content: "Total", styles: { fontStyle: "bold" } },
+      { content: String(nb), styles: { fontStyle: "bold" } },
+      { content: FCFA(total), styles: { fontStyle: "bold", halign: "right" } },
+    ]],
+    columnStyles: { 1: { halign: "center", cellWidth: 15 }, 2: { halign: "right", cellWidth: 35 } },
+    tableWidth: (w - 30) / 2 - 3,
+    margin: { left: 15 },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+  });
+
+  autoTable(doc, {
+    startY: y + 8,
+    head: [["Classe", "Nb", "Total"]],
+    body: data.ventilationClasses.map((c) => [c.classe, String(c.nb), FCFA(c.total)]),
+    foot: [[
+      { content: "Total", styles: { fontStyle: "bold" } },
+      { content: String(nb), styles: { fontStyle: "bold" } },
+      { content: FCFA(total), styles: { fontStyle: "bold", halign: "right" } },
+    ]],
+    columnStyles: { 1: { halign: "center", cellWidth: 15 }, 2: { halign: "right", cellWidth: 35 } },
+    tableWidth: (w - 30) / 2 - 3,
+    margin: { left: w / 2 + 3 },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+  });
+
+  const yEnd = (doc as any).lastAutoTable?.finalY ?? y + 40;
+
+  const sigY = Math.min(yEnd + 20, doc.internal.pageSize.getHeight() - 30);
+  doc.setDrawColor(180);
+  doc.line(20, sigY, 80, sigY);
+  doc.line(w - 80, sigY, w - 20, sigY);
+  doc.setFontSize(8);
+  doc.setTextColor(90);
+  doc.text(`Caissier${data.caissier ? ` : ${data.caissier}` : ""}`, 20, sigY + 5);
+  doc.text("Comptable / Direction", w - 80, sigY + 5);
+  doc.setTextColor(0);
+
+  addFooter(doc, meta.nom);
+  if (returnDoc) return doc;
+  doc.save(`Recap_paiements_${dateISO}.pdf`);
+}
