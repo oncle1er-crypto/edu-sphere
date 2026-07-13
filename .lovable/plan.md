@@ -1,109 +1,56 @@
-# Audit responsive & plan de correction progressive
+## Contexte / diagnostic
 
-## 1. Résumé de l'audit (état actuel)
+En inspectant la base pour l'élève affiché sur ta capture, j'ai trouvé la cause de chaque bug.
 
-L'application est conçue **desktop-first**. Après scan du code, voici les catégories de problèmes détectées :
+### 1. Tranches doublées
 
-### A. Navigation & Chrome global
-- `TopNav` (barre principale) : liens en `overflow-x-auto` mais **titre de l'école caché < md**, aucun bouton hamburger, pas de drawer mobile.
-- `AppLayout` : padding correct, mais pas de menu mobile latéral.
-- `AppSidebar` existe mais **n'est pas monté** dans `AppLayout` — sidebar orpheline.
+L'élève `695b6bc4…` (Adjoua/6ème) possède DEUX échéanciers actifs simultanés :
 
-### B. Tableaux (le plus gros problème)
-Tableaux larges sans wrapper `overflow-x-auto` ou avec largeur mini forcée :
-- `finances/Payments.tsx`, `Unpaid.tsx`, `ClassSummary.tsx`, `StudentSummary.tsx`
-- `classes/ClassesEffectifs.tsx`, `ClassesSchedule.tsx`
-- `enseignants/StaffContracts.tsx`, `StaffSchedule.tsx`
-- `emploi/WeeklyView.tsx` (`min-w-[750px]`), `TeacherAvailability.tsx`
-- `examens/FinAnnee.tsx`, `GradingScales.tsx`, `QuickGradeEntry.tsx`
-- `statistiques/SchoolsCompare.tsx`
-- Bulletins/paiements/parents : mêmes patterns
+- `Scolarité — CE1-CE2` (frais `0bfa6c8c`) → T1 Octobre 80 000 / T2 Novembre 45 000 / T3 Janvier 40 000
+- `Scolarité — 6ème-5ème` (frais `49d2deec`) → T1 Octobre 85 000 / T2 Novembre 55 000 / T3 Janvier 40 000
 
-→ Sur mobile : soit débordement, soit tableau illisible.
+C'est ce qui donne « T1 Octobre 85 000 Soldée » puis « T1 Octobre 80 000 Non soldée » etc. dans le drawer.
 
-### C. Grilles fixes non-responsive (`grid-cols-3` sans breakpoint)
-17 occurrences relevées, notamment :
-- Dialogs financiers : `PaymentDialog`, `SettleDialog`, `DiscountDialog`
-- `InscriptionWorkflowDialog`, `StudentDetailDrawer` (élèves + finances)
-- `FinanceDashboard`, `Treasury`, `StudentSummary`
-- `CanteenStock`, `VieScolaireBillets`, `QuickGradeEntry`
-- `SubjectEditDialog`, `AppearanceSettings`
+**Origine :** la fonction PL/pgSQL `generer_tranches_eleve` ne bloque la re-génération que si l'élève a déjà des tranches **pour le même `frais_id`**. Quand la classe / le niveau change (ex. l'élève passe de CE1 à 6ème), un nouveau `frais_scolarite` est résolu par la grille et un second lot de tranches est inséré à côté de l'ancien — sans purge ni détection.
 
-### D. Filtres & barres de recherche
-Nombreuses barres de filtres en `flex` sans `flex-wrap`, avec `min-w-[220px]` → débordement < 480px.
+### 2. « Reçus & quittances » vide et « Encaissé = 0 »
 
-### E. Modales (Dialog) — 339 occurrences
-`DialogContent` shadcn par défaut a `max-h-[90vh]` mais **peu de dialogs custom ajoutent `overflow-y-auto`** sur leur contenu interne. Formulaires longs coupés sur mobile.
+Les deux écrans filtrent les paiements par `tranche_id IN (tranches de l'année active)` via un `!inner` join sur `frais_scolarite.annee_id` (voir `Receipts.tsx` et `useFinanceData.ts`).
 
-### F. Cibles tactiles
-Boutons `h-8`, icônes `h-3 w-3` cliquables dans tableaux → < 44px minimum tactile.
+- Si le drawer courant s'est ouvert alors que le contexte `AcademicPeriodContext` pointe encore sur `b0000000…` (année verrouillée 2025-2026) au lieu de `d0aa1e69…` (active 2026-2027), toutes les tranches de tes 5 paiements du jour se retrouvent hors scope → totaux 0 et liste vide. Ta capture montre bien des dates `2026-10-15` (année active) donc l'appli **est** en année active côté drawer, mais les composants Receipts / dashboards ré-utilisent l'`activeAnneeId` stocké dans `localStorage` — il peut rester coincé.
+- De plus, `Receipts.tsx` fait `.in("tranche_id", trancheIds)` : cela **exclut aussi tout paiement avec `tranche_id = null`** (aucun dans ta base, mais fragile).
 
-### G. Home / Modules
-`Home.tsx` utilise `lg:grid-cols-[minmax(0,1fr)_1px_minmax(0,1.4fr)]` : OK. Mais `ModulesGrid` non vérifié.
+## Plan de correction
 
-### H. Cartes PDF / impressions
-`SchoolCard`, `StudentIdCard` : dimensions physiques (format carte) — à laisser tel quel, non impacté par le responsive écran.
+### A. Empêcher et nettoyer les doublons de tranches
 
----
+Migration Postgres :
 
-## 2. Stratégie de correction (progressive, non destructive)
+1. **Nettoyage des données existantes** : pour chaque `(eleve_id)`, garder uniquement le `frais_id` correspondant au cycle actuel de la classe de l'élève et supprimer les tranches orphelines des autres `frais_id` **si elles n'ont aucun paiement rattaché**. Si des paiements existent sur les anciennes tranches, on les conserve mais on les marque via un statut/annotation neutre pour éviter la duplication d'échéancier (choix : détacher `frais_id` ne suffit pas — on garde donc les tranches soldées, on supprime uniquement celles à `paye = 0`).
+2. **Réécrire `generer_tranches_eleve`** : avant l'INSERT, si l'élève a déjà des tranches pour un `frais_id` différent du `v_frais_id` cible et qu'aucune de ces tranches n'a de paiement, faire un `DELETE` de ces anciennes tranches. Sinon (paiements existants), lever une exception explicite (« Échéancier déjà en cours avec paiements — utilisez la migration d'échéancier »).
+3. **Contrainte d'intégrité** : ajouter un index unique `UNIQUE (eleve_id, numero)` sur `tranches` pour interdire toute future duplication de numéro par élève au niveau DB.
 
-**Principe** : aucune logique métier touchée. Uniquement classes Tailwind, wrappers layout, et 2-3 primitives utilitaires nouvelles.
+### B. Fiabiliser le scoping paiements / reçus par année
 
-### Phase 1 — Fondations partagées (petit effort, gros impact)
-1. **`src/components/ui/table.tsx`** : envelopper le `<table>` dans un `div` avec `overflow-x-auto -mx-4 sm:mx-0` par défaut → corrige *tous* les tableaux d'un coup.
-2. **Nouveau `src/components/ui/responsive-table.tsx`** : helper `<ResponsiveTable>` optionnel pour cas complexes.
-3. **`DialogContent`** (`src/components/ui/dialog.tsx`) : ajouter `max-h-[90vh] overflow-y-auto` + `w-[calc(100vw-2rem)] sm:w-full` sur le wrapper.
-4. **`TopNav`** : ajouter un bouton hamburger < md ouvrant un `Sheet` (drawer) listant les mêmes liens + section école.
-5. **`AppLayout`** : baisser `px` mobile (`px-3`), `py-4`.
-6. **`index.css`** : ajouter utilitaires `.touch-target` (min 44px), `.table-scroll`.
+1. Dans `useFinanceData.ts` et `Receipts.tsx`, remplacer la logique « fetch tranches puis `.in("tranche_id", …)` » par un `paiements` scopé directement via un **inner join sur `tranches.frais_scolarite.annee_id`** — plus court, plus robuste, et inclut correctement les paiements liés à toute tranche de l'année active.
+2. Dans `AcademicPeriodContext`, à l'initialisation, vérifier que la valeur en `localStorage` correspond toujours à une année existante ET non `verrouillee` ; sinon retomber sur l'année `active` en DB. Cela évite qu'un ancien cache pointe sur `b0000000` alors que la scolarité 2026-2027 est active.
 
-### Phase 2 — Grilles fixes → responsive
-Remplacement mécanique `grid-cols-3` → `grid-cols-1 sm:grid-cols-2 md:grid-cols-3` (ou `grid-cols-2 md:grid-cols-3` pour KPI compacts) dans les 17 fichiers listés en C.
+### C. Vérification finale
 
-### Phase 3 — Barres de filtres
-Ajout de `flex-wrap gap-2 w-full` et `w-full sm:w-auto sm:min-w-[220px]` sur les inputs concernés (fichiers listés en D).
+Après migration :
 
-### Phase 4 — Pages sensibles (revue ciblée)
-Revue visuelle + retouches sur :
-- Finances (Payments, Unpaid, ClassSummary, Dashboard, Treasury)
-- Élèves (Dashboard, Assignment, StudentDetailDrawer)
-- Classes (Effectifs, Schedule, ClassesLayout tabs)
-- Présences (DailyCall, StudentAbsences)
-- Bulletins (BulletinSendDialog, BulletinOverrideDialog)
-- Enseignants (StaffContracts, AssignmentsPanel)
-- Paramètres (SettingsLayout tabs)
+- `SELECT eleve_id, numero, count(*) FROM tranches GROUP BY 1,2 HAVING count(*)>1;` doit renvoyer 0.
+- Le drawer de l'élève `695b6bc4` doit lister 3 tranches uniques (T1 Octobre 85 000 Soldée, T2 Novembre 55 000, T3 Janvier 40 000).
+- `Reçus & quittances` doit afficher les 5 paiements du 2026-07-13.
+- La carte « Encaissé » du dashboard doit afficher ≥ 170 000 FCFA.
 
-Pour chaque : vérifier tabs (`overflow-x-auto`), en-têtes de section, KPI cards.
+## Détails techniques
 
-### Phase 5 — Boutons tactiles
-Passer les boutons d'action tableau de `h-8` à `h-9 sm:h-8`, icônes à `h-4 w-4`.
+Fichiers touchés :
 
-### Phase 6 — Vérification navigateur (Playwright)
-Captures à 320, 375, 768, 1024, 1280 sur : Home, Élèves, Finances, Classes, Bulletins, Paramètres. Contrôle absence de scroll horizontal, lisibilité, tap targets.
+- `supabase/migrations/*` — nouvelle migration : nettoyage + refonte de `generer_tranches_eleve` + `CREATE UNIQUE INDEX tranches_eleve_numero_uniq ON tranches(eleve_id, numero) WHERE frais_id IS NOT NULL;` (conditionnel pour rester compatible avec les tranches historiques déjà en base).
+- `src/pages/finances/useFinanceData.ts` — remplacer le double round-trip par une seule requête paiements `select("*, tranches!inner(frais_scolarite!inner(annee_id))")` filtrée sur `annee_id`.
+- `src/pages/finances/sections/Receipts.tsx` — même refactor.
+- `src/context/AcademicPeriodContext.tsx` — validation de la valeur `localStorage` à l'init (refuser une année `verrouillee` obsolète).
 
----
-
-## 3. Ce qui ne sera PAS modifié
-
-- Aucune migration SQL, aucun hook Supabase, aucune permission.
-- Aucun composant PDF (cartes physiques, bulletins imprimés).
-- Le design system (couleurs bordeaux/or, typographie, cartes) reste identique.
-- Aucune suppression de fonctionnalité.
-
----
-
-## 4. Livrables
-
-- Diff Tailwind sur ~30-40 fichiers.
-- 1 nouveau composant (drawer mobile TopNav via `Sheet`).
-- Modifs primitives : `table.tsx`, `dialog.tsx`.
-- Rapport final : problèmes détectés / corrigés / à surveiller.
-
----
-
-## 5. Ordre d'exécution recommandé
-
-Je propose d'exécuter **Phases 1 → 2 → 3** dans un premier passage (impact maximal, faible risque), puis **Phase 4 → 5** dans un second passage, et enfin **Phase 6** (tests visuels). Cela vous laisse valider entre chaque passage.
-
-**Confirmez-vous ce plan ?** Je peux aussi démarrer directement par la Phase 1 si vous préférez itérer plus vite.
+Aucune interaction UI côté élève ne change — seule la source de données devient fiable.
