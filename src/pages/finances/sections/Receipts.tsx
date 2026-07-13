@@ -240,7 +240,9 @@ export default function Receipts() {
       const lbl = modeMeta(it.mode).label;
       cnt.set(lbl, (cnt.get(lbl) ?? 0) + it.montant);
     }
-    const modeCombine = "COMBINÉ — " + Array.from(cnt.entries()).map(([l, v]) => `${l} ${fcfa(v)}`).join(" + ");
+    // Formatte les montants avec des espaces standard (le PDF ne rend pas les espaces fines U+202F)
+    const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[\u202F\u00A0]/g, " ");
+    const modeCombine = "COMBINE - " + Array.from(cnt.entries()).map(([l, v]) => `${l} ${fmtPdf(v)} FCFA`).join(" + ");
 
     const refs = g.items.map((i) => i.reference ?? i.id.slice(0, 6).toUpperCase()).join(" / ");
     return generateRecuPDF({
