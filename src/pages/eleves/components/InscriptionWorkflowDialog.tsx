@@ -177,6 +177,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     repartition: { numero: number; label: string; montant: number }[];
     totalDu: number;
     totalPayeApres: number;
+    forceDownload?: boolean;
   }) => {
     try {
       const [{ data: ecole }, { data: eleveFull }] = await Promise.all([
