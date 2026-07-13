@@ -77,40 +77,36 @@ export default function Receipts() {
   useEffect(() => {
     if (!ecoleId || periodLoading || !activeAnnee?.id) { if (!ecoleId && !ecoleLoading) setLoading(false); return; }
     setLoading(true);
-    // Récupère les tranches de l'année pour filtrer les paiements
+    // Une seule requête : les paiements dont la tranche appartient à un frais
+    // de l'année active. Robuste au scoping via inner join.
     supabase
-      .from("tranches")
-      .select("id, frais_scolarite!inner(annee_id)")
+      .from("paiements")
+      .select(
+        "id, reference, montant, date_paiement, mode, eleve_id, " +
+        "tranches!inner(frais_scolarite!inner(annee_id)), " +
+        "eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))"
+      )
       .eq("ecole_id", ecoleId)
-      .eq("frais_scolarite.annee_id", activeAnnee.id)
-      .then(({ data: trData }) => {
-        const trancheIds = (trData ?? []).map((t: any) => t.id);
-        if (trancheIds.length === 0) { setRecus([]); setLoading(false); return; }
-        supabase
-          .from("paiements")
-          .select("id, reference, montant, date_paiement, mode, eleve_id, eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))")
-          .eq("ecole_id", ecoleId)
-          .in("tranche_id", trancheIds)
-          .order("date_paiement", { ascending: false })
-          .limit(50)
-          .then(({ data }) => {
-            if (data) {
-              setRecus(data.map((p: any) => ({
-                id: p.id,
-                reference: p.reference,
-                eleve_id: p.eleve_id,
-                eleve_nom: p.eleves?.nom ?? "—",
-                eleve_prenom: p.eleves?.prenom ?? "",
-                matricule: p.eleves?.matricule ?? "",
-                classe: p.eleves?.classes?.nom ?? "",
-                photo_url: p.eleves?.photo_url ?? null,
-                montant: Number(p.montant),
-                date_paiement: p.date_paiement,
-                mode: p.mode,
-              })));
-            }
-            setLoading(false);
-          });
+      .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
+      .order("date_paiement", { ascending: false })
+      .limit(100)
+      .then(({ data }) => {
+        if (data) {
+          setRecus(data.map((p: any) => ({
+            id: p.id,
+            reference: p.reference,
+            eleve_id: p.eleve_id,
+            eleve_nom: p.eleves?.nom ?? "—",
+            eleve_prenom: p.eleves?.prenom ?? "",
+            matricule: p.eleves?.matricule ?? "",
+            classe: p.eleves?.classes?.nom ?? "",
+            photo_url: p.eleves?.photo_url ?? null,
+            montant: Number(p.montant),
+            date_paiement: p.date_paiement,
+            mode: p.mode,
+          })));
+        }
+        setLoading(false);
       });
   }, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id]);
 
