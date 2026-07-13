@@ -14,6 +14,8 @@ import { DiscountDialog } from "./DiscountDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
+import { CustomFeeOverride } from "./CustomFeeOverride";
+
 
 interface Props {
   eleve: EleveScolarite | null;
