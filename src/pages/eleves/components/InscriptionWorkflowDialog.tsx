@@ -425,35 +425,71 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                 <p className="text-xs text-muted-foreground">{fmt(totalPaye)} FCFA déjà encaissé.</p>
               ) : nextTranche ? (
                 <div className="space-y-2">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Tranche</p><p className="text-xs font-semibold">T{nextTranche.numero}</p></div>
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Montant</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant))}</p></div>
-                    <div><p className="text-[9px] uppercase text-muted-foreground">Reste</p><p className="text-xs font-semibold text-destructive">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-[10px]">Montant (FCFA)</Label>
-                      <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Moyen</Label>
-                      <Select value={payMode} onValueChange={setPayMode}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-[10px]">Référence (optionnel)</Label>
-                    <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
-                  </div>
-                  <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
-                    {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
-                    Enregistrer l'encaissement
-                  </Button>
+                  {(() => {
+                    const unpaid = tranches.filter(t => Number(t.paye) < Number(t.montant));
+                    const totalReste = unpaid.reduce((s, t) => s + (Number(t.montant) - Number(t.paye)), 0);
+                    const saisi = Number(payMontant) || 0;
+                    // preview de la répartition
+                    const preview: { numero: number; part: number }[] = [];
+                    let restant = saisi;
+                    for (const t of unpaid) {
+                      if (restant <= 0) break;
+                      const r = Number(t.montant) - Number(t.paye);
+                      const p = Math.min(restant, r);
+                      preview.push({ numero: t.numero, part: p });
+                      restant -= p;
+                    }
+                    return (
+                      <>
+                        <div className="grid grid-cols-3 gap-2 bg-background/60 rounded p-2 border text-center">
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Prochaine</p><p className="text-xs font-semibold">T{nextTranche.numero}</p></div>
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Reste T{nextTranche.numero}</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
+                          <div><p className="text-[9px] uppercase text-muted-foreground">Reste total</p><p className="text-xs font-semibold text-destructive">{fmt(totalReste)}</p></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label className="text-[10px]">Montant (FCFA)</Label>
+                            <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Moyen</Label>
+                            <Select value={payMode} onValueChange={setPayMode}>
+                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Référence (optionnel)</Label>
+                          <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+                        </div>
+                        {saisi > 0 && preview.length > 0 && (
+                          <div className="rounded border bg-primary/5 p-2 text-[10.5px] space-y-0.5">
+                            <p className="font-semibold text-primary">Répartition automatique :</p>
+                            {preview.map(p => (
+                              <div key={p.numero} className="flex justify-between">
+                                <span>Tranche T{p.numero}</span>
+                                <span className="font-medium tabular-nums">{fmt(p.part)} FCFA</span>
+                              </div>
+                            ))}
+                            {saisi > totalReste && (
+                              <p className="text-amber-700 pt-1">
+                                ⚠ {fmt(saisi - totalReste)} FCFA au-dessus du solde — non affectés.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading}>
+                          {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
+                          Enregistrer l'encaissement & imprimer le reçu
+                        </Button>
+                      </>
+                    );
+                  })()}
                 </div>
+
               ) : (
                 <div className="space-y-2">
                   <p className="text-[11px] text-amber-900">
