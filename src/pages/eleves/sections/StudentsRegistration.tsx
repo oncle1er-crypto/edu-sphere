@@ -47,6 +47,10 @@ export default function StudentsRegistration() {
 
   const [saving, setSaving] = useState(false);
   const [showImport, setShowImport] = useState(false);
+  const [createdEleve, setCreatedEleve] = useState<any | null>(null);
+  const [showPayPrompt, setShowPayPrompt] = useState(false);
+  const [showPayWorkflow, setShowPayWorkflow] = useState(false);
+
   const [form, setForm] = useState({
     nom: "",
     prenom: "",
