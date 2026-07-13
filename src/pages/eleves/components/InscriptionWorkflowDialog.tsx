@@ -15,6 +15,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import { finalizeInscription } from "@/lib/finalizeInscription";
 import { useAuth } from "@/context/AuthContext";
+import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 
 interface Props {
   eleve: any | null;
