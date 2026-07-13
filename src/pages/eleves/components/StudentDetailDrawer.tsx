@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   User, CalendarCheck, Wallet, Award, Files, Loader2,
   Check, X, Clock, BookOpen, Pencil, Save, Camera, Plus, Trash2, MessageSquare, Mail, History, IdCard,
+  Eye, Upload,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useClasses } from "@/hooks/useClasses";
