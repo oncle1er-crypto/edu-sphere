@@ -1,7 +1,9 @@
-import { Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet } from "lucide-react";
+import { Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -14,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
+import { generateRecapPaiementsJournalier } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 
 interface PaiementRecu {
