@@ -512,6 +512,45 @@ export default function StudentsList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Suppression définitive (admin) */}
+      <Dialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" /> Suppression définitive
+            </DialogTitle>
+          </DialogHeader>
+          {purgeTarget && (
+            <div className="space-y-2 text-sm">
+              <p>
+                Vous êtes sur le point de supprimer <strong>définitivement</strong>{" "}
+                <strong>{purgeTarget.nom} {purgeTarget.prenom}</strong> ({purgeTarget.matricule}).
+              </p>
+              <p className="text-destructive">
+                Cette action est <strong>irréversible</strong> et n'est autorisée que si l'élève n'a aucun paiement enregistré.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPurgeTarget(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handlePurge} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Doublons */}
+      <DuplicatesDialog
+        open={duplicatesOpen}
+        onClose={() => setDuplicatesOpen(false)}
+        eleves={eleves}
+        onView={(e) => { setDuplicatesOpen(false); setViewEleve(e); }}
+        onDeleted={() => fetchEleves()}
+      />
     </>
+
   );
 }
