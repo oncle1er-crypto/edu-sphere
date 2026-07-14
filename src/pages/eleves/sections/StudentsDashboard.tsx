@@ -20,6 +20,7 @@ export default function StudentsDashboard() {
 
   const [tauxPresence, setTauxPresence] = useState<number | null>(null);
   const [retardPaiement, setRetardPaiement] = useState(0);
+  const [elevesAvecVersement, setElevesAvecVersement] = useState<Set<string>>(new Set());
 
   const loading = loadingE || loadingC || loadingCy;
 
