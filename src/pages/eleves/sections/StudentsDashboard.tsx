@@ -118,8 +118,8 @@ export default function StudentsDashboard() {
 
   const cycleColors = ["bg-pink-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500"];
 
-  const pctFilles = inscrits > 0 ? Math.round((filles / inscrits) * 100) : 0;
-  const pctGarcons = inscrits > 0 ? Math.round((garcons / inscrits) * 100) : 0;
+  const pctFilles = actifsTotal > 0 ? Math.round((filles / actifsTotal) * 100) : 0;
+  const pctGarcons = actifsTotal > 0 ? Math.round((garcons / actifsTotal) * 100) : 0;
 
   return (
     <div className="space-y-6">
