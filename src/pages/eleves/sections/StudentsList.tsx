@@ -13,14 +13,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles } from "lucide-react";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
 import BulkInscriptionDialog from "@/pages/eleves/components/BulkInscriptionDialog";
+import DuplicatesDialog from "@/pages/eleves/components/DuplicatesDialog";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -35,6 +38,7 @@ export default function StudentsList() {
   const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
+  const { isAdmin } = useIsAdmin();
   const { cycles } = useCycles();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -63,6 +67,8 @@ export default function StudentsList() {
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+  const [purgeTarget, setPurgeTarget] = useState<typeof eleves[0] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Keep drawer eleve in sync with realtime-refreshed list
@@ -114,6 +120,27 @@ export default function StudentsList() {
     setDeleteTarget(null);
     setActionLoading(false);
   };
+
+  const handlePurge = async () => {
+    if (!purgeTarget || !isAdmin) return;
+    setActionLoading(true);
+    const { count, error: cErr } = await supabase
+      .from("paiements")
+      .select("id", { head: true, count: "exact" })
+      .eq("eleve_id", purgeTarget.id);
+    if (cErr) { setActionLoading(false); toast.error(cErr.message); return; }
+    if ((count ?? 0) > 0) {
+      setActionLoading(false);
+      toast.error("Suppression refusée", { description: "Cet élève a déjà des paiements enregistrés." });
+      setPurgeTarget(null);
+      return;
+    }
+    const ok = await deleteEleve(purgeTarget.id);
+    if (ok) toast.success(`${purgeTarget.nom} ${purgeTarget.prenom} supprimé(e) définitivement`);
+    setPurgeTarget(null);
+    setActionLoading(false);
+  };
+
 
   if (loading) {
     return (
@@ -179,6 +206,15 @@ export default function StudentsList() {
         <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(s)}>
           <Trash2 className="h-4 w-4 mr-2" />Désinscrire
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => setPurgeTarget(s)}
+            title="Supprimer définitivement (uniquement si aucun paiement)"
+          >
+            <ShieldAlert className="h-4 w-4 mr-2" />Supprimer définitivement
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -235,6 +271,16 @@ export default function StudentsList() {
             >
               <Sparkles className="h-4 w-4" />
               Finaliser en lot {selectedIds.size > 0 && `(${selectedIds.size})`}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => setDuplicatesOpen(true)}
+              title="Détecter les doublons d'élèves"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Doublons
             </Button>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
             <div className="flex border rounded-md overflow-hidden">
@@ -466,6 +512,45 @@ export default function StudentsList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Suppression définitive (admin) */}
+      <Dialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <ShieldAlert className="h-5 w-5" /> Suppression définitive
+            </DialogTitle>
+          </DialogHeader>
+          {purgeTarget && (
+            <div className="space-y-2 text-sm">
+              <p>
+                Vous êtes sur le point de supprimer <strong>définitivement</strong>{" "}
+                <strong>{purgeTarget.nom} {purgeTarget.prenom}</strong> ({purgeTarget.matricule}).
+              </p>
+              <p className="text-destructive">
+                Cette action est <strong>irréversible</strong> et n'est autorisée que si l'élève n'a aucun paiement enregistré.
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPurgeTarget(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={handlePurge} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              Supprimer définitivement
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Doublons */}
+      <DuplicatesDialog
+        open={duplicatesOpen}
+        onClose={() => setDuplicatesOpen(false)}
+        eleves={eleves}
+        onView={(e) => { setDuplicatesOpen(false); setViewEleve(e); }}
+        onDeleted={() => fetchEleves()}
+      />
     </>
+
   );
 }
