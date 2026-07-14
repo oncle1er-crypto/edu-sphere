@@ -84,6 +84,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     if (trErr || !tranchesData || tranchesData.length === 0) {
       setData([]);
       setUsingMock(false);
+      hasLoadedRef.current = true;
       setLoading(false);
       setRefetching(false);
       return;
