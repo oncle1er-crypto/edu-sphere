@@ -272,6 +272,14 @@ export default function StudentsList() {
                 <SelectItem value="sorti">Sorti</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={docFilter} onValueChange={(v) => setDocFilter(v as typeof docFilter)}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les dossiers</SelectItem>
+                <SelectItem value="with">Avec au moins un document</SelectItem>
+                <SelectItem value="without">Sans aucun document</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               size="sm"
