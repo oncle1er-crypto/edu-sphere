@@ -272,6 +272,16 @@ export default function StudentsList() {
               <Sparkles className="h-4 w-4" />
               Finaliser en lot {selectedIds.size > 0 && `(${selectedIds.size})`}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => setDuplicatesOpen(true)}
+              title="Détecter les doublons d'élèves"
+            >
+              <AlertTriangle className="h-4 w-4" />
+              Doublons
+            </Button>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button
