@@ -233,6 +233,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     setData(result);
     setUsingMock(false);
     setLoading(false);
+    setRefetching(false);
   }, [ecoleId, scopedAnneeId, scopedProvided]);
 
   useEffect(() => {
@@ -241,8 +242,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setData([]);
       setUsingMock(false);
       setLoading(false);
+      setRefetching(false);
     }
   }, [ecoleLoading, ecoleId, fetchData]);
 
-  return { data, loading: loading || ecoleLoading, usingMock, refetch: fetchData, ecoleId };
+  return { data, loading: loading || ecoleLoading, refetching, usingMock, refetch: fetchData, ecoleId };
 }
+
