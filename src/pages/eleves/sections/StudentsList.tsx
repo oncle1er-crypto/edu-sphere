@@ -384,6 +384,27 @@ export default function StudentsList() {
                       </div>
                     </TableCell>
                     <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
+                    <TableCell className="hidden md:table-cell text-center">
+                      {(() => {
+                        const c = countByEleve.get(s.id) ?? 0;
+                        return c > 0 ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[11px] font-medium"
+                            title={`${c} document(s) dans le dossier`}
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            {c}
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-muted-foreground/60 text-[11px]"
+                            title="Aucun document"
+                          >
+                            <Paperclip className="h-3 w-3" />—
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
                     <TableCell><div className="flex items-center gap-1.5 flex-wrap">{statusBadge(s)}{finalizeButton(s)}</div></TableCell>
                     <TableCell>{studentActions(s)}</TableCell>
