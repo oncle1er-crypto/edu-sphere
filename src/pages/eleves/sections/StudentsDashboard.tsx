@@ -4,7 +4,7 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { KpiCard } from "@/components/KpiCard";
-import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck, UserCog } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
