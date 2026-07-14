@@ -79,12 +79,13 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       return;
     }
-    // Counts en parallèle
+    // Counts et revenus en parallèle
     const ids = (data ?? []).map((e: any) => e.id);
-    const [elevesRes, ensRes, clRes] = await Promise.all([
+    const [elevesRes, ensRes, clRes, trRes] = await Promise.all([
       supabase.from("eleves").select("ecole_id").in("ecole_id", ids),
       supabase.from("enseignants").select("ecole_id").in("ecole_id", ids),
       supabase.from("classes").select("ecole_id").in("ecole_id", ids),
+      supabase.from("tranches").select("ecole_id, paye").in("ecole_id", ids),
     ]);
     const countBy = (rows: any[] | null) => {
       const acc: Record<string, number> = {};
@@ -94,11 +95,16 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
     const eC = countBy(elevesRes.data as any);
     const enC = countBy(ensRes.data as any);
     const cC = countBy(clRes.data as any);
+    const revBy: Record<string, number> = {};
+    (trRes.data ?? []).forEach((t: any) => { revBy[t.ecole_id] = (revBy[t.ecole_id] ?? 0) + Number(t.paye || 0); });
 
-    setEcoles((data ?? []).map((row: any) => rowToEcole(row, {
-      eleves: eC[row.id] ?? 0,
-      enseignants: enC[row.id] ?? 0,
-      classes: cC[row.id] ?? 0,
+    setEcoles((data ?? []).map((row: any) => ({
+      ...rowToEcole(row, {
+        eleves: eC[row.id] ?? 0,
+        enseignants: enC[row.id] ?? 0,
+        classes: cC[row.id] ?? 0,
+      }),
+      revenu_mensuel: revBy[row.id] ?? 0,
     })));
     setLoading(false);
   }, []);
