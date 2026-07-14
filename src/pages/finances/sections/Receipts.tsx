@@ -355,10 +355,20 @@ export default function Receipts() {
 
   // ── PDF ──
   const buildSinglePDF = async (r: PaiementRecu) => {
-    const [{ data: tranches }, { data: paiements }] = await Promise.all([
-      supabase.from("tranches").select("montant").eq("ecole_id", ecoleId!).eq("eleve_id", r.eleve_id),
-      supabase.from("paiements").select("montant").eq("ecole_id", ecoleId!).eq("eleve_id", r.eleve_id),
-    ]);
+    const anneeId = activeAnnee?.id;
+    const trQ = supabase
+      .from("tranches")
+      .select(anneeId ? "montant, frais_scolarite!inner(annee_id)" : "montant")
+      .eq("ecole_id", ecoleId!)
+      .eq("eleve_id", r.eleve_id);
+    if (anneeId) trQ.eq("frais_scolarite.annee_id", anneeId);
+    const paQ = supabase
+      .from("paiements")
+      .select(anneeId ? "montant, tranches!inner(frais_scolarite!inner(annee_id))" : "montant")
+      .eq("ecole_id", ecoleId!)
+      .eq("eleve_id", r.eleve_id);
+    if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
+    const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
     const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
     const total_paye = (paiements ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
     return generateRecuPDF({
@@ -372,6 +382,7 @@ export default function Receipts() {
       total_paye,
     });
   };
+
 
   const buildMergedPDF = async (g: GroupedRow) => {
     const [{ data: tranches }, { data: paiements }] = await Promise.all([
