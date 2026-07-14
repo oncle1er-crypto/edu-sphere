@@ -4,7 +4,7 @@
  *
  * Falls back to mock data from scolarite-data.ts when DB is empty.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import type {
