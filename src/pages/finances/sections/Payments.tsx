@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type EleveScolarite, type Cycle } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { PaymentDialog } from "../components/PaymentDialog";
+
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
@@ -34,7 +36,7 @@ export default function Payments() {
   const lock = useLock("paiements");
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetching, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
@@ -48,6 +50,9 @@ export default function Payments() {
   );
   const setSelected = (e: EleveScolarite | null) => setSelectedId(e?.id ?? null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [payDialogEleve, setPayDialogEleve] = useState<EleveScolarite | null>(null);
+
 
   const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
 
@@ -79,10 +84,10 @@ export default function Payments() {
     const att = filtered.reduce((s, e) => s + e.fraisAnnuel, 0);
     const pay = filtered.reduce((s, e) => s + e.totalPaye, 0);
     const rem = filtered.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
-    // Aligné avec la Synthèse par classe : Encaissé = total couvert sur les tranches
-    // (inclut tout règlement appliqué, y compris ceux sans ligne "paiements" détaillée).
-    return { att, pay, enc: pay, rem, du: att - pay, count: filtered.length };
+    const enc = filtered.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
+    return { att, pay, enc, rem, du: att - pay, count: filtered.length };
   }, [filtered]);
+
 
   const openFiche = (e: EleveScolarite, trancheNum?: number) => {
     setSelected(e);
@@ -100,7 +105,7 @@ export default function Payments() {
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Élèves filtrés</p><p className="text-xl font-bold font-display text-primary mt-1">{stats.count}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Attendu</p><p className="text-xl font-bold font-display text-foreground mt-1">{fcfa(stats.att)}</p></CardContent></Card>
-        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Encaissé</p><p className="text-xl font-bold font-display text-success mt-1">{fcfa(stats.enc)}</p></CardContent></Card>
+        <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Couvert</p><p className="text-xl font-bold font-display text-success mt-1">{fcfa(stats.pay)}</p><p className="text-[10px] text-muted-foreground mt-0.5">dont {fcfa(stats.enc)} encaissé · {fcfa(stats.rem)} remises · {stats.att > 0 ? Math.round((stats.pay / stats.att) * 100) : 0}%</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Remises / Bourses</p><p className="text-xl font-bold font-display text-orange-600 mt-1">{fcfa(stats.rem)}</p></CardContent></Card>
         <Card className="border"><CardContent className="p-4"><p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reste dû</p><p className="text-xl font-bold font-display text-destructive mt-1">{fcfa(stats.du)}</p></CardContent></Card>
       </div>
@@ -190,17 +195,23 @@ export default function Payments() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
-          <ConfirmButton
+          <Button
             size="sm"
             disabled={lock.locked}
-            title={lock.locked ? lock.reason : undefined}
-            confirmTitle="Enregistrer ce paiement ?"
-            confirmDescription="Le paiement sera ajouté à la caisse et un reçu sera émis. Cette opération est traçable."
-            confirmLabel="Enregistrer"
-            onConfirm={() => { toast.success("Paiement enregistré"); }}
+            title={lock.locked ? lock.reason : "Sélectionnez un élève ou filtrez à un seul résultat"}
+            onClick={() => {
+              const target = selected ?? (filtered.length === 1 ? filtered[0] : null);
+              if (!target) {
+                toast.info("Sélectionnez un élève (cliquez une ligne) ou filtrez à un seul résultat.");
+                return;
+              }
+              setPayDialogEleve(target);
+              setPayDialogOpen(true);
+            }}
           >
             <Plus className="h-4 w-4" />Saisir paiement
-          </ConfirmButton>
+          </Button>
+
         </div>
 
         {/* Récap critères avancés actifs */}
@@ -308,8 +319,18 @@ export default function Payments() {
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelected(null); setOpenTrancheNum(undefined); } }}
         ecoleId={ecoleId}
+        refetching={refetching}
+        onPaymentRecorded={refetch}
+      />
+
+      <PaymentDialog
+        eleve={payDialogEleve}
+        open={payDialogOpen}
+        onOpenChange={(o) => { setPayDialogOpen(o); if (!o) setPayDialogEleve(null); }}
+        ecoleId={ecoleId}
         onPaymentRecorded={refetch}
       />
     </div>
   );
 }
+

@@ -46,6 +46,7 @@ export function useFinanceData(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [data, setData] = useState<EleveScolarite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refetching, setRefetching] = useState(false);
   const [usingMock, setUsingMock] = useState(false);
   const scopedProvided = scopedAnneeId !== undefined;
 
@@ -57,7 +58,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setLoading(false);
       return;
     }
+    setRefetching(true);
     setLoading(true);
+
+
 
     // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
     let tranchesQuery = supabase
@@ -78,8 +82,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setData([]);
       setUsingMock(false);
       setLoading(false);
+      setRefetching(false);
       return;
     }
+
 
     // Fetch parents for contact info
     const { data: parentsData } = await supabase
@@ -120,11 +126,25 @@ export function useFinanceData(scopedAnneeId?: string) {
     (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
     const trancheIdsSet = new Set<string>((tranchesData as any[]).map((t) => t.id));
 
-    const { data: paiementsData } = await supabase
-      .from("paiements")
-      .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
-      .eq("ecole_id", ecoleId)
-      .order("date_paiement", { ascending: false });
+    // Pagination pour dépasser la limite PostgREST de 1000 lignes.
+    const paiementsAll: any[] = [];
+    let offset = 0;
+    const PAGE = 1000;
+    // Sécurité : plafond à 20 pages (20000 paiements) pour éviter une boucle infinie.
+    for (let i = 0; i < 20; i++) {
+      const { data: page, error: pErr } = await supabase
+        .from("paiements")
+        .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
+        .eq("ecole_id", ecoleId)
+        .order("date_paiement", { ascending: false })
+        .range(offset, offset + PAGE - 1);
+      if (pErr || !page || page.length === 0) break;
+      paiementsAll.push(...page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+    const paiementsData = paiementsAll;
+
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
@@ -213,6 +233,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     setData(result);
     setUsingMock(false);
     setLoading(false);
+    setRefetching(false);
   }, [ecoleId, scopedAnneeId, scopedProvided]);
 
   useEffect(() => {
@@ -221,8 +242,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setData([]);
       setUsingMock(false);
       setLoading(false);
+      setRefetching(false);
     }
   }, [ecoleLoading, ecoleId, fetchData]);
 
-  return { data, loading: loading || ecoleLoading, usingMock, refetch: fetchData, ecoleId };
+  return { data, loading: loading || ecoleLoading, refetching, usingMock, refetch: fetchData, ecoleId };
 }
+

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
@@ -25,6 +25,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   ecoleId?: string | null;
   onPaymentRecorded?: () => void;
+  refetching?: boolean;
 }
 
 function buildSmsRelance(e: EleveScolarite): string {
@@ -46,7 +47,8 @@ const STATUT_LABEL: Record<Tranche["statut"], string> = {
   due: "Non soldée",
 };
 
-export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded }: Props) {
+export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded, refetching }: Props) {
+
   const { relances, fetchRelances, addRelance } = useRelances(eleve?.id);
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>(undefined);
@@ -124,12 +126,16 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
               <SheetHeader>
                 <div className="flex items-start justify-between gap-3 pr-8">
                   <div className="min-w-0">
-                    <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
+                    <SheetTitle className="text-primary flex items-center gap-2">
+                      <span>{eleve.nom} {eleve.prenom}</span>
+                      {refetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-label="Actualisation en cours" />}
+                    </SheetTitle>
                     <SheetDescription>
                       {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                     </SheetDescription>
                   </div>
                   {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
+
                     <Button
                       size="sm"
                       variant="outline"

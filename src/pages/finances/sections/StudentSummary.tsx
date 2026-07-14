@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Mail, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,9 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type Cycle } from "../scolarite-data";
 import { PaymentDialog } from "../components/PaymentDialog";
 import { SettleDialog } from "../components/SettleDialog";
+import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { toast } from "sonner";
+
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
@@ -131,10 +133,27 @@ export default function StudentSummary() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <Button size="sm" variant="outline"><Phone className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
+                    <Button size="sm" variant="outline" asChild title="Appeler le parent">
+                      <a href={`tel:${eleve.telephone}`}><Phone className="h-4 w-4" /></a>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild title="Envoyer un SMS">
+                      <a href={`sms:${eleve.telephone}`}><MessageSquare className="h-4 w-4" /></a>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild title="Envoyer un email">
+                      <a href={`mailto:?subject=${encodeURIComponent(`Scolarité — ${eleve.nom} ${eleve.prenom}`)}`}><Mail className="h-4 w-4" /></a>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!ecoleId) { toast.error("École non identifiée"); return; }
+                        try { await downloadGlobalReceipt({ ecoleId, eleve }); }
+                        catch (err) { console.error(err); toast.error("Impossible de générer le reçu"); }
+                      }}
+                    >
+                      <Printer className="h-4 w-4" />Imprimer
+                    </Button>
+
                     {eleve.resteDu > 0 && (
                       <Button size="sm" onClick={() => setSettleOpen(true)} className="bg-success hover:bg-success/90 text-white">
                         <Wallet className="h-4 w-4" />Solder ({fcfa(eleve.resteDu)})

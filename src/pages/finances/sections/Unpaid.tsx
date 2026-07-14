@@ -42,7 +42,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 export default function Unpaid() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetching, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const { relances, fetchRelances, addRelance, getRelancesCount, getDerniereRelance } = useRelances();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
@@ -105,6 +105,12 @@ export default function Unpaid() {
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
   const retardMoyen = enRetard.length ? Math.round(enRetard.reduce((s, e) => s + e.joursRetard, 0) / enRetard.length) : 0;
   const critique = enRetard.filter((e) => e.joursRetard > 30).length;
+  const relancesCeMois = useMemo(() => {
+    const now = new Date();
+    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return (relances ?? []).filter((r: any) => (r.date_envoi ?? "").startsWith(prefix)).length;
+  }, [relances]);
+
 
   // Build echeancier from data
   const echeancier = [1, 2, 3].map((num) => {
@@ -331,7 +337,7 @@ export default function Unpaid() {
         <Card className="border shadow-[var(--shadow-card)]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Bell className="h-3.5 w-3.5 text-primary" />Relances ce mois</div>
-            <p className="text-xl font-bold font-display text-primary mt-2">87</p>
+            <p className="text-xl font-bold font-display text-primary mt-2">{relancesCeMois}</p>
           </CardContent>
         </Card>
       </div>
@@ -342,7 +348,7 @@ export default function Unpaid() {
           <Calendar className="h-4 w-4 text-primary" />
           <div>
             <h3 className="font-bold font-display text-primary">Échéancier des tranches — état de recouvrement</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Vision consolidée par tranche pour l'année 2025-2026</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Vision consolidée par tranche{activeAnnee?.libelle ? ` pour l'année ${activeAnnee.libelle}` : ""}</p>
           </div>
         </div>
         <CardContent className="p-6">
@@ -415,7 +421,7 @@ export default function Unpaid() {
               <SelectItem value="nom:desc">Nom (Z → A)</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><MessageSquare className="h-4 w-4" />Email groupé</Button>
+          {/* « Email groupé » retiré tant que l'envoi réel n'est pas branché. */}
           <Button size="sm" onClick={async () => {
             const results = await Promise.all(enRetard.map((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone })));
             const sent = results.filter(Boolean).length;
@@ -444,8 +450,10 @@ export default function Unpaid() {
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelectedEleve(null); setOpenTrancheNum(undefined); } }}
         ecoleId={ecoleId}
+        refetching={refetching}
         onPaymentRecorded={refetch}
       />
+
 
       <PaymentDialog
         eleve={paymentEleve}
