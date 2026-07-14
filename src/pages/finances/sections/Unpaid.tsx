@@ -421,7 +421,7 @@ export default function Unpaid() {
               <SelectItem value="nom:desc">Nom (Z → A)</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={() => toast.success("Email groupé envoyé")}><MessageSquare className="h-4 w-4" />Email groupé</Button>
+          {/* « Email groupé » retiré tant que l'envoi réel n'est pas branché. */}
           <Button size="sm" onClick={async () => {
             const results = await Promise.all(enRetard.map((e) => addRelance({ eleveId: e.id, canal: "SMS", message: buildSmsRelance(e), destinataire: e.telephone })));
             const sent = results.filter(Boolean).length;
