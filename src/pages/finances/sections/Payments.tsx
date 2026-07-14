@@ -50,6 +50,9 @@ export default function Payments() {
   );
   const setSelected = (e: EleveScolarite | null) => setSelectedId(e?.id ?? null);
   const [openTrancheNum, setOpenTrancheNum] = useState<number | undefined>(undefined);
+  const [payDialogOpen, setPayDialogOpen] = useState(false);
+  const [payDialogEleve, setPayDialogEleve] = useState<EleveScolarite | null>(null);
+
 
   const advActive = adv.nom || adv.prenom || adv.classe || adv.telephone;
 
