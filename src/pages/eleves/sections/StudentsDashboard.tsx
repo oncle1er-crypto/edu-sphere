@@ -144,7 +144,7 @@ export default function StudentsDashboard() {
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {kpis.map((k, i) => (
-            <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
+            <KpiCard key={k.label} label={k.label} value={k.value} sub={(k as any).sub} icon={k.icon} index={i} />
           ))}
         </div>
       </SettingsSection>
