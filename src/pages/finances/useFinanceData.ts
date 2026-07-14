@@ -82,8 +82,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setData([]);
       setUsingMock(false);
       setLoading(false);
+      setRefetching(false);
       return;
     }
+
 
     // Fetch parents for contact info
     const { data: parentsData } = await supabase
