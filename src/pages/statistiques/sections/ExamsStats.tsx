@@ -7,7 +7,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 
 export default function ExamsStats() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [stats, setStats] = useState({ evaluations: 0, notes: 0, moyenne: 0, parMatiere: [] as { label: string; value: number }[] });
+  const [stats, setStats] = useState({ evaluations: 0, notes: 0, moyenne: 0, reussite: 0, parMatiere: [] as { label: string; value: number }[] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
