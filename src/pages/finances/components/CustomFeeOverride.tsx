@@ -133,7 +133,7 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
               </p>
             )}
             <p className="text-[10px] text-muted-foreground italic">
-              Les tranches déjà encaissées sont conservées ; seules celles non payées sont recréées au nouveau tarif.
+              Les tranches déjà encaissées sont conservées (mêmes IDs, reçus toujours valides) et leurs montants sont adaptés à la nouvelle grille. Aucun doublon n'est créé — seuls le total et le reste à payer changent.
             </p>
           </>
         )}
