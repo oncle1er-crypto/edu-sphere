@@ -4,7 +4,7 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { KpiCard } from "@/components/KpiCard";
-import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck } from "lucide-react";
+import { LayoutDashboard, Users, UserPlus, GraduationCap, Loader2, CalendarCheck, AlertTriangle, UserCheck, UserCog } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
@@ -86,7 +86,9 @@ export default function StudentsDashboard() {
 
   const isActif = (s?: string | null) => s === "inscrit" || s === "pre_inscrit" || s === "actif";
   const total = eleves.length;
-  const inscrits = eleves.filter((e) => isActif(e.statut)).length;
+  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif").length;
+  const preInscrits = eleves.filter((e) => e.statut === "pre_inscrit").length;
+  const actifsTotal = inscrits + preInscrits;
   const garcons = eleves.filter((e) => e.sexe === "M" && isActif(e.statut)).length;
   const filles = eleves.filter((e) => e.sexe === "F" && isActif(e.statut)).length;
 
@@ -106,7 +108,8 @@ export default function StudentsDashboard() {
 
   const kpis = [
     { label: "Total élèves", value: total.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
-    { label: "Inscrits actifs", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
+    { label: "Inscrits (payés)", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
+    { label: "Pré-inscrits", value: preInscrits.toString(), icon: UserCog, color: "text-amber-600" },
     { label: "Classes", value: classes.length.toString(), icon: GraduationCap, color: "text-accent-foreground" },
     { label: "Taux de présence (30j)", value: tauxPresence !== null ? `${tauxPresence}%` : "—", icon: CalendarCheck, color: "text-blue-600" },
     { label: "Nouveaux ce mois", value: nouveauxCeMois.toString(), icon: UserCheck, color: "text-violet-600" },
@@ -115,8 +118,8 @@ export default function StudentsDashboard() {
 
   const cycleColors = ["bg-pink-500", "bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-purple-500"];
 
-  const pctFilles = inscrits > 0 ? Math.round((filles / inscrits) * 100) : 0;
-  const pctGarcons = inscrits > 0 ? Math.round((garcons / inscrits) * 100) : 0;
+  const pctFilles = actifsTotal > 0 ? Math.round((filles / actifsTotal) * 100) : 0;
+  const pctGarcons = actifsTotal > 0 ? Math.round((garcons / actifsTotal) * 100) : 0;
 
   return (
     <div className="space-y-6">
