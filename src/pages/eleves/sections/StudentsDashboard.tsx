@@ -112,7 +112,7 @@ export default function StudentsDashboard() {
 
   const repartition = cycles.map((cy) => {
     const classeIds = classes.filter((c) => c.cycle_id === cy.id).map((c) => c.id);
-    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id) && isActif(e.statut)).length;
+    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id)).length;
     const capacite = classes
       .filter((c) => c.cycle_id === cy.id)
       .reduce((sum, c) => sum + (c.capacite ?? 50), 0);
