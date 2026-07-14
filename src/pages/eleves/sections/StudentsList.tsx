@@ -58,7 +58,7 @@ export default function StudentsList() {
   }, [search]);
 
   // Reset to page 1 whenever filters change
-  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, viewMode]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, docFilter, viewMode]);
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
