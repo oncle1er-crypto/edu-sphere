@@ -105,6 +105,12 @@ export default function Unpaid() {
   const totalDu = enRetard.reduce((s, e) => s + e.resteDu, 0);
   const retardMoyen = enRetard.length ? Math.round(enRetard.reduce((s, e) => s + e.joursRetard, 0) / enRetard.length) : 0;
   const critique = enRetard.filter((e) => e.joursRetard > 30).length;
+  const relancesCeMois = useMemo(() => {
+    const now = new Date();
+    const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    return (relances ?? []).filter((r: any) => (r.date_envoi ?? "").startsWith(prefix)).length;
+  }, [relances]);
+
 
   // Build echeancier from data
   const echeancier = [1, 2, 3].map((num) => {
