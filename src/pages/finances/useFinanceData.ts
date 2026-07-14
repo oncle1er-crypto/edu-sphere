@@ -112,26 +112,25 @@ export function useFinanceData(scopedAnneeId?: string) {
     });
 
     // Fetch paiements pour bâtir l'historique + totaux remises/encaissements
-    const eleveIdsArr = Array.from(
-      new Set((tranchesData as any[]).map((t) => t.eleves?.id).filter(Boolean) as string[]),
-    );
+    // NB : on ne peut PAS envoyer un `.in("eleve_id", [...])` ou `.in("tranche_id", [...])`
+    // avec plusieurs centaines d'IDs — l'URL dépasse la limite PostgREST (414 / 400).
+    // On récupère tous les paiements de l'école, puis on filtre côté client via
+    // le set des tranche_ids déjà scopé à l'année active.
     const trancheNumByTrancheId = new Map<string, number>();
     (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
+    const trancheIdsSet = new Set<string>((tranchesData as any[]).map((t) => t.id));
 
-    const trancheIdsArr = (tranchesData as any[]).map((t) => t.id);
-    let paiementsQuery = supabase
+    const { data: paiementsData } = await supabase
       .from("paiements")
       .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
       .eq("ecole_id", ecoleId)
-      .in("eleve_id", eleveIdsArr.length ? eleveIdsArr : ["00000000-0000-0000-0000-000000000000"]);
-    // Si on est en mode scopé année : filtrer les paiements par tranche_id pour ignorer ceux des autres années.
-    if (scopedAnneeId && trancheIdsArr.length) {
-      paiementsQuery = paiementsQuery.in("tranche_id", trancheIdsArr);
-    }
-    const { data: paiementsData } = await paiementsQuery.order("date_paiement", { ascending: false });
+      .order("date_paiement", { ascending: false });
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
+      // Si on est en mode scopé année : ignorer les paiements rattachés à une tranche
+      // d'une autre année (les paiements sans tranche_id sont conservés).
+      if (scopedAnneeId && p.tranche_id && !trancheIdsSet.has(p.tranche_id)) return;
       const meta = modeMeta(p.mode);
       const item: PaiementHistorique = {
         id: p.id,
