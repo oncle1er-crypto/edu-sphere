@@ -86,6 +86,8 @@ export default function StudentsDashboard() {
     fetchPresence();
     fetchRetard();
     fetchVersements();
+  }, [ecoleId, eleves, classes]);
+
 
   if (loading) {
     return (
