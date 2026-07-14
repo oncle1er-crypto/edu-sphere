@@ -73,9 +73,19 @@ export default function StudentsDashboard() {
       }
     };
 
+    // Élèves ayant au moins un versement (définit Inscrit vs Pré-inscrit)
+    const fetchVersements = async () => {
+      const { data } = await supabase
+        .from("paiements")
+        .select("eleve_id, montant")
+        .eq("ecole_id", ecoleId)
+        .gt("montant", 0);
+      setElevesAvecVersement(new Set((data ?? []).map((p: any) => p.eleve_id)));
+    };
+
     fetchPresence();
     fetchRetard();
-  }, [ecoleId, eleves, classes]);
+    fetchVersements();
 
   if (loading) {
     return (
