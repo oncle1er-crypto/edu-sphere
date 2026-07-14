@@ -225,24 +225,6 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       <Receipt className="h-4 w-4 text-primary" />
                       Paiements & remises
                       <Badge variant="secondary" className="ml-1">{eleve.paiements.length}</Badge>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="ml-auto h-7 text-xs"
-                        title="Imprimer un reçu récapitulatif de tous les versements"
-                        onClick={async () => {
-                          if (!ecoleId) return;
-                          try {
-                            await downloadGlobalReceipt({ ecoleId, eleve });
-                          } catch (err) {
-                            console.error(err);
-                            toast.error("Impossible de générer le reçu global");
-                          }
-                        }}
-                      >
-                        <Printer className="h-3.5 w-3.5 mr-1" />
-                        Reçu global
-                      </Button>
                     </h4>
                     <div className="border rounded-lg divide-y">
                       {eleve.paiements.map((p) => (
