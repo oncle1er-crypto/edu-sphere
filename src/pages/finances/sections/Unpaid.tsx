@@ -42,7 +42,7 @@ function buildSmsRelance(e: EleveScolarite): string {
 export default function Unpaid() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetching, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const { relances, fetchRelances, addRelance, getRelancesCount, getDerniereRelance } = useRelances();
   const [search, setSearch] = useState("");
   const [cycle, setCycle] = useState<Cycle | "all">("all");
