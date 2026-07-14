@@ -319,8 +319,18 @@ export default function Payments() {
         openTrancheNum={openTrancheNum}
         onOpenChange={(o) => { if (!o) { setSelected(null); setOpenTrancheNum(undefined); } }}
         ecoleId={ecoleId}
+        refetching={refetching}
+        onPaymentRecorded={refetch}
+      />
+
+      <PaymentDialog
+        eleve={payDialogEleve}
+        open={payDialogOpen}
+        onOpenChange={(o) => { setPayDialogOpen(o); if (!o) setPayDialogEleve(null); }}
+        ecoleId={ecoleId}
         onPaymentRecorded={refetch}
       />
     </div>
   );
 }
+
