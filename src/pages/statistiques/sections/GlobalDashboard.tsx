@@ -41,8 +41,8 @@ export default function GlobalDashboard() {
       const elevesData = eRes.data ?? [];
       const garcons = elevesData.filter((e: any) => e.sexe === "M").length;
       const filles = elevesData.filter((e: any) => e.sexe === "F").length;
-      const totalAttendu = (tRes.data ?? []).reduce((s: number, t: any) => s + Number(t.montant), 0);
-      const totalPaye = (tRes.data ?? []).reduce((s: number, t: any) => s + Number(t.paye), 0);
+      const totalAttendu = tranchesData.reduce((s: number, t: any) => s + Number(t.montant), 0);
+      const totalPaye = tranchesData.reduce((s: number, t: any) => s + Number(t.paye), 0);
 
       setStats({
         eleves: eRes.count ?? elevesData.length,
