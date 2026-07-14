@@ -62,7 +62,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     setRefetching(true);
     // On ne bascule `loading` que lors du premier chargement pour éviter un flash
     // (skeleton complet de la page) lors des refetch en arrière-plan (ex. ouverture drawer).
-    setLoading((prev) => (data.length === 0 ? true : prev));
+    if (!hasLoadedRef.current) setLoading(true);
 
 
 
