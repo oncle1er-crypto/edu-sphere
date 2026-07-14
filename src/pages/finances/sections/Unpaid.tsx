@@ -337,7 +337,7 @@ export default function Unpaid() {
         <Card className="border shadow-[var(--shadow-card)]">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><Bell className="h-3.5 w-3.5 text-primary" />Relances ce mois</div>
-            <p className="text-xl font-bold font-display text-primary mt-2">87</p>
+            <p className="text-xl font-bold font-display text-primary mt-2">{relancesCeMois}</p>
           </CardContent>
         </Card>
       </div>
