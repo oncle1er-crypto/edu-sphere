@@ -36,7 +36,7 @@ export default function Payments() {
   const lock = useLock("paiements");
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const { data: ELEVES_SCOLARITE, loading: finLoading, refetch, ecoleId } = useFinanceData(scopedAnneeId);
+  const { data: ELEVES_SCOLARITE, loading: finLoading, refetching, refetch, ecoleId } = useFinanceData(scopedAnneeId);
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
