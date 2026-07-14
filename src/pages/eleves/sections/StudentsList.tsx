@@ -41,10 +41,12 @@ export default function StudentsList() {
   const { classes } = useClasses(activeAnnee.id);
   const { isAdmin } = useIsAdmin();
   const { cycles } = useCycles();
+  const { countByEleve, refetch: refetchDocsCount } = useDocumentsCountByEleve();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
+  const [docFilter, setDocFilter] = useState<"all" | "with" | "without">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
