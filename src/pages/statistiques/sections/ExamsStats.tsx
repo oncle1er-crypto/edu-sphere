@@ -27,10 +27,12 @@ export default function ExamsStats() {
         parMat[mat].count += 1;
       });
 
+      const reussis = notes.filter((n: any) => Number(n.note) >= 10).length;
       setStats({
         evaluations: evRes.count ?? 0,
         notes: notes.length,
         moyenne: Math.round(avg * 10) / 10,
+        reussite: notes.length > 0 ? Math.round((reussis / notes.length) * 100) : 0,
         parMatiere: Object.entries(parMat).map(([label, v]) => ({ label, value: Math.round((v.sum / v.count) * 10) / 10 })).sort((a, b) => b.value - a.value),
       });
       setLoading(false);
@@ -45,7 +47,7 @@ export default function ExamsStats() {
         <KpiCard label="Évaluations" value={stats.evaluations} icon={ClipboardList} />
         <KpiCard label="Notes saisies" value={stats.notes.toLocaleString("fr-FR")} icon={ClipboardList} color="text-primary" />
         <KpiCard label="Moyenne générale" value={`${stats.moyenne} / 20`} icon={ClipboardList} />
-        <KpiCard label="Réussite (≥10)" value={stats.notes > 0 ? "—" : "—"} icon={ClipboardList} color="text-primary" />
+        <KpiCard label="Réussite (≥10)" value={stats.notes > 0 ? `${stats.reussite}%` : "—"} icon={ClipboardList} color="text-primary" />
       </div>
       {stats.parMatiere.length > 0 && <BarChart title="Moyenne par matière (/20)" data={stats.parMatiere.slice(0, 10)} unit=" / 20" />}
     </SettingsSection>
