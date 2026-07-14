@@ -121,6 +121,27 @@ export default function StudentsList() {
     setActionLoading(false);
   };
 
+  const handlePurge = async () => {
+    if (!purgeTarget || !isAdmin) return;
+    setActionLoading(true);
+    const { count, error: cErr } = await supabase
+      .from("paiements")
+      .select("id", { head: true, count: "exact" })
+      .eq("eleve_id", purgeTarget.id);
+    if (cErr) { setActionLoading(false); toast.error(cErr.message); return; }
+    if ((count ?? 0) > 0) {
+      setActionLoading(false);
+      toast.error("Suppression refusée", { description: "Cet élève a déjà des paiements enregistrés." });
+      setPurgeTarget(null);
+      return;
+    }
+    const ok = await deleteEleve(purgeTarget.id);
+    if (ok) toast.success(`${purgeTarget.nom} ${purgeTarget.prenom} supprimé(e) définitivement`);
+    setPurgeTarget(null);
+    setActionLoading(false);
+  };
+
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
