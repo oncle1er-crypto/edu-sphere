@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Mail, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
