@@ -195,17 +195,23 @@ export default function Payments() {
             </SelectContent>
           </Select>
           <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
-          <ConfirmButton
+          <Button
             size="sm"
             disabled={lock.locked}
-            title={lock.locked ? lock.reason : undefined}
-            confirmTitle="Enregistrer ce paiement ?"
-            confirmDescription="Le paiement sera ajouté à la caisse et un reçu sera émis. Cette opération est traçable."
-            confirmLabel="Enregistrer"
-            onConfirm={() => { toast.success("Paiement enregistré"); }}
+            title={lock.locked ? lock.reason : "Sélectionnez un élève ou filtrez à un seul résultat"}
+            onClick={() => {
+              const target = selected ?? (filtered.length === 1 ? filtered[0] : null);
+              if (!target) {
+                toast.info("Sélectionnez un élève (cliquez une ligne) ou filtrez à un seul résultat.");
+                return;
+              }
+              setPayDialogEleve(target);
+              setPayDialogOpen(true);
+            }}
           >
             <Plus className="h-4 w-4" />Saisir paiement
-          </ConfirmButton>
+          </Button>
+
         </div>
 
         {/* Récap critères avancés actifs */}
