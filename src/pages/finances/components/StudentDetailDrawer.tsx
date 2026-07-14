@@ -4,10 +4,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
+import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { CustomFeeOverride } from "./CustomFeeOverride";
+import { HelpTooltip } from "@/components/help";
 
 
 interface Props {
@@ -170,11 +172,26 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
 
                 {/* Synthèse */}
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Total</p><p className="text-sm font-bold text-foreground">{fcfa(eleve.fraisAnnuel)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Couvert</p><p className="text-sm font-bold text-success">{fcfa(eleve.totalPaye)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">dont Encaissé</p><p className="text-sm font-bold text-primary">{fcfa(eleve.totalEncaisse ?? 0)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">dont Remises</p><p className="text-sm font-bold text-orange-600">{fcfa(eleve.totalRemises ?? 0)}</p></CardContent></Card>
-                  <Card className="border"><CardContent className="p-3"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p></CardContent></Card>
+                  <Card className="border"><CardContent className="p-3">
+                    <div className="flex items-center gap-1"><p className="text-[10px] text-muted-foreground uppercase">Total</p><HelpTooltip text="Frais annuels dus selon la grille tarifaire appliquée à cet élève." /></div>
+                    <p className="text-sm font-bold text-foreground">{fcfa(eleve.fraisAnnuel)}</p>
+                  </CardContent></Card>
+                  <Card className="border"><CardContent className="p-3">
+                    <div className="flex items-center gap-1"><p className="text-[10px] text-muted-foreground uppercase">Couvert</p><HelpTooltip text="Part du total prise en charge : versements en caisse + remises / bourses." /></div>
+                    <p className="text-sm font-bold text-success">{fcfa(eleve.totalPaye)}</p>
+                  </CardContent></Card>
+                  <Card className="border"><CardContent className="p-3">
+                    <div className="flex items-center gap-1"><p className="text-[10px] text-muted-foreground uppercase">dont Encaissé</p><HelpTooltip text="Sommes réellement reçues en caisse (hors remises et bourses)." /></div>
+                    <p className="text-sm font-bold text-primary">{fcfa(eleve.totalEncaisse ?? 0)}</p>
+                  </CardContent></Card>
+                  <Card className="border"><CardContent className="p-3">
+                    <div className="flex items-center gap-1"><p className="text-[10px] text-muted-foreground uppercase">dont Remises</p><HelpTooltip text="Réductions accordées : remises commerciales, bourses ou prise en charge externe." /></div>
+                    <p className="text-sm font-bold text-orange-600">{fcfa(eleve.totalRemises ?? 0)}</p>
+                  </CardContent></Card>
+                  <Card className="border"><CardContent className="p-3">
+                    <div className="flex items-center gap-1"><p className="text-[10px] text-muted-foreground uppercase">Reste</p><HelpTooltip text="Montant qu'il reste à payer par la famille (Total − Couvert)." /></div>
+                    <p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p>
+                  </CardContent></Card>
                 </div>
 
                 {/* Historique des paiements & remises */}
@@ -184,6 +201,24 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       <Receipt className="h-4 w-4 text-primary" />
                       Paiements & remises
                       <Badge variant="secondary" className="ml-1">{eleve.paiements.length}</Badge>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="ml-auto h-7 text-xs"
+                        title="Imprimer un reçu récapitulatif de tous les versements"
+                        onClick={async () => {
+                          if (!ecoleId) return;
+                          try {
+                            await downloadGlobalReceipt({ ecoleId, eleve });
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Impossible de générer le reçu global");
+                          }
+                        }}
+                      >
+                        <Printer className="h-3.5 w-3.5 mr-1" />
+                        Reçu global
+                      </Button>
                     </h4>
                     <div className="border rounded-lg divide-y">
                       {eleve.paiements.map((p) => (
