@@ -86,7 +86,9 @@ export default function StudentsDashboard() {
 
   const isActif = (s?: string | null) => s === "inscrit" || s === "pre_inscrit" || s === "actif";
   const total = eleves.length;
-  const inscrits = eleves.filter((e) => isActif(e.statut)).length;
+  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif").length;
+  const preInscrits = eleves.filter((e) => e.statut === "pre_inscrit").length;
+  const actifsTotal = inscrits + preInscrits;
   const garcons = eleves.filter((e) => e.sexe === "M" && isActif(e.statut)).length;
   const filles = eleves.filter((e) => e.sexe === "F" && isActif(e.statut)).length;
 
@@ -106,7 +108,8 @@ export default function StudentsDashboard() {
 
   const kpis = [
     { label: "Total élèves", value: total.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
-    { label: "Inscrits actifs", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
+    { label: "Inscrits (payés)", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
+    { label: "Pré-inscrits", value: preInscrits.toString(), icon: UserCog, color: "text-amber-600" },
     { label: "Classes", value: classes.length.toString(), icon: GraduationCap, color: "text-accent-foreground" },
     { label: "Taux de présence (30j)", value: tauxPresence !== null ? `${tauxPresence}%` : "—", icon: CalendarCheck, color: "text-blue-600" },
     { label: "Nouveaux ce mois", value: nouveauxCeMois.toString(), icon: UserCheck, color: "text-violet-600" },
