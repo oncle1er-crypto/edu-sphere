@@ -493,7 +493,7 @@ export default function StudentsList() {
       <StudentDetailDrawer
         eleve={viewEleve}
         open={!!viewEleve}
-        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); }}
+        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); refetchDocsCount(); }}
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
         initialTab={viewEleveTab}
       />
