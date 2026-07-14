@@ -6017,10 +6017,12 @@ export type Database = {
         }
         Returns: Json
       }
-      generer_tranches_eleve: {
-        Args: { _eleve_id: string }
-        Returns: undefined
-      }
+      generer_tranches_eleve:
+        | { Args: { _eleve_id: string }; Returns: undefined }
+        | {
+            Args: { _eleve_id: string; _force_recalc?: boolean }
+            Returns: undefined
+          }
       generer_tranches_pour_frais: {
         Args: { _frais_id: string }
         Returns: number
