@@ -46,6 +46,7 @@ export function useFinanceData(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [data, setData] = useState<EleveScolarite[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refetching, setRefetching] = useState(false);
   const [usingMock, setUsingMock] = useState(false);
   const scopedProvided = scopedAnneeId !== undefined;
 
@@ -57,7 +58,10 @@ export function useFinanceData(scopedAnneeId?: string) {
       setLoading(false);
       return;
     }
-    setLoading(true);
+    // Si on a déjà des données, on est en refetch : garder l'UI en place
+    setRefetching((prev) => prev || true);
+    setLoading((prev) => (data.length === 0 ? true : prev));
+
 
     // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
     let tranchesQuery = supabase
