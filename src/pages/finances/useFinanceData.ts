@@ -126,11 +126,25 @@ export function useFinanceData(scopedAnneeId?: string) {
     (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
     const trancheIdsSet = new Set<string>((tranchesData as any[]).map((t) => t.id));
 
-    const { data: paiementsData } = await supabase
-      .from("paiements")
-      .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
-      .eq("ecole_id", ecoleId)
-      .order("date_paiement", { ascending: false });
+    // Pagination pour dépasser la limite PostgREST de 1000 lignes.
+    const paiementsAll: any[] = [];
+    let offset = 0;
+    const PAGE = 1000;
+    // Sécurité : plafond à 20 pages (20000 paiements) pour éviter une boucle infinie.
+    for (let i = 0; i < 20; i++) {
+      const { data: page, error: pErr } = await supabase
+        .from("paiements")
+        .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
+        .eq("ecole_id", ecoleId)
+        .order("date_paiement", { ascending: false })
+        .range(offset, offset + PAGE - 1);
+      if (pErr || !page || page.length === 0) break;
+      paiementsAll.push(...page);
+      if (page.length < PAGE) break;
+      offset += PAGE;
+    }
+    const paiementsData = paiementsAll;
+
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
