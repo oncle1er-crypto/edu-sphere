@@ -278,6 +278,13 @@ export default function Receipts() {
     return { total, count, eleves, jours, avg };
   }, [filtered]);
 
+  // ── KPI Paiements du jour (indépendant des filtres) ──
+  const todayKpi = useMemo(() => {
+    const t = todayIso();
+    const list = recus.filter((r) => jourKey(r.date_paiement) === t);
+    return { total: list.reduce((s, r) => s + r.montant, 0), count: list.length };
+  }, [recus]);
+
   // ── Récapitulatif par mode (sur données filtrées) ──
   const modeSummary = useMemo(() => {
     const map = new Map<string, { label: string; total: number; count: number }>();
@@ -607,18 +614,24 @@ export default function Receipts() {
       </SettingsSection>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         {[
+          { label: "Paiements du jour", value: `${fcfa(todayKpi.total)} FCFA`, sub: `${todayKpi.count} reçu(s)`, today: true, onClick: () => { const t = todayIso(); setDateFrom(t); setDateTo(t); } },
           { label: "Total encaissé", value: `${fcfa(kpis.total)} FCFA`, hero: true },
           { label: "Reçus", value: kpis.count.toLocaleString("fr-FR") },
           { label: "Ticket moyen", value: `${fcfa(kpis.avg)} FCFA` },
           { label: "Élèves", value: kpis.eleves.toLocaleString("fr-FR") },
           { label: "Jours couverts", value: kpis.jours.toLocaleString("fr-FR") },
-        ].map((k) => (
-          <Card key={k.label} className={k.hero ? "border-primary/40 bg-primary/5" : ""}>
+        ].map((k: any) => (
+          <Card
+            key={k.label}
+            onClick={k.onClick}
+            className={`${k.today ? "border-accent/60 bg-accent/10 cursor-pointer hover:bg-accent/20 transition" : k.hero ? "border-primary/40 bg-primary/5" : ""}`}
+          >
             <CardContent className="p-4">
               <p className="text-xs text-muted-foreground uppercase tracking-wide">{k.label}</p>
-              <p className={`mt-1 font-bold ${k.hero ? "text-xl text-primary" : "text-lg"}`}>{k.value}</p>
+              <p className={`mt-1 font-bold ${k.today ? "text-xl text-primary" : k.hero ? "text-xl text-primary" : "text-lg"}`}>{k.value}</p>
+              {k.sub && <p className="text-[11px] text-muted-foreground mt-0.5">{k.sub}</p>}
             </CardContent>
           </Card>
         ))}
