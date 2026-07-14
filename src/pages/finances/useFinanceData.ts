@@ -4,7 +4,7 @@
  *
  * Falls back to mock data from scolarite-data.ts when DB is empty.
  */
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import type {
@@ -48,6 +48,7 @@ export function useFinanceData(scopedAnneeId?: string) {
   const [loading, setLoading] = useState(true);
   const [refetching, setRefetching] = useState(false);
   const [usingMock, setUsingMock] = useState(false);
+  const hasLoadedRef = useRef(false);
   const scopedProvided = scopedAnneeId !== undefined;
 
   const fetchData = useCallback(async () => {
@@ -59,7 +60,9 @@ export function useFinanceData(scopedAnneeId?: string) {
       return;
     }
     setRefetching(true);
-    setLoading(true);
+    // On ne bascule `loading` que lors du premier chargement pour éviter un flash
+    // (skeleton complet de la page) lors des refetch en arrière-plan (ex. ouverture drawer).
+    if (!hasLoadedRef.current) setLoading(true);
 
 
 
@@ -81,6 +84,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     if (trErr || !tranchesData || tranchesData.length === 0) {
       setData([]);
       setUsingMock(false);
+      hasLoadedRef.current = true;
       setLoading(false);
       setRefetching(false);
       return;
@@ -232,6 +236,7 @@ export function useFinanceData(scopedAnneeId?: string) {
 
     setData(result);
     setUsingMock(false);
+    hasLoadedRef.current = true;
     setLoading(false);
     setRefetching(false);
   }, [ecoleId, scopedAnneeId, scopedProvided]);
