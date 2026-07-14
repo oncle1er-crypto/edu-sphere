@@ -235,6 +235,7 @@ export function useFinanceData(scopedAnneeId?: string) {
 
     setData(result);
     setUsingMock(false);
+    hasLoadedRef.current = true;
     setLoading(false);
     setRefetching(false);
   }, [ecoleId, scopedAnneeId, scopedProvided]);
