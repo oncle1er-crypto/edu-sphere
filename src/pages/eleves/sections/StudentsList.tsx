@@ -349,6 +349,7 @@ export default function StudentsList() {
                   <TableHead>Matricule</TableHead>
                   <TableHead>Élève</TableHead>
                   <TableHead>Classe</TableHead>
+                  <TableHead className="hidden md:table-cell w-20 text-center">Docs</TableHead>
                   <TableHead className="hidden md:table-cell">Né(e) le</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="w-10" />
