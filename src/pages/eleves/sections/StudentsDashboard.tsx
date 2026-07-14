@@ -20,6 +20,7 @@ export default function StudentsDashboard() {
 
   const [tauxPresence, setTauxPresence] = useState<number | null>(null);
   const [retardPaiement, setRetardPaiement] = useState(0);
+  const [elevesAvecVersement, setElevesAvecVersement] = useState<Set<string>>(new Set());
 
   const loading = loadingE || loadingC || loadingCy;
 
@@ -72,9 +73,21 @@ export default function StudentsDashboard() {
       }
     };
 
+    // Élèves ayant au moins un versement (définit Inscrit vs Pré-inscrit)
+    const fetchVersements = async () => {
+      const { data } = await supabase
+        .from("paiements")
+        .select("eleve_id, montant")
+        .eq("ecole_id", ecoleId)
+        .gt("montant", 0);
+      setElevesAvecVersement(new Set((data ?? []).map((p: any) => p.eleve_id)));
+    };
+
     fetchPresence();
     fetchRetard();
+    fetchVersements();
   }, [ecoleId, eleves, classes]);
+
 
   if (loading) {
     return (
@@ -84,13 +97,13 @@ export default function StudentsDashboard() {
     );
   }
 
-  const isActif = (s?: string | null) => s === "inscrit" || s === "pre_inscrit" || s === "actif";
+  // Inscrit = élève ayant fait au moins un versement. Pré-inscrit = aucun versement.
   const total = eleves.length;
-  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif").length;
-  const preInscrits = eleves.filter((e) => e.statut === "pre_inscrit").length;
-  const actifsTotal = inscrits + preInscrits;
-  const garcons = eleves.filter((e) => e.sexe === "M" && isActif(e.statut)).length;
-  const filles = eleves.filter((e) => e.sexe === "F" && isActif(e.statut)).length;
+  const inscrits = eleves.filter((e) => elevesAvecVersement.has(e.id)).length;
+  const preInscrits = eleves.filter((e) => !elevesAvecVersement.has(e.id)).length;
+  const actifsTotal = total;
+  const garcons = eleves.filter((e) => e.sexe === "M").length;
+  const filles = eleves.filter((e) => e.sexe === "F").length;
 
   // Nouveaux inscrits ce mois
   const now = new Date();
@@ -99,7 +112,7 @@ export default function StudentsDashboard() {
 
   const repartition = cycles.map((cy) => {
     const classeIds = classes.filter((c) => c.cycle_id === cy.id).map((c) => c.id);
-    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id) && isActif(e.statut)).length;
+    const effectif = eleves.filter((e) => e.classe_id && classeIds.includes(e.classe_id)).length;
     const capacite = classes
       .filter((c) => c.cycle_id === cy.id)
       .reduce((sum, c) => sum + (c.capacite ?? 50), 0);
@@ -108,8 +121,8 @@ export default function StudentsDashboard() {
 
   const kpis = [
     { label: "Total élèves", value: total.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
-    { label: "Inscrits (payés)", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
-    { label: "Pré-inscrits", value: preInscrits.toString(), icon: UserCog, color: "text-amber-600" },
+    { label: "Inscrits", value: inscrits.toString(), sub: "Au moins un versement", icon: UserPlus, color: "text-emerald-600" },
+    { label: "Pré-inscrits", value: preInscrits.toString(), sub: "Aucun versement", icon: UserCog, color: "text-amber-600" },
     { label: "Classes", value: classes.length.toString(), icon: GraduationCap, color: "text-accent-foreground" },
     { label: "Taux de présence (30j)", value: tauxPresence !== null ? `${tauxPresence}%` : "—", icon: CalendarCheck, color: "text-blue-600" },
     { label: "Nouveaux ce mois", value: nouveauxCeMois.toString(), icon: UserCheck, color: "text-violet-600" },
@@ -131,7 +144,7 @@ export default function StudentsDashboard() {
       >
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
           {kpis.map((k, i) => (
-            <KpiCard key={k.label} label={k.label} value={k.value} icon={k.icon} index={i} />
+            <KpiCard key={k.label} label={k.label} value={k.value} sub={(k as any).sub} icon={k.icon} index={i} />
           ))}
         </div>
       </SettingsSection>

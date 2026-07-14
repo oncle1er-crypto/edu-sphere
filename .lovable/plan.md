@@ -1,56 +1,36 @@
-## Contexte / diagnostic
+## Contexte
 
-En inspectant la base pour l'élève affiché sur ta capture, j'ai trouvé la cause de chaque bug.
+La carte « Inscrits (payés) » du tableau de bord Élèves compte aujourd'hui les élèves dont le champ `statut` vaut `inscrit`/`actif`, sans regarder les paiements réels. Le libellé est trompeur : un élève sans versement peut y figurer, et un élève « pré-inscrit » ayant déjà payé n'y apparaît pas.
 
-### 1. Tranches doublées
+## Nouvelle définition (validée)
 
-L'élève `695b6bc4…` (Adjoua/6ème) possède DEUX échéanciers actifs simultanés :
+- **Inscrits** = élèves de l'année active ayant **au moins un versement enregistré** sur la 1ère tranche (tranche d'inscription).
+- **Pré-inscrits** = élèves de l'année active **sans aucun versement** enregistré.
 
-- `Scolarité — CE1-CE2` (frais `0bfa6c8c`) → T1 Octobre 80 000 / T2 Novembre 45 000 / T3 Janvier 40 000
-- `Scolarité — 6ème-5ème` (frais `49d2deec`) → T1 Octobre 85 000 / T2 Novembre 55 000 / T3 Janvier 40 000
+Le champ `statut` de l'élève n'est plus utilisé pour ces deux compteurs.
 
-C'est ce qui donne « T1 Octobre 85 000 Soldée » puis « T1 Octobre 80 000 Non soldée » etc. dans le drawer.
+## Ce qui change
 
-**Origine :** la fonction PL/pgSQL `generer_tranches_eleve` ne bloque la re-génération que si l'élève a déjà des tranches **pour le même `frais_id`**. Quand la classe / le niveau change (ex. l'élève passe de CE1 à 6ème), un nouveau `frais_scolarite` est résolu par la grille et un second lot de tranches est inséré à côté de l'ancien — sans purge ni détection.
+Un seul fichier front : `src/pages/eleves/sections/StudentsDashboard.tsx`.
 
-### 2. « Reçus & quittances » vide et « Encaissé = 0 »
-
-Les deux écrans filtrent les paiements par `tranche_id IN (tranches de l'année active)` via un `!inner` join sur `frais_scolarite.annee_id` (voir `Receipts.tsx` et `useFinanceData.ts`).
-
-- Si le drawer courant s'est ouvert alors que le contexte `AcademicPeriodContext` pointe encore sur `b0000000…` (année verrouillée 2025-2026) au lieu de `d0aa1e69…` (active 2026-2027), toutes les tranches de tes 5 paiements du jour se retrouvent hors scope → totaux 0 et liste vide. Ta capture montre bien des dates `2026-10-15` (année active) donc l'appli **est** en année active côté drawer, mais les composants Receipts / dashboards ré-utilisent l'`activeAnneeId` stocké dans `localStorage` — il peut rester coincé.
-- De plus, `Receipts.tsx` fait `.in("tranche_id", trancheIds)` : cela **exclut aussi tout paiement avec `tranche_id = null`** (aucun dans ta base, mais fragile).
-
-## Plan de correction
-
-### A. Empêcher et nettoyer les doublons de tranches
-
-Migration Postgres :
-
-1. **Nettoyage des données existantes** : pour chaque `(eleve_id)`, garder uniquement le `frais_id` correspondant au cycle actuel de la classe de l'élève et supprimer les tranches orphelines des autres `frais_id` **si elles n'ont aucun paiement rattaché**. Si des paiements existent sur les anciennes tranches, on les conserve mais on les marque via un statut/annotation neutre pour éviter la duplication d'échéancier (choix : détacher `frais_id` ne suffit pas — on garde donc les tranches soldées, on supprime uniquement celles à `paye = 0`).
-2. **Réécrire `generer_tranches_eleve`** : avant l'INSERT, si l'élève a déjà des tranches pour un `frais_id` différent du `v_frais_id` cible et qu'aucune de ces tranches n'a de paiement, faire un `DELETE` de ces anciennes tranches. Sinon (paiements existants), lever une exception explicite (« Échéancier déjà en cours avec paiements — utilisez la migration d'échéancier »).
-3. **Contrainte d'intégrité** : ajouter un index unique `UNIQUE (eleve_id, numero)` sur `tranches` pour interdire toute future duplication de numéro par élève au niveau DB.
-
-### B. Fiabiliser le scoping paiements / reçus par année
-
-1. Dans `useFinanceData.ts` et `Receipts.tsx`, remplacer la logique « fetch tranches puis `.in("tranche_id", …)` » par un `paiements` scopé directement via un **inner join sur `tranches.frais_scolarite.annee_id`** — plus court, plus robuste, et inclut correctement les paiements liés à toute tranche de l'année active.
-2. Dans `AcademicPeriodContext`, à l'initialisation, vérifier que la valeur en `localStorage` correspond toujours à une année existante ET non `verrouillee` ; sinon retomber sur l'année `active` en DB. Cela évite qu'un ancien cache pointe sur `b0000000` alors que la scolarité 2026-2027 est active.
-
-### C. Vérification finale
-
-Après migration :
-
-- `SELECT eleve_id, numero, count(*) FROM tranches GROUP BY 1,2 HAVING count(*)>1;` doit renvoyer 0.
-- Le drawer de l'élève `695b6bc4` doit lister 3 tranches uniques (T1 Octobre 85 000 Soldée, T2 Novembre 55 000, T3 Janvier 40 000).
-- `Reçus & quittances` doit afficher les 5 paiements du 2026-07-13.
-- La carte « Encaissé » du dashboard doit afficher ≥ 170 000 FCFA.
+1. Charger, en plus de l'existant, la table `paiements` (colonnes `eleve_id`, `tranche_id`, `montant`) filtrée par `ecole_id`, restreinte aux paiements de l'année active (via jointure sur `tranches.annee_id` ou équivalent déjà utilisé côté Finances).
+2. Identifier la **1ère tranche** de chaque élève via `tranches` (ordre le plus bas pour son cycle/classe). Un versement compte pour « Inscrit » s'il est rattaché à cette 1ère tranche **et** que `montant > 0`.
+3. Pour chaque élève de l'année active :
+   - **Inscrit** s'il possède au moins un paiement sur sa 1ère tranche,
+   - **Pré-inscrit** sinon.
+4. Recalculer `inscrits`, `preInscrits`, `actifsTotal` à partir de ces ensembles. Adapter la répartition garçons/filles et par cycle pour utiliser le même ensemble « actifs = inscrits ∪ pré-inscrits » (cohérence visuelle).
+5. Renommer la carte **« Inscrits (payés) »** → **« Inscrits »**. Laisser « Pré-inscrits » tel quel.
+6. Ajouter un petit sous-texte discret sur les deux cartes : *« basé sur les versements de la 1ère tranche »*.
 
 ## Détails techniques
 
-Fichiers touchés :
+- Requêtes ajoutées dans le `useEffect` existant, à côté de `fetchPresence` / `fetchRetard`, strictement scopées par `ecole_id` et année active.
+- Construction d'un `Set<eleve_id>` des élèves ayant au moins un paiement sur leur 1ère tranche, puis dérivation des deux compteurs.
+- Si aucune tranche n'existe pour le cycle d'un élève (cas limite), on retombe sur : « a-t-il au moins un paiement toutes tranches confondues ? » → Inscrit, sinon Pré-inscrit.
+- Aucun changement de schéma, aucune migration, aucune modification des autres écrans (Finances, fiche élève, workflow d'inscription).
+- Vérification post-changement : recharger `/eleves/tableau` et comparer les deux compteurs avec le tableau « Paiements du jour » (Finances).
 
-- `supabase/migrations/*` — nouvelle migration : nettoyage + refonte de `generer_tranches_eleve` + `CREATE UNIQUE INDEX tranches_eleve_numero_uniq ON tranches(eleve_id, numero) WHERE frais_id IS NOT NULL;` (conditionnel pour rester compatible avec les tranches historiques déjà en base).
-- `src/pages/finances/useFinanceData.ts` — remplacer le double round-trip par une seule requête paiements `select("*, tranches!inner(frais_scolarite!inner(annee_id))")` filtrée sur `annee_id`.
-- `src/pages/finances/sections/Receipts.tsx` — même refactor.
-- `src/context/AcademicPeriodContext.tsx` — validation de la valeur `localStorage` à l'init (refuser une année `verrouillee` obsolète).
+## Hors périmètre
 
-Aucune interaction UI côté élève ne change — seule la source de données devient fiable.
+- Pas de modification de la logique `statut` de l'élève.
+- Pas de modification du tableau des paiements ni du dashboard Finances.
