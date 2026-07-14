@@ -278,6 +278,13 @@ export default function Receipts() {
     return { total, count, eleves, jours, avg };
   }, [filtered]);
 
+  // ── KPI Paiements du jour (indépendant des filtres) ──
+  const todayKpi = useMemo(() => {
+    const t = todayIso();
+    const list = recus.filter((r) => jourKey(r.date_paiement) === t);
+    return { total: list.reduce((s, r) => s + r.montant, 0), count: list.length };
+  }, [recus]);
+
   // ── Récapitulatif par mode (sur données filtrées) ──
   const modeSummary = useMemo(() => {
     const map = new Map<string, { label: string; total: number; count: number }>();
