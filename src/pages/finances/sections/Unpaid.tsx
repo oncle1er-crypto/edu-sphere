@@ -348,7 +348,7 @@ export default function Unpaid() {
           <Calendar className="h-4 w-4 text-primary" />
           <div>
             <h3 className="font-bold font-display text-primary">Échéancier des tranches — état de recouvrement</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Vision consolidée par tranche pour l'année 2025-2026</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Vision consolidée par tranche{activeAnnee?.libelle ? ` pour l'année ${activeAnnee.libelle}` : ""}</p>
           </div>
         </div>
         <CardContent className="p-6">
