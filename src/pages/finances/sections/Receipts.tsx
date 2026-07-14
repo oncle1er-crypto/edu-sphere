@@ -1,9 +1,15 @@
-import { Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText } from "lucide-react";
+import {
+  Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText,
+  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw,
+} from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +24,7 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 import { generateRecapPaiementsJournalier } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 interface PaiementRecu {
   id: string;
@@ -46,11 +53,49 @@ interface EcoleInfo {
 }
 
 type ViewMode = "detail" | "day" | "day_tranche";
+type SortKey = "date" | "montant" | "eleve" | "classe" | "mode" | "tranche" | "reference";
+type SortDir = "asc" | "desc";
 
 const MODE_OPTIONS = Object.entries(PAIEMENT_MODE_META).map(([id, m]) => ({ id, label: m.label }));
 
+// Badge palette (fond doux) par mode — semantic tokens conservés autant que possible.
+const MODE_BADGE: Record<string, string> = {
+  especes:         "bg-emerald-100 text-emerald-800 border-emerald-200",
+  wave:            "bg-sky-100 text-sky-800 border-sky-200",
+  orange_money:    "bg-orange-100 text-orange-800 border-orange-200",
+  mtn_money:       "bg-yellow-100 text-yellow-900 border-yellow-200",
+  moov_money:      "bg-indigo-100 text-indigo-800 border-indigo-200",
+  virement:        "bg-blue-100 text-blue-800 border-blue-200",
+  cheque:          "bg-violet-100 text-violet-800 border-violet-200",
+  remise:          "bg-rose-100 text-rose-800 border-rose-200",
+  bourse:          "bg-pink-100 text-pink-800 border-pink-200",
+  prise_en_charge: "bg-fuchsia-100 text-fuchsia-800 border-fuchsia-200",
+};
+const modeBadgeClass = (mode: string) =>
+  MODE_BADGE[mode] ?? "bg-muted text-foreground border-border";
+
 const jourKey = (iso: string) => iso.slice(0, 10);
 const jourLabel = (iso: string) => new Date(iso).toLocaleDateString("fr-FR");
+const initials = (nom: string, prenom: string) =>
+  ((nom?.[0] ?? "") + (prenom?.[0] ?? "")).toUpperCase() || "?";
+
+const todayIso = () => new Date().toISOString().slice(0, 10);
+const addDaysIso = (iso: string, n: number) => {
+  const d = new Date(iso); d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const monthStartIso = (offsetMonths = 0) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offsetMonths, 1);
+  return d.toISOString().slice(0, 10);
+};
+const monthEndIso = (offsetMonths = 0) => {
+  const d = new Date();
+  d.setMonth(d.getMonth() + offsetMonths + 1, 0);
+  return d.toISOString().slice(0, 10);
+};
+
+const PAGE_SIZE = 50;
 
 export default function Receipts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
@@ -71,8 +116,26 @@ export default function Receipts() {
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState<ViewMode>("detail");
 
+  // ── Filtres ──
+  const [query, setQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [modesSel, setModesSel] = useState<Set<string>>(new Set());
+  const [classesSel, setClassesSel] = useState<Set<string>>(new Set());
+  const [tranchesSel, setTranchesSel] = useState<Set<string>>(new Set());
+  const [montantMin, setMontantMin] = useState<string>("");
+  const [montantMax, setMontantMax] = useState<string>("");
+
+  // ── Tri / pagination ──
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [visibleCount, setVisibleCount] = useState<number>(PAGE_SIZE);
+
+  // ── Sélection multiple ──
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
   // Récap journalier
-  const [recapDate, setRecapDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const [recapDate, setRecapDate] = useState<string>(() => todayIso());
   const [recapBusy, setRecapBusy] = useState(false);
 
   // Édition du mode
@@ -103,7 +166,10 @@ export default function Receipts() {
   }, [ecoleId]);
 
   const fetchRecus = () => {
-    if (!ecoleId || periodLoading || !activeAnnee?.id) { if (!ecoleId && !ecoleLoading) setLoading(false); return; }
+    if (!ecoleId || periodLoading || !activeAnnee?.id) {
+      if (!ecoleId && !ecoleLoading) setLoading(false);
+      return;
+    }
     setLoading(true);
     supabase
       .from("paiements")
@@ -115,7 +181,7 @@ export default function Receipts() {
       .eq("ecole_id", ecoleId)
       .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
       .order("date_paiement", { ascending: false })
-      .limit(300)
+      .limit(5000)
       .then(({ data }) => {
         setRecus(
           (data ?? []).map((p: any) => ({
@@ -140,10 +206,82 @@ export default function Receipts() {
 
   useEffect(fetchRecus, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id]);
 
-  // ── Récapitulatif par mode (sur données chargées) ──
+  // Options dérivées pour les filtres
+  const classeOptions = useMemo(() => {
+    const s = new Set<string>();
+    recus.forEach((r) => r.classe && s.add(r.classe));
+    return Array.from(s).sort();
+  }, [recus]);
+
+  const trancheOptions = useMemo(() => {
+    const s = new Set<string>();
+    recus.forEach((r) => r.tranche_numero != null && s.add(String(r.tranche_numero)));
+    return Array.from(s).sort((a, b) => Number(a) - Number(b));
+  }, [recus]);
+
+  // ── Application des filtres ──
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const minV = montantMin ? Number(montantMin) : null;
+    const maxV = montantMax ? Number(montantMax) : null;
+    return recus.filter((r) => {
+      if (dateFrom && jourKey(r.date_paiement) < dateFrom) return false;
+      if (dateTo && jourKey(r.date_paiement) > dateTo) return false;
+      if (modesSel.size && !modesSel.has(r.mode)) return false;
+      if (classesSel.size && !classesSel.has(r.classe)) return false;
+      if (tranchesSel.size && !tranchesSel.has(String(r.tranche_numero ?? ""))) return false;
+      if (minV != null && r.montant < minV) return false;
+      if (maxV != null && r.montant > maxV) return false;
+      if (q) {
+        const hay = `${r.eleve_nom} ${r.eleve_prenom} ${r.matricule} ${r.classe} ${r.reference ?? ""}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }, [recus, query, dateFrom, dateTo, modesSel, classesSel, tranchesSel, montantMin, montantMax]);
+
+  // ── Tri ──
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    const dir = sortDir === "asc" ? 1 : -1;
+    arr.sort((a, b) => {
+      let av: any, bv: any;
+      switch (sortKey) {
+        case "date":      av = a.date_paiement; bv = b.date_paiement; break;
+        case "montant":   av = a.montant; bv = b.montant; break;
+        case "eleve":     av = `${a.eleve_nom} ${a.eleve_prenom}`.toLowerCase();
+                          bv = `${b.eleve_nom} ${b.eleve_prenom}`.toLowerCase(); break;
+        case "classe":    av = a.classe.toLowerCase(); bv = b.classe.toLowerCase(); break;
+        case "mode":      av = modeMeta(a.mode).label; bv = modeMeta(b.mode).label; break;
+        case "tranche":   av = a.tranche_numero ?? 999; bv = b.tranche_numero ?? 999; break;
+        case "reference": av = a.reference ?? ""; bv = b.reference ?? ""; break;
+      }
+      if (av < bv) return -1 * dir;
+      if (av > bv) return  1 * dir;
+      return 0;
+    });
+    return arr;
+  }, [filtered, sortKey, sortDir]);
+
+  // Reset pagination when filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [query, dateFrom, dateTo, modesSel, classesSel, tranchesSel, montantMin, montantMax, sortKey, sortDir]);
+
+  const visible = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
+
+  // ── KPIs sur la sélection filtrée ──
+  const kpis = useMemo(() => {
+    const total = filtered.reduce((s, r) => s + r.montant, 0);
+    const count = filtered.length;
+    const eleves = new Set(filtered.map((r) => r.eleve_id)).size;
+    const jours  = new Set(filtered.map((r) => jourKey(r.date_paiement))).size;
+    const avg = count > 0 ? Math.round(total / count) : 0;
+    return { total, count, eleves, jours, avg };
+  }, [filtered]);
+
+  // ── Récapitulatif par mode (sur données filtrées) ──
   const modeSummary = useMemo(() => {
     const map = new Map<string, { label: string; total: number; count: number }>();
-    for (const r of recus) {
+    for (const r of filtered) {
       const meta = modeMeta(r.mode);
       const entry = map.get(r.mode) ?? { label: meta.label, total: 0, count: 0 };
       entry.total += r.montant;
@@ -153,9 +291,9 @@ export default function Receipts() {
     const rows = Array.from(map.entries()).map(([id, v]) => ({ id, ...v })).sort((a, b) => b.total - a.total);
     const totalGlobal = rows.reduce((s, r) => s + r.total, 0);
     return { rows, totalGlobal };
-  }, [recus]);
+  }, [filtered]);
 
-  // ── Regroupements élève+jour (+tranche) ──
+  // ── Regroupements élève+jour (+tranche) sur données filtrées ──
   interface GroupedRow {
     key: string;
     eleve_id: string;
@@ -174,15 +312,13 @@ export default function Receipts() {
   const grouped: GroupedRow[] = useMemo(() => {
     if (view === "detail") return [];
     const map = new Map<string, GroupedRow>();
-    for (const r of recus) {
+    for (const r of sorted) {
       const k = view === "day"
         ? `${r.eleve_id}|${jourKey(r.date_paiement)}`
         : `${r.eleve_id}|${jourKey(r.date_paiement)}|${r.tranche_id ?? "none"}`;
       const g = map.get(k);
-      if (g) {
-        g.items.push(r);
-        g.montant += r.montant;
-      } else {
+      if (g) { g.items.push(r); g.montant += r.montant; }
+      else {
         map.set(k, {
           key: k,
           eleve_id: r.eleve_id,
@@ -199,19 +335,16 @@ export default function Receipts() {
         });
       }
     }
-    // Build modes label
     for (const g of map.values()) {
       const cnt = new Map<string, number>();
       for (const it of g.items) {
         const lbl = modeMeta(it.mode).label;
         cnt.set(lbl, (cnt.get(lbl) ?? 0) + it.montant);
       }
-      g.modesLabel = Array.from(cnt.entries())
-        .map(([lbl, tot]) => `${lbl} (${fcfa(tot)})`)
-        .join(" + ");
+      g.modesLabel = Array.from(cnt.entries()).map(([lbl, tot]) => `${lbl} (${fcfa(tot)})`).join(" + ");
     }
     return Array.from(map.values()).sort((a, b) => b.date_paiement.localeCompare(a.date_paiement));
-  }, [recus, view]);
+  }, [sorted, view]);
 
   // ── PDF ──
   const buildSinglePDF = async (r: PaiementRecu) => {
@@ -241,16 +374,13 @@ export default function Receipts() {
     const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
     const total_paye = (paiements ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
 
-    // Compose une chaîne "mode" représentant tous les moyens de règlement encaissés
     const cnt = new Map<string, number>();
     for (const it of g.items) {
       const lbl = modeMeta(it.mode).label;
       cnt.set(lbl, (cnt.get(lbl) ?? 0) + it.montant);
     }
-    // Formatte les montants avec des espaces standard (le PDF ne rend pas les espaces fines U+202F)
     const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[\u202F\u00A0]/g, " ");
     const modeCombine = "COMBINE - " + Array.from(cnt.entries()).map(([l, v]) => `${l} ${fmtPdf(v)} FCFA`).join(" + ");
-
     const refs = g.items.map((i) => i.reference ?? i.id.slice(0, 6).toUpperCase()).join(" / ");
     return generateRecuPDF({
       ecole: { nom: ecole.nom, sigle: ecole.sigle, devise: ecole.devise, adresse: ecole.adresse, telephone: ecole.telephone, email: ecole.email, logoUrl: ecole.logo_url },
@@ -279,7 +409,6 @@ export default function Receipts() {
   };
   const closePreview = () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); setPdfUrl(null); setPreviewTitle(""); };
 
-  // ── Édition mode ──
   const openEdit = (r: PaiementRecu) => { setEditing(r); setEditMode(r.mode); };
   const saveEdit = async () => {
     if (!editing || !editMode || editMode === editing.mode) { setEditing(null); return; }
@@ -291,6 +420,99 @@ export default function Receipts() {
     setEditing(null);
     fetchRecus();
   };
+
+  // ── Export Excel ──
+  const exportExcel = () => {
+    if (filtered.length === 0) { toast.info("Aucune donnée à exporter."); return; }
+    const rows = sorted.map((r) => ({
+      Date: jourLabel(r.date_paiement),
+      Heure: new Date(r.date_paiement).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+      Référence: r.reference ?? r.id.slice(0, 8).toUpperCase(),
+      Matricule: r.matricule,
+      Nom: r.eleve_nom,
+      Prénom: r.eleve_prenom,
+      Classe: r.classe,
+      Tranche: r.tranche_numero != null ? `T${r.tranche_numero}` : "",
+      Mode: modeMeta(r.mode).label,
+      "Montant (FCFA)": r.montant,
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, "Reçus");
+    const fname = `recus_${dateFrom || "debut"}_${dateTo || todayIso()}.xlsx`;
+    XLSX.writeFile(wb, fname);
+    toast.success(`${rows.length} ligne(s) exportée(s)`);
+  };
+
+  // ── Sélection multiple ──
+  const toggleOne = (id: string) => {
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id); else s.add(id);
+      return s;
+    });
+  };
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      const allSelected = visible.every((r) => s.has(r.id));
+      if (allSelected) visible.forEach((r) => s.delete(r.id));
+      else visible.forEach((r) => s.add(r.id));
+      return s;
+    });
+  };
+  const clearSelection = () => setSelectedIds(new Set());
+
+  const downloadSelected = async () => {
+    const items = sorted.filter((r) => selectedIds.has(r.id));
+    if (items.length === 0) return;
+    setBusy(true);
+    try {
+      for (const r of items) {
+        const pdf = await buildSinglePDF(r);
+        pdf.save(`recu-${r.reference ?? r.id.slice(0, 8)}.pdf`);
+      }
+      toast.success(`${items.length} reçu(s) téléchargé(s)`);
+    } finally { setBusy(false); }
+  };
+
+  // ── Reset filtres ──
+  const activeFiltersCount =
+    (query ? 1 : 0) + (dateFrom ? 1 : 0) + (dateTo ? 1 : 0) +
+    (modesSel.size ? 1 : 0) + (classesSel.size ? 1 : 0) + (tranchesSel.size ? 1 : 0) +
+    (montantMin ? 1 : 0) + (montantMax ? 1 : 0);
+  const resetFilters = () => {
+    setQuery(""); setDateFrom(""); setDateTo("");
+    setModesSel(new Set()); setClassesSel(new Set()); setTranchesSel(new Set());
+    setMontantMin(""); setMontantMax("");
+  };
+  const applyPreset = (preset: "today" | "7d" | "month" | "prevMonth" | "year") => {
+    const today = todayIso();
+    switch (preset) {
+      case "today":     setDateFrom(today); setDateTo(today); break;
+      case "7d":        setDateFrom(addDaysIso(today, -6)); setDateTo(today); break;
+      case "month":     setDateFrom(monthStartIso(0)); setDateTo(monthEndIso(0)); break;
+      case "prevMonth": setDateFrom(monthStartIso(-1)); setDateTo(monthEndIso(-1)); break;
+      case "year":      setDateFrom(""); setDateTo(""); break;
+    }
+  };
+
+  // ── Tri : helper d'entête cliquable ──
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    else { setSortKey(k); setSortDir(k === "date" || k === "montant" ? "desc" : "asc"); }
+  };
+  const SortIcon = ({ k }: { k: SortKey }) => {
+    if (sortKey !== k) return <ArrowUpDown className="h-3 w-3 inline ml-1 opacity-40" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="h-3 w-3 inline ml-1" />
+      : <ArrowDown className="h-3 w-3 inline ml-1" />;
+  };
+  const Th = ({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) => (
+    <TableHead className={`cursor-pointer select-none hover:text-primary ${className}`} onClick={() => toggleSort(k)}>
+      {children}<SortIcon k={k} />
+    </TableHead>
+  );
 
   // ── Récap journalier PDF ──
   const genererRecapJournalier = async (previewOnly: boolean) => {
@@ -324,10 +546,7 @@ export default function Receipts() {
           montant: Number(p.montant),
         };
       });
-      if (paiements.length === 0) {
-        toast.info("Aucun paiement enregistré ce jour-là.");
-        return;
-      }
+      if (paiements.length === 0) { toast.info("Aucun paiement enregistré ce jour-là."); return; }
       const modeMap = new Map<string, { total: number; nb: number }>();
       const classeMap = new Map<string, { total: number; nb: number }>();
       for (const p of paiements) {
@@ -338,15 +557,7 @@ export default function Receipts() {
       }
       const ventilationModes = Array.from(modeMap.entries()).map(([mode, v]) => ({ mode, ...v })).sort((a, b) => b.total - a.total);
       const ventilationClasses = Array.from(classeMap.entries()).map(([classe, v]) => ({ classe, ...v })).sort((a, b) => b.total - a.total);
-
-      const meta = {
-        nom: ecole.nom,
-        devise: ecole.devise,
-        adresse: ecole.adresse,
-        telephone: ecole.telephone,
-        email: ecole.email,
-        logoUrl: ecole.logo_url,
-      };
+      const meta = { nom: ecole.nom, devise: ecole.devise, adresse: ecole.adresse, telephone: ecole.telephone, email: ecole.email, logoUrl: ecole.logo_url };
       if (previewOnly) {
         const pdf = await generateRecapPaiementsJournalier(meta, recapDate, { paiements, ventilationModes, ventilationClasses }, true);
         if (pdf) {
@@ -367,6 +578,8 @@ export default function Receipts() {
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
+  const allVisibleSelected = visible.length > 0 && visible.every((r) => selectedIds.has(r.id));
+
   return (
     <div className="space-y-6">
       {/* Récap journalier PDF */}
@@ -379,13 +592,8 @@ export default function Receipts() {
         <div className="flex flex-wrap items-end gap-3">
           <div className="flex flex-col gap-1">
             <Label className="text-xs">Date</Label>
-            <Input
-              type="date"
-              value={recapDate}
-              onChange={(e) => setRecapDate(e.target.value)}
-              max={new Date().toISOString().slice(0, 10)}
-              className="w-[180px]"
-            />
+            <Input type="date" value={recapDate} onChange={(e) => setRecapDate(e.target.value)}
+              max={todayIso()} className="w-[180px]" />
           </div>
           <Button variant="outline" onClick={() => genererRecapJournalier(true)} disabled={recapBusy || !recapDate}>
             {recapBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Eye className="h-4 w-4 mr-2" />}
@@ -398,11 +606,28 @@ export default function Receipts() {
         </div>
       </SettingsSection>
 
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        {[
+          { label: "Total encaissé", value: `${fcfa(kpis.total)} FCFA`, hero: true },
+          { label: "Reçus", value: kpis.count.toLocaleString("fr-FR") },
+          { label: "Ticket moyen", value: `${fcfa(kpis.avg)} FCFA` },
+          { label: "Élèves", value: kpis.eleves.toLocaleString("fr-FR") },
+          { label: "Jours couverts", value: kpis.jours.toLocaleString("fr-FR") },
+        ].map((k) => (
+          <Card key={k.label} className={k.hero ? "border-primary/40 bg-primary/5" : ""}>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground uppercase tracking-wide">{k.label}</p>
+              <p className={`mt-1 font-bold ${k.hero ? "text-xl text-primary" : "text-lg"}`}>{k.value}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-      {/* Récapitulatif par mode de paiement */}
+      {/* Récapitulatif par mode (filtré) */}
       <SettingsSection
-        title="Récapitulatif par mode de paiement"
-        description={`Ventilation des ${recus.length} paiement(s) chargé(s) — Total : ${fcfa(modeSummary.totalGlobal)} FCFA`}
+        title="Ventilation par mode de paiement"
+        description={`Sur la sélection actuelle — ${filtered.length} paiement(s), total : ${fcfa(modeSummary.totalGlobal)} FCFA`}
         icon={<Wallet className="h-5 w-5" />}
         hideSave
       >
@@ -415,9 +640,9 @@ export default function Receipts() {
               return (
                 <Card key={r.id} className="border">
                   <CardContent className="p-4">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide">{r.label}</p>
-                    <p className="text-lg font-bold text-primary mt-1">{fcfa(r.total)} FCFA</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{r.count} opération(s) · {pct.toFixed(1)}%</p>
+                    <Badge variant="outline" className={`${modeBadgeClass(r.id)} text-[10px]`}>{r.label}</Badge>
+                    <p className="text-lg font-bold text-primary mt-2">{fcfa(r.total)} FCFA</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{r.count} op. · {pct.toFixed(1)}%</p>
                   </CardContent>
                 </Card>
               );
@@ -426,42 +651,169 @@ export default function Receipts() {
         )}
       </SettingsSection>
 
+      {/* Liste principale */}
       <SettingsSection
-        title={`Reçus & quittances (${view === "detail" ? recus.length : grouped.length})`}
-        description="Éditez le mode de paiement, réimprimez un reçu ou fusionnez plusieurs versements du même jour."
+        title={`Reçus & quittances (${view === "detail" ? filtered.length : grouped.length})`}
+        description="Recherchez, filtrez, triez, exportez. Cliquez sur un en-tête de colonne pour trier."
         icon={<Receipt className="h-5 w-5" />}
         hideSave
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as ViewMode)} className="border rounded-md">
+        {/* Barre de recherche + filtres */}
+        <div className="space-y-3 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex-1 min-w-[220px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher élève, matricule, référence, classe…"
+                value={query} onChange={(e) => setQuery(e.target.value)}
+                className="pl-9"
+              />
+              {query && (
+                <button onClick={() => setQuery("")} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Presets date */}
+            <Select onValueChange={(v) => applyPreset(v as any)}>
+              <SelectTrigger className="w-[170px]"><SelectValue placeholder="Période rapide" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="today">Aujourd'hui</SelectItem>
+                <SelectItem value="7d">7 derniers jours</SelectItem>
+                <SelectItem value="month">Ce mois</SelectItem>
+                <SelectItem value="prevMonth">Mois précédent</SelectItem>
+                <SelectItem value="year">Année active</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)}
+              className="w-[145px]" title="Date de début" />
+            <span className="text-xs text-muted-foreground">→</span>
+            <Input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)}
+              className="w-[145px]" title="Date de fin" />
+
+            {/* Mode */}
+            <MultiFilter label="Mode" options={MODE_OPTIONS} selected={modesSel} onChange={setModesSel} />
+            {/* Classe */}
+            <MultiFilter label="Classe" options={classeOptions.map((c) => ({ id: c, label: c }))} selected={classesSel} onChange={setClassesSel} />
+            {/* Tranche */}
+            <MultiFilter label="Tranche" options={trancheOptions.map((t) => ({ id: t, label: `T${t}` }))} selected={tranchesSel} onChange={setTranchesSel} />
+
+            {/* Montant */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-9">
+                  Montant {(montantMin || montantMax) && <Badge variant="secondary" className="ml-2 h-5">1</Badge>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 p-3 space-y-2" align="start">
+                <div className="text-xs font-medium">Fourchette de montant (FCFA)</div>
+                <div className="flex gap-2">
+                  <Input placeholder="Min" type="number" value={montantMin} onChange={(e) => setMontantMin(e.target.value)} />
+                  <Input placeholder="Max" type="number" value={montantMax} onChange={(e) => setMontantMax(e.target.value)} />
+                </div>
+                <Button variant="ghost" size="sm" className="w-full" onClick={() => { setMontantMin(""); setMontantMax(""); }}>
+                  Effacer
+                </Button>
+              </PopoverContent>
+            </Popover>
+
+            {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={resetFilters} className="text-muted-foreground">
+                <RotateCcw className="h-3.5 w-3.5 mr-1" />
+                Réinitialiser ({activeFiltersCount})
+              </Button>
+            )}
+
+            <div className="ml-auto flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={exportExcel} disabled={filtered.length === 0}>
+                <FileSpreadsheet className="h-4 w-4 mr-2" /> Exporter Excel
+              </Button>
+            </div>
+          </div>
+
+          {/* Barre d'actions sélection */}
+          {selectedIds.size > 0 && view === "detail" && (
+            <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size} reçu(s) sélectionné(s)</span>
+              <Button size="sm" variant="outline" onClick={downloadSelected} disabled={busy}>
+                <Download className="h-4 w-4 mr-1" /> Télécharger les PDF
+              </Button>
+              <Button size="sm" variant="ghost" onClick={clearSelection}>
+                <X className="h-4 w-4 mr-1" /> Effacer la sélection
+              </Button>
+            </div>
+          )}
+
+          {/* Toggle vue */}
+          <ToggleGroup type="single" value={view} onValueChange={(v) => v && setView(v as ViewMode)} className="border rounded-md w-fit">
             <ToggleGroupItem value="detail" className="text-xs px-3">Détaillé</ToggleGroupItem>
             <ToggleGroupItem value="day" className="text-xs px-3">Groupé (élève + jour)</ToggleGroupItem>
             <ToggleGroupItem value="day_tranche" className="text-xs px-3">Groupé (élève + jour + tranche)</ToggleGroupItem>
           </ToggleGroup>
         </div>
 
+        {/* Tableau */}
         <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/40">
-                <TableHead>{view === "detail" ? "Référence" : "Élève"}</TableHead>
-                {view === "detail" && <TableHead>Élève</TableHead>}
-                {view !== "detail" && <TableHead>Détail modes</TableHead>}
-                {view === "day_tranche" && <TableHead>Tranche</TableHead>}
-                <TableHead className="text-right">Montant</TableHead>
-                {view === "detail" && <TableHead>Mode</TableHead>}
-                <TableHead>Date</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow className="bg-muted/40 sticky top-0 z-10">
+                {view === "detail" && (
+                  <TableHead className="w-10">
+                    <Checkbox checked={allVisibleSelected} onCheckedChange={toggleAllVisible} aria-label="Tout sélectionner" />
+                  </TableHead>
+                )}
+                {view === "detail" ? (
+                  <>
+                    <Th k="reference">Référence</Th>
+                    <Th k="eleve">Élève</Th>
+                    <Th k="classe">Classe</Th>
+                    <Th k="tranche">Tranche</Th>
+                    <Th k="mode">Mode</Th>
+                    <Th k="montant" className="text-right">Montant</Th>
+                    <Th k="date">Date</Th>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </>
+                ) : (
+                  <>
+                    <TableHead>Élève</TableHead>
+                    <TableHead>Détail modes</TableHead>
+                    {view === "day_tranche" && <TableHead>Tranche</TableHead>}
+                    <TableHead className="text-right">Montant</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </>
+                )}
               </TableRow>
             </TableHeader>
             <TableBody>
-              {view === "detail" && recus.map((r) => (
-                <TableRow key={r.id}>
+              {view === "detail" && visible.map((r) => (
+                <TableRow key={r.id} className={selectedIds.has(r.id) ? "bg-primary/5" : ""}>
+                  <TableCell>
+                    <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleOne(r.id)} aria-label="Sélectionner" />
+                  </TableCell>
                   <TableCell className="font-mono text-xs">{r.reference ?? r.id.slice(0, 8).toUpperCase()}</TableCell>
-                  <TableCell className="font-medium">{r.eleve_nom} {r.eleve_prenom}</TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center">
+                        {initials(r.eleve_nom, r.eleve_prenom)}
+                      </div>
+                      <div>
+                        <div>{r.eleve_nom} {r.eleve_prenom}</div>
+                        <div className="text-[10px] text-muted-foreground font-mono">{r.matricule}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{r.classe || "—"}</TableCell>
+                  <TableCell className="text-xs">{r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={`${modeBadgeClass(r.mode)} text-[10px]`}>
+                      {modeMeta(r.mode).label}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-right font-semibold">{fcfa(r.montant)} FCFA</TableCell>
-                  <TableCell className="text-muted-foreground capitalize">{modeMeta(r.mode).label}</TableCell>
-                  <TableCell className="text-muted-foreground">{jourLabel(r.date_paiement)}</TableCell>
+                  <TableCell className="text-muted-foreground text-sm">{jourLabel(r.date_paiement)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Prévisualiser"
@@ -493,7 +845,17 @@ export default function Receipts() {
 
               {view !== "detail" && grouped.map((g) => (
                 <TableRow key={g.key}>
-                  <TableCell className="font-medium">{g.eleve_nom} {g.eleve_prenom}<div className="text-xs text-muted-foreground">{g.matricule} · {g.classe}</div></TableCell>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <div className="h-7 w-7 rounded-full bg-primary/10 text-primary text-[11px] font-semibold flex items-center justify-center">
+                        {initials(g.eleve_nom, g.eleve_prenom)}
+                      </div>
+                      <div>
+                        <div>{g.eleve_nom} {g.eleve_prenom}</div>
+                        <div className="text-xs text-muted-foreground">{g.matricule} · {g.classe}</div>
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">{g.modesLabel}<div className="text-[10px]">{g.items.length} versement(s)</div></TableCell>
                   {view === "day_tranche" && <TableCell className="text-xs">{g.tranche_numero ? `Tranche ${g.tranche_numero}` : "—"}</TableCell>}
                   <TableCell className="text-right font-semibold">{fcfa(g.montant)} FCFA</TableCell>
@@ -513,11 +875,37 @@ export default function Receipts() {
                 </TableRow>
               ))}
 
-              {((view === "detail" && recus.length === 0) || (view !== "detail" && grouped.length === 0)) && (
-                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Aucun paiement enregistré.</TableCell></TableRow>
+              {((view === "detail" && filtered.length === 0) || (view !== "detail" && grouped.length === 0)) && (
+                <TableRow>
+                  <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
+                    Aucun paiement pour ces filtres.
+                    {activeFiltersCount > 0 && (
+                      <Button variant="link" size="sm" onClick={resetFilters} className="ml-2">Réinitialiser</Button>
+                    )}
+                  </TableCell>
+                </TableRow>
               )}
             </TableBody>
           </Table>
+
+          {/* Pied de tableau + charger plus */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t bg-muted/20 px-4 py-2 text-sm">
+            <div className="text-muted-foreground">
+              {view === "detail" ? (
+                <>Affichage <strong>{Math.min(visible.length, filtered.length)}</strong> / <strong>{filtered.length}</strong></>
+              ) : (
+                <>Groupes affichés : <strong>{grouped.length}</strong></>
+              )}
+            </div>
+            <div className="font-semibold">
+              Total filtré : <span className="text-primary">{fcfa(kpis.total)} FCFA</span>
+            </div>
+            {view === "detail" && visibleCount < filtered.length && (
+              <Button variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}>
+                Charger {Math.min(PAGE_SIZE, filtered.length - visibleCount)} de plus
+              </Button>
+            )}
+          </div>
         </div>
       </SettingsSection>
 
@@ -564,5 +952,47 @@ export default function Receipts() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+// ── Composant multi-select (Popover + checkboxes) ──
+function MultiFilter({
+  label, options, selected, onChange,
+}: {
+  label: string;
+  options: { id: string; label: string }[];
+  selected: Set<string>;
+  onChange: (s: Set<string>) => void;
+}) {
+  const toggle = (id: string) => {
+    const s = new Set(selected);
+    if (s.has(id)) s.delete(id); else s.add(id);
+    onChange(s);
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="h-9">
+          {label}
+          {selected.size > 0 && <Badge variant="secondary" className="ml-2 h-5">{selected.size}</Badge>}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-2" align="start">
+        <div className="max-h-64 overflow-auto space-y-1">
+          {options.length === 0 && <p className="text-xs text-muted-foreground p-2">Aucune option</p>}
+          {options.map((o) => (
+            <label key={o.id} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted cursor-pointer text-sm">
+              <Checkbox checked={selected.has(o.id)} onCheckedChange={() => toggle(o.id)} />
+              <span>{o.label}</span>
+            </label>
+          ))}
+        </div>
+        {selected.size > 0 && (
+          <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => onChange(new Set())}>
+            Effacer
+          </Button>
+        )}
+      </PopoverContent>
+    </Popover>
   );
 }
