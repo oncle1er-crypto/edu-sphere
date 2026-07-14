@@ -94,9 +94,16 @@ export default function StudentsList() {
         (s.classe_nom ?? "").toLowerCase().includes(q);
       const matchCycle = cycle === "all" || s.cycle_nom === cycle;
       const matchStatut = statut === "all" || s.statut === statut;
-      return matchSearch && matchCycle && matchStatut;
+      const c = countByEleve.get(s.id) ?? 0;
+      const matchDocs = docFilter === "all" || (docFilter === "with" ? c > 0 : c === 0);
+      return matchSearch && matchCycle && matchStatut && matchDocs;
     });
-  }, [eleves, debouncedSearch, cycle, statut]);
+  }, [eleves, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+
+  const withDocsCount = useMemo(
+    () => eleves.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
+    [eleves, countByEleve]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
