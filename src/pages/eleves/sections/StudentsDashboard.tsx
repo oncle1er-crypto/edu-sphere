@@ -121,8 +121,8 @@ export default function StudentsDashboard() {
 
   const kpis = [
     { label: "Total élèves", value: total.toLocaleString("fr-FR"), icon: Users, color: "text-primary" },
-    { label: "Inscrits (payés)", value: inscrits.toString(), icon: UserPlus, color: "text-emerald-600" },
-    { label: "Pré-inscrits", value: preInscrits.toString(), icon: UserCog, color: "text-amber-600" },
+    { label: "Inscrits", value: inscrits.toString(), sub: "Au moins un versement", icon: UserPlus, color: "text-emerald-600" },
+    { label: "Pré-inscrits", value: preInscrits.toString(), sub: "Aucun versement", icon: UserCog, color: "text-amber-600" },
     { label: "Classes", value: classes.length.toString(), icon: GraduationCap, color: "text-accent-foreground" },
     { label: "Taux de présence (30j)", value: tauxPresence !== null ? `${tauxPresence}%` : "—", icon: CalendarCheck, color: "text-blue-600" },
     { label: "Nouveaux ce mois", value: nouveauxCeMois.toString(), icon: UserCheck, color: "text-violet-600" },
