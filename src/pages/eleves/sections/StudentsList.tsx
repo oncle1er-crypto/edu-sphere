@@ -67,6 +67,8 @@ export default function StudentsList() {
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [duplicatesOpen, setDuplicatesOpen] = useState(false);
+  const [purgeTarget, setPurgeTarget] = useState<typeof eleves[0] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Keep drawer eleve in sync with realtime-refreshed list
