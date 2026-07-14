@@ -133,10 +133,27 @@ export default function StudentSummary() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    <Button size="sm" variant="outline"><Phone className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline"><MessageSquare className="h-4 w-4" /></Button>
-                    <Button size="sm" variant="outline" onClick={() => toast.success("Fiche imprimée")}><Printer className="h-4 w-4" />Imprimer</Button>
+                    <Button size="sm" variant="outline" asChild title="Appeler le parent">
+                      <a href={`tel:${eleve.telephone}`}><Phone className="h-4 w-4" /></a>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild title="Envoyer un SMS">
+                      <a href={`sms:${eleve.telephone}`}><MessageSquare className="h-4 w-4" /></a>
+                    </Button>
+                    <Button size="sm" variant="outline" asChild title="Envoyer un email">
+                      <a href={`mailto:?subject=${encodeURIComponent(`Scolarité — ${eleve.nom} ${eleve.prenom}`)}`}><Mail className="h-4 w-4" /></a>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={async () => {
+                        if (!ecoleId) { toast.error("École non identifiée"); return; }
+                        try { await downloadGlobalReceipt({ ecoleId, eleve }); }
+                        catch (err) { console.error(err); toast.error("Impossible de générer le reçu"); }
+                      }}
+                    >
+                      <Printer className="h-4 w-4" />Imprimer
+                    </Button>
+
                     {eleve.resteDu > 0 && (
                       <Button size="sm" onClick={() => setSettleOpen(true)} className="bg-success hover:bg-success/90 text-white">
                         <Wallet className="h-4 w-4" />Solder ({fcfa(eleve.resteDu)})
