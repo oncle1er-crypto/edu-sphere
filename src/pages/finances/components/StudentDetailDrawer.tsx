@@ -126,12 +126,16 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
               <SheetHeader>
                 <div className="flex items-start justify-between gap-3 pr-8">
                   <div className="min-w-0">
-                    <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
+                    <SheetTitle className="text-primary flex items-center gap-2">
+                      <span>{eleve.nom} {eleve.prenom}</span>
+                      {refetching && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" aria-label="Actualisation en cours" />}
+                    </SheetTitle>
                     <SheetDescription>
                       {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                     </SheetDescription>
                   </div>
                   {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
+
                     <Button
                       size="sm"
                       variant="outline"
