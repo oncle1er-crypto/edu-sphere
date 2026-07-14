@@ -13,14 +13,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles } from "lucide-react";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
 import BulkInscriptionDialog from "@/pages/eleves/components/BulkInscriptionDialog";
+import DuplicatesDialog from "@/pages/eleves/components/DuplicatesDialog";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
