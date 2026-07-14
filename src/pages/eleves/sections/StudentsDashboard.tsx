@@ -97,13 +97,13 @@ export default function StudentsDashboard() {
     );
   }
 
-  const isActif = (s?: string | null) => s === "inscrit" || s === "pre_inscrit" || s === "actif";
+  // Inscrit = élève ayant fait au moins un versement. Pré-inscrit = aucun versement.
   const total = eleves.length;
-  const inscrits = eleves.filter((e) => e.statut === "inscrit" || e.statut === "actif").length;
-  const preInscrits = eleves.filter((e) => e.statut === "pre_inscrit").length;
-  const actifsTotal = inscrits + preInscrits;
-  const garcons = eleves.filter((e) => e.sexe === "M" && isActif(e.statut)).length;
-  const filles = eleves.filter((e) => e.sexe === "F" && isActif(e.statut)).length;
+  const inscrits = eleves.filter((e) => elevesAvecVersement.has(e.id)).length;
+  const preInscrits = eleves.filter((e) => !elevesAvecVersement.has(e.id)).length;
+  const actifsTotal = total;
+  const garcons = eleves.filter((e) => e.sexe === "M").length;
+  const filles = eleves.filter((e) => e.sexe === "F").length;
 
   // Nouveaux inscrits ce mois
   const now = new Date();
