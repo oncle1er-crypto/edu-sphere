@@ -48,6 +48,7 @@ export function useFinanceData(scopedAnneeId?: string) {
   const [loading, setLoading] = useState(true);
   const [refetching, setRefetching] = useState(false);
   const [usingMock, setUsingMock] = useState(false);
+  const hasLoadedRef = useRef(false);
   const scopedProvided = scopedAnneeId !== undefined;
 
   const fetchData = useCallback(async () => {
