@@ -18,6 +18,8 @@ import { toast } from "sonner";
 import { useFinanceData, fcfa } from "../useFinanceData";
 import { statutEleve, STATUT_LABEL, STATUT_CLASS, type EleveScolarite, type Cycle } from "../scolarite-data";
 import { StudentDetailDrawer } from "../components/StudentDetailDrawer";
+import { PaymentDialog } from "../components/PaymentDialog";
+
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
