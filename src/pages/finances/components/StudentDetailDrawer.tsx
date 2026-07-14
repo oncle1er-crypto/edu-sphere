@@ -25,6 +25,7 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   ecoleId?: string | null;
   onPaymentRecorded?: () => void;
+  refetching?: boolean;
 }
 
 function buildSmsRelance(e: EleveScolarite): string {
@@ -46,7 +47,8 @@ const STATUT_LABEL: Record<Tranche["statut"], string> = {
   due: "Non soldée",
 };
 
-export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded }: Props) {
+export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded, refetching }: Props) {
+
   const { relances, fetchRelances, addRelance } = useRelances(eleve?.id);
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>(undefined);
