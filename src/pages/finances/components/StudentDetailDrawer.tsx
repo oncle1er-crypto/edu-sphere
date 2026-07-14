@@ -123,7 +123,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                     </SheetDescription>
                   </div>
-                  {eleve.paiements && eleve.paiements.length > 0 && (
+                  {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
                     <Button
                       size="sm"
                       variant="outline"
