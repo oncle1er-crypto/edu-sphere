@@ -1,19 +1,53 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { FileText, Download, FileSpreadsheet, FileBarChart } from "lucide-react";
+import { FileText, Download, FileSpreadsheet, FileBarChart, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useState } from "react";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import {
+  generateRapportMensuelConsolide,
+  generateKpisReseauXlsx,
+  generateRapportAcademique,
+  generateRapportFinancierXlsx,
+  generateRapportPresences,
+  generateRapportOperationnel,
+} from "@/lib/statsReports";
 
-const reports = [
-  { title: "Rapport mensuel consolidé", desc: "Synthèse PDF de tous les modules sur le réseau.", icon: FileBarChart, format: "PDF" },
-  { title: "Export Excel — KPIs réseau", desc: "Tableau croisé par école et par module.", icon: FileSpreadsheet, format: "XLSX" },
-  { title: "Rapport académique annuel", desc: "Bulletins, moyennes et taux de réussite.", icon: FileText, format: "PDF" },
-  { title: "Rapport financier consolidé", desc: "Revenus, impayés, trésorerie multi-écoles.", icon: FileSpreadsheet, format: "XLSX" },
-  { title: "Rapport des présences", desc: "Assiduité par classe et par établissement.", icon: FileText, format: "PDF" },
-  { title: "Rapport opérationnel", desc: "Cantine, transport, bibliothèque agrégés.", icon: FileBarChart, format: "PDF" },
+const reports: {
+  key: string;
+  title: string;
+  desc: string;
+  icon: typeof FileBarChart;
+  format: "PDF" | "XLSX";
+  run: (ecoleId: string) => Promise<void>;
+}[] = [
+  { key: "mensuel", title: "Rapport mensuel consolidé", desc: "Synthèse PDF des KPIs du mois en cours.", icon: FileBarChart, format: "PDF", run: generateRapportMensuelConsolide },
+  { key: "xlsx-kpis", title: "Export Excel — KPIs réseau", desc: "Tableau croisé (élèves, enseignants, finances, présences).", icon: FileSpreadsheet, format: "XLSX", run: generateKpisReseauXlsx },
+  { key: "academique", title: "Rapport académique annuel", desc: "Moyennes et taux de réussite par classe et matière.", icon: FileText, format: "PDF", run: generateRapportAcademique },
+  { key: "financier", title: "Rapport financier consolidé", desc: "Tranches attendues, encaissées et restant dû par élève.", icon: FileSpreadsheet, format: "XLSX", run: generateRapportFinancierXlsx },
+  { key: "presences", title: "Rapport des présences", desc: "Assiduité par classe sur les 30 derniers jours.", icon: FileText, format: "PDF", run: generateRapportPresences },
+  { key: "operationnel", title: "Rapport opérationnel", desc: "Cantine, transport, bibliothèque agrégés (30 j).", icon: FileBarChart, format: "PDF", run: generateRapportOperationnel },
 ];
 
 export default function GlobalReports() {
+  const { ecoleId } = useEcoleId();
+  const [running, setRunning] = useState<string | null>(null);
+
+  const handle = async (r: typeof reports[number]) => {
+    if (!ecoleId) { toast.error("École introuvable"); return; }
+    setRunning(r.key);
+    try {
+      await r.run(ecoleId);
+      toast.success(`${r.title} généré`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(`Erreur : ${err?.message ?? "génération impossible"}`);
+    } finally {
+      setRunning(null);
+    }
+  };
+
   return (
     <SettingsSection
       title="Rapports & exports"
@@ -23,7 +57,7 @@ export default function GlobalReports() {
     >
       <div className="grid md:grid-cols-2 gap-3">
         {reports.map((r) => (
-          <Card key={r.title} className="border shadow-[var(--shadow-card)]">
+          <Card key={r.key} className="border shadow-[var(--shadow-card)]">
             <CardContent className="p-4 flex items-start justify-between gap-3">
               <div className="flex items-start gap-3 min-w-0">
                 <div className="h-10 w-10 rounded-lg bg-accent/15 text-primary flex items-center justify-center shrink-0">
@@ -38,9 +72,13 @@ export default function GlobalReports() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => toast.success(`Génération : ${r.title}`)}
+                disabled={running === r.key}
+                onClick={() => handle(r)}
               >
-                <Download className="h-4 w-4 mr-1" /> Générer
+                {running === r.key
+                  ? <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  : <Download className="h-4 w-4 mr-1" />}
+                Générer
               </Button>
             </CardContent>
           </Card>
