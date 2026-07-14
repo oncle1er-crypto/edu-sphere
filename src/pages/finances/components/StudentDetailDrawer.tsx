@@ -55,8 +55,14 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
   const [discountOpen, setDiscountOpen] = useState(false);
 
   useEffect(() => {
-    if (eleve) fetchRelances();
-  }, [eleve, fetchRelances]);
+    if (eleve) {
+      fetchRelances();
+      // Refetch données finance à chaque ouverture pour éviter d'afficher un état périmé
+      // (paiement effectué depuis un autre module non encore reflété).
+      onPaymentRecorded?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eleve?.id]);
 
   useEffect(() => {
     if (eleve && openTrancheNum) {
