@@ -1,83 +1,93 @@
+
 ## Objectif
+Rendre la page **Finances → Reçus & quittances** vraiment exploitable au quotidien : retrouver un paiement en 2 secondes, comprendre d'un coup d'œil ce qui a été encaissé, et exporter/agir en masse.
 
-Rendre le module **Statistiques globales** entièrement fonctionnel et alimenté par les vraies données de la base (plus de valeurs codées en dur), avec des KPIs cohérents entre les sections et des exports/rapports réellement générés.
+Aujourd'hui la page charge les 300 derniers paiements, sans recherche, sans filtre, sans tri, sans total dynamique. Dès qu'il y a plusieurs semaines d'activité, on ne retrouve plus rien.
 
-## État actuel
+---
 
-| Section | État | Problème |
-|---|---|---|
-| Vue d'ensemble | Réel (partiel) | Ratio & effectifs OK. « Taux recouvrement » basé sur `tranches.paye`/`montant` toutes années confondues → fausse la lecture. Pas de filtre année active. |
-| Comparatif écoles | Mock | Utilise `useEcoles` mais les colonnes `effectif_eleves`, `effectif_enseignants`, `nb_classes`, `revenu_mensuel` ne sont jamais recalculées (toujours 0). |
-| Élèves | Réel | OK. Manque : nouveaux inscrits/mois, taux redoublement, moyenne d'âge. |
-| Enseignants | Réel | OK. Manque : ancienneté moyenne, ratio élèves/prof, matières couvertes. |
-| Présences | Réel | Pas de filtre période (agrège tout l'historique). Manque évolution mensuelle. |
-| Examens & notes | Réel | KPI « Réussite (≥10) » affiche `—`. Pas de filtre période/classe. |
-| Finances | Réel via `useFinanceData` | OK, mais année active non filtrée. |
-| Cantine | **Mock** | Toutes les valeurs sont codées en dur (« 18 240 », « 942 »…). |
-| Transport | **Mock** | Idem, valeurs fictives. |
-| Bibliothèque | Réel | OK. |
-| Rapports & exports | **Faux** | Les 6 boutons affichent juste un toast, aucun fichier généré. |
-| Configuration | Cosmétique | Switches non persistés. Hors périmètre. |
+## Ce qui va être ajouté
 
-## Plan d'action
+### 1. Bandeau KPI en tête (mis à jour selon les filtres)
+- **Total encaissé** sur la sélection
+- **Nombre de reçus**
+- **Ticket moyen**
+- **Nombre d'élèves distincts**
+- **Nombre de jours couverts**
 
-### 1. Sélecteur global de période (nouveau)
-Ajouter un petit `PeriodPicker` en haut du layout Stats (Année active — défaut / 30 j / 90 j / Année scolaire précédente). Il pose une valeur dans un contexte `StatsScopeContext` que chaque section lit pour filtrer ses requêtes.
+### 2. Barre de recherche & filtres (sticky)
+- **Recherche libre** instantanée : nom, prénom, matricule, référence, classe
+- **Plage de dates** (du / au) avec raccourcis : *Aujourd'hui · 7 derniers jours · Ce mois · Mois précédent · Année active*
+- **Mode de paiement** (multi-sélection : Espèces, Wave, Orange Money, Chèque, Virement…)
+- **Classe** (multi-sélection alimentée depuis la BD)
+- **Tranche** (T1, T2, T3, Inscription…)
+- **Fourchette de montant** (min / max)
+- Bouton **Réinitialiser les filtres** + compteur "X filtres actifs"
 
-### 2. Sections à brancher sur la base
+### 3. Tri par colonne
+En-têtes cliquables (flèche ↑/↓) sur : **Date**, **Montant**, **Élève**, **Classe**, **Mode**, **Tranche**, **Référence**. Tri stable, avec indicateur visuel.
 
-**Cantine (`CanteenStatsGlobal.tsx`)** — remplacer intégralement les mocks par :
-- `abonnements_cantine` (count par statut, par école) → Abonnés actifs.
-- `cantine_planning` (repas servis sur la période) → Repas servis.
-- `cantine_incidents` → KPI incidents.
-- Coût moyen : `depenses` catégorie cantine / repas servis (fallback « — » si vide).
+### 4. Chargement sans limite artificielle
+- Remplacement du `.limit(300)` par une **pagination** (50 par page) ou un **chargement incrémental** ("Charger 50 de plus"), pour couvrir toute l'année active sans figer la page.
+- Les KPIs et le total ligne du bas se calculent côté serveur sur l'ensemble filtré, pas seulement sur la page visible.
 
-**Transport (`TransportStatsGlobal.tsx`)** — remplacer les mocks par :
-- `vehicules` (count) → Véhicules.
-- `lignes_transport` (count actives) → Lignes actives.
-- `abonnements_transport` → Élèves transportés.
-- Taux de remplissage = abonnements / Σ `vehicules.capacite`.
+### 5. Lisibilité de la liste
+- **Badge coloré** par mode de paiement (cohérent avec la charte)
+- **Avatar / initiales** de l'élève à côté du nom
+- **Ligne cliquable** → ouvre le drawer élève existant (`StudentDetailDrawer`) pour voir tout son historique de paiement et sa scolarité
+- **Ligne de pied de tableau** qui affiche `Total filtré` et `Nombre de reçus`
+- En-tête de tableau **sticky** lors du scroll
 
-**Vue d'ensemble** : ajouter un filtre `annee_id = active` sur `tranches` pour un taux de recouvrement réaliste ; ajouter KPI « Nouveaux inscrits ce mois ».
+### 6. Actions groupées
+- Case à cocher par ligne + case "tout sélectionner sur la page"
+- Actions sur la sélection :
+  - **Télécharger les reçus** (ZIP de PDFs)
+  - **Fusionner en un seul PDF** (extension du bouton "Fusionner" actuel à une sélection libre, pas seulement même élève+jour)
+  - **Exporter en CSV / Excel** la liste filtrée (utile pour la comptabilité et les audits)
 
-**Examens** : calculer réellement le taux de réussite (`notes.filter(n ≥ 10).length / notes.length`) et ajouter filtre période.
+### 7. Petits plus UX
+- Vue **Détaillé / Groupé** conservée, mais les filtres s'appliquent aux deux
+- Persistance des filtres dans l'URL (partageable, retour arrière ne perd pas la sélection)
+- Message vide plus utile : "Aucun résultat pour ces filtres — [Réinitialiser]"
 
-**Présences** : ajouter filtre période et un `BarChart` d'évolution mensuelle (12 derniers mois).
+---
 
-### 3. Comparatif écoles (`SchoolsCompare.tsx`)
-Enrichir `EcoleContext.rowToEcole` : effectuer, à côté du fetch des écoles, un `COUNT` groupé par `ecole_id` sur `eleves` (actifs), `enseignants` (actifs), `classes`, et un `SUM(tranches.paye)` de l'année active pour `revenu_mensuel` (renommé « Revenu — année active »). Les colonnes de la table deviennent alors réelles.
+## Aperçu visuel (ASCII)
 
-### 4. Rapports & exports (`GlobalReports.tsx`)
-Implémenter réellement les 6 rapports :
-- **Rapport mensuel consolidé (PDF)** : jsPDF + autoTable, agrège élèves/enseignants/finances/présences du mois écoulé.
-- **Export Excel KPIs réseau (XLSX)** : via `xlsx` (déjà utilisé ailleurs si présent, sinon ajouter). Un onglet par module.
-- **Rapport académique annuel (PDF)** : moyennes par classe/matière + taux réussite.
-- **Rapport financier consolidé (XLSX)** : par école, tranches attendues/payées/restant dû.
-- **Rapport présences (PDF)** : par classe, taux + absences.
-- **Rapport opérationnel (PDF)** : cantine, transport, biblio agrégés.
+```text
+┌────────────────────────────────────────────────────────────────────────┐
+│  Total encaissé   Reçus     Ticket moyen   Élèves    Jours            │
+│  2 145 000 F      49        43 776 F       38        3                │
+└────────────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│ 🔍 Rechercher élève, référence, matricule…    [Aujourd'hui ▾] [Mode ▾]│
+│ [Classe ▾]  [Tranche ▾]  [Montant min–max]    3 filtres · Réinitialiser│
+└────────────────────────────────────────────────────────────────────────┘
+┌ Détaillé │ Groupé (élève+jour) │ Groupé (élève+jour+tranche) ┐
+│ ☐  Réf ↕  Élève ↕        Classe ↕  Tranche ↕  Mode ↕  Montant↓ Date ↕│
+│ ☐  A7F2  👤 KOFFI Awa    CE1       T2         Wave    75 000   12/07 │
+│ ☐  B31C  👤 DIALLO Sara  6ème A    T1         Espèces 120 000  12/07 │
+│ …                                                                      │
+│                                        Total filtré : 2 145 000 F     │
+│                       [Charger 50 de plus]   [Export CSV] [ZIP PDFs]  │
+└────────────────────────────────────────────────────────────────────────┘
+```
 
-Regrouper les générateurs dans `src/lib/statsReports.ts` (une fonction par rapport). Réutiliser `generateFinanceReports.ts` là où c'est pertinent.
+---
 
-### 5. Cohérence & qualité
-- Toutes les requêtes strictement scopées par `ecoleId` (multi-tenant).
-- Extraire les patterns récurrents en un mini-hook `useStatsQuery(fn, deps)` pour éviter la duplication du `useEffect + loading + Loader2`.
-- Tous les KPIs numériques passent par `.toLocaleString("fr-FR")`, tous les montants via `fcfa()`.
-- Aucun `Math.random`, aucun tableau mock ne subsiste dans `src/pages/statistiques/`.
+## Détails techniques
+- **Fichier principal** : `src/pages/finances/sections/Receipts.tsx` (refactor en découpant en sous-composants : `ReceiptsFilters`, `ReceiptsKpis`, `ReceiptsTable`, `ReceiptsBulkBar`).
+- Requêtes Supabase paginées (`.range(from, to)`), avec un `count: "exact"` séparé pour les KPIs (`sum`, `count(distinct eleve_id)`) via une petite RPC ou des agrégations côté client sur la page en cours + un endpoint dédié pour les totaux.
+- Recherche : `.or("eleves.nom.ilike.%q%, eleves.prenom.ilike.%q%, eleves.matricule.ilike.%q%, reference.ilike.%q%")`, debounce 250 ms.
+- Tri : paramètre `.order(col, { ascending })` piloté par l'état local.
+- ZIP : `jszip` (déjà indirectement compatible avec l'app) pour le paquet de PDFs.
+- CSV : sérialisation en clair, séparateur `;` (compatible Excel FR).
+- URL sync via `useSearchParams`.
+- Aucune modification de schéma BD nécessaire (indices existants sur `paiements(ecole_id, date_paiement)` suffisent ; on pourra ajouter un index sur `paiements(reference)` si la recherche par référence devient lente).
 
-## Fichiers touchés
+---
 
-- Modifiés : `StatsLayout.tsx`, `sections/GlobalDashboard.tsx`, `sections/SchoolsCompare.tsx`, `sections/AttendanceStats.tsx`, `sections/ExamsStats.tsx`, `sections/FinanceStats.tsx`, `sections/CanteenStatsGlobal.tsx`, `sections/TransportStatsGlobal.tsx`, `sections/GlobalReports.tsx`, `context/EcoleContext.tsx`.
-- Nouveaux : `src/pages/statistiques/context/StatsScopeContext.tsx`, `src/pages/statistiques/components/PeriodPicker.tsx`, `src/pages/statistiques/hooks/useStatsQuery.ts`, `src/lib/statsReports.ts`.
-
-## Hors périmètre
-
-- Section **Configuration** (persistance des switches) — à faire dans un lot séparé.
-- Nouvelles tables ou migrations : aucune nécessaire, tout est déjà en base.
-- Refonte visuelle : on garde les mêmes composants (`KpiCard`, `BarChart`, `SettingsSection`).
-
-## Découpage suggéré pour l'implémentation
-1. Contexte de période + `useStatsQuery` (fondations).
-2. Cantine + Transport (élimine tous les mocks visibles).
-3. Vue d'ensemble + Comparatif écoles (KPIs cohérents).
-4. Présences + Examens (filtre période + réussite).
-5. Rapports & exports (le plus gros lot, PDF/XLSX réels).
+## Hors périmètre (à confirmer si souhaité)
+- Impression thermique / imprimante ticket
+- Reçus annulés / avoirs (aujourd'hui on peut seulement changer le mode)
+- Rapprochement bancaire (import relevé Wave / Orange Money)
