@@ -13,11 +13,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert, Paperclip } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useDocumentsCountByEleve } from "@/hooks/useDocumentsCountByEleve";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
@@ -40,10 +41,12 @@ export default function StudentsList() {
   const { classes } = useClasses(activeAnnee.id);
   const { isAdmin } = useIsAdmin();
   const { cycles } = useCycles();
+  const { countByEleve, refetch: refetchDocsCount } = useDocumentsCountByEleve();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [cycle, setCycle] = useState("all");
   const [statut, setStatut] = useState("all");
+  const [docFilter, setDocFilter] = useState<"all" | "with" | "without">("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 50;
@@ -55,7 +58,7 @@ export default function StudentsList() {
   }, [search]);
 
   // Reset to page 1 whenever filters change
-  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, viewMode]);
+  useEffect(() => { setPage(1); }, [debouncedSearch, cycle, statut, docFilter, viewMode]);
 
   // Dialogs
   const [viewEleve, setViewEleve] = useState<typeof eleves[0] | null>(null);
@@ -91,9 +94,16 @@ export default function StudentsList() {
         (s.classe_nom ?? "").toLowerCase().includes(q);
       const matchCycle = cycle === "all" || s.cycle_nom === cycle;
       const matchStatut = statut === "all" || s.statut === statut;
-      return matchSearch && matchCycle && matchStatut;
+      const c = countByEleve.get(s.id) ?? 0;
+      const matchDocs = docFilter === "all" || (docFilter === "with" ? c > 0 : c === 0);
+      return matchSearch && matchCycle && matchStatut && matchDocs;
     });
-  }, [eleves, debouncedSearch, cycle, statut]);
+  }, [eleves, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+
+  const withDocsCount = useMemo(
+    () => eleves.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
+    [eleves, countByEleve]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -224,7 +234,7 @@ export default function StudentsList() {
       <SettingsSection
         icon={<Users className="h-5 w-5" />}
         title={`Liste des élèves (${filtered.length})`}
-        description="Recherchez, filtrez et consultez la fiche d'un élève."
+        description={`Recherchez, filtrez et consultez la fiche d'un élève. ${withDocsCount} avec document, ${eleves.length - withDocsCount} sans.`}
         hideSave
       >
         <HelpBanner storageKey="eleves-liste" title="Comment utiliser cette page ?">
@@ -260,6 +270,14 @@ export default function StudentsList() {
                 <SelectItem value="actif">Actif</SelectItem>
                 <SelectItem value="suspendu">Suspendu</SelectItem>
                 <SelectItem value="sorti">Sorti</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={docFilter} onValueChange={(v) => setDocFilter(v as typeof docFilter)}>
+              <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les dossiers</SelectItem>
+                <SelectItem value="with">Avec au moins un document</SelectItem>
+                <SelectItem value="without">Sans aucun document</SelectItem>
               </SelectContent>
             </Select>
             <Button
@@ -331,6 +349,7 @@ export default function StudentsList() {
                   <TableHead>Matricule</TableHead>
                   <TableHead>Élève</TableHead>
                   <TableHead>Classe</TableHead>
+                  <TableHead className="hidden md:table-cell w-20 text-center">Docs</TableHead>
                   <TableHead className="hidden md:table-cell">Né(e) le</TableHead>
                   <TableHead>Statut</TableHead>
                   <TableHead className="w-10" />
@@ -365,6 +384,27 @@ export default function StudentsList() {
                       </div>
                     </TableCell>
                     <TableCell><Badge variant="secondary">{s.classe_nom ?? "Non affecté"}</Badge></TableCell>
+                    <TableCell className="hidden md:table-cell text-center">
+                      {(() => {
+                        const c = countByEleve.get(s.id) ?? 0;
+                        return c > 0 ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2 py-0.5 text-[11px] font-medium"
+                            title={`${c} document(s) dans le dossier`}
+                          >
+                            <Paperclip className="h-3 w-3" />
+                            {c}
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-muted-foreground/60 text-[11px]"
+                            title="Aucun document"
+                          >
+                            <Paperclip className="h-3 w-3" />—
+                          </span>
+                        );
+                      })()}
+                    </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">{formatDate(s.date_naissance)}</TableCell>
                     <TableCell><div className="flex items-center gap-1.5 flex-wrap">{statusBadge(s)}{finalizeButton(s)}</div></TableCell>
                     <TableCell>{studentActions(s)}</TableCell>
@@ -372,7 +412,7 @@ export default function StudentsList() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
+                    <TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
                       Aucun élève trouvé.
                     </TableCell>
                   </TableRow>
@@ -394,6 +434,18 @@ export default function StudentsList() {
                 <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   {studentActions(s)}
                 </div>
+                {(() => {
+                  const c = countByEleve.get(s.id) ?? 0;
+                  return c > 0 ? (
+                    <span
+                      className="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[10px] font-semibold shadow-sm"
+                      title={`${c} document(s) dans le dossier`}
+                    >
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {c}
+                    </span>
+                  ) : null;
+                })()}
                 {studentAvatar(s, "h-16 w-16", "text-xl")}
                 <div className="min-w-0 w-full">
                   <p className="font-semibold text-sm leading-tight truncate">{s.nom} {s.prenom}</p>
@@ -441,7 +493,7 @@ export default function StudentsList() {
       <StudentDetailDrawer
         eleve={viewEleve}
         open={!!viewEleve}
-        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); }}
+        onClose={() => { setViewEleve(null); setViewEleveTab(undefined); refetchDocsCount(); }}
         onUpdated={() => { /* realtime handles list refresh, drawer stays open */ }}
         initialTab={viewEleveTab}
       />

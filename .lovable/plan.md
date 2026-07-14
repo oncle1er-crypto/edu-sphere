@@ -1,46 +1,51 @@
-## Plan de correction du module Paiements
+# Repérer les élèves ayant au moins un document
 
-### Lot 1 — Boutons factices
-1. **`Payments.tsx`** — bouton « Saisir paiement » en haut du registre : le remplacer par un vrai bouton qui ouvre `PaymentDialog`. Si aucun élève n'est sélectionné, ouvrir d'abord un petit picker (liste filtrable réutilisant `filtered`).
-2. **`StudentSummary.tsx`** — en-tête de la fiche synthèse :
-   - Câbler les 3 icônes de contact : `Phone` → `tel:${eleve.telephone}`, `MessageSquare` (SMS) → `sms:`, `MessageSquare` (email) → `mailto:`. Retirer le doublon d'icône (utiliser `Mail` pour l'email).
-   - Bouton « Imprimer » → générer un vrai PDF via `downloadGlobalReceipt({ ecoleId, eleve })` (comme le « Reçu global » du drawer).
-3. **`Unpaid.tsx`** — bouton « Email groupé » : masquer purement et simplement (retirer le bouton) en attendant l'implémentation ultérieure.
+Ajouter, dans la liste des élèves (`/eleves/liste`), un indicateur du **nombre de documents** attachés à chaque dossier, plus un **filtre** dédié.
 
-### Lot 2 — Valeurs codées en dur
-4. **`Unpaid.tsx`** :
-   - Calculer « Relances ce mois » à partir de `relances` filtré sur le mois courant (`date_envoi.startsWith(YYYY-MM)`), au lieu de la valeur codée `87`.
-   - Remplacer le libellé codé « année 2025-2026 » par `activeAnnee?.libelle` issu de `useAcademicPeriod`.
-5. **KPIs « Encaissé » (Option B choisie)** — renommer clairement pour ne plus mélanger encaissement caisse et couvert total :
-   - `FinanceDashboard.tsx` (ligne 137) : renommer la carte en **« Couvert »**, sous-texte « dont {totalEncaisse} encaissé · {totalRemises} remises · {taux}% ».
-   - `Payments.tsx` (ligne 103) : renommer la carte KPI en **« Couvert »** avec le même sous-texte détaillé.
+## 1. Récupérer les compteurs de documents
 
-### Lot 3 — Grand livre OHADA (`Ledger.tsx`)
-6. Réécrire les écritures comptables correctement :
-   - **Encaissement paiement** : `DÉBIT 571 Caisse` (si mode = `especes`) ou `DÉBIT 521 Banque` (autres modes) `/ CRÉDIT 411 Clients — {Nom Prénom}`.
-   - **Règlement dépense validée** : `DÉBIT 401 Fournisseurs / CRÉDIT 521 Banque` (ou 571 selon mode si dispo sur la dépense, sinon 521 par défaut).
-   - **Émission de facture** (à ajouter, source = table `factures`) : `DÉBIT 411 Clients / CRÉDIT 706 Prestations de services`. Pour la période active seulement, tri chronologique commun.
-7. Petit mapping mode → compte trésorerie centralisé en haut du fichier (`especes` → 571, `wave` / `orange_money` / `mtn_money` / `moov_money` / `virement` / `cheque` → 521).
+Nouveau petit hook `useDocumentsCountByEleve(ecoleId)` :
 
-### Lot 4 — Robustesse des requêtes Supabase
-8. **`Ledger.tsx`** : appliquer la même stratégie que `useFinanceData` — supprimer le `.in("tranche_id", safeIds)` (URL trop longue en cas de gros volumes) et filtrer les paiements côté SQL via le join `tranches!inner(frais_scolarite!inner(annee_id))` avec `.eq("tranches.frais_scolarite.annee_id", activeAnnee.id)`.
-9. **`useFinanceData.ts`** : ajouter une pagination sur la requête `paiements` (boucle `range(offset, offset+999)` tant que la page retourne 1000 lignes) pour rester correct au-delà de la limite PostgREST de 1000.
-10. **`Receipts.tsx`** — `buildSinglePDF` et `buildMergedPDF` : filtrer `total_du` et `total_paye` sur l'année scolaire active via join `frais_scolarite!inner(annee_id)` et `.eq(... annee_id, activeAnnee.id)`. Sans cela, un élève avec historique multi-années voit ses totaux cumulés à tort sur le reçu.
+- Une seule requête au chargement : `SELECT eleve_id FROM documents_eleves WHERE ecole_id = ?`
+- Retourne un `Map<eleveId, number>` (agrégation côté client, très peu coûteux même à 200 élèves).
+- Exposé : `{ countByEleve, loading, refetch }`.
+- Rafraîchi manuellement après ajout/suppression d'un document depuis le drawer (via `refetch()` passé au drawer, ou plus simple : refetch à la fermeture du drawer).
 
-### Lot 5 — UX drawer (petit polish)
-11. **`StudentDetailDrawer.tsx`** : afficher un petit spinner discret (dans l'en-tête, à droite du titre) pendant que le `refetch` déclenché à l'ouverture est en cours, pour éviter le flash de données périmées. Requiert d'exposer un `refetching` depuis `useFinanceData` (petit booléen mis à `true` en début de `fetch()` et `false` à la fin) et de le passer en prop au drawer.
+Aucune modification de schéma nécessaire.
 
----
+## 2. Nouveau filtre « Documents »
 
-## Fichiers à modifier
+Dans la barre de filtres de `StudentsList.tsx`, à côté de « Tous statuts », ajouter un `Select` :
 
-- `src/pages/finances/sections/Payments.tsx` (lots 1, 2)
-- `src/pages/finances/sections/StudentSummary.tsx` (lot 1)
-- `src/pages/finances/sections/Unpaid.tsx` (lots 1, 2)
-- `src/pages/finances/sections/FinanceDashboard.tsx` (lot 2)
-- `src/pages/finances/sections/Ledger.tsx` (lots 3, 4)
-- `src/pages/finances/sections/Receipts.tsx` (lot 4)
-- `src/pages/finances/useFinanceData.ts` (lots 4, 5)
-- `src/pages/finances/components/StudentDetailDrawer.tsx` (lot 5)
+- **Tous les dossiers** (défaut)
+- **Avec au moins un document**
+- **Sans aucun document**
 
-Aucun changement de schéma DB, aucune migration. Uniquement du code React + requêtes Supabase existantes.
+État `docFilter: "all" | "with" | "without"`, appliqué dans le `filtered = useMemo(...)`. Reset de la pagination inclus.
+
+## 3. Indicateur visuel
+
+### Vue liste (tableau)
+
+- Nouvelle colonne **Docs** (juste après « Classe », largeur étroite, masquée sur mobile via `hidden md:table-cell`).
+- Contenu par ligne :
+  - Si `count > 0` : petit badge vert pâle avec icône trombone (`Paperclip` lucide) + chiffre, ex. `📎 3`. Tooltip : « 3 document(s) dans le dossier ».
+  - Si `count === 0` : icône trombone grise atténuée + `—`. Tooltip : « Aucun document ».
+
+### Vue grille (cartes)
+
+- Ajouter un petit **badge trombone** en overlay en haut à gauche de chaque carte (`absolute top-1.5 left-1.5`) : rond, fond vert pâle, icône `Paperclip` + chiffre. N'apparaît que si `count > 0` (garde la carte propre pour les dossiers vides).
+
+Couleurs via tokens sémantiques (`bg-emerald-100 text-emerald-700` acceptable ici, aligné avec le reste de la page Documents qui utilise déjà ces teintes de succès).
+
+## 4. Compteur global (bonus léger)
+
+Dans le titre de la section, à côté de « Liste des élèves (196) », afficher un sous-texte : « X avec documents, Y sans ». Aide à repérer l'ampleur des dossiers incomplets.
+
+## Détails techniques
+
+- Fichiers modifiés :
+  - `src/hooks/useDocumentsCountByEleve.ts` (nouveau)
+  - `src/pages/eleves/sections/StudentsList.tsx` (colonne, filtre, badge overlay, sous-titre)
+- Aucune migration SQL, aucune policy RLS touchée (la table `documents_eleves` est déjà lisible par les rôles autorisés de l'école).
+- Le fetch des counts se déclenche en parallèle de `useEleves`, pas de chargement bloquant : la liste s'affiche même si les counts arrivent avec un léger décalage (badges vides pendant ~200 ms max).
