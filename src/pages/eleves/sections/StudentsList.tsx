@@ -434,6 +434,18 @@ export default function StudentsList() {
                 <div className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
                   {studentActions(s)}
                 </div>
+                {(() => {
+                  const c = countByEleve.get(s.id) ?? 0;
+                  return c > 0 ? (
+                    <span
+                      className="absolute top-1.5 left-1.5 inline-flex items-center gap-0.5 rounded-full bg-emerald-100 text-emerald-700 px-1.5 py-0.5 text-[10px] font-semibold shadow-sm"
+                      title={`${c} document(s) dans le dossier`}
+                    >
+                      <Paperclip className="h-2.5 w-2.5" />
+                      {c}
+                    </span>
+                  ) : null;
+                })()}
                 {studentAvatar(s, "h-16 w-16", "text-xl")}
                 <div className="min-w-0 w-full">
                   <p className="font-semibold text-sm leading-tight truncate">{s.nom} {s.prenom}</p>
