@@ -116,10 +116,34 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
           {eleve && (
             <>
               <SheetHeader>
-                <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
-                <SheetDescription>
-                  {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
-                </SheetDescription>
+                <div className="flex items-start justify-between gap-3 pr-8">
+                  <div className="min-w-0">
+                    <SheetTitle className="text-primary">{eleve.nom} {eleve.prenom}</SheetTitle>
+                    <SheetDescription>
+                      {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
+                    </SheetDescription>
+                  </div>
+                  {eleve.paiements && eleve.paiements.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 h-8 text-xs"
+                      title="Imprimer un reçu récapitulatif de tous les versements"
+                      onClick={async () => {
+                        if (!ecoleId) return;
+                        try {
+                          await downloadGlobalReceipt({ ecoleId, eleve });
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Impossible de générer le reçu global");
+                        }
+                      }}
+                    >
+                      <Printer className="h-3.5 w-3.5 mr-1" />
+                      Reçu global
+                    </Button>
+                  )}
+                </div>
               </SheetHeader>
 
               <div className="mt-6 space-y-5">
