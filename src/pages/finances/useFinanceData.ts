@@ -58,9 +58,9 @@ export function useFinanceData(scopedAnneeId?: string) {
       setLoading(false);
       return;
     }
-    // Si on a déjà des données, on est en refetch : garder l'UI en place
-    setRefetching((prev) => prev || true);
-    setLoading((prev) => (data.length === 0 ? true : prev));
+    setRefetching(true);
+    setLoading(true);
+
 
 
     // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
