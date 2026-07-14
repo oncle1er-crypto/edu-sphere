@@ -206,6 +206,15 @@ export default function StudentsList() {
         <DropdownMenuItem className="text-destructive" onClick={() => setDeleteTarget(s)}>
           <Trash2 className="h-4 w-4 mr-2" />Désinscrire
         </DropdownMenuItem>
+        {isAdmin && (
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => setPurgeTarget(s)}
+            title="Supprimer définitivement (uniquement si aucun paiement)"
+          >
+            <ShieldAlert className="h-4 w-4 mr-2" />Supprimer définitivement
+          </DropdownMenuItem>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
