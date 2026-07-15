@@ -152,9 +152,12 @@ export function useFinanceData(scopedAnneeId?: string) {
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
     (paiementsData ?? []).forEach((p: any) => {
-      // Si on est en mode scopé année : ignorer les paiements rattachés à une tranche
-      // d'une autre année (les paiements sans tranche_id sont conservés).
-      if (scopedAnneeId && p.tranche_id && !trancheIdsSet.has(p.tranche_id)) return;
+      // Si on est en mode scopé année : ne conserver que les paiements rattachés
+      // à une tranche de l'année active. Les paiements sans tranche_id (remises,
+      // bourses, imports historiques) ne peuvent pas être attribués à une année
+      // en particulier et sont donc exclus du scope année pour éviter de gonfler
+      // les totaux du dossier scolarité courant.
+      if (scopedAnneeId && (!p.tranche_id || !trancheIdsSet.has(p.tranche_id))) return;
       const meta = modeMeta(p.mode);
       const item: PaiementHistorique = {
         id: p.id,
