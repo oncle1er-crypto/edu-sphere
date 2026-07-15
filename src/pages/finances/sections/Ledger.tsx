@@ -66,11 +66,11 @@ export default function Ledger() {
       // Émissions de factures sur la période
       supabase
         .from("factures")
-        .select("montant, date_facture, numero, eleves(nom, prenom)")
+        .select("montant, date_emission, numero, eleves(nom, prenom)")
         .eq("ecole_id", ecoleId)
-        .gte("date_facture", from)
-        .lte("date_facture", to)
-        .order("date_facture", { ascending: false })
+        .gte("date_emission", from)
+        .lte("date_emission", to)
+        .order("date_emission", { ascending: false })
         .limit(50),
     ]).then(([pRes, dRes, fRes]) => {
       const entries: EcritureComptable[] = [];
@@ -79,8 +79,8 @@ export default function Ledger() {
       (fRes.data ?? []).forEach((f: any) => {
         const nom = f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "Client";
         const ref = f.numero ? ` — facture ${f.numero}` : "";
-        entries.push({ date: f.date_facture, account: "411 - Clients", label: `${nom}${ref}`, debit: Number(f.montant), credit: 0 });
-        entries.push({ date: f.date_facture, account: "706 - Prestations de services", label: `Scolarité${ref}`, debit: 0, credit: Number(f.montant) });
+        entries.push({ date: f.date_emission, account: "411 - Clients", label: `${nom}${ref}`, debit: Number(f.montant), credit: 0 });
+        entries.push({ date: f.date_emission, account: "706 - Prestations de services", label: `Scolarité${ref}`, debit: 0, credit: Number(f.montant) });
       });
 
       // ── Encaissement paiement : DÉBIT 571/521 / CRÉDIT 411 Clients
