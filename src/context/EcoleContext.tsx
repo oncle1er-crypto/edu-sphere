@@ -81,22 +81,36 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
     }
     // Counts et revenus en parallèle
     const ids = (data ?? []).map((e: any) => e.id);
-    const [elevesRes, ensRes, clRes, trRes] = await Promise.all([
-      supabase.from("eleves").select("ecole_id").in("ecole_id", ids),
-      supabase.from("enseignants").select("ecole_id").in("ecole_id", ids),
-      supabase.from("classes").select("ecole_id").in("ecole_id", ids),
-      supabase.from("tranches").select("ecole_id, paye").in("ecole_id", ids),
+    // Pagination pour dépasser la limite PostgREST de 1000 lignes (surtout critique pour `tranches`).
+    async function fetchAllPaged<T = any>(table: "eleves" | "enseignants" | "classes" | "tranches", cols: string): Promise<T[]> {
+      const all: T[] = [];
+      const PAGE = 1000;
+      let offset = 0;
+      for (let i = 0; i < 50; i++) {
+        const { data: page, error } = await supabase.from(table).select(cols).in("ecole_id", ids).range(offset, offset + PAGE - 1);
+        if (error || !page || page.length === 0) break;
+        all.push(...(page as any));
+        if (page.length < PAGE) break;
+        offset += PAGE;
+      }
+      return all;
+    }
+    const [elevesRows, ensRows, clRows, trRows] = await Promise.all([
+      fetchAllPaged("eleves", "ecole_id"),
+      fetchAllPaged("enseignants", "ecole_id"),
+      fetchAllPaged("classes", "ecole_id"),
+      fetchAllPaged("tranches", "ecole_id, paye"),
     ]);
     const countBy = (rows: any[] | null) => {
       const acc: Record<string, number> = {};
       (rows ?? []).forEach((r) => { acc[r.ecole_id] = (acc[r.ecole_id] ?? 0) + 1; });
       return acc;
     };
-    const eC = countBy(elevesRes.data as any);
-    const enC = countBy(ensRes.data as any);
-    const cC = countBy(clRes.data as any);
+    const eC = countBy(elevesRows as any);
+    const enC = countBy(ensRows as any);
+    const cC = countBy(clRows as any);
     const revBy: Record<string, number> = {};
-    (trRes.data ?? []).forEach((t: any) => { revBy[t.ecole_id] = (revBy[t.ecole_id] ?? 0) + Number(t.paye || 0); });
+    (trRows ?? []).forEach((t: any) => { revBy[t.ecole_id] = (revBy[t.ecole_id] ?? 0) + Number(t.paye || 0); });
 
     setEcoles((data ?? []).map((row: any) => ({
       ...rowToEcole(row, {
