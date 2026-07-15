@@ -10,17 +10,26 @@ export function useDocumentsCountByEleve() {
   const fetchCounts = useCallback(async () => {
     if (!ecoleId) return;
     setLoading(true);
-    const { data, error } = await supabase
-      .from("documents_eleves")
-      .select("eleve_id")
-      .eq("ecole_id", ecoleId);
-    if (!error && data) {
-      const m = new Map<string, number>();
-      for (const row of data as { eleve_id: string }[]) {
-        m.set(row.eleve_id, (m.get(row.eleve_id) ?? 0) + 1);
-      }
-      setCountByEleve(m);
+    // Pagination pour dépasser la limite PostgREST de 1000 lignes.
+    const rows: { eleve_id: string }[] = [];
+    const PAGE = 1000;
+    let offset = 0;
+    for (let i = 0; i < 50; i++) {
+      const { data, error } = await supabase
+        .from("documents_eleves")
+        .select("eleve_id")
+        .eq("ecole_id", ecoleId)
+        .range(offset, offset + PAGE - 1);
+      if (error || !data || data.length === 0) break;
+      rows.push(...(data as { eleve_id: string }[]));
+      if (data.length < PAGE) break;
+      offset += PAGE;
     }
+    const m = new Map<string, number>();
+    for (const row of rows) {
+      m.set(row.eleve_id, (m.get(row.eleve_id) ?? 0) + 1);
+    }
+    setCountByEleve(m);
     setLoading(false);
   }, [ecoleId]);
 
