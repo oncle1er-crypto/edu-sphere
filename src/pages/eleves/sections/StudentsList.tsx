@@ -376,7 +376,17 @@ export default function StudentsList() {
                       <div className="flex items-center gap-3">
                         {studentAvatar(s)}
                         <div>
-                          <p className="font-medium leading-tight">{s.nom} {s.prenom}</p>
+                          <p className="font-medium leading-tight flex items-center gap-1.5 flex-wrap">
+                            {s.nom} {s.prenom}
+                            {s.est_nouveau && /maternelle/i.test(s.cycle_nom ?? "") && (
+                              <Badge
+                                className="text-[10px] px-1.5 py-0 bg-accent/40 text-accent-foreground border-accent/60"
+                                title="Nouvel(le) élève en maternelle — tarif « Nouveau » appliqué cette année"
+                              >
+                                Nouveau
+                              </Badge>
+                            )}
+                          </p>
                           <p className="text-[11px] text-muted-foreground">
                             {s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"} • {s.cycle_nom ?? "—"}
                           </p>
