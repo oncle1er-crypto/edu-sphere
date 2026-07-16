@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
+import { reprintAttestationInscription } from "@/lib/reprintAttestationInscription";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
@@ -134,27 +135,46 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       {eleve.classe} · {eleve.cycle} · <span className="font-mono">{eleve.matricule}</span>
                     </SheetDescription>
                   </div>
-                  {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
-
+                  <div className="flex flex-col gap-1.5 shrink-0">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="shrink-0 h-8 text-xs"
-                      title="Imprimer un reçu récapitulatif de tous les versements"
+                      className="h-8 text-xs"
+                      title="Réimprimer l'attestation d'inscription (montants mis à jour selon la grille tarifaire en vigueur)"
                       onClick={async () => {
-                        if (!ecoleId) return;
                         try {
-                          await downloadGlobalReceipt({ ecoleId, eleve });
-                        } catch (err) {
+                          await reprintAttestationInscription(eleve.id);
+                          toast.success("Attestation d'inscription générée");
+                        } catch (err: any) {
                           console.error(err);
-                          toast.error("Impossible de générer le reçu global");
+                          toast.error("Impossible de générer l'attestation", { description: err?.message });
                         }
                       }}
                     >
                       <Printer className="h-3.5 w-3.5 mr-1" />
-                      Reçu global
+                      Attestation
                     </Button>
-                  )}
+                    {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        title="Imprimer un reçu récapitulatif de tous les versements"
+                        onClick={async () => {
+                          if (!ecoleId) return;
+                          try {
+                            await downloadGlobalReceipt({ ecoleId, eleve });
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Impossible de générer le reçu global");
+                          }
+                        }}
+                      >
+                        <Receipt className="h-3.5 w-3.5 mr-1" />
+                        Reçu global
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </SheetHeader>
 
