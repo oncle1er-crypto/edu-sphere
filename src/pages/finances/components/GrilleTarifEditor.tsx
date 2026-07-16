@@ -102,11 +102,11 @@ export default function GrilleTarifEditor({
               </Select>
             </div>
             <div>
-              <Label>Variante {niveau !== "GS" && <span className="text-xs text-muted-foreground">(GS uniquement)</span>}</Label>
+              <Label>Variante {!["MAT1","MAT2","GS"].includes(niveau) && <span className="text-xs text-muted-foreground">(Maternelle & GS uniquement)</span>}</Label>
               <Select
                 value={variant ?? "none"}
                 onValueChange={(v) => setVariant(v === "none" ? null : (v as Variant))}
-                disabled={niveau !== "GS" || !!initial}
+                disabled={!["MAT1","MAT2","GS"].includes(niveau) || !!initial}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
