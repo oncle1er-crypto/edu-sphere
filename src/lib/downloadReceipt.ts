@@ -16,7 +16,28 @@ interface Params {
  * Récupère les données du paiement + école + élève et construit le PDF reçu.
  */
 async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true, hideVersementLine }: Params) {
-  const [{ data: paiement }, { data: ecole }, { data: eleve }, { data: tranches }, { data: paiements }] =
+  // 1) Récupère l'année scolaire active de l'élève pour scoper les cumuls
+  const { data: eleveScope } = await supabase
+    .from("eleves")
+    .select("annee_id")
+    .eq("id", eleveId)
+    .maybeSingle();
+  const anneeId = (eleveScope as any)?.annee_id ?? null;
+
+  const tranchesQ = anneeId
+    ? supabase
+        .from("tranches")
+        .select("montant, paye, frais_scolarite!inner(annee_id)")
+        .eq("ecole_id", ecoleId)
+        .eq("eleve_id", eleveId)
+        .eq("frais_scolarite.annee_id", anneeId)
+    : supabase
+        .from("tranches")
+        .select("montant, paye")
+        .eq("ecole_id", ecoleId)
+        .eq("eleve_id", eleveId);
+
+  const [{ data: paiement }, { data: ecole }, { data: eleve }, { data: tranches }] =
     await Promise.all([
       supabase.from("paiements")
         .select("id, reference, montant, mode, motif, date_paiement")
@@ -27,14 +48,16 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
       supabase.from("eleves")
         .select("nom, prenom, matricule, photo_url, classes(nom)")
         .eq("id", eleveId).maybeSingle(),
-      supabase.from("tranches").select("montant").eq("ecole_id", ecoleId).eq("eleve_id", eleveId),
-      supabase.from("paiements").select("montant").eq("ecole_id", ecoleId).eq("eleve_id", eleveId),
+      tranchesQ,
     ]);
 
   if (!paiement || !ecole || !eleve) return null;
 
+  // Total dû = somme des montants des tranches de l'année active (grille override incluse).
+  // Total payé = somme de `paye` des mêmes tranches (maintenu par le trigger de rapprochement),
+  // ce qui garantit la même valeur que celle affichée à l'écran.
   const totalDu = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
-  const totalPaye = (paiements ?? []).reduce((s: number, p: any) => s + Number(p.montant || 0), 0);
+  const totalPaye = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.paye || 0), 0);
 
   const pdf = await generateRecuPDF({
     ecole: {
