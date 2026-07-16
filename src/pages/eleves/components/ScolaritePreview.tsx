@@ -34,7 +34,9 @@ export function ScolaritePreview({ ecoleId, anneeId, classeNom, estNouveau }: Pr
         if (!cancelled) { setError("Niveau non résolu pour cette classe"); setLoading(false); }
         return;
       }
-      const variant = niveau === "GS" ? (estNouveau ? "nouveau" : "ancien") : null;
+      const variant = ["MAT1", "MAT2", "GS"].includes(niveau)
+        ? (estNouveau ? "nouveau" : "ancien")
+        : null;
       let q = supabase.from("grille_tarifs_niveaux")
         .select("libelle, niveau_code, variant, montant_total, tranches")
         .eq("ecole_id", ecoleId).eq("annee_id", anneeId).eq("niveau_code", niveau);
@@ -43,14 +45,22 @@ export function ScolaritePreview({ ecoleId, anneeId, classeNom, estNouveau }: Pr
       if (cancelled) return;
       if (data) {
         setTarif({ ...data, source: "grille" } as TarifInfo);
-      } else if (niveau === "GS" && variant === "ancien") {
-        // Fallback : pas de tarif ancien → utiliser le tarif "nouveau"
-        const { data: alt } = await supabase.from("grille_tarifs_niveaux")
+      } else if (variant) {
+        // Fallback : essaie l'autre variante puis sans variante
+        const { data: altVar } = await supabase.from("grille_tarifs_niveaux")
           .select("libelle, niveau_code, variant, montant_total, tranches")
           .eq("ecole_id", ecoleId).eq("annee_id", anneeId).eq("niveau_code", niveau)
-          .eq("variant", "nouveau").maybeSingle();
-        if (alt) setTarif({ ...alt, source: "grille" } as TarifInfo);
-        else setError("Aucun tarif configuré pour ce niveau");
+          .eq("variant", variant === "ancien" ? "nouveau" : "ancien").maybeSingle();
+        if (altVar) {
+          setTarif({ ...altVar, source: "grille" } as TarifInfo);
+        } else {
+          const { data: noVar } = await supabase.from("grille_tarifs_niveaux")
+            .select("libelle, niveau_code, variant, montant_total, tranches")
+            .eq("ecole_id", ecoleId).eq("annee_id", anneeId).eq("niveau_code", niveau)
+            .is("variant", null).maybeSingle();
+          if (noVar) setTarif({ ...noVar, source: "grille" } as TarifInfo);
+          else setError("Aucun tarif configuré pour ce niveau");
+        }
       } else {
         setError("Aucun tarif configuré pour ce niveau");
       }
