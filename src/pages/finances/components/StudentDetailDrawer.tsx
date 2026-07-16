@@ -155,6 +155,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                               eleveId: eleve.id,
                               paiementId: premier.id,
                               type: "encaissement",
+                              hideVersementLine: true,
                             });
                             toast.success("Reçu d'inscription généré");
                           } catch (err: any) {
