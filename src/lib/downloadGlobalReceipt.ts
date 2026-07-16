@@ -132,7 +132,10 @@ export async function downloadGlobalReceipt({ ecoleId, eleve }: Params): Promise
   const remises = eleve.totalRemises ?? 0;
   const couvert = eleve.totalPaye;
   const total = eleve.fraisAnnuel;
-  const reste = Math.max(0, eleve.resteDu);
+  const resteRaw = eleve.resteDu;             // peut être négatif = trop-perçu
+  const isCredit = resteRaw < 0;
+  const resteLabel = isCredit ? "Trop-perçu / Crédit famille" : "Reste à payer";
+  const resteValeur = Math.abs(resteRaw);
 
   autoTable(doc, {
     startY: y1 + 6,
@@ -146,8 +149,14 @@ export async function downloadGlobalReceipt({ ecoleId, eleve }: Params): Promise
         { content: FCFA(couvert), styles: { fontStyle: "bold", textColor: [22, 122, 70] } },
       ],
       [
-        { content: "Reste à payer", styles: { fontStyle: "bold" } },
-        { content: FCFA(reste), styles: { fontStyle: "bold", textColor: reste > 0 ? [180, 40, 40] : [22, 122, 70] } },
+        { content: resteLabel, styles: { fontStyle: "bold" } },
+        {
+          content: FCFA(resteValeur),
+          styles: {
+            fontStyle: "bold",
+            textColor: isCredit ? [22, 122, 70] : (resteRaw > 0 ? [180, 40, 40] : [22, 122, 70]),
+          },
+        },
       ],
     ],
     theme: "grid",
