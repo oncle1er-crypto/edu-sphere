@@ -204,14 +204,17 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...muted);
-      const isReprint = !isRemise && Number(totalPaye) !== Number(data.montant);
-      const versementLabel = isRemise
-        ? "Montant accordé"
-        : isReprint
-          ? "Dont ce versement"
-          : "Versement reçu";
-      const versementValue = isRemise ? data.montant : data.montant;
-      doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(versementValue)}`, M, y);
+      if (data.hideVersementLine) {
+        doc.text(`Total dû : ${formatFCFA(totalDu)}`, M, y);
+      } else {
+        const isReprint = !isRemise && Number(totalPaye) !== Number(data.montant);
+        const versementLabel = isRemise
+          ? "Montant accordé"
+          : isReprint
+            ? "Dont ce versement"
+            : "Versement reçu";
+        doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(data.montant)}`, M, y);
+      }
     }
 
     // Badge
