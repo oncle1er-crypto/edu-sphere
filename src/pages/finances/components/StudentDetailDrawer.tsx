@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
-import { reprintAttestationInscription } from "@/lib/reprintAttestationInscription";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
@@ -136,24 +135,38 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                     </SheetDescription>
                   </div>
                   <div className="flex flex-col gap-1.5 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 text-xs"
-                      title="Réimprimer l'attestation d'inscription (montants mis à jour selon la grille tarifaire en vigueur)"
-                      onClick={async () => {
-                        try {
-                          await reprintAttestationInscription(eleve.id);
-                          toast.success("Attestation d'inscription générée");
-                        } catch (err: any) {
-                          console.error(err);
-                          toast.error("Impossible de générer l'attestation", { description: err?.message });
-                        }
-                      }}
-                    >
-                      <Printer className="h-3.5 w-3.5 mr-1" />
-                      Attestation
-                    </Button>
+                    {((eleve.paiements?.length ?? 0) > 0) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 text-xs"
+                        title="Réimprimer le reçu du 1er versement (inscription) — totaux mis à jour selon la grille en vigueur"
+                        onClick={async () => {
+                          if (!ecoleId) return;
+                          const encaissements = (eleve.paiements ?? []).filter((p) => p.kind === "encaissement");
+                          if (encaissements.length === 0) {
+                            toast.error("Aucun paiement d'inscription à réimprimer");
+                            return;
+                          }
+                          const premier = [...encaissements].sort((a, b) => a.date.localeCompare(b.date))[0];
+                          try {
+                            await downloadReceiptFor({
+                              ecoleId,
+                              eleveId: eleve.id,
+                              paiementId: premier.id,
+                              type: "encaissement",
+                            });
+                            toast.success("Reçu d'inscription généré");
+                          } catch (err: any) {
+                            console.error(err);
+                            toast.error("Impossible de générer le reçu", { description: err?.message });
+                          }
+                        }}
+                      >
+                        <Printer className="h-3.5 w-3.5 mr-1" />
+                        Reçu inscription
+                      </Button>
+                    )}
                     {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (
                       <Button
                         size="sm"
