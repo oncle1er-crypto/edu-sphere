@@ -24,6 +24,8 @@ export interface RecuData {
   motif?: string | null;
   /** Inclure la souche école (par défaut: true). Mettre à false pour un reçu "famille seule" (WhatsApp). */
   souche?: boolean;
+  /** Masquer la ligne « Versement reçu / Dont ce versement » (ex: réimpression). */
+  hideVersementLine?: boolean;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
