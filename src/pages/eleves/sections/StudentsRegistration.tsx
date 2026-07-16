@@ -312,10 +312,15 @@ export default function StudentsRegistration() {
           </FieldRow>
           {(() => {
             const cl = classes.find((c) => c.id === form.classe_id);
-            const isGS = !!cl && /GS|GRANDE\s*SEC/i.test(cl.nom);
-            if (!isGS) return null;
+            if (!cl) return null;
+            const isGS = /GS|GRANDE\s*SEC/i.test(cl.nom);
+            const isMS = /\bMS\b|MOYENNE\s*SEC/i.test(cl.nom);
+            const isPS = /\bPS\b|PETITE\s*SEC/i.test(cl.nom);
+            if (!isGS && !isMS && !isPS) return null;
+            const label = isGS ? "GS" : isMS ? "MS" : "PS";
+            const fullLabel = isGS ? "Grande Section" : isMS ? "Moyenne Section" : "Petite Section";
             return (
-              <FieldRow label="Nouvel élève (1ère inscription)" hint="Détermine le tarif appliqué pour la Grande Section.">
+              <FieldRow label="Nouvel élève (1ère inscription)" hint={`Détermine le tarif appliqué pour la ${fullLabel}.`}>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
@@ -323,11 +328,12 @@ export default function StudentsRegistration() {
                     checked={form.est_nouveau}
                     onChange={(e) => set("est_nouveau", e.target.checked)}
                   />
-                  <span className="text-sm">Oui, premier passage en GS</span>
+                  <span className="text-sm">Oui, premier passage en {label}</span>
                 </label>
               </FieldRow>
             );
           })()}
+
           <ScolaritePreview
             ecoleId={ecoleId ?? null}
             anneeId={anneeId ?? null}
