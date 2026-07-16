@@ -175,11 +175,13 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
-    doc.text(isRemise ? "MONTANT ACCORDÉ" : "MONTANT REÇU", M, y);
+    const bigLabel = isRemise ? "MONTANT ACCORDÉ" : (totalDu > 0 ? "TOTAL RÉGLÉ" : "MONTANT REÇU");
+    const bigValue = isRemise || totalDu === 0 ? data.montant : totalPaye;
+    doc.text(bigLabel, M, y);
     doc.setFont("times", "bold");
     doc.setFontSize(20);
     doc.setTextColor(...primary);
-    doc.text(formatFCFA(data.montant), W - M, y + 2, { align: "right" });
+    doc.text(formatFCFA(bigValue), W - M, y + 2, { align: "right" });
 
     // ── Motif (obligatoire pour remises) ──
     if (data.motif) {
@@ -200,7 +202,8 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...muted);
-      doc.text(`Total dû : ${formatFCFA(totalDu)}    •    Total réglé : ${formatFCFA(totalPaye)}`, M, y);
+      const versementLabel = isRemise ? "Montant accordé" : "Versement reçu";
+      doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(data.montant)}`, M, y);
     }
 
     // Badge
