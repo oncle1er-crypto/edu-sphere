@@ -461,7 +461,17 @@ export default function StudentsList() {
                   <p className="font-semibold text-sm leading-tight truncate">{s.nom} {s.prenom}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{s.matricule}</p>
                 </div>
-                <Badge variant="secondary" className="text-[10px]">{s.classe_nom ?? "Non affecté"}</Badge>
+                <div className="flex items-center gap-1 flex-wrap justify-center">
+                  <Badge variant="secondary" className="text-[10px]">{s.classe_nom ?? "Non affecté"}</Badge>
+                  {s.est_nouveau && /maternelle/i.test(s.cycle_nom ?? "") && (
+                    <Badge
+                      className="text-[10px] px-1.5 py-0 bg-accent/40 text-accent-foreground border-accent/60"
+                      title="Nouvel(le) élève en maternelle — tarif « Nouveau » appliqué cette année"
+                    >
+                      Nouveau
+                    </Badge>
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                   <span>{s.sexe === "F" ? "F" : s.sexe === "M" ? "M" : "—"}</span>
                   <span>•</span>
