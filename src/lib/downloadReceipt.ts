@@ -8,6 +8,8 @@ interface Params {
   type: RecuData["type"];
   /** Inclure la souche école. Par défaut true. */
   souche?: boolean;
+  /** Masquer la ligne « Versement reçu / Dont ce versement ». */
+  hideVersementLine?: boolean;
 }
 
 /**
