@@ -1,51 +1,67 @@
-# Repérer les élèves ayant au moins un document
+# Audit du module Paiement / Finances — synthèse et plan de correction
 
-Ajouter, dans la liste des élèves (`/eleves/liste`), un indicateur du **nombre de documents** attachés à chaque dossier, plus un **filtre** dédié.
+## Ce qui est cohérent (rassurant ✅)
 
-## 1. Récupérer les compteurs de documents
+Le cœur du calcul est solide : toutes les vues (tableau de bord finances, drawer élève, impayés, relances, SMS) lisent la même source de vérité — les lignes `tranches` en base — qui sont recalculées automatiquement quand tu appliques une **grille tarifaire personnalisée** (`frais_id_override`). La fonction serveur `generer_tranches_eleve` traite bien l'override **en priorité absolue** avant la grille de classe, un trigger reconcilie chaque paiement avec sa tranche, et les statuts (payée / partielle) sont bien réévalués. Un trop-perçu apparaît correctement comme reste négatif à l'écran. Pas de « double remise » possible : le concept `eleves.remise` n'existe pas — les remises sont des lignes de paiement normales.
 
-Nouveau petit hook `useDocumentsCountByEleve(ecoleId)` :
+## Incohérences confirmées (à corriger ❌)
 
-- Une seule requête au chargement : `SELECT eleve_id FROM documents_eleves WHERE ecole_id = ?`
-- Retourne un `Map<eleveId, number>` (agrégation côté client, très peu coûteux même à 200 élèves).
-- Exposé : `{ countByEleve, loading, refetch }`.
-- Rafraîchi manuellement après ajout/suppression d'un document depuis le drawer (via `refetch()` passé au drawer, ou plus simple : refetch à la fermeture du drawer).
+### 1. Le reçu individuel PDF n'est pas filtré par année scolaire
+`src/lib/downloadReceipt.ts` (lignes 30-37) somme **tous** les paiements et **toutes** les tranches de l'élève, toutes années confondues. Pour un élève qui a un historique (redoublement, réinscription), le « Total dû » et « Total payé » imprimés sur le reçu **ne correspondent pas** à ce qui est affiché dans l'app (qui, elle, est scopée à l'année active via `useFinanceData`). Résultat : chiffres non réconciliables entre l'écran et le PDF remis à la famille.
 
-Aucune modification de schéma nécessaire.
+→ **Fix** : ajouter le filtre `annee_id` sur les requêtes `tranches` et `paiements` dans `downloadReceipt.ts`, comme dans `useFinanceData.ts`.
 
-## 2. Nouveau filtre « Documents »
+### 2. Le reçu global masque les trop-perçus
+`src/lib/downloadGlobalReceipt.ts` ligne 135 : `const reste = Math.max(0, eleve.resteDu)`. Un parent en crédit de 15 000 FCFA (après baisse de grille override) voit `-15 000` à l'écran mais **`0 FCFA` sur le PDF**, sans mention qu'il est créditeur. Cela contredit directement le tooltip de `CustomFeeOverride` qui promet « un trop-perçu apparaît comme reste à payer négatif ».
 
-Dans la barre de filtres de `StudentsList.tsx`, à côté de « Tous statuts », ajouter un `Select` :
+→ **Fix** : retirer le `Math.max(0, …)` et afficher un libellé explicite (« Trop-perçu / Crédit famille : X FCFA ») quand `resteDu < 0`.
 
-- **Tous les dossiers** (défaut)
-- **Avec au moins un document**
-- **Sans aucun document**
+### 3. Deux logiques de calcul « total dû » divergentes
+`downloadReceipt.ts` refait ses propres requêtes DB, alors que `downloadGlobalReceipt.ts` réutilise l'objet `eleve` déjà scopé. Toute évolution future dans un seul des deux fichiers créera une divergence silencieuse.
 
-État `docFilter: "all" | "with" | "without"`, appliqué dans le `filtered = useMemo(...)`. Reset de la pagination inclus.
+→ **Fix** : extraire une fonction unique `computeEleveTotals(eleveId, ecoleId, anneeId)` dans `src/lib/eleveTotals.ts` et l'utiliser dans les deux générateurs de reçu.
 
-## 3. Indicateur visuel
+## Risques à traiter (à surveiller ⚠️)
 
-### Vue liste (tableau)
+### 4. `_force_recalc = true` par défaut sur le trigger de changement de classe
+Le trigger `eleves_generer_tranches` appelle `generer_tranches_eleve` sans passer `_force_recalc`, donc la valeur par défaut `true` s'applique. Conséquence : **tout changement de classe recalcule rétroactivement les montants des tranches déjà encaissées** selon la nouvelle grille — même sans intention de corriger une erreur (ex. simple hausse tarifaire).
 
-- Nouvelle colonne **Docs** (juste après « Classe », largeur étroite, masquée sur mobile via `hidden md:table-cell`).
-- Contenu par ligne :
-  - Si `count > 0` : petit badge vert pâle avec icône trombone (`Paperclip` lucide) + chiffre, ex. `📎 3`. Tooltip : « 3 document(s) dans le dossier ».
-  - Si `count === 0` : icône trombone grise atténuée + `—`. Tooltip : « Aucun document ».
+→ **Fix** : changer le default de `generer_tranches_eleve` à `_force_recalc boolean DEFAULT false` (migration). Le composant `CustomFeeOverride` continue à passer explicitement `true` quand la case « Corriger une erreur d'affectation » est cochée.
 
-### Vue grille (cartes)
+### 5. Statut `retard` non persisté après recalcul
+`generer_tranches_eleve` ne connaît que `due / payee / partielle` — jamais `retard`. L'UI reste correcte (recalcul à l'affichage), mais tout export CSV ou requête basée sur `tranches.statut` en base sous-évalue les retards.
 
-- Ajouter un petit **badge trombone** en overlay en haut à gauche de chaque carte (`absolute top-1.5 left-1.5`) : rond, fond vert pâle, icône `Paperclip` + chiffre. N'apparaît que si `count > 0` (garde la carte propre pour les dossiers vides).
+→ **Fix** : ajouter dans le `CASE` de la fonction : `WHEN tr.paye <= 0 AND tr.echeance < CURRENT_DATE THEN 'retard'`.
 
-Couleurs via tokens sémantiques (`bg-emerald-100 text-emerald-700` acceptable ici, aligné avec le reste de la page Documents qui utilise déjà ces teintes de succès).
+### 6. Factures manuelles non resynchronisées
+`useFactures.ts` fige `montant` à la création. Après un override, les factures déjà émises gardent l'ancien montant. Non bloquant tant que les factures ne sont pas utilisées comme référence de dû (le vrai dû reste dans `tranches`).
 
-## 4. Compteur global (bonus léger)
+→ **Fix** : afficher un badge « ⚠ Grille modifiée depuis l'émission » dans `Invoices.tsx` quand la date de la facture est antérieure au dernier `updated_at` des tranches de l'élève. Pas de régénération automatique — juste un signal visuel.
 
-Dans le titre de la section, à côté de « Liste des élèves (196) », afficher un sous-texte : « X avec documents, Y sans ». Aide à repérer l'ampleur des dossiers incomplets.
+### 7. Grille standard : somme des tranches non validée
+`useGrilleTarifs.ts` n'empêche pas de saisir une grille dont `Σ tranches ≠ montant_total`. La branche override est mathématiquement garantie, mais pas la branche grille classique.
+
+→ **Fix** : ajouter dans `GrilleTarifEditor.tsx` une validation front qui bloque la sauvegarde si l'écart dépasse 0 FCFA, avec message clair.
 
 ## Détails techniques
 
-- Fichiers modifiés :
-  - `src/hooks/useDocumentsCountByEleve.ts` (nouveau)
-  - `src/pages/eleves/sections/StudentsList.tsx` (colonne, filtre, badge overlay, sous-titre)
-- Aucune migration SQL, aucune policy RLS touchée (la table `documents_eleves` est déjà lisible par les rôles autorisés de l'école).
-- Le fetch des counts se déclenche en parallèle de `useEleves`, pas de chargement bloquant : la liste s'affiche même si les counts arrivent avec un léger décalage (badges vides pendant ~200 ms max).
+**Fichiers frontend à modifier**
+- `src/lib/downloadReceipt.ts` — filtre `annee_id`, utilise `computeEleveTotals`
+- `src/lib/downloadGlobalReceipt.ts` — retire `Math.max(0, …)`, ajoute libellé crédit, utilise `computeEleveTotals`
+- `src/lib/eleveTotals.ts` **(nouveau)** — source unique de calcul totalDu / totalPaye / resteDu scopés par année
+- `src/pages/finances/sections/Invoices.tsx` — badge « grille modifiée »
+- `src/pages/finances/components/GrilleTarifEditor.tsx` — validation Σ tranches = montant_total
+
+**Migration SQL**
+- Nouvelle migration `update_generer_tranches_eleve.sql` :
+  - `_force_recalc boolean DEFAULT false` (au lieu de `true`)
+  - Ajout du statut `retard` dans les 3 blocs `CASE` (branches override, grille classe standard, fallback)
+
+**Hors périmètre (à confirmer avant tout changement)**
+- `regenerer_tranches_pre_inscrits` : non lue en détail, à vérifier séparément si tu confirmes ce plan.
+- Aucune modification du trigger `reconcilier_tranche_paiements` — il fonctionne bien.
+- Aucune modification du calcul en mémoire `useFinanceData.ts` — c'est la source de vérité correcte.
+
+---
+
+Confirme-moi que je peux implémenter ces 7 correctifs (ou dis-moi lesquels écarter), et je passe en mode build.
