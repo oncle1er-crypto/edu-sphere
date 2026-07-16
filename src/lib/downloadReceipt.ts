@@ -62,6 +62,7 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
     type,
     motif: paiement.motif ?? null,
     souche,
+    hideVersementLine,
   });
 
   return {
