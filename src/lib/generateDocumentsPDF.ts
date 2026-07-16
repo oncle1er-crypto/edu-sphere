@@ -24,6 +24,8 @@ export interface RecuData {
   motif?: string | null;
   /** Inclure la souche école (par défaut: true). Mettre à false pour un reçu "famille seule" (WhatsApp). */
   souche?: boolean;
+  /** Masquer la ligne « Versement reçu / Dont ce versement » (ex: réimpression). */
+  hideVersementLine?: boolean;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
@@ -202,14 +204,17 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(...muted);
-      const isReprint = !isRemise && Number(totalPaye) !== Number(data.montant);
-      const versementLabel = isRemise
-        ? "Montant accordé"
-        : isReprint
-          ? "Dont ce versement"
-          : "Versement reçu";
-      const versementValue = isRemise ? data.montant : data.montant;
-      doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(versementValue)}`, M, y);
+      if (data.hideVersementLine) {
+        doc.text(`Total dû : ${formatFCFA(totalDu)}`, M, y);
+      } else {
+        const isReprint = !isRemise && Number(totalPaye) !== Number(data.montant);
+        const versementLabel = isRemise
+          ? "Montant accordé"
+          : isReprint
+            ? "Dont ce versement"
+            : "Versement reçu";
+        doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(data.montant)}`, M, y);
+      }
     }
 
     // Badge

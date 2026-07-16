@@ -8,12 +8,14 @@ interface Params {
   type: RecuData["type"];
   /** Inclure la souche école. Par défaut true. */
   souche?: boolean;
+  /** Masquer la ligne « Versement reçu / Dont ce versement ». */
+  hideVersementLine?: boolean;
 }
 
 /**
  * Récupère les données du paiement + école + élève et construit le PDF reçu.
  */
-async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true }: Params) {
+async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true, hideVersementLine }: Params) {
   const [{ data: paiement }, { data: ecole }, { data: eleve }, { data: tranches }, { data: paiements }] =
     await Promise.all([
       supabase.from("paiements")
@@ -60,6 +62,7 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
     type,
     motif: paiement.motif ?? null,
     souche,
+    hideVersementLine,
   });
 
   return {
