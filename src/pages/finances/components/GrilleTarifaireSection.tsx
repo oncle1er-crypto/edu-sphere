@@ -205,7 +205,7 @@ export default function GrilleTarifaireSection() {
       <div className="mt-3 p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground space-y-1">
         <p className="flex items-start gap-1.5">
           <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <span>Pour la Grande Section, créez deux lignes : une « Ancien » et une « Nouveau ». Le tarif appliqué à un élève dépend de la case « Nouvel élève » sur sa fiche.</span>
+          <span>Pour la <strong>Maternelle 1 (Petite Section)</strong>, la <strong>Maternelle 2 (Moyenne Section)</strong> et la <strong>Grande Section</strong>, créez deux lignes : une « Ancien » et une « Nouveau ». Le tarif appliqué à un élève dépend de la case « Nouvel élève » sur sa fiche.</span>
         </p>
         <p className="flex items-start gap-1.5">
           <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
