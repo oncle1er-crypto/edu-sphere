@@ -1,67 +1,121 @@
-# Audit du module Paiement / Finances — synthèse et plan de correction
+# Plan — Scolarité auto, Grille Cantine/Car, Paiements & Bons
 
-## Ce qui est cohérent (rassurant ✅)
+## 1. Scolarité : appliquer la grille modifiée aux élèves existants
 
-Le cœur du calcul est solide : toutes les vues (tableau de bord finances, drawer élève, impayés, relances, SMS) lisent la même source de vérité — les lignes `tranches` en base — qui sont recalculées automatiquement quand tu appliques une **grille tarifaire personnalisée** (`frais_id_override`). La fonction serveur `generer_tranches_eleve` traite bien l'override **en priorité absolue** avant la grille de classe, un trigger reconcilie chaque paiement avec sa tranche, et les statuts (payée / partielle) sont bien réévalués. Un trop-perçu apparaît correctement comme reste négatif à l'écran. Pas de « double remise » possible : le concept `eleves.remise` n'existe pas — les remises sont des lignes de paiement normales.
+**Problème actuel :** `regenerer_tranches_pre_inscrits` ne touche que les élèves au statut `pre_inscrit` **sans aucun paiement**. Résultat : dès qu'un élève est `inscrit` ou a payé une seule tranche, il conserve son ancien montant même si la grille change.
 
-## Incohérences confirmées (à corriger ❌)
+**Solution :**
+- Nouvelle fonction SQL `recalculer_grille_ecole(ecole_id, annee_id, force boolean)` :
+  - Boucle sur tous les élèves de l'année, appelle `generer_tranches_eleve(id, _force_recalc := true)`.
+  - `_force_recalc = true` recalcule le montant même sur tranches déjà partiellement payées **uniquement si `paye < nouveau_montant`** (jamais en dessous du déjà payé) — sécurise contre remboursement fantôme.
+  - Retourne `{ eleves_traites, tranches_modifiees }`.
+- Trigger `AFTER UPDATE` sur `grille_tarifs_niveaux` : enqueue un flag (pas d'exécution auto pour éviter les surprises).
+- Dans `GrilleTarifaireSection.tsx` : renommer le bouton en **« Appliquer aux élèves de la classe »** avec un `AlertDialog` clair :
+  - Option 1 : « Pré-inscrits uniquement (sans paiement) » — comportement actuel.
+  - Option 2 : « **Tous les élèves de ce niveau** » — nouveau, appelle `recalculer_grille_ecole`.
+  - Message : « Les paiements déjà encaissés ne sont jamais annulés. Seul le montant restant est ajusté. »
 
-### 1. Le reçu individuel PDF n'est pas filtré par année scolaire
-`src/lib/downloadReceipt.ts` (lignes 30-37) somme **tous** les paiements et **toutes** les tranches de l'élève, toutes années confondues. Pour un élève qui a un historique (redoublement, réinscription), le « Total dû » et « Total payé » imprimés sur le reçu **ne correspondent pas** à ce qui est affiché dans l'app (qui, elle, est scopée à l'année active via `useFinanceData`). Résultat : chiffres non réconciliables entre l'écran et le PDF remis à la famille.
+## 2. Grille tarifaire Cantine & Car — CRUD complet
 
-→ **Fix** : ajouter le filtre `annee_id` sur les requêtes `tranches` et `paiements` dans `downloadReceipt.ts`, comme dans `useFinanceData.ts`.
+**État actuel :** Grille en dur dans `useFinanceSettings` (3 colonnes T1/T2/T3, lignes non modifiables).
 
-### 2. Le reçu global masque les trop-perçus
-`src/lib/downloadGlobalReceipt.ts` ligne 135 : `const reste = Math.max(0, eleve.resteDu)`. Un parent en crédit de 15 000 FCFA (après baisse de grille override) voit `-15 000` à l'écran mais **`0 FCFA` sur le PDF**, sans mention qu'il est créditeur. Cela contredit directement le tooltip de `CustomFeeOverride` qui promet « un trop-perçu apparaît comme reste à payer négatif ».
+**Nouveau schéma :**
 
-→ **Fix** : retirer le `Math.max(0, …)` et afficher un libellé explicite (« Trop-perçu / Crédit famille : X FCFA ») quand `resteDu < 0`.
+```sql
+CREATE TABLE public.grille_tarifs_services (
+  id uuid PK,
+  ecole_id uuid, annee_id uuid,
+  service_type text CHECK IN ('cantine','transport'),
+  libelle text,                 -- ex: "Cantine Maternelle", "Car zone A"
+  periodicite text CHECK IN ('mensuel','trimestriel'),
+  tranches jsonb,               -- [{numero, label, mois, jour, montant}]
+  montant_total numeric GENERATED,
+  actif boolean DEFAULT true
+);
+-- + GRANT + RLS ecole scope + trigger total
+```
 
-### 3. Deux logiques de calcul « total dû » divergentes
-`downloadReceipt.ts` refait ses propres requêtes DB, alors que `downloadGlobalReceipt.ts` réutilise l'objet `eleve` déjà scopé. Toute évolution future dans un seul des deux fichiers créera une divergence silencieuse.
+**UI :** Remplacer la carte statique `Grille tarifaire — Car & Cantine` par un composant `GrilleServicesSection` calqué sur `GrilleTarifaireSection` : table avec badges, boutons Ajouter/Modifier/Supprimer, dialog `GrilleServiceEditor` (libellé + périodicité + tranches libres).
 
-→ **Fix** : extraire une fonction unique `computeEleveTotals(eleveId, ecoleId, anneeId)` dans `src/lib/eleveTotals.ts` et l'utiliser dans les deux générateurs de reçu.
+## 3. Module Cantine/Car — paiements & bons de réduction
 
-## Risques à traiter (à surveiller ⚠️)
+**Nouvelles tables :**
 
-### 4. `_force_recalc = true` par défaut sur le trigger de changement de classe
-Le trigger `eleves_generer_tranches` appelle `generer_tranches_eleve` sans passer `_force_recalc`, donc la valeur par défaut `true` s'applique. Conséquence : **tout changement de classe recalcule rétroactivement les montants des tranches déjà encaissées** selon la nouvelle grille — même sans intention de corriger une erreur (ex. simple hausse tarifaire).
+```sql
+-- Échéances générées pour chaque abonné
+CREATE TABLE public.echeances_services (
+  id, ecole_id, eleve_id, service_type,
+  grille_id → grille_tarifs_services,
+  numero, label, echeance date, montant, paye numeric DEFAULT 0,
+  statut CHECK IN ('due','partielle','payee','retard'),
+  remise_id uuid NULL
+);
 
-→ **Fix** : changer le default de `generer_tranches_eleve` à `_force_recalc boolean DEFAULT false` (migration). Le composant `CustomFeeOverride` continue à passer explicitement `true` quand la case « Corriger une erreur d'affectation » est cochée.
+-- Paiements
+CREATE TABLE public.paiements_services (
+  id, ecole_id, eleve_id, echeance_id, montant,
+  mode paiement_mode, reference, recu_par, motif, created_at
+);
 
-### 5. Statut `retard` non persisté après recalcul
-`generer_tranches_eleve` ne connaît que `due / payee / partielle` — jamais `retard`. L'UI reste correcte (recalcul à l'affichage), mais tout export CSV ou requête basée sur `tranches.statut` en base sous-évalue les retards.
+-- Bons de réduction
+CREATE TABLE public.bons_reduction (
+  id, ecole_id, code text UNIQUE,
+  libelle text, type CHECK IN ('montant','pourcent'),
+  valeur numeric,                 -- FCFA si montant, % si pourcent
+  service_types text[],           -- ['cantine'] / ['transport'] / both
+  date_debut date, date_fin date,
+  usage_max int NULL, usage_count int DEFAULT 0,
+  actif boolean
+);
 
-→ **Fix** : ajouter dans le `CASE` de la fonction : `WHEN tr.paye <= 0 AND tr.echeance < CURRENT_DATE THEN 'retard'`.
+CREATE TABLE public.bons_reduction_utilisations (
+  id, bon_id, eleve_id, echeance_id, montant_applique, applique_par, created_at
+);
+```
 
-### 6. Factures manuelles non resynchronisées
-`useFactures.ts` fige `montant` à la création. Après un override, les factures déjà émises gardent l'ancien montant. Non bloquant tant que les factures ne sont pas utilisées comme référence de dû (le vrai dû reste dans `tranches`).
+**Fonctions RPC :**
+- `generer_echeances_service(eleve_id, service_type)` : lit la grille active, crée les échéances.
+- `enregistrer_paiement_service(echeance_id, montant, mode, ref, motif)` : sécurisée admin/comptable, met à jour paye/statut.
+- `appliquer_bon_reduction(bon_id, echeance_id)` : vérifie validité + plafond, calcule le montant, crée la ligne d'utilisation, met à jour le paye de l'échéance (mode `remise`).
 
-→ **Fix** : afficher un badge « ⚠ Grille modifiée depuis l'émission » dans `Invoices.tsx` quand la date de la facture est antérieure au dernier `updated_at` des tranches de l'élève. Pas de régénération automatique — juste un signal visuel.
+**UI (Cantine & Transport) :**
+- Section **« Abonnés »** enrichie : liste avec colonnes Payé/Dû/Reste/Statut (comme Finances).
+- Bouton **« Enregistrer un paiement »** → dialog similaire à `PaymentDialog` finances : choix échéance (mois ou trimestre selon périodicité), montant, mode, référence, bouton **« Appliquer un bon »** ouvrant un sélecteur des bons actifs applicables.
+- Nouvelle sous-section **« Bons de réduction »** dans la configuration de chaque module :
+  - CRUD complet (créer/modifier/désactiver, jamais supprimer si utilisé).
+  - Affichage des utilisations passées.
 
-### 7. Grille standard : somme des tranches non validée
-`useGrilleTarifs.ts` n'empêche pas de saisir une grille dont `Σ tranches ≠ montant_total`. La branche override est mathématiquement garantie, mais pas la branche grille classique.
+## Fichiers principaux touchés
 
-→ **Fix** : ajouter dans `GrilleTarifEditor.tsx` une validation front qui bloque la sauvegarde si l'écart dépasse 0 FCFA, avec message clair.
+- `supabase/migrations/…_grille_services_paiements_bons.sql`
+- `supabase/migrations/…_recalcul_grille_ecole.sql`
+- `src/hooks/useGrilleServices.ts` (nouveau)
+- `src/hooks/useEcheancesServices.ts` (nouveau)
+- `src/hooks/useBonsReduction.ts` (nouveau)
+- `src/pages/finances/components/GrilleTarifaireSection.tsx` (ajout options recalcul)
+- `src/pages/finances/components/GrilleServicesSection.tsx` (nouveau)
+- `src/pages/finances/components/GrilleServiceEditor.tsx` (nouveau)
+- `src/pages/cantine/sections/CanteenBilling.tsx` (refonte)
+- `src/pages/cantine/sections/CanteenSubscribers.tsx` (ajout colonnes paiement)
+- `src/pages/cantine/sections/CanteenConfig.tsx` (ajout bons)
+- `src/pages/transport/sections/…` équivalents
+- `src/pages/finances/components/ServicePaymentDialog.tsx` (nouveau, mutualisé)
+- `src/pages/finances/components/BonReductionDialog.tsx` (nouveau)
+- `src/pages/finances/components/BonsReductionSection.tsx` (nouveau, réutilisable)
 
 ## Détails techniques
 
-**Fichiers frontend à modifier**
-- `src/lib/downloadReceipt.ts` — filtre `annee_id`, utilise `computeEleveTotals`
-- `src/lib/downloadGlobalReceipt.ts` — retire `Math.max(0, …)`, ajoute libellé crédit, utilise `computeEleveTotals`
-- `src/lib/eleveTotals.ts` **(nouveau)** — source unique de calcul totalDu / totalPaye / resteDu scopés par année
-- `src/pages/finances/sections/Invoices.tsx` — badge « grille modifiée »
-- `src/pages/finances/components/GrilleTarifEditor.tsx` — validation Σ tranches = montant_total
+- Toutes les nouvelles tables suivent la règle `GRANT` + RLS scoping par `ecole_id` via `private.has_ecole_role`.
+- Les fonctions RPC sont `SECURITY DEFINER` limitées à `admin`/`comptable`/`directeur`.
+- Aucun statut n'est régressé : le recalcul scolarité ne baisse jamais `paye`, ne repasse pas une tranche `payee` à `due`.
+- Bons : validation côté DB (dates, plafond, service, ecole_id) + côté UI.
+- Devise FCFA partout, formatage via `fcfa()` existant.
+- Les paiements services ne touchent PAS les tables `paiements`/`tranches` scolarité — modules séparés.
 
-**Migration SQL**
-- Nouvelle migration `update_generer_tranches_eleve.sql` :
-  - `_force_recalc boolean DEFAULT false` (au lieu de `true`)
-  - Ajout du statut `retard` dans les 3 blocs `CASE` (branches override, grille classe standard, fallback)
+## Livraison en 2 phases
 
-**Hors périmètre (à confirmer avant tout changement)**
-- `regenerer_tranches_pre_inscrits` : non lue en détail, à vérifier séparément si tu confirmes ce plan.
-- Aucune modification du trigger `reconcilier_tranche_paiements` — il fonctionne bien.
-- Aucune modification du calcul en mémoire `useFinanceData.ts` — c'est la source de vérité correcte.
+**Phase A (ce tour)** : migrations DB + hooks + recalcul scolarité (fix immédiat du bug remonté).
 
----
+**Phase B (tour suivant)** : refonte UI Cantine/Transport (billing, bons, dialogs) — beaucoup de composants, mieux séparé pour rester lisible et testable.
 
-Confirme-moi que je peux implémenter ces 7 correctifs (ou dis-moi lesquels écarter), et je passe en mode build.
+Confirme si tu valides ce plan, ou dis-moi ce que tu veux ajuster (nommage des bons, périodicité obligatoire, etc.).
