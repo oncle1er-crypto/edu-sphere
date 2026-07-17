@@ -1,4 +1,4 @@
-import { Settings2, Info, Save, Loader2 } from "lucide-react";
+import { Settings2, Save, Loader2 } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
-import { fcfa } from "../scolarite-data";
 import GrilleTarifaireSection from "../components/GrilleTarifaireSection";
 import GrilleServicesSection from "../components/GrilleServicesSection";
 
