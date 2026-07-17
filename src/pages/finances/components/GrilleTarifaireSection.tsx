@@ -30,6 +30,7 @@ export default function GrilleTarifaireSection() {
     upsert, isSaving,
     remove, regenererPreInscrits, isRegenerating,
     dupliquerDepuis, isDuplicating,
+    recalculerTousEleves, isRecalculating,
   } = useGrilleTarifs();
 
   const [editorOpen, setEditorOpen] = useState(false);
