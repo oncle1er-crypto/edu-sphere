@@ -30,6 +30,7 @@ export default function GrilleTarifaireSection() {
     upsert, isSaving,
     remove, regenererPreInscrits, isRegenerating,
     dupliquerDepuis, isDuplicating,
+    recalculerTousEleves, isRecalculating,
   } = useGrilleTarifs();
 
   const [editorOpen, setEditorOpen] = useState(false);
@@ -119,6 +120,32 @@ export default function GrilleTarifaireSection() {
             <AlertDialogFooter>
               <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={() => regenererPreInscrits()}>Régénérer</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="secondary" disabled={!anneeId || isRecalculating}>
+              {isRecalculating ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              Appliquer à tous les élèves
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Recalculer la scolarité de tous les élèves ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Toutes les tranches non payées de tous les élèves de l'année en cours seront ajustées à la nouvelle grille tarifaire.
+                <br /><br />
+                <strong>Aucun paiement déjà encaissé n'est annulé</strong> — seul le montant restant est mis à jour.
+                Les tranches déjà entièrement payées ne changent pas.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction onClick={() => recalculerTousEleves(undefined)}>
+                Confirmer et recalculer
+              </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

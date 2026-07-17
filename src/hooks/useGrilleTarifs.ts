@@ -145,6 +145,26 @@ export function useGrilleTarifs() {
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const recalculerTousEleves = useMutation({
+    mutationFn: async (opts?: { niveau_code?: NiveauCode | null }) => {
+      const { data, error } = await supabase.rpc(
+        "recalculer_grille_ecole" as any,
+        {
+          _ecole_id: ecoleId,
+          _annee_id: anneeId,
+          _niveau_code: opts?.niveau_code ?? null,
+          _seulement_pre_inscrits: false,
+        },
+      );
+      if (error) throw error;
+      return (data as any)?.eleves_traites ?? 0;
+    },
+    onSuccess: (n: number) => {
+      toast.success(`${n} élève(s) recalculé(s). Paiements déjà encaissés préservés.`);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   return {
     lignes: query.data ?? [],
     isLoading: query.isLoading,
@@ -153,5 +173,6 @@ export function useGrilleTarifs() {
     remove: remove.mutate, isRemoving: remove.isPending,
     regenererPreInscrits: regenererPreInscrits.mutate, isRegenerating: regenererPreInscrits.isPending,
     dupliquerDepuis: dupliquerDepuis.mutate, isDuplicating: dupliquerDepuis.isPending,
+    recalculerTousEleves: recalculerTousEleves.mutate, isRecalculating: recalculerTousEleves.isPending,
   };
 }

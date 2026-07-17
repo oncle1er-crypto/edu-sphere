@@ -518,6 +518,134 @@ export type Database = {
           },
         ]
       }
+      bons_reduction: {
+        Row: {
+          actif: boolean
+          code: string
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          ecole_id: string
+          id: string
+          libelle: string
+          service_types: string[]
+          type: string
+          updated_at: string
+          usage_count: number
+          usage_max: number | null
+          valeur: number
+        }
+        Insert: {
+          actif?: boolean
+          code: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          ecole_id: string
+          id?: string
+          libelle: string
+          service_types?: string[]
+          type: string
+          updated_at?: string
+          usage_count?: number
+          usage_max?: number | null
+          valeur: number
+        }
+        Update: {
+          actif?: boolean
+          code?: string
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          service_types?: string[]
+          type?: string
+          updated_at?: string
+          usage_count?: number
+          usage_max?: number | null
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bons_reduction_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bons_reduction_utilisations: {
+        Row: {
+          applique_par: string | null
+          bon_id: string
+          created_at: string
+          echeance_id: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          montant_applique: number
+        }
+        Insert: {
+          applique_par?: string | null
+          bon_id: string
+          created_at?: string
+          echeance_id?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          montant_applique: number
+        }
+        Update: {
+          applique_par?: string | null
+          bon_id?: string
+          created_at?: string
+          echeance_id?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          montant_applique?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bons_reduction_utilisations_bon_id_fkey"
+            columns: ["bon_id"]
+            isOneToOne: false
+            referencedRelation: "bons_reduction"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_reduction_utilisations_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_reduction_utilisations_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_reduction_utilisations_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bons_reduction_utilisations_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
+      }
       bulletins_audit: {
         Row: {
           annee_id: string
@@ -1820,6 +1948,93 @@ export type Database = {
         }
         Relationships: []
       }
+      echeances_services: {
+        Row: {
+          annee_id: string
+          created_at: string
+          echeance: string
+          ecole_id: string
+          eleve_id: string
+          grille_id: string | null
+          id: string
+          label: string
+          montant: number
+          numero: number
+          paye: number
+          service_type: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          echeance: string
+          ecole_id: string
+          eleve_id: string
+          grille_id?: string | null
+          id?: string
+          label: string
+          montant?: number
+          numero: number
+          paye?: number
+          service_type: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          echeance?: string
+          ecole_id?: string
+          eleve_id?: string
+          grille_id?: string | null
+          id?: string
+          label?: string
+          montant?: number
+          numero?: number
+          paye?: number
+          service_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "echeances_services_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "echeances_services_grille_id_fkey"
+            columns: ["grille_id"]
+            isOneToOne: false
+            referencedRelation: "grille_tarifs_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ecoles: {
         Row: {
           adresse: string | null
@@ -2967,6 +3182,63 @@ export type Database = {
           },
         ]
       }
+      grille_tarifs_services: {
+        Row: {
+          actif: boolean
+          annee_id: string
+          created_at: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_total: number
+          periodicite: string
+          service_type: string
+          tranches: Json
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          annee_id: string
+          created_at?: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant_total?: number
+          periodicite?: string
+          service_type: string
+          tranches?: Json
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          annee_id?: string
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_total?: number
+          periodicite?: string
+          service_type?: string
+          tranches?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grille_tarifs_services_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       groupe_membres: {
         Row: {
           created_at: string
@@ -3802,6 +4074,80 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_paiements_incoherents"
             referencedColumns: ["tranche_id"]
+          },
+        ]
+      }
+      paiements_services: {
+        Row: {
+          bon_reduction_id: string | null
+          created_at: string
+          echeance_id: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mode: string
+          montant: number
+          motif: string | null
+          recu_par: string | null
+          reference: string | null
+          service_type: string
+        }
+        Insert: {
+          bon_reduction_id?: string | null
+          created_at?: string
+          echeance_id: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mode?: string
+          montant: number
+          motif?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          service_type: string
+        }
+        Update: {
+          bon_reduction_id?: string | null
+          created_at?: string
+          echeance_id?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mode?: string
+          montant?: number
+          motif?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_services_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
         ]
       }
@@ -5902,6 +6248,10 @@ export type Database = {
         Returns: undefined
       }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
+      appliquer_bon_service: {
+        Args: { _bon_id: string; _echeance_id: string }
+        Returns: Json
+      }
       appliquer_decisions_fin_annee: {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: Json
@@ -6008,6 +6358,16 @@ export type Database = {
         }
         Returns: string
       }
+      enregistrer_paiement_service: {
+        Args: {
+          _echeance_id: string
+          _mode: string
+          _montant: number
+          _motif?: string
+          _reference?: string
+        }
+        Returns: string
+      }
       executer_passage_classe: {
         Args: {
           _annee_cible: string
@@ -6016,6 +6376,10 @@ export type Database = {
           _plan: Json
         }
         Returns: Json
+      }
+      generer_echeances_service: {
+        Args: { _eleve_id: string; _grille_id: string; _service_type: string }
+        Returns: number
       }
       generer_tranches_eleve: {
         Args: { _eleve_id: string; _force_recalc?: boolean }
@@ -6077,6 +6441,15 @@ export type Database = {
       recalc_vacances_eleve_statut: {
         Args: { _eleve_id: string }
         Returns: undefined
+      }
+      recalculer_grille_ecole: {
+        Args: {
+          _annee_id: string
+          _ecole_id: string
+          _niveau_code?: string
+          _seulement_pre_inscrits?: boolean
+        }
+        Returns: Json
       }
       reconduire_affectations_pedagogiques: {
         Args: {

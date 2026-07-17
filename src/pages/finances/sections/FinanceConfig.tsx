@@ -1,4 +1,4 @@
-import { Settings2, Bus, Info, Save, Loader2 } from "lucide-react";
+import { Settings2, Save, Loader2 } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -8,12 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
-import {
-  TARIFS_SERVICES,
-  ECHEANCES_SERVICES,
-  fcfa,
-} from "../scolarite-data";
 import GrilleTarifaireSection from "../components/GrilleTarifaireSection";
+import GrilleServicesSection from "../components/GrilleServicesSection";
 
 const paymentMethods = [
   { id: "cash", label: "Espèces" },
@@ -66,47 +62,11 @@ export default function FinanceConfig() {
       {/* ─── Grille tarifaire scolarité (CRUD en base) ─── */}
       <GrilleTarifaireSection />
 
-      {/* ─── Grille tarifaire Car & Cantine ─── */}
-      <SettingsSection
-        title="Grille tarifaire — Car & Cantine"
-        description="Frais de transport scolaire et de restauration par trimestre."
-        icon={<Bus className="h-5 w-5" />}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm border-collapse">
-            <thead>
-              <tr className="border-b-2 border-primary/20">
-                <th className="text-left py-3 px-3 font-bold text-foreground">Désignation</th>
-                {ECHEANCES_SERVICES.map((e) => (
-                  <th key={e} className="text-right py-3 px-3 font-bold text-foreground">{e}</th>
-                ))}
-                <th className="text-right py-3 px-3 font-extrabold text-primary">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {TARIFS_SERVICES.map((t, i) => (
-                <tr key={t.designation} className={i % 2 === 0 ? "bg-muted/30" : ""}>
-                  <td className="py-2.5 px-3 font-medium text-foreground">{t.designation}</td>
-                  {t.tranches.map((m, j) => (
-                    <td key={j} className="py-2.5 px-3 text-right tabular-nums text-muted-foreground">
-                      {fcfa(m)}
-                    </td>
-                  ))}
-                  <td className="py-2.5 px-3 text-right tabular-nums font-bold text-primary">
-                    {fcfa(t.total)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div className="mt-3 p-3 bg-muted/40 rounded-lg text-xs text-muted-foreground">
-          <p className="flex items-start gap-1.5">
-            <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-            <span>Les frais du car et de la cantine sont payés au début de chaque trimestre de préférence avant le 27 du mois antérieur. Les places sont limitées et la priorité est accordée aux plus petits et plus éloignés.</span>
-          </p>
-        </div>
-      </SettingsSection>
+      {/* ─── Grille tarifaire Cantine (CRUD en base) ─── */}
+      <GrilleServicesSection serviceType="cantine" />
+
+      {/* ─── Grille tarifaire Transport / Car (CRUD en base) ─── */}
+      <GrilleServicesSection serviceType="transport" />
 
       {/* ─── Numérotation & paiements ─── */}
       <SettingsSection
