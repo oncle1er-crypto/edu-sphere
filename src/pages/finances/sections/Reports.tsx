@@ -1,19 +1,17 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Download, FileText, Eye, Loader2, Filter, X } from "lucide-react";
+import { BarChart3, Download, FileText, Eye, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "@/pages/finances/useFinanceData";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { ReportFilters, ALL_CLASSES, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
@@ -34,7 +32,6 @@ import { toast } from "sonner";
 
 const ECOLE_NOM = "Complexe Scolaire La Providence de Don Orione";
 
-// ── Helper: group finance data by classe ──
 function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]): RecouvrementData {
   const classeMap = new Map<string, { effectif: number; du: number; paye: number }>();
   for (const e of data) {
@@ -54,11 +51,7 @@ function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]):
 
 type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution" | "remises";
 
-interface ReportDef {
-  id: ReportId;
-  title: string;
-  description: string;
-}
+interface ReportDef { id: ReportId; title: string; description: string; }
 
 const REPORTS: ReportDef[] = [
   { id: "compte_resultat", title: "Compte de résultat", description: "Recettes vs charges sur la période" },
@@ -73,17 +66,23 @@ const REPORTS: ReportDef[] = [
 export default function Reports() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
   const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
-  const { depenses, loading: depLoading } = useDepenses(dateRange);
+
+  const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
+
+  const effectiveRange = useMemo(() => {
+    if (filters.from || filters.to) {
+      return { from: filters.from || activeAnnee?.debut, to: filters.to || activeAnnee?.fin };
+    }
+    return periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  }, [filters.from, filters.to, activeAnnee, periodLoading]);
+
+  const { depenses, loading: depLoading } = useDepenses(effectiveRange);
   const { comptes, mouvements, loading: tresLoading } = useTresorerie();
   const { lignes: budgetLignes, loading: budLoading } = useBudget();
   const { bulletins, loading: paieLoading } = useBulletinsPaie();
 
   const [preview, setPreview] = useState<ReportId | null>(null);
-  const [remiseFrom, setRemiseFrom] = useState<string>("");
-  const [remiseTo, setRemiseTo] = useState<string>("");
-  const [remiseClasse, setRemiseClasse] = useState<string>("__all__");
 
   const classesList = useMemo(() => {
     const s = new Set<string>();
@@ -91,20 +90,17 @@ export default function Reports() {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [financeData]);
 
+  const scopedFinance = useMemo(() => {
+    if (!filters.classe || filters.classe === ALL_CLASSES) return financeData;
+    return financeData.filter((e) => e.classe === filters.classe);
+  }, [financeData, filters.classe]);
+
   const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
   const now = new Date();
   const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-  const periode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+  const defaultPeriode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+  const periode = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
 
-  const remisesFilterActive = !!(remiseFrom || remiseTo || (remiseClasse && remiseClasse !== "__all__"));
-  const remisesPeriodeLabel = (() => {
-    if (!remiseFrom && !remiseTo) return periode;
-    const fmt = (s: string) => new Date(s).toLocaleDateString("fr-FR");
-    if (remiseFrom && remiseTo) return `${fmt(remiseFrom)} → ${fmt(remiseTo)}`;
-    if (remiseFrom) return `Depuis le ${fmt(remiseFrom)}`;
-    return `Jusqu'au ${fmt(remiseTo)}`;
-  })();
-  const resetRemisesFilters = () => { setRemiseFrom(""); setRemiseTo(""); setRemiseClasse("__all__"); };
 
   // ── Data builders ──
   const getCompteResultat = (): CompteResultatData => {
@@ -136,7 +132,7 @@ export default function Reports() {
   });
 
   const getImpayes = (): AnalyseImpayesData => ({
-    lignes: financeData
+    lignes: scopedFinance
       .filter((e) => e.resteDu > 0)
       .map((e) => ({
         nom: e.nom,
@@ -149,12 +145,10 @@ export default function Reports() {
   });
 
   const getRemises = (): RemisesData => {
-    const from = remiseFrom ? new Date(remiseFrom + "T00:00:00") : null;
-    const to = remiseTo ? new Date(remiseTo + "T23:59:59") : null;
-    const classeFilter = remiseClasse && remiseClasse !== "__all__" ? remiseClasse : null;
+    const from = filters.from ? new Date(filters.from + "T00:00:00") : null;
+    const to = filters.to ? new Date(filters.to + "T23:59:59") : null;
     return {
-      lignes: financeData
-        .filter((e) => !classeFilter || e.classe === classeFilter)
+      lignes: scopedFinance
         .map((e) => {
           const remisePaiements = (e.paiements ?? []).filter((p) => {
             if (p.kind !== "remise") return false;
@@ -181,6 +175,7 @@ export default function Reports() {
         .filter((l) => l.montant > 0),
     };
   };
+
 
   const getMasseSalariale = (): MasseSalarialeData => ({
     mois: periode,
@@ -240,11 +235,11 @@ export default function Reports() {
       switch (id) {
         case "compte_resultat": await generateCompteResultat(meta, periode, getCompteResultat()); break;
         case "flux_tresorerie": await generateFluxTresorerie(meta, periode, getFluxTresorerie()); break;
-        case "recouvrement": await generateRecouvrement(meta, periode, buildRecouvrementData(financeData)); break;
+        case "recouvrement": await generateRecouvrement(meta, periode, buildRecouvrementData(scopedFinance)); break;
         case "impayes": await generateAnalyseImpayes(meta, getImpayes()); break;
         case "masse_salariale": await generateMasseSalariale(meta, periode, getMasseSalariale()); break;
         case "budget_execution": await generateBudgetExecution(meta, periode, getBudgetExecution()); break;
-        case "remises": await generateRemisesAccordees(meta, remisesPeriodeLabel, getRemises()); break;
+        case "remises": await generateRemisesAccordees(meta, periode, getRemises()); break;
       }
       toast.success("PDF généré avec succès");
     } catch (e) {
@@ -280,7 +275,7 @@ export default function Reports() {
         );
       }
       case "recouvrement": {
-        const d = buildRecouvrementData(financeData);
+        const d = buildRecouvrementData(scopedFinance);
         return (
           <Table><TableHeader><TableRow><TableHead>Classe</TableHead><TableHead>Effectif</TableHead><TableHead className="text-right">Dû</TableHead><TableHead className="text-right">Payé</TableHead><TableHead className="text-right">Taux</TableHead></TableRow></TableHeader>
             <TableBody>{d.lignes.map((l, i) => <TableRow key={i}><TableCell>{l.classe}</TableCell><TableCell>{l.effectif}</TableCell><TableCell className="text-right">{fcfa(l.montant_du)}</TableCell><TableCell className="text-right">{fcfa(l.montant_paye)}</TableCell><TableCell className="text-right">{l.montant_du > 0 ? ((l.montant_paye / l.montant_du) * 100).toFixed(1) + "%" : "—"}</TableCell></TableRow>)}
@@ -300,40 +295,7 @@ export default function Reports() {
         const total = d.lignes.reduce((s, l) => s + l.montant, 0);
         return (
           <div className="space-y-4">
-            <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Filter className="h-4 w-4 text-primary" />
-                Filtres
-                {remisesFilterActive && (
-                  <Button size="sm" variant="ghost" className="ml-auto h-7 gap-1 text-xs" onClick={resetRemisesFilters}>
-                    <X className="h-3 w-3" />Réinitialiser
-                  </Button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Du</Label>
-                  <Input type="date" value={remiseFrom} onChange={(e) => setRemiseFrom(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Au</Label>
-                  <Input type="date" value={remiseTo} onChange={(e) => setRemiseTo(e.target.value)} />
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Classe</Label>
-                  <Select value={remiseClasse} onValueChange={setRemiseClasse}>
-                    <SelectTrigger><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__all__">Toutes les classes</SelectItem>
-                      {classesList.map((c) => (
-                        <SelectItem key={c} value={c}>{c}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">Période appliquée : <span className="font-medium">{remisesPeriodeLabel}</span></p>
-            </div>
+
             {d.lignes.length === 0 ? (
               <div className="text-center text-sm text-muted-foreground py-8">Aucune remise sur ces critères.</div>
             ) : (
@@ -405,33 +367,42 @@ export default function Reports() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {REPORTS.map((r) => (
-              <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <FileText className="h-5 w-5" />
+          <div className="space-y-4">
+            <ReportFilters
+              value={filters}
+              onChange={setFilters}
+              classes={classesList}
+              periodeLabel={periode}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {REPORTS.map((r) => (
+                <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold font-display text-primary">{r.title}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{r.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold font-display text-primary">{r.title}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">{r.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
+                        <Eye className="h-4 w-4" />Visualiser
+                      </Button>
+                      <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
+                        <Download className="h-4 w-4" />PDF
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
-                      <Eye className="h-4 w-4" />Visualiser
-                    </Button>
-                    <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
-                      <Download className="h-4 w-4" />PDF
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
+
       </SettingsSection>
 
       <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
