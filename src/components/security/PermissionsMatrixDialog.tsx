@@ -26,7 +26,7 @@ const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: an
 ];
 
 export function PermissionsMatrixDialog({ open, onOpenChange, userId, userName }: Props) {
-  const { modules, perms, loading, saving, toggle, setAllForModule, setActionForModules, applyPreset, save } = useUserPermissions(userId);
+  const { modules, perms, loading, saving, isDefault, toggle, setAllForModule, setActionForModules, applyPreset, save } = useUserPermissions(userId);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -94,6 +94,13 @@ export function PermissionsMatrixDialog({ open, onOpenChange, userId, userName }
               </button>
             )}
           </div>
+
+          {!loading && isDefault && (
+            <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+              Aucune permission individuelle n'est encore enregistrée pour cet utilisateur. Les cases pré-cochées ci-dessous correspondent à ce que <strong>son rôle</strong> lui accorde (ou aux valeurs par défaut recommandées). Ajustez-les puis cliquez sur <strong>Enregistrer</strong> pour créer une surcharge individuelle.
+            </div>
+          )}
+
 
           <div className="flex flex-wrap items-center gap-2">
             <Badge variant="secondary">
