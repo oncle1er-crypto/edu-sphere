@@ -235,7 +235,7 @@ export default function Reports() {
       switch (id) {
         case "compte_resultat": await generateCompteResultat(meta, periode, getCompteResultat()); break;
         case "flux_tresorerie": await generateFluxTresorerie(meta, periode, getFluxTresorerie()); break;
-        case "recouvrement": await generateRecouvrement(meta, periode, buildRecouvrementData(financeData)); break;
+        case "recouvrement": await generateRecouvrement(meta, periode, buildRecouvrementData(scopedFinance)); break;
         case "impayes": await generateAnalyseImpayes(meta, getImpayes()); break;
         case "masse_salariale": await generateMasseSalariale(meta, periode, getMasseSalariale()); break;
         case "budget_execution": await generateBudgetExecution(meta, periode, getBudgetExecution()); break;
