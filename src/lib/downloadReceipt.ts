@@ -27,13 +27,13 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
   const tranchesQ = anneeId
     ? supabase
         .from("tranches")
-        .select("montant, paye, frais_scolarite!inner(annee_id)")
+        .select("id, montant, paye, frais_scolarite!inner(annee_id)")
         .eq("ecole_id", ecoleId)
         .eq("eleve_id", eleveId)
         .eq("frais_scolarite.annee_id", anneeId)
     : supabase
         .from("tranches")
-        .select("montant, paye")
+        .select("id, montant, paye")
         .eq("ecole_id", ecoleId)
         .eq("eleve_id", eleveId);
 
@@ -59,6 +59,24 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
   const totalDu = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
   const totalPaye = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.paye || 0), 0);
 
+  // Ventilation encaissé / remises : on additionne les paiements réels de l'élève,
+  // scopés aux tranches de l'année active si dispo.
+  const trancheIds = new Set<string>((tranches ?? []).map((t: any) => t.id));
+  const { data: paiementsRaw } = await supabase
+    .from("paiements")
+    .select("montant, mode, tranche_id")
+    .eq("ecole_id", ecoleId)
+    .eq("eleve_id", eleveId);
+  const REMISE_MODES = new Set(["remise", "bourse", "prise_en_charge"]);
+  let totalEncaisse = 0;
+  let totalRemises = 0;
+  (paiementsRaw ?? []).forEach((p: any) => {
+    if (anneeId && trancheIds.size > 0 && p.tranche_id && !trancheIds.has(p.tranche_id)) return;
+    const m = Number(p.montant || 0);
+    if (REMISE_MODES.has(p.mode)) totalRemises += m;
+    else totalEncaisse += m;
+  });
+
   const pdf = await generateRecuPDF({
     ecole: {
       nom: ecole.nom || "École",
@@ -82,6 +100,8 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
     date_paiement: paiement.date_paiement,
     total_du: totalDu,
     total_paye: totalPaye,
+    total_encaisse: totalEncaisse,
+    total_remises: totalRemises,
     type,
     motif: paiement.motif ?? null,
     souche,
