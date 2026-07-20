@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useSpVentes, type SpModePaiement, type SpVenteStatut, type SpVenteTenue } from "../hooks/useSpVentes";
+import { useSpServices } from "../hooks/useSpServices";
+import { toast } from "sonner";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
 const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "annule"];
