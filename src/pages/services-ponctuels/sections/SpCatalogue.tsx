@@ -33,6 +33,7 @@ export default function SpCatalogue() {
                   <TableHead>Prix</TableHead>
                   <TableHead>Partiel</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Restant</TableHead>
                   <TableHead>Actif</TableHead>
                   <TableHead className="w-24"></TableHead>
                 </TableRow>
@@ -50,6 +51,11 @@ export default function SpCatalogue() {
                     <TableCell>{Number(s.prix).toLocaleString("fr-FR")} FCFA</TableCell>
                     <TableCell>{s.accepte_partiel ? <Badge>Oui</Badge> : "—"}</TableCell>
                     <TableCell>{s.gere_stock ? <Badge>Oui</Badge> : "—"}</TableCell>
+                    <TableCell>{s.gere_stock ? (
+                      <Badge variant={s.stock_actuel != null && s.stock_actuel <= 5 ? "destructive" : "secondary"}>
+                        {s.stock_actuel ?? 0}
+                      </Badge>
+                    ) : "—"}</TableCell>
                     <TableCell>{s.actif ? <Badge className="bg-emerald-600">Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
@@ -82,6 +88,9 @@ export default function SpCatalogue() {
               </div>
               <div className="flex items-center justify-between rounded border p-2"><Label>Accepte paiement partiel</Label><Switch checked={editing.accepte_partiel ?? false} onCheckedChange={(v) => setEditing({ ...editing, accepte_partiel: v })} /></div>
               <div className="flex items-center justify-between rounded border p-2"><Label>Gère un stock</Label><Switch checked={editing.gere_stock ?? false} onCheckedChange={(v) => setEditing({ ...editing, gere_stock: v })} /></div>
+              {editing.gere_stock && (
+                <div><Label>Stock actuel</Label><Input type="number" value={editing.stock_actuel ?? 0} onChange={(e) => setEditing({ ...editing, stock_actuel: +e.target.value })} /></div>
+              )}
               <div className="flex items-center justify-between rounded border p-2"><Label>Actif</Label><Switch checked={editing.actif ?? true} onCheckedChange={(v) => setEditing({ ...editing, actif: v })} /></div>
             </div>
           )}

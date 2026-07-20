@@ -9,6 +9,7 @@ import { useSpCandidats, type SpCandidat } from "../hooks/useSpCandidats";
 import { CandidatFormDialog } from "../components/CandidatFormDialog";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
 import { useSpServices } from "../hooks/useSpServices";
+import { ConvertCandidatDialog } from "../components/ConvertCandidatDialog";
 
 const STATUT_COLOR: Record<string, string> = {
   en_attente: "bg-muted", programme: "bg-blue-500", absent: "bg-orange-500",
@@ -20,6 +21,7 @@ export default function SpTestsEntree() {
   const { services } = useSpServices();
   const [editing, setEditing] = useState<Partial<SpCandidat> | null>(null);
   const [pay, setPay] = useState<SpCandidat | null>(null);
+  const [convert, setConvert] = useState<SpCandidat | null>(null);
   const [q, setQ] = useState("");
 
   const testService = services.find((s) => s.slug === "test_entree");
@@ -71,7 +73,7 @@ export default function SpTestsEntree() {
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" title="Convertir en élève" disabled={!!c.converti_eleve_id} onClick={async () => { if (confirm("Convertir ce candidat en élève ?")) await convertir(c.id); }}>
+                        <Button size="icon" variant="ghost" title="Convertir en élève" disabled={!!c.converti_eleve_id} onClick={() => setConvert(c)}>
                           <UserPlus className="h-4 w-4" />
                         </Button>
                         <Button size="icon" variant="ghost" onClick={() => setEditing(c)}><Pencil className="h-4 w-4" /></Button>
@@ -103,6 +105,15 @@ export default function SpTestsEntree() {
           beneficiaire_libre: `${pay.nom} ${pay.prenom}`,
         } : undefined}
       />
+
+      {convert && (
+        <ConvertCandidatDialog
+          open={!!convert}
+          onOpenChange={(v) => !v && setConvert(null)}
+          candidatNom={`${convert.nom} ${convert.prenom}`}
+          onConfirm={async (classeId) => { await convertir(convert.id, classeId); }}
+        />
+      )}
     </div>
   );
 }

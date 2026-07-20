@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useSpVentes, type SpModePaiement, type SpVenteStatut, type SpVenteTenue } from "../hooks/useSpVentes";
+import { useSpServices } from "../hooks/useSpServices";
+import { toast } from "sonner";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
 const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "annule"];
@@ -18,6 +20,9 @@ interface Props {
 
 export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const { save } = useSpVentes();
+  const { services } = useSpServices();
+  const tenueService = services.find((s) => s.slug === "tenue") ?? services.find((s) => s.gere_stock);
+  const stock = tenueService?.stock_actuel ?? null;
   const [acheteur, setAcheteur] = useState("");
   const [qte, setQte] = useState(1);
   const [prix, setPrix] = useState(0);
@@ -27,10 +32,13 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setAcheteur(""); setQte(1); setPrix(0); setMode("especes"); setStatut("paye"); setObs(""); }
-  }, [open]);
+    if (open) { setAcheteur(""); setQte(1); setPrix(Number(tenueService?.prix ?? 0)); setMode("especes"); setStatut("paye"); setObs(""); }
+  }, [open, tenueService?.prix]);
 
   const submit = async () => {
+    if (tenueService?.gere_stock && stock != null && qte > stock) {
+      return toast.error(`Stock insuffisant : ${stock} tenue(s) restante(s)`);
+    }
     setSaving(true);
     const v = await save({
       acheteur_type: "libre",
@@ -57,6 +65,11 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
             <div><Label>Prix unitaire</Label><Input type="number" value={prix} onChange={(e) => setPrix(+e.target.value)} /></div>
           </div>
           <p className="text-sm">Total : <strong>{(qte * prix).toLocaleString("fr-FR")} FCFA</strong></p>
+          {tenueService?.gere_stock && stock != null && (
+            <p className={`text-xs ${qte > stock ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+              Stock disponible : {stock} tenue(s){qte > stock ? " — insuffisant !" : ""}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Mode</Label>

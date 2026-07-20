@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Download, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { useSpServices } from "../hooks/useSpServices";
 import { useSpCandidats } from "../hooks/useSpCandidats";
@@ -68,6 +70,45 @@ export default function SpRapports() {
     download("recettes-services-ponctuels.csv", toCsv(rows));
   };
 
+  const exportPdf = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(14);
+    doc.text("Rapport — Services ponctuels", 14, 15);
+    doc.setFontSize(10);
+    const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
+    doc.text(periode, 14, 22);
+    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 28);
+
+    autoTable(doc, {
+      startY: 34,
+      head: [["Par service", "Total"]],
+      body: parService.map(([n, v]) => [n, fmt(v)]),
+      theme: "striped",
+      headStyles: { fillColor: [110, 26, 44] },
+    });
+    autoTable(doc, {
+      head: [["Mode paiement", "Total"]],
+      body: parMode.map(([n, v]) => [n, fmt(v)]),
+      theme: "striped",
+      headStyles: { fillColor: [110, 26, 44] },
+    });
+    autoTable(doc, {
+      head: [["N°", "Date", "Service", "Bénéficiaire", "Montant", "Mode"]],
+      body: paiementsFiltres.map((p) => [
+        p.numero,
+        new Date(p.date_paiement).toLocaleDateString("fr-FR"),
+        svcMap[p.service_id]?.nom ?? "",
+        p.beneficiaire_libre ?? "",
+        fmt(Number(p.montant_paye)),
+        p.mode_paiement,
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [110, 26, 44] },
+      styles: { fontSize: 8 },
+    });
+    doc.save("rapport-services-ponctuels.pdf");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
@@ -82,7 +123,10 @@ export default function SpRapports() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recettes ({fmt(totalRecettes)})</CardTitle>
-          <Button variant="outline" size="sm" onClick={exportRecettes}><Download className="h-4 w-4 mr-1" />Exporter CSV</Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
+            <Button variant="outline" size="sm" onClick={exportRecettes}><Download className="h-4 w-4 mr-1" />CSV</Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-2 gap-6">

@@ -15,6 +15,7 @@ export interface SpService {
   gere_stock: boolean;
   couleur: string;
   icone: string;
+  stock_actuel: number | null;
 }
 
 export function useSpServices() {
