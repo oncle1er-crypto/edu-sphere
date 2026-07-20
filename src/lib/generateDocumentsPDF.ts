@@ -17,6 +17,10 @@ export interface RecuData {
   date_paiement: string;
   total_du?: number;
   total_paye?: number;
+  /** Total encaissé (caisse/mobile money/virement) — si fourni avec total_remises, affiche la ventilation. */
+  total_encaisse?: number;
+  /** Total remises accordées (remise/bourse/prise en charge) — si > 0, affiche une ligne dédiée. */
+  total_remises?: number;
   recu_par?: string;
   /** Type d'opération — détermine le titre du document et l'affichage du motif. */
   type?: "encaissement" | "remise" | "bourse" | "prise_en_charge";
@@ -76,6 +80,9 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
 
   const totalDu = data.total_du ?? 0;
   const totalPaye = data.total_paye ?? data.montant;
+  const totalRemises = Math.max(0, data.total_remises ?? 0);
+  const totalEncaisse = Math.max(0, data.total_encaisse ?? Math.max(0, totalPaye - totalRemises));
+  const hasRemise = totalRemises > 0;
   const reste = Math.max(0, totalDu - totalPaye);
   const solde = totalDu > 0 && reste <= 0;
 
@@ -177,8 +184,20 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
-    const bigLabel = isRemise ? "MONTANT ACCORDÉ" : (totalDu > 0 ? "TOTAL RÉGLÉ" : "MONTANT REÇU");
-    const bigValue = isRemise || totalDu === 0 ? data.montant : totalPaye;
+    // Quand il y a une remise/bourse, on met en évidence le montant réellement
+    // encaissé (caisse) plutôt que le total réglé, pour éviter toute confusion
+    // sur ce que la famille a effectivement versé.
+    const showEncaisseAsBig = !isRemise && totalDu > 0 && hasRemise;
+    const bigLabel = isRemise
+      ? "MONTANT ACCORDÉ"
+      : showEncaisseAsBig
+        ? "TOTAL ENCAISSÉ"
+        : (totalDu > 0 ? "TOTAL RÉGLÉ" : "MONTANT REÇU");
+    const bigValue = isRemise || totalDu === 0
+      ? data.montant
+      : showEncaisseAsBig
+        ? totalEncaisse
+        : totalPaye;
     doc.text(bigLabel, M, y);
     doc.setFont("times", "bold");
     doc.setFontSize(20);
@@ -205,7 +224,11 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       doc.setFontSize(8);
       doc.setTextColor(...muted);
       if (data.hideVersementLine) {
-        doc.text(`Total dû : ${formatFCFA(totalDu)}`, M, y);
+        const base = `Total dû : ${formatFCFA(totalDu)}`;
+        const extra = hasRemise
+          ? `    •    Total réglé : ${formatFCFA(totalPaye)}    •    Dont remise : ${formatFCFA(totalRemises)}`
+          : "";
+        doc.text(base + extra, M, y);
       } else {
         const isReprint = !isRemise && Number(totalPaye) !== Number(data.montant);
         const versementLabel = isRemise
@@ -213,7 +236,14 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
           : isReprint
             ? "Dont ce versement"
             : "Versement reçu";
-        doc.text(`Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(data.montant)}`, M, y);
+        const remiseSuffix = hasRemise && !isRemise
+          ? `    •    Dont remise : ${formatFCFA(totalRemises)}`
+          : "";
+        doc.text(
+          `Total dû : ${formatFCFA(totalDu)}    •    ${versementLabel} : ${formatFCFA(data.montant)}${remiseSuffix}`,
+          M,
+          y,
+        );
       }
     }
 
