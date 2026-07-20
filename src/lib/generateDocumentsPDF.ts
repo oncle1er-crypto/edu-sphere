@@ -23,7 +23,7 @@ export interface RecuData {
   total_remises?: number;
   recu_par?: string;
   /** Type d'opération — détermine le titre du document et l'affichage du motif. */
-  type?: "encaissement" | "remise" | "bourse" | "prise_en_charge";
+  type?: "encaissement" | "remise" | "bourse" | "prise_en_charge" | "annulation";
   /** Motif obligatoire pour remise/bourse/prise en charge. */
   motif?: string | null;
   /** Inclure la souche école (par défaut: true). Mettre à false pour un reçu "famille seule" (WhatsApp). */
@@ -118,6 +118,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       remise:           { title: "ATTESTATION DE REMISE", subtitle: "Remise commerciale" },
       bourse:           { title: "ATTESTATION DE BOURSE", subtitle: "Bourse d'études" },
       prise_en_charge:  { title: "ATTESTATION DE PRISE EN CHARGE", subtitle: "Prise en charge tiers" },
+      annulation:       { title: "REÇU DE CORRECTION",    subtitle: "Annulation / Remboursement" },
     };
     const typeInfo = TYPE_LABEL[data.type ?? "encaissement"] ?? TYPE_LABEL.encaissement;
 
