@@ -18,6 +18,7 @@ import {
   ClipboardCheck,
   IdCard,
   Sun,
+  Ticket,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -61,6 +62,7 @@ const otherItems = [
   { title: "Communication", url: "/communication", icon: MessageSquare },
   { title: "Cartes & Badges", url: "/cartes", icon: IdCard },
   { title: "Cours de vacances", url: "/cours-vacances", icon: Sun },
+  { title: "Services ponctuels", url: "/services-ponctuels", icon: Ticket },
   { title: "Statistiques", url: "/statistiques", icon: BarChart3 },
 ];
 
