@@ -20,6 +20,8 @@ interface TopNavProps {
 
 export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" }: TopNavProps) {
   const [open, setOpen] = useState(false);
+  const { can, loading: permsLoading } = usePermissions();
+  const visibleItems = navItems.filter(i => !i.module || permsLoading || can(i.module));
 
   return (
     <nav className="px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 pb-2">
