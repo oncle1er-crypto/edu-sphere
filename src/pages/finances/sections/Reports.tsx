@@ -367,33 +367,42 @@ export default function Reports() {
         {loading ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {REPORTS.map((r) => (
-              <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                      <FileText className="h-5 w-5" />
+          <div className="space-y-4">
+            <ReportFilters
+              value={filters}
+              onChange={setFilters}
+              classes={classesList}
+              periodeLabel={periode}
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {REPORTS.map((r) => (
+                <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold font-display text-primary">{r.title}</p>
+                        <p className="text-sm text-muted-foreground mt-0.5">{r.description}</p>
+                        <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold font-display text-primary">{r.title}</p>
-                      <p className="text-sm text-muted-foreground mt-0.5">{r.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
+                    <div className="flex gap-2 mt-4">
+                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
+                        <Eye className="h-4 w-4" />Visualiser
+                      </Button>
+                      <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
+                        <Download className="h-4 w-4" />PDF
+                      </Button>
                     </div>
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
-                      <Eye className="h-4 w-4" />Visualiser
-                    </Button>
-                    <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
-                      <Download className="h-4 w-4" />PDF
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
+
       </SettingsSection>
 
       <Dialog open={!!preview} onOpenChange={() => setPreview(null)}>
