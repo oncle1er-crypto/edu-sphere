@@ -95,7 +95,42 @@ export default function StudentsRegistration() {
       toast.error("Nom et prénom sont obligatoires");
       return;
     }
+    if (!ecoleId) {
+      toast.error("École introuvable");
+      return;
+    }
     setSaving(true);
+
+    // Détection de doublon : même nom + prénom + date de naissance + classe pour l'année académique
+    try {
+      let dupQuery = supabase
+        .from("eleves")
+        .select("id, nom, prenom, matricule, classe_id, date_naissance")
+        .eq("ecole_id", ecoleId)
+        .ilike("nom", form.nom.trim())
+        .ilike("prenom", form.prenom.trim());
+      if (anneeId) dupQuery = dupQuery.eq("annee_id", anneeId);
+      if (form.date_naissance) dupQuery = dupQuery.eq("date_naissance", form.date_naissance);
+      else dupQuery = dupQuery.is("date_naissance", null);
+      if (form.classe_id) dupQuery = dupQuery.eq("classe_id", form.classe_id);
+      else dupQuery = dupQuery.is("classe_id", null);
+
+      const { data: dups, error: dupErr } = await dupQuery;
+      if (dupErr) {
+        console.error("[registration] duplicate check error:", dupErr);
+      } else if (dups && dups.length > 0) {
+        const classeName = classes.find((c) => c.id === form.classe_id)?.nom ?? "sans classe";
+        toast.error(
+          `Doublon détecté : un élève « ${form.nom} ${form.prenom} » né(e) le ${form.date_naissance || "?"} est déjà inscrit(e) en ${classeName} pour cette année académique (matricule ${dups[0].matricule}).`,
+          { duration: 8000 }
+        );
+        setSaving(false);
+        return;
+      }
+    } catch (e) {
+      console.error("[registration] duplicate check exception:", e);
+    }
+
     const eleve = await addEleve({
       matricule: generateMatricule(),
       nom: form.nom,
@@ -141,8 +176,13 @@ export default function StudentsRegistration() {
     }
 
     if (eleve) {
+      const hasClasse = !!form.classe_id;
       setCreatedEleve({ ...eleve, classe_id: form.classe_id || null, ecole_id: ecoleId });
-      setShowPayPrompt(true);
+      if (hasClasse) {
+        setShowPayPrompt(true);
+      } else {
+        toast.success("Élève enregistré. Affectez-lui une classe pour lancer le paiement de la scolarité.", { duration: 6000 });
+      }
     }
 
     setForm({ nom: "", prenom: "", sexe: "", date_naissance: "", lieu_naissance: "", nationalite: "Ivoirienne", adresse: "", classe_id: "", cycle_id: "", matricule_national: "", numero_inscription_en_ligne: "", est_nouveau: false });
