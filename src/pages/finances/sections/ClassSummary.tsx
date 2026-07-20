@@ -273,6 +273,11 @@ export default function ClassSummary() {
                                         <TableCell className="text-right text-xs">
                                           <span className="text-primary font-semibold">{fcfa(e.totalPaye)}</span>
                                           <span className="text-muted-foreground"> / {fcfa(e.fraisAnnuel)}</span>
+                                          {e.totalRemises > 0 && (
+                                            <p className="text-[10px] text-rose-600 mt-0.5">
+                                              dont {fcfa(e.totalRemises)} remise · {fcfa((e.totalEncaisse ?? e.totalPaye - e.totalRemises))} encaissé
+                                            </p>
+                                          )}
                                         </TableCell>
                                         <TableCell className="text-right text-sm font-bold text-destructive">{fcfa(e.resteDu)}</TableCell>
                                         <TableCell>
