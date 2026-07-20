@@ -43,6 +43,7 @@ const modules: ModuleItem[] = [
   { title: "CANTINE",         description: "Menus et abonnés",            icon: UtensilsCrossed,  to: "/cantine",         moduleKey: "cantine",         hue: "18 85% 55%",  hue2: "42 90% 55%" },
   { title: "TRANSPORT",       description: "Lignes et passagers",         icon: Bus,              to: "/transport",       moduleKey: "transport",       hue: "48 95% 48%",  hue2: "32 90% 50%" },
   { title: "COMMUNICATION",   description: "Messages et notifications",   icon: MessageSquare,    to: "/communication",   moduleKey: "communication",   hue: "330 75% 55%", hue2: "280 65% 58%" },
+  { title: "SERVICES PONCTUELS", description: "Tests, tenues, paiements exceptionnels", icon: Ticket, to: "/services-ponctuels", moduleKey: "services_ponctuels", hue: "280 65% 50%", hue2: "320 70% 55%" },
   { title: "PARAMÈTRES",      description: "Configuration système",       icon: Settings,         to: "/parametres",      moduleKey: "parametres",      hue: "220 15% 40%", hue2: "220 12% 55%" },
 ];
 
