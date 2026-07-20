@@ -49,7 +49,7 @@ function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]):
   };
 }
 
-type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution";
+type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution" | "remises";
 
 interface ReportDef {
   id: ReportId;
@@ -62,6 +62,7 @@ const REPORTS: ReportDef[] = [
   { id: "flux_tresorerie", title: "Flux de trésorerie", description: "Soldes et mouvements des comptes" },
   { id: "recouvrement", title: "Recouvrement scolarité", description: "Taux de paiement par classe" },
   { id: "impayes", title: "Analyse des impayés", description: "Vieillissement de la créance" },
+  { id: "remises", title: "Remises accordées", description: "Élèves bénéficiaires, montant, parent" },
   { id: "masse_salariale", title: "Masse salariale", description: "Détail des salaires versés" },
   { id: "budget_execution", title: "Exécution budgétaire", description: "Prévu vs réalisé" },
 ];
