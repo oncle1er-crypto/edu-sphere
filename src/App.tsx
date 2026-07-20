@@ -80,6 +80,14 @@ const TransportStats = lazy(() => import("@/pages/transport/sections/TransportSt
 const TransportReports = lazy(() => import("@/pages/transport/sections/TransportReports"));
 const TransportConfig = lazy(() => import("@/pages/transport/sections/TransportConfig"));
 const Placeholder = lazy(() => import("@/pages/Placeholder"));
+const ServicesPonctuelsLayout = lazy(() => import("@/pages/services-ponctuels/ServicesPonctuelsLayout"));
+const SpDashboard = lazy(() => import("@/pages/services-ponctuels/sections/SpDashboard"));
+const SpPaiements = lazy(() => import("@/pages/services-ponctuels/sections/SpPaiements"));
+const SpTestsEntree = lazy(() => import("@/pages/services-ponctuels/sections/SpTestsEntree"));
+const SpVentesTenues = lazy(() => import("@/pages/services-ponctuels/sections/SpVentesTenues"));
+const SpCatalogue = lazy(() => import("@/pages/services-ponctuels/sections/SpCatalogue"));
+const SpRapports = lazy(() => import("@/pages/services-ponctuels/sections/SpRapports"));
+const SpParametres = lazy(() => import("@/pages/services-ponctuels/sections/SpParametres"));
 const SettingsLayout = lazy(() => import("@/pages/parametres/SettingsLayout"));
 const FinanceLayout = lazy(() => import("@/pages/finances/FinanceLayout"));
 const FinanceDashboard = lazy(() => import("@/pages/finances/sections/FinanceDashboard"));
