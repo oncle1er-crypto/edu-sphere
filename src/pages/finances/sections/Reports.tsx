@@ -91,6 +91,11 @@ export default function Reports() {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [financeData]);
 
+  const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
+  const now = new Date();
+  const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const periode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+
   const remisesFilterActive = !!(remiseFrom || remiseTo || (remiseClasse && remiseClasse !== "__all__"));
   const remisesPeriodeLabel = (() => {
     if (!remiseFrom && !remiseTo) return periode;
@@ -99,11 +104,7 @@ export default function Reports() {
     if (remiseFrom) return `Depuis le ${fmt(remiseFrom)}`;
     return `Jusqu'au ${fmt(remiseTo)}`;
   })();
-
-  const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
-  const now = new Date();
-  const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-  const periode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+  const resetRemisesFilters = () => { setRemiseFrom(""); setRemiseTo(""); setRemiseClasse("__all__"); };
 
   // ── Data builders ──
   const getCompteResultat = (): CompteResultatData => {
