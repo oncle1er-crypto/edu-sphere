@@ -9,6 +9,7 @@ import { useSpCandidats, type SpCandidat } from "../hooks/useSpCandidats";
 import { CandidatFormDialog } from "../components/CandidatFormDialog";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
 import { useSpServices } from "../hooks/useSpServices";
+import { ConvertCandidatDialog } from "../components/ConvertCandidatDialog";
 
 const STATUT_COLOR: Record<string, string> = {
   en_attente: "bg-muted", programme: "bg-blue-500", absent: "bg-orange-500",
