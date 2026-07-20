@@ -19,7 +19,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Évènements jugés critiques → déconnexion immédiate des autres sessions. */
+/** Évènements jugés critiques → déconnexion immédiate des autres sessions.
+ *  Doit être STRICTEMENT restrictif : un faux positif déconnecte l'utilisateur
+ *  en pleine session. On n'y met QUE des events qui justifient une révocation
+ *  immédiate de toutes les sessions (compromission avérée). */
 const SUSPICIOUS_EVENTS = new Set([
   "mfa_account_locked",
   "mfa_reset_by_admin",
@@ -27,6 +30,11 @@ const SUSPICIOUS_EVENTS = new Set([
   "password_changed",
   "suspicious_login_blocked",
 ]);
+
+/** Délai (ms) après SIGNED_IN pendant lequel on ignore les events suspects.
+ *  Évite qu'un event résiduel de la session précédente ne déconnecte
+ *  immédiatement l'utilisateur qui vient de se reconnecter. */
+const SUSPICIOUS_GRACE_MS = 20_000;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
