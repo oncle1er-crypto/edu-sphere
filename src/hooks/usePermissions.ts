@@ -14,6 +14,11 @@ export interface UserPermission {
   can_export: boolean;
 }
 
+/**
+ * Retourne les permissions EFFECTIVES de l'utilisateur courant pour l'école courante
+ * (union des permissions du/des rôle(s) via `role_permissions` et des overrides
+ * individuels via `user_permissions`). L'admin bypass tout.
+ */
 export function usePermissions() {
   const { user } = useAuth();
   const { ecoleId } = useEcoleId();
@@ -26,8 +31,7 @@ export function usePermissions() {
     setLoading(true);
     const [{ data: roles }, { data: p }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", user.id).eq("ecole_id", ecoleId),
-      supabase.from("user_permissions").select("module_key, can_view, can_create, can_update, can_delete, can_export")
-        .eq("user_id", user.id).eq("ecole_id", ecoleId),
+      supabase.rpc("get_effective_permissions", { _user_id: user.id, _ecole_id: ecoleId }),
     ]);
     setIsAdmin((roles ?? []).some(r => r.role === "admin"));
     setPerms((p ?? []) as UserPermission[]);
