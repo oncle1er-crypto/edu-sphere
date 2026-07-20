@@ -18,12 +18,14 @@ import {
   generateMasseSalariale,
   generateAnalyseImpayes,
   generateBudgetExecution,
+  generateRemisesAccordees,
   type CompteResultatData,
   type FluxTresorerieData,
   type RecouvrementData,
   type MasseSalarialeData,
   type AnalyseImpayesData,
   type BudgetExecutionData,
+  type RemisesData,
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 
