@@ -138,7 +138,14 @@ Deno.serve(async (req) => {
       }
       if (!pwd) pwd = randomTempPassword();
 
-      const loginEmail = email ? String(email).trim() : phoneToEmail(String(phone));
+      const loginEmail = email ? normalizeEmail(email) : phoneToEmail(String(phone));
+      if (!EMAIL_RE.test(loginEmail)) {
+        return json({
+          error: email
+            ? "Format d'email invalide. Exemple attendu : prenom.nom@exemple.com"
+            : "Identifiant généré invalide (téléphone). Contactez le support.",
+        }, 400);
+      }
 
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
         email: loginEmail,
