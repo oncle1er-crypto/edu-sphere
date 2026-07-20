@@ -20,6 +20,9 @@ interface Props {
 
 export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const { save } = useSpVentes();
+  const { services } = useSpServices();
+  const tenueService = services.find((s) => s.slug === "tenue") ?? services.find((s) => s.gere_stock);
+  const stock = tenueService?.stock_actuel ?? null;
   const [acheteur, setAcheteur] = useState("");
   const [qte, setQte] = useState(1);
   const [prix, setPrix] = useState(0);
@@ -29,10 +32,13 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) { setAcheteur(""); setQte(1); setPrix(0); setMode("especes"); setStatut("paye"); setObs(""); }
-  }, [open]);
+    if (open) { setAcheteur(""); setQte(1); setPrix(Number(tenueService?.prix ?? 0)); setMode("especes"); setStatut("paye"); setObs(""); }
+  }, [open, tenueService?.prix]);
 
   const submit = async () => {
+    if (tenueService?.gere_stock && stock != null && qte > stock) {
+      return toast.error(`Stock insuffisant : ${stock} tenue(s) restante(s)`);
+    }
     setSaving(true);
     const v = await save({
       acheteur_type: "libre",
