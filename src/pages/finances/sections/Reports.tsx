@@ -1,10 +1,13 @@
-import { useState } from "react";
-import { BarChart3, Download, FileText, Eye, Loader2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BarChart3, Download, FileText, Eye, Loader2, Filter, X } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "@/pages/finances/useFinanceData";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useTresorerie } from "@/hooks/useTresorerie";
