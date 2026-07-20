@@ -10,6 +10,8 @@ export default function FinanceStats() {
 
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
   const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
+  const totalEncaisse = ELEVES.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
+  const totalRemises = ELEVES.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
   const totalDu = totalAttendu - totalPaye;
   const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
 
@@ -20,7 +22,7 @@ export default function FinanceStats() {
   const parCycle = cycleNames.map((c) => {
     const list = ELEVES.filter((e) => e.cycle === c);
     const att = list.reduce((s, e) => s + e.fraisAnnuel, 0);
-    const pay = list.reduce((s, e) => s + e.totalPaye, 0);
+    const pay = list.reduce((s, e) => s + (e.totalEncaisse ?? e.totalPaye), 0);
     return { label: `${c} (${att > 0 ? Math.round((pay / att) * 100) : 0}%)`, value: pay };
   });
 
@@ -28,15 +30,15 @@ export default function FinanceStats() {
     <SettingsSection title="Statistiques — Finances" description="Revenus, impayés et recouvrement." icon={<DollarSign className="h-5 w-5" />} hideSave>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Frais attendus" value={`${fcfa(totalAttendu)} F`} icon={DollarSign} />
-        <KpiCard label="Encaissé" value={`${fcfa(totalPaye)} F`} icon={DollarSign} color="text-success" />
+        <KpiCard label="Encaissé (cash)" value={`${fcfa(totalEncaisse)} F`} icon={DollarSign} color="text-success" trend={`Réglé total : ${fcfa(totalPaye)} F`} />
+        <KpiCard label="Remises accordées" value={`${fcfa(totalRemises)} F`} icon={DollarSign} color="text-rose-600" trend="Bourses · prises en charge" />
         <KpiCard label="Impayés" value={`${fcfa(totalDu)} F`} icon={DollarSign} color="text-destructive" />
-        <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} color="text-primary" />
       </div>
       <div className="grid grid-cols-2 gap-4">
+        <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} color="text-primary" trend={`${ELEVES.length - retards} familles à jour · ${retards} en retard`} />
         <KpiCard label="Familles en retard" value={retards} icon={DollarSign} color="text-destructive" />
-        <KpiCard label="Familles à jour" value={ELEVES.length - retards} icon={DollarSign} color="text-primary" />
       </div>
-      {parCycle.length > 0 && <BarChart title="Encaissements par cycle (FCFA)" data={parCycle} format={(v) => fcfa(v)} />}
+      {parCycle.length > 0 && <BarChart title="Encaissements (cash) par cycle (FCFA)" data={parCycle} format={(v) => fcfa(v)} />}
     </SettingsSection>
   );
 }

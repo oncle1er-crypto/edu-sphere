@@ -10,7 +10,7 @@ import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 export default function GlobalDashboard() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee } = useAcademicPeriod();
-  const [stats, setStats] = useState({ eleves: 0, enseignants: 0, classes: 0, garcons: 0, filles: 0, totalAttendu: 0, totalPaye: 0 });
+  const [stats, setStats] = useState({ eleves: 0, enseignants: 0, classes: 0, garcons: 0, filles: 0, totalAttendu: 0, totalPaye: 0, totalEncaisse: 0, totalRemises: 0 });
   const [classeData, setClasseData] = useState<{ label: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -30,31 +30,53 @@ export default function GlobalDashboard() {
     ]).then(async ([eRes, ensRes, cRes, fRes]) => {
       const fraisIds = (fRes.data ?? []).map((f: any) => f.id);
       let tranchesData: any[] = [];
+      let trancheIds: string[] = [];
       if (fraisIds.length > 0) {
-        const { data } = await supabase.from("tranches").select("montant, paye").eq("ecole_id", ecoleId).in("frais_id", fraisIds);
+        const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId).in("frais_id", fraisIds);
         tranchesData = data ?? [];
       } else {
-        // Fallback : toutes les tranches (aucune année active configurée)
-        const { data } = await supabase.from("tranches").select("montant, paye").eq("ecole_id", ecoleId);
+        const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId);
         tranchesData = data ?? [];
       }
+      trancheIds = tranchesData.map((t: any) => t.id);
+
+      // Remises réelles = paiements avec mode ∈ {remise, bourse, prise_en_charge} imputés sur ces tranches
+      let totalRemises = 0;
+      if (trancheIds.length > 0) {
+        // pagination pour dépasser la limite 1000 lignes
+        let off = 0;
+        for (let i = 0; i < 20; i++) {
+          const { data: page } = await supabase
+            .from("paiements")
+            .select("montant, mode, tranche_id")
+            .eq("ecole_id", ecoleId)
+            .in("mode", ["remise", "bourse", "prise_en_charge"])
+            .range(off, off + 999);
+          if (!page || page.length === 0) break;
+          const trSet = new Set(trancheIds);
+          totalRemises += page.reduce((s: number, p: any) => s + (p.tranche_id && trSet.has(p.tranche_id) ? Number(p.montant || 0) : 0), 0);
+          if (page.length < 1000) break;
+          off += 1000;
+        }
+      }
+
       const elevesData = eRes.data ?? [];
       const garcons = elevesData.filter((e: any) => e.sexe === "M").length;
       const filles = elevesData.filter((e: any) => e.sexe === "F").length;
       const totalAttendu = tranchesData.reduce((s: number, t: any) => s + Number(t.montant), 0);
       const totalPaye = tranchesData.reduce((s: number, t: any) => s + Number(t.paye), 0);
+      const totalEncaisse = Math.max(0, totalPaye - totalRemises);
 
       setStats({
         eleves: eRes.count ?? elevesData.length,
         enseignants: ensRes.count ?? 0,
         classes: cRes.count ?? 0,
-        garcons, filles, totalAttendu, totalPaye,
+        garcons, filles, totalAttendu, totalPaye, totalEncaisse, totalRemises,
       });
 
       // Effectifs par classe
       if (cRes.data && elevesData.length > 0) {
         const classeCount: Record<string, number> = {};
-        // We need classe_id from eleves - refetch light
         supabase.from("eleves").select("classe_id, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]).then(({ data: ed }) => {
           (ed ?? []).forEach((e: any) => {
             const nom = e.classes?.nom ?? "Non affecté";
@@ -78,7 +100,12 @@ export default function GlobalDashboard() {
         <KpiCard label="Élèves inscrits" value={stats.eleves.toLocaleString("fr-FR")} icon={GraduationCap} />
         <KpiCard label="Enseignants actifs" value={stats.enseignants.toLocaleString("fr-FR")} icon={Users} color="text-primary" />
         <KpiCard label="Classes" value={stats.classes} icon={BookOpen} />
-        <KpiCard label="Taux recouvrement" value={`${tauxRecouvrement}%`} icon={DollarSign} />
+        <KpiCard
+          label="Taux recouvrement"
+          value={`${tauxRecouvrement}%`}
+          icon={DollarSign}
+          trend={`Encaissé ${stats.totalEncaisse.toLocaleString("fr-FR")} F · Remises ${stats.totalRemises.toLocaleString("fr-FR")} F`}
+        />
         <KpiCard label="Ratio élèves/prof" value={ratio} icon={TrendingUp} color="text-primary" />
         <KpiCard label="Garçons / Filles" value={`${stats.garcons} / ${stats.filles}`} icon={GraduationCap} />
       </div>
