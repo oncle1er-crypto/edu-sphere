@@ -11,7 +11,7 @@ import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
-import { ReportFilters, ALL_CLASSES, isFiltersActive, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
+import { ReportFilters, ALL_CLASSES, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
