@@ -276,7 +276,19 @@ export default function ClassSummary() {
                                         </TableCell>
                                         <TableCell className="text-right text-sm font-bold text-destructive">{fcfa(e.resteDu)}</TableCell>
                                         <TableCell>
-                                          <Badge variant="outline" className={STATUT_CLASS[s]}>{STATUT_LABEL[s]}</Badge>
+                                          <div className="flex flex-wrap items-center gap-1">
+                                            <Badge variant="outline" className={STATUT_CLASS[s]}>{STATUT_LABEL[s]}</Badge>
+                                            {e.totalRemises > 0 && (
+                                              <Badge
+                                                variant="outline"
+                                                className="bg-rose-100 text-rose-800 border-rose-200 gap-1"
+                                                title={`Remise / bourse / prise en charge accordée : ${fcfa(e.totalRemises)} FCFA`}
+                                              >
+                                                <Gift className="h-3 w-3" />
+                                                Remise {fcfa(e.totalRemises)}
+                                              </Badge>
+                                            )}
+                                          </div>
                                           {e.joursRetard > 0 && <p className="text-[10px] text-destructive mt-0.5">{e.joursRetard}j retard</p>}
                                         </TableCell>
                                         <TableCell className="text-right">
