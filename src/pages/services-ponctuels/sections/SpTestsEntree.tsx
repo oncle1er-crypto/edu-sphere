@@ -21,6 +21,7 @@ export default function SpTestsEntree() {
   const { services } = useSpServices();
   const [editing, setEditing] = useState<Partial<SpCandidat> | null>(null);
   const [pay, setPay] = useState<SpCandidat | null>(null);
+  const [convert, setConvert] = useState<SpCandidat | null>(null);
   const [q, setQ] = useState("");
 
   const testService = services.find((s) => s.slug === "test_entree");
