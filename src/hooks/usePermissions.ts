@@ -21,13 +21,16 @@ export interface UserPermission {
  */
 export function usePermissions() {
   const { user } = useAuth();
-  const { ecoleId } = useEcoleId();
+  const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [perms, setPerms] = useState<UserPermission[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!user?.id || !ecoleId) { setLoading(false); return; }
+    // Attendre que l'école soit hydratée : sinon RequirePerm voit loading=false
+    // avec perms=[] et redirige vers "/" avant même que la RPC ne s'exécute.
+    if (ecoleLoading) { setLoading(true); return; }
+    if (!user?.id || !ecoleId) { setPerms([]); setIsAdmin(false); setLoading(false); return; }
     setLoading(true);
     const [{ data: roles }, { data: p }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", user.id).eq("ecole_id", ecoleId),
@@ -36,7 +39,7 @@ export function usePermissions() {
     setIsAdmin((roles ?? []).some(r => r.role === "admin"));
     setPerms((p ?? []) as UserPermission[]);
     setLoading(false);
-  }, [user?.id, ecoleId]);
+  }, [user?.id, ecoleId, ecoleLoading]);
 
   useEffect(() => { load(); }, [load]);
 
