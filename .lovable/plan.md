@@ -1,73 +1,84 @@
-## Plan — Rendre 100% fonctionnels les 10 points inertes de Cantine & Transport
+## Module « Services ponctuels »
 
-### 1. Base de données (une seule migration)
+Module autonome pour gérer les paiements exceptionnels (tests d'entrée, ventes de tenues, autres services ponctuels). Aucune table métier existante n'est modifiée ; seule la barre latérale gagne une entrée. Toute la logique tient dans un dossier isolé `src/pages/services-ponctuels/` + nouvelles tables préfixées `sp_`.
 
-Nouvelles tables (toutes multi-tenant `ecole_id` + RLS + GRANT authenticated/service_role) :
+### 1. Base de données (migration unique)
 
-- **`transport_carburant`** — plein de carburant : `vehicule_id`, `date_plein`, `litres`, `prix_litre`, `montant`, `km_compteur`, `chauffeur_id?`, `notes`.
-- **`transport_incidents`** — `vehicule_id`, `chauffeur_id?`, `date_incident`, `type` (panne, accident, retard, autre), `gravite`, `description`, `statut` (ouvert/traite).
-- **`transport_maintenance`** — `vehicule_id`, `type` (vidange, révision, réparation, contrôle technique), `date_operation`, `km_compteur`, `cout`, `garage`, `prochaine_echeance_date?`, `prochaine_echeance_km?`, `statut`.
+Nouvelles tables (toutes multi-tenant `ecole_id`, RLS + GRANT complets) :
 
-Nouvelle RPC **`enregistrer_paiement_facture(_facture_id, _montant, _mode, _reference, _recu_par)`** (SECURITY DEFINER) :
-- Contrôle rôle (`admin` / `directeur` / `comptable`), même école.
-- Contrôle `_montant > 0` et `_montant <= montant − montant_paye`.
-- Insère dans `paiements` (avec `facture_id`, `categorie` = celle de la facture).
-- Met à jour `factures.montant_paye` et `statut` (`emise` → `partielle` → `payee`).
-- Retourne l'`id` du paiement.
-- GRANT EXECUTE authenticated.
+- `sp_services` — catalogue : `nom`, `slug`, `description`, `prix`, `actif`, `accepte_partiel`, `gere_stock`, `couleur`, `icone`. Seed : `test_entree`, `tenue_scolaire`.
+- `sp_candidats` — `numero` (séquence par école), `nom`, `prenom`, `sexe`, `date_naissance`, `classe_demandee`, `ecole_origine`, `parent`, `telephone`, `date_test`, `statut` (enum `en_attente|programme|absent|present|admis|refuse`), `converti_eleve_id` (FK `eleves`, nullable).
+- `sp_ventes_tenues` — `acheteur_type` (`eleve|candidat`), `eleve_id`/`candidat_id`, `quantite`, `prix_unitaire`, `montant_total`, `mode_paiement`, `statut` (`paye|remis|attente|annule`), `caissier_id`, `observations`.
+- `sp_paiements` — `numero`, `service_id`, `beneficiaire_type` (`eleve|candidat|libre`), `eleve_id`/`candidat_id`/`beneficiaire_libre`, `montant_du`, `montant_paye`, `remise`, `mode_paiement` (enum incluant Wave/Orange/MTN/Moov/virement/chèque/espèces), `caissier_id`, `date_paiement`, `observations`, `annule_le`, `motif_annulation`.
 
-### 2. Encaissement + reçu PDF (Cantine & Transport)
+RLS : lecture pour tous les rôles de l'école ; écriture selon permissions (`admin`, `directeur`, `comptable`, `secretaire`, `caissier`). Aucune migration touchant `eleves` — la conversion candidat→élève passe par un simple `INSERT` côté client via le hook élèves existant.
 
-- Nouveau composant partagé **`src/pages/finances/components/InvoicePaymentDialog.tsx`** :
-  moyen de paiement, montant, référence, aperçu reste dû → appelle la RPC → toast + téléchargement automatique du reçu PDF + action WhatsApp + SMS parent (mêmes patterns que `PaymentDialog`).
-- Extension de **`src/lib/downloadReceipt.ts`** / **`generateDocumentsPDF.ts`** : support `type: "facture"` (entête = libellé facture + catégorie cantine/transport, réutilise logo/mentions/souche existants).
-- Dans **`CanteenBilling.tsx`** et **`TransportBilling.tsx`** : colonne « Actions » avec bouton **Encaisser** (masqué si soldée) et bouton **Réimprimer** (dernier paiement lié). Permission `finances.update`.
+RPC :
+- `sp_convertir_candidat(_id uuid) returns uuid` — crée un `eleves` à partir des champs du candidat (sans classe s'il n'y a pas d'affectation), stocke `converti_eleve_id`, trace dans `audit_logs`.
+- `sp_annuler_paiement(_id uuid, _motif text)` — admin/directeur, remplit `annule_le`/`motif_annulation`, trace.
 
-### 3. Hooks React Query pour les nouvelles tables
+### 2. Routes & navigation
 
-- **`useTransportCarburant.ts`**, **`useTransportIncidents.ts`**, **`useTransportMaintenance.ts`** : liste + add + update + delete (patterns existants type `useCantine`).
+- Ajout d'un item `services-ponctuels` dans `src/lib/roleDefaults.ts` (admin, directeur, comptable, secretaire).
+- Nouvelle route parent `/services-ponctuels` dans `src/App.tsx` protégée par `RequirePerm module="services_ponctuels"`.
+- `AppSidebar.tsx` : nouvelle entrée dans `otherItems` avec icône `Ticket`.
+- `TopNav.tsx` inchangé (le sidebar est le canal principal).
 
-### 4. Réécriture des sections mock
+### 3. Arborescence code
 
-- **`TransportFuel.tsx`** : table réelle + dialog « Ajouter un plein » (véhicule, litres, prix/L auto-calcul du total, km) + total du mois + consommation moyenne.
-- **`TransportIncidents.tsx`** : table réelle + dialog CRUD + filtre par statut, badge gravité.
-- **`TransportMaintenance.tsx`** : table réelle + dialog CRUD + surlignage lignes dont `prochaine_echeance_date` < J+30.
-- **`TransportAlerts.tsx`** : requêtes live sur `vehicules` (`date_assurance`, `date_visite_technique`) + `chauffeurs` (`date_expiration_permis`) → alerte si < 30 jours ; tri par urgence.
-- **`CanteenStats.tsx`** : agrégats réels — repas servis par mois (`cantine_planning`), coût moyen (moyenne `stocks_cantine`), abonnés actifs, incidents.
-- **`TransportStats.tsx`** : consommation par véhicule (agrégat `transport_carburant`), km parcourus, coût moyen par élève (dépenses transport / abonnés), incidents/mois.
+```text
+src/pages/services-ponctuels/
+  ServicesPonctuelsLayout.tsx     (menu latéral local, style FinanceLayout)
+  hooks/
+    useSpServices.ts
+    useSpCandidats.ts
+    useSpVentes.ts
+    useSpPaiements.ts
+  sections/
+    SpDashboard.tsx
+    SpPaiements.tsx
+    SpTestsEntree.tsx
+    SpVentesTenues.tsx
+    SpCatalogue.tsx
+    SpRapports.tsx
+    SpParametres.tsx
+  components/
+    ServicePaymentDialog.tsx      (encaissement, partiel selon service)
+    CandidatFormDialog.tsx
+    ConvertCandidatButton.tsx
+    VenteTenueDialog.tsx
+  lib/
+    generateSpReceipt.ts          (wrapper autour de generateDocumentsPDF)
+```
 
-### 5. Rapports & exports (branchement des boutons)
+### 4. Réutilisation stricte
 
-- **`CanteenReports.tsx`** et **`TransportReports.tsx`** :
-  - « Liste des abonnés (Excel) » → CSV via `abonnements_cantine` / `abonnements_transport` + jointure élèves.
-  - « Factures du mois (PDF) » → PDF groupé via `factures` filtrées par catégorie et période.
-  - « Menus de la semaine (PDF) » (cantine) → PDF de `menus_cantine`.
-  - « Inventaire stock (Excel) » (cantine) → CSV `stocks_cantine`.
-  - « Synthèse financière (PDF) » → total facturé / encaissé / impayés du mois.
-  - « Consommation carburant (Excel) » et « Maintenance (PDF) » (transport).
-  - Rapport HACCP : reste un placeholder (nécessite données HACCP non modélisées) — bouton désactivé + tooltip explicite.
+- Composants UI : `Card`, `Table`, `Dialog`, `Select`, `Button`, `Badge`, toasts.
+- Filtres rapports : composant partagé `ReportFilters` déjà en place.
+- PDF : réutilisation de `src/lib/generateDocumentsPDF.ts` (type `paiement` existant) + logo/école via `useEcole`.
+- Ticket thermique : réutilisation du chemin existant si présent, sinon A4 uniquement.
+- Permissions : `usePermissions`, `Can`, `RequirePerm`.
+- Modes de paiement : mêmes libellés/typage que le module Finances.
 
-### 6. Permissions
+### 5. Sécurité & audit
 
-- Nouvelles clés déjà couvertes par `cantine.*` / `transport.*` existants ; on ajoute juste les vérifications `has_permission` sur les boutons **Encaisser** (`update`), **Ajouter/Supprimer** (`create`/`delete`) et **Télécharger** (`export`).
+- Toute mutation via RPC ou requête filtrée par `ecole_id`.
+- Annulation/suppression → insertion dans `audit_logs`.
+- Rôles :
+  - `admin`, `directeur` : tout, y compris annulation.
+  - `comptable`/`caissier` : consulter catalogue, encaisser paiements & ventes, imprimer reçus.
+  - `secretaire` : CRUD candidats, planifier tests, convertir en élève.
 
-## Détails techniques
+### 6. Étapes atomiques
 
-- Aucune modification aux tables existantes (`factures`, `paiements`, `vehicules`, `chauffeurs`) — on lit leurs colonnes actuelles.
-- Utilise `paiements.categorie` (déjà en base) pour distinguer scolarité / cantine / transport dans le grand livre et la trésorerie.
-- Les nouveaux hooks suivent le pattern `useQuery`/`useMutation` avec invalidation par école + année.
-- Les PDF réutilisent le template existant (`generateDocumentsPDF`) → cohérence graphique garantie.
+1. Migration SQL (tables, enums, RLS, RPC, seed catalogue).
+2. Ajout du module dans `roleDefaults` + entrée sidebar + route lazy.
+3. `ServicesPonctuelsLayout` + squelette des 7 sections (placeholders).
+4. Hooks CRUD (catalogue → candidats → ventes → paiements).
+5. Dialogs encaissement + génération de reçu.
+6. Dashboard + Rapports (KPIs, filtres période, exports).
+7. Paramètres (édition tarifs/couleurs/icônes/actif) + tests visuels de non‑régression (élèves, finances, cartes, cantine, transport toujours OK).
 
-## Livrables
+### 7. Non-régression
 
-1. Migration SQL (3 tables + RPC + grants + policies).
-2. `src/pages/finances/components/InvoicePaymentDialog.tsx`.
-3. `src/hooks/useTransportCarburant.ts`, `useTransportIncidents.ts`, `useTransportMaintenance.ts`.
-4. Refonte : `CanteenBilling`, `TransportBilling`, `TransportFuel`, `TransportIncidents`, `TransportMaintenance`, `TransportAlerts`, `CanteenStats`, `TransportStats`, `CanteenReports`, `TransportReports`.
-5. Extension : `src/lib/downloadReceipt.ts` + `src/lib/generateDocumentsPDF.ts` (type facture).
-
-## Hors périmètre
-
-- Génération automatique périodique des factures (cron) — l'utilisateur les crée manuellement aujourd'hui, comportement conservé.
-- Module HACCP complet (formulaires hygiène, températures) — bouton grisé.
-- Géolocalisation temps réel des bus — non demandé.
+- Aucun fichier hors du nouveau dossier n'est modifié sauf : `App.tsx` (ajout route), `AppSidebar.tsx` (ajout item), `roleDefaults.ts` (ajout clé), migration DB. Aucun renommage, aucun changement de logique existante.

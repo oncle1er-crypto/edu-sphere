@@ -80,6 +80,14 @@ const TransportStats = lazy(() => import("@/pages/transport/sections/TransportSt
 const TransportReports = lazy(() => import("@/pages/transport/sections/TransportReports"));
 const TransportConfig = lazy(() => import("@/pages/transport/sections/TransportConfig"));
 const Placeholder = lazy(() => import("@/pages/Placeholder"));
+const ServicesPonctuelsLayout = lazy(() => import("@/pages/services-ponctuels/ServicesPonctuelsLayout"));
+const SpDashboard = lazy(() => import("@/pages/services-ponctuels/sections/SpDashboard"));
+const SpPaiements = lazy(() => import("@/pages/services-ponctuels/sections/SpPaiements"));
+const SpTestsEntree = lazy(() => import("@/pages/services-ponctuels/sections/SpTestsEntree"));
+const SpVentesTenues = lazy(() => import("@/pages/services-ponctuels/sections/SpVentesTenues"));
+const SpCatalogue = lazy(() => import("@/pages/services-ponctuels/sections/SpCatalogue"));
+const SpRapports = lazy(() => import("@/pages/services-ponctuels/sections/SpRapports"));
+const SpParametres = lazy(() => import("@/pages/services-ponctuels/sections/SpParametres"));
 const SettingsLayout = lazy(() => import("@/pages/parametres/SettingsLayout"));
 const FinanceLayout = lazy(() => import("@/pages/finances/FinanceLayout"));
 const FinanceDashboard = lazy(() => import("@/pages/finances/sections/FinanceDashboard"));
@@ -506,6 +514,15 @@ const App = () => (
               <Route path="presences" element={<VieScolairePresences />} />
               <Route path="discipline" element={<VieScolaireDiscipline />} />
               <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
+            </Route>
+            <Route path="/services-ponctuels" element={<RequirePerm module="services_ponctuels"><ServicesPonctuelsLayout /></RequirePerm>}>
+              <Route path="tableau" element={<SpDashboard />} />
+              <Route path="paiements" element={<SpPaiements />} />
+              <Route path="tests-entree" element={<SpTestsEntree />} />
+              <Route path="ventes-tenues" element={<SpVentesTenues />} />
+              <Route path="catalogue" element={<SpCatalogue />} />
+              <Route path="rapports" element={<SpRapports />} />
+              <Route path="parametres" element={<SpParametres />} />
             </Route>
             <Route path="/cours-vacances" element={<RequirePerm module="cours_vacances"><VacancesLayout /></RequirePerm>}>
               <Route path="tableau" element={<VacancesDashboard />} />
