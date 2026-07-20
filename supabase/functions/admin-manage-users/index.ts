@@ -17,6 +17,12 @@ const json = (body: unknown, status = 200) =>
 const PHONE_EMAIL_DOMAIN = "phone.laprovidence.ci";
 const phoneToEmail = (phone: string) => `${phone}@${PHONE_EMAIL_DOMAIN}`;
 const isValidPhone = (p: string) => /^\d{10}$/.test(p);
+// Regex email conforme à celle utilisée par Supabase Auth (format strict).
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const normalizeEmail = (e: string) =>
+  String(e ?? "")
+    .replace(/[\u200B-\u200D\uFEFF\s]+/g, "") // supprime espaces + zero-width
+    .toLowerCase();
 const randomTempPassword = () => {
   // Code numérique à 6 chiffres (100000–999999), sûr côté crypto.
   const buf = new Uint32Array(1);
