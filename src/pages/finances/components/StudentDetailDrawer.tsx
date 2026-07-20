@@ -4,19 +4,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2 } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
+import { fcfa, type EleveScolarite, type Tranche, type PaiementHistorique } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
+import { EditPaymentDialog } from "./EditPaymentDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { CustomFeeOverride } from "./CustomFeeOverride";
 import { HelpTooltip } from "@/components/help";
+import { usePermissions } from "@/hooks/usePermissions";
 
 
 interface Props {
