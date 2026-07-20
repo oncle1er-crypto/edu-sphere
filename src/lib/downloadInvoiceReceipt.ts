@@ -4,22 +4,28 @@ import { generateRecuPDF } from "./generateDocumentsPDF";
 interface Params {
   ecoleId: string;
   factureId: string;
-  /** Montant du versement à mettre en avant. Si absent, on utilise `montant_paye` (réimpression / situation). */
+  /** Montant du versement à mettre en avant. Si absent, on utilise `montant_paye`. */
   montant?: number;
-  /** Référence du reçu à afficher. Si absente, on prend celle du dernier paiement lié, sinon un identifiant court. */
   reference?: string | null;
-  /** Mode de règlement (especes, wave, ...). Par défaut « especes ». */
   mode?: string;
   souche?: boolean;
+  /** Génère un reçu de correction (annulation/remboursement) au lieu d'un encaissement. */
+  annulation?: boolean;
+  /** Motif obligatoire si annulation. */
+  motifAnnulation?: string | null;
+  /** Date d'opération à afficher (par défaut aujourd'hui). */
+  datePaiement?: string;
 }
 
 /**
- * Génère et télécharge le reçu PDF d'un paiement de facture (cantine / transport / autre).
- * Réutilise le template `generateRecuPDF` pour rester graphiquement cohérent avec les reçus de scolarité.
+ * Génère et télécharge le reçu PDF d'un paiement ou d'une annulation de facture.
  */
 export async function downloadInvoiceReceipt(params: Params): Promise<void> {
   try {
-    const { ecoleId, factureId, montant, mode = "especes", souche = true } = params;
+    const {
+      ecoleId, factureId, montant, mode = "especes", souche = true,
+      annulation = false, motifAnnulation, datePaiement,
+    } = params;
 
     const [{ data: facture }, { data: ecole }] = await Promise.all([
       supabase
@@ -39,10 +45,11 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
     const eleve: any = (facture as any).eleves ?? {};
     const totalDu = Number(facture.montant);
     const totalPaye = Number(facture.montant_paye);
-    // Reference : soit celle fournie, soit un id court basé sur le n° de facture.
     const reference =
       params.reference ??
-      (`REC-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`);
+      (annulation
+        ? `ANN-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`
+        : `REC-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`);
 
     const montantVersement = montant ?? totalPaye;
 
@@ -51,6 +58,10 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       : facture.categorie === "transport" ? "Transport"
       : facture.categorie === "scolarite" ? "Scolarité"
       : String(facture.categorie ?? "Divers");
+
+    const motifLine = annulation
+      ? `ANNULATION — ${catLabel} — ${facture.libelle} (Facture ${facture.numero})${motifAnnulation ? ` · Motif : ${motifAnnulation}` : ""}`
+      : `${catLabel} — ${facture.libelle} (Facture ${facture.numero})`;
 
     const pdf = await generateRecuPDF({
       ecole: {
@@ -72,17 +83,18 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       },
       montant: Number(montantVersement) || 0,
       mode,
-      date_paiement: new Date().toISOString().slice(0, 10),
+      date_paiement: datePaiement ?? new Date().toISOString().slice(0, 10),
       total_du: totalDu,
       total_paye: totalPaye,
       total_encaisse: totalPaye,
       total_remises: 0,
-      type: "encaissement",
-      motif: `${catLabel} — ${facture.libelle} (Facture ${facture.numero})`,
+      type: annulation ? "annulation" : "encaissement",
+      motif: motifLine,
       souche,
     });
 
-    pdf.save(`recu-${facture.numero}.pdf`);
+    const prefix = annulation ? "annulation" : "recu";
+    pdf.save(`${prefix}-${facture.numero}.pdf`);
   } catch (err) {
     console.error("downloadInvoiceReceipt failed", err);
   }

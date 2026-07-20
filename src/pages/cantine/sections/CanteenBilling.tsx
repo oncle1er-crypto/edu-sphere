@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
-import { Receipt, Plus, Loader2, Wallet, Printer } from "lucide-react";
+import { Receipt, Plus, Loader2, Wallet, Printer, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useEleves } from "@/hooks/useEleves";
 import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/components/InvoicePaymentDialog";
+import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/InvoicePaymentsHistoryDialog";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 
@@ -37,6 +38,7 @@ export default function CanteenBilling() {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
+  const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
   const [form, setForm] = useState({ eleve_id: "", libelle: "Cantine - Mensuel", montant: "15000", date_echeance: new Date().toISOString().slice(0,10) });
 
   const fetchData = async () => {
@@ -143,9 +145,18 @@ export default function CanteenBilling() {
                       </Button>
                     )}
                     {f.montant_paye > 0 && (
-                      <Button size="sm" variant="ghost" onClick={() => reprint(f)} title="Réimprimer le reçu">
-                        <Printer className="h-3.5 w-3.5" />
-                      </Button>
+                      <>
+                        <Button size="sm" variant="ghost" onClick={() => setHistoryFor({
+                          id: f.id, numero: f.numero, libelle: f.libelle,
+                          montant: f.montant, montant_paye: f.montant_paye,
+                          eleve_nom: f.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie,
+                        })} title="Historique / Annuler">
+                          <History className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => reprint(f)} title="Réimprimer le reçu">
+                          <Printer className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
                     )}
                   </TableCell>
                 </TableRow>
@@ -163,6 +174,13 @@ export default function CanteenBilling() {
         open={!!payFor}
         onOpenChange={(o) => !o && setPayFor(null)}
         onPaymentRecorded={fetchData}
+      />
+
+      <InvoicePaymentsHistoryDialog
+        facture={historyFor}
+        open={!!historyFor}
+        onOpenChange={(o) => !o && setHistoryFor(null)}
+        onChanged={fetchData}
       />
     </SettingsSection>
   );
