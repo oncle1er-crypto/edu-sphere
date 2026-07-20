@@ -492,6 +492,78 @@ export async function generateBudgetExecution(
   doc.save(`Budget_execution_${periode.replace(/\s/g, "_")}.pdf`);
 }
 
+// ── Liste des remises accordées ──
+export interface RemiseLigne {
+  matricule: string;
+  nom: string;
+  prenom: string;
+  classe: string;
+  parent: string;
+  telephone: string;
+  montant: number;
+  motif?: string | null;
+}
+
+export interface RemisesData {
+  lignes: RemiseLigne[];
+}
+
+export async function generateRemisesAccordees(
+  ecole: string | EcoleMeta,
+  periode: string,
+  data: RemisesData,
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
+  const doc = new jsPDF({ orientation: "landscape" });
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Liste des élèves ayant bénéficié d'une remise",
+    periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
+
+  const sorted = [...data.lignes].sort(
+    (a, b) => a.classe.localeCompare(b.classe) || a.nom.localeCompare(b.nom),
+  );
+  const total = sorted.reduce((s, l) => s + l.montant, 0);
+
+  autoTable(doc, {
+    startY,
+    head: [["#", "Matricule", "Élève", "Classe", "Parent", "Téléphone", "Remise", "Motif"]],
+    body: [
+      ...sorted.map((l, i) => [
+        String(i + 1),
+        l.matricule || "—",
+        `${l.nom} ${l.prenom}`,
+        l.classe,
+        l.parent || "—",
+        l.telephone || "—",
+        FCFA(l.montant),
+        l.motif || "—",
+      ]),
+      [
+        { content: `TOTAL — ${sorted.length} élève(s)`, colSpan: 6, styles: { fontStyle: "bold", halign: "right" } },
+        { content: FCFA(total), styles: { fontStyle: "bold", halign: "right", fillColor: [245, 235, 238] } },
+        { content: "", styles: { fillColor: [245, 235, 238] } },
+      ],
+    ],
+    columnStyles: {
+      0: { cellWidth: 10, halign: "center" },
+      1: { cellWidth: 22 },
+      5: { cellWidth: 26 },
+      6: { halign: "right", cellWidth: 28 },
+      7: { cellWidth: 55 },
+    },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+  });
+
+  addFooter(doc, meta.nom);
+  doc.save(`Remises_accordees_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
 // ── Récapitulatif journalier des paiements ──
 export interface RecapJournalierPaiement {
   heure: string;
