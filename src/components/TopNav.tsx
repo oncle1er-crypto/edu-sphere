@@ -60,7 +60,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
                   <SheetTitle className="text-left text-sm">{schoolName}</SheetTitle>
                 </SheetHeader>
                 <div className="p-2">
-                  {navItems.map((item) => (
+                  {visibleItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
@@ -86,7 +86,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1 md:gap-2 overflow-x-auto">
-            {navItems.map((item) => (
+            {visibleItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
