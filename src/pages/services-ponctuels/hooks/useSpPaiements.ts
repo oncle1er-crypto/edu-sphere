@@ -44,6 +44,15 @@ export function useSpPaiements() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!ecoleId) return;
+    const channel = supabase
+      .channel(`sp_paiements:${ecoleId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sp_paiements", filter: `ecole_id=eq.${ecoleId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ecoleId, load]);
+
   const save = async (patch: Partial<SpPaiement> & { id?: string }) => {
     if (!ecoleId) return null;
     const { data: sess } = await supabase.auth.getUser();

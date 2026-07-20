@@ -46,6 +46,15 @@ export function useSpVentes() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!ecoleId) return;
+    const channel = supabase
+      .channel(`sp_ventes:${ecoleId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sp_ventes_tenues", filter: `ecole_id=eq.${ecoleId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ecoleId, load]);
+
   const save = async (patch: Partial<SpVenteTenue> & { id?: string }) => {
     if (!ecoleId) return;
     const payload: any = { ...patch, ecole_id: ecoleId };
