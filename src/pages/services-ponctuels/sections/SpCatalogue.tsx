@@ -51,6 +51,11 @@ export default function SpCatalogue() {
                     <TableCell>{Number(s.prix).toLocaleString("fr-FR")} FCFA</TableCell>
                     <TableCell>{s.accepte_partiel ? <Badge>Oui</Badge> : "—"}</TableCell>
                     <TableCell>{s.gere_stock ? <Badge>Oui</Badge> : "—"}</TableCell>
+                    <TableCell>{s.gere_stock ? (
+                      <Badge variant={s.stock_actuel != null && s.stock_actuel <= 5 ? "destructive" : "secondary"}>
+                        {s.stock_actuel ?? 0}
+                      </Badge>
+                    ) : "—"}</TableCell>
                     <TableCell>{s.actif ? <Badge className="bg-emerald-600">Actif</Badge> : <Badge variant="secondary">Inactif</Badge>}</TableCell>
                     <TableCell>
                       <div className="flex gap-1">
