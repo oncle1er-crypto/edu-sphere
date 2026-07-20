@@ -44,7 +44,10 @@ export default function SchoolProfile() {
   const update = <K extends keyof Ecole>(k: K, v: Ecole[K]) => setData(d => ({ ...d, [k]: v }));
 
   const handleSave = async () => {
-    if (!ecoleId) return;
+    if (!ecoleId) {
+      toast.error("Aucune école active — reconnectez-vous.");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("ecoles").update({
       nom: data.nom, sigle: data.sigle, devise: data.devise, type: data.type,
@@ -54,8 +57,12 @@ export default function SchoolProfile() {
       directeur: data.directeur, ville: data.ville, pays: data.pays,
     }).eq("id", ecoleId);
     setSaving(false);
-    if (error) toast.error("Erreur : " + error.message);
-    else toast.success("Profil de l'école enregistré");
+    if (error) {
+      console.error("[SchoolProfile] update failed:", error);
+      toast.error("Erreur : " + error.message);
+      throw error;
+    }
+    toast.success("Profil de l'école enregistré");
   };
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
