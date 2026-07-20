@@ -105,6 +105,15 @@ export default function SpTestsEntree() {
           beneficiaire_libre: `${pay.nom} ${pay.prenom}`,
         } : undefined}
       />
+
+      {convert && (
+        <ConvertCandidatDialog
+          open={!!convert}
+          onOpenChange={(v) => !v && setConvert(null)}
+          candidatNom={`${convert.nom} ${convert.prenom}`}
+          onConfirm={async (classeId) => { await convertir(convert.id, classeId); }}
+        />
+      )}
     </div>
   );
 }
