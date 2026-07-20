@@ -126,6 +126,28 @@ export default function Reports() {
       })),
   });
 
+  const getRemises = (): RemisesData => ({
+    lignes: financeData
+      .filter((e) => (e.totalRemises ?? 0) > 0)
+      .map((e) => {
+        const remisePaiements = (e.paiements ?? []).filter((p) => p.kind === "remise");
+        const motif = remisePaiements
+          .map((p) => p.motif)
+          .filter(Boolean)
+          .join(" ; ");
+        return {
+          matricule: e.matricule,
+          nom: e.nom,
+          prenom: e.prenom,
+          classe: e.classe,
+          parent: e.parent,
+          telephone: e.telephone,
+          montant: e.totalRemises ?? 0,
+          motif,
+        };
+      }),
+  });
+
   const getMasseSalariale = (): MasseSalarialeData => ({
     mois: periode,
     lignes: bulletins.map((b) => ({
