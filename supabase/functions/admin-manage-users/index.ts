@@ -202,8 +202,12 @@ Deno.serve(async (req) => {
         await admin.from("profiles").update({ full_name }).eq("id", target_user_id);
       }
       if (email) {
+        const normalized = normalizeEmail(email);
+        if (!EMAIL_RE.test(normalized)) {
+          return json({ error: "Format d'email invalide." }, 400);
+        }
         const { error: uErr } = await admin.auth.admin.updateUserById(target_user_id, {
-          email, email_confirm: true,
+          email: normalized, email_confirm: true,
         });
         if (uErr) return json({ error: uErr.message }, 400);
       }
