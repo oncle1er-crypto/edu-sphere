@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
 
 export interface AppModule {
   key: string;
@@ -18,32 +19,82 @@ export interface PermRow {
   can_export: boolean;
 }
 
+const emptyRow = (k: string): PermRow => ({
+  module_key: k,
+  can_view: false, can_create: false, can_update: false, can_delete: false, can_export: false,
+});
+
+const readonlyRow = (k: string): PermRow => ({
+  module_key: k,
+  can_view: true, can_create: false, can_update: false, can_delete: false, can_export: true,
+});
+
+const mergeRow = (a: PermRow, b: PermRow): PermRow => ({
+  module_key: a.module_key,
+  can_view: a.can_view || b.can_view,
+  can_create: a.can_create || b.can_create,
+  can_update: a.can_update || b.can_update,
+  can_delete: a.can_delete || b.can_delete,
+  can_export: a.can_export || b.can_export,
+});
+
 export function useUserPermissions(targetUserId: string | null) {
   const { ecoleId } = useEcoleId();
   const [modules, setModules] = useState<AppModule[]>([]);
   const [perms, setPerms] = useState<Record<string, PermRow>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
 
   const load = useCallback(async () => {
     if (!targetUserId || !ecoleId) return;
     setLoading(true);
-    const [{ data: mods }, { data: p }] = await Promise.all([
+    const [{ data: mods }, { data: p }, { data: roles }] = await Promise.all([
       supabase.from("app_modules").select("key, label, ordre").order("ordre"),
       supabase.from("user_permissions")
         .select("module_key, can_view, can_create, can_update, can_delete, can_export")
         .eq("user_id", targetUserId).eq("ecole_id", ecoleId),
+      supabase.from("user_roles").select("role").eq("user_id", targetUserId).eq("ecole_id", ecoleId),
     ]);
     setModules((mods ?? []) as AppModule[]);
+    const userRows = (p ?? []) as PermRow[];
+    const usingDefaults = userRows.length === 0;
+
+    // Si aucune permission individuelle : pré-remplir avec les permissions
+    // du/des rôle(s) de l'utilisateur (union role_permissions), et sinon
+    // avec les valeurs par défaut recommandées par ROLE_DEFAULT_MODULES.
+    let seedFromRoles: Record<string, PermRow> = {};
+    if (usingDefaults && (roles ?? []).length > 0) {
+      const roleList = (roles ?? []).map((r: any) => r.role);
+      const { data: rp } = await supabase
+        .from("role_permissions")
+        .select("module_key, can_view, can_create, can_update, can_delete, can_export")
+        .eq("ecole_id", ecoleId)
+        .in("role", roleList as any);
+      (rp ?? []).forEach((row: any) => {
+        const existing = seedFromRoles[row.module_key];
+        seedFromRoles[row.module_key] = existing ? mergeRow(existing, row) : row;
+      });
+      // Fallback : pour chaque rôle sans lignes en base, appliquer les défauts.
+      const rolesInDb = new Set((rp ?? []).map((r: any) => r.role));
+      roleList.forEach((r: string) => {
+        if (rolesInDb.has(r)) return;
+        (ROLE_DEFAULT_MODULES[r] ?? []).forEach(k => {
+          const existing = seedFromRoles[k];
+          seedFromRoles[k] = existing ? mergeRow(existing, readonlyRow(k)) : readonlyRow(k);
+        });
+      });
+    }
+
     const map: Record<string, PermRow> = {};
     (mods ?? []).forEach((m: any) => {
-      const existing = (p ?? []).find((x: any) => x.module_key === m.key);
-      map[m.key] = existing ?? {
-        module_key: m.key,
-        can_view: false, can_create: false, can_update: false, can_delete: false, can_export: false,
-      };
+      const existing = userRows.find(x => x.module_key === m.key);
+      if (existing) map[m.key] = existing;
+      else if (usingDefaults && seedFromRoles[m.key]) map[m.key] = { ...seedFromRoles[m.key], module_key: m.key };
+      else map[m.key] = emptyRow(m.key);
     });
     setPerms(map);
+    setIsDefault(usingDefaults);
     setLoading(false);
   }, [targetUserId, ecoleId]);
 
