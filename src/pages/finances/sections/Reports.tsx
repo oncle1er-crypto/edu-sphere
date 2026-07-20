@@ -148,27 +148,39 @@ export default function Reports() {
       })),
   });
 
-  const getRemises = (): RemisesData => ({
-    lignes: financeData
-      .filter((e) => (e.totalRemises ?? 0) > 0)
-      .map((e) => {
-        const remisePaiements = (e.paiements ?? []).filter((p) => p.kind === "remise");
-        const motif = remisePaiements
-          .map((p) => p.motif)
-          .filter(Boolean)
-          .join(" ; ");
-        return {
-          matricule: e.matricule,
-          nom: e.nom,
-          prenom: e.prenom,
-          classe: e.classe,
-          parent: e.parent,
-          telephone: e.telephone,
-          montant: e.totalRemises ?? 0,
-          motif,
-        };
-      }),
-  });
+  const getRemises = (): RemisesData => {
+    const from = remiseFrom ? new Date(remiseFrom + "T00:00:00") : null;
+    const to = remiseTo ? new Date(remiseTo + "T23:59:59") : null;
+    const classeFilter = remiseClasse && remiseClasse !== "__all__" ? remiseClasse : null;
+    return {
+      lignes: financeData
+        .filter((e) => !classeFilter || e.classe === classeFilter)
+        .map((e) => {
+          const remisePaiements = (e.paiements ?? []).filter((p) => {
+            if (p.kind !== "remise") return false;
+            if (!from && !to) return true;
+            const d = p.date ? new Date(p.date) : null;
+            if (!d) return false;
+            if (from && d < from) return false;
+            if (to && d > to) return false;
+            return true;
+          });
+          const montant = remisePaiements.reduce((s, p) => s + (p.montant ?? 0), 0);
+          const motif = remisePaiements.map((p) => p.motif).filter(Boolean).join(" ; ");
+          return {
+            matricule: e.matricule,
+            nom: e.nom,
+            prenom: e.prenom,
+            classe: e.classe,
+            parent: e.parent,
+            telephone: e.telephone,
+            montant,
+            motif,
+          };
+        })
+        .filter((l) => l.montant > 0),
+    };
+  };
 
   const getMasseSalariale = (): MasseSalarialeData => ({
     mois: periode,
