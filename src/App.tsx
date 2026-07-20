@@ -515,6 +515,15 @@ const App = () => (
               <Route path="discipline" element={<VieScolaireDiscipline />} />
               <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
             </Route>
+            <Route path="/services-ponctuels" element={<RequirePerm module="services_ponctuels"><ServicesPonctuelsLayout /></RequirePerm>}>
+              <Route path="tableau" element={<SpDashboard />} />
+              <Route path="paiements" element={<SpPaiements />} />
+              <Route path="tests-entree" element={<SpTestsEntree />} />
+              <Route path="ventes-tenues" element={<SpVentesTenues />} />
+              <Route path="catalogue" element={<SpCatalogue />} />
+              <Route path="rapports" element={<SpRapports />} />
+              <Route path="parametres" element={<SpParametres />} />
+            </Route>
             <Route path="/cours-vacances" element={<RequirePerm module="cours_vacances"><VacancesLayout /></RequirePerm>}>
               <Route path="tableau" element={<VacancesDashboard />} />
               <Route path="inscriptions" element={<VacancesInscriptions />} />
