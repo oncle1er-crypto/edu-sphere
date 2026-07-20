@@ -1,5 +1,6 @@
-import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal, Sun, Pencil, Trash2 } from "lucide-react";
+import { Users, UserPlus, Shield, ShieldOff, Loader2, Check, BookOpen, Calculator, Eye, ClipboardList, Bus, UtensilsCrossed, CreditCard, UserCog, KeyRound, SlidersHorizontal, Sun, Pencil, Trash2, ShieldCheck } from "lucide-react";
 import { PermissionsMatrixDialog } from "@/components/security/PermissionsMatrixDialog";
+import { RolePermissionsDialog } from "@/components/security/RolePermissionsDialog";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
 import { Input } from "@/components/ui/input";
@@ -86,6 +87,7 @@ export default function UsersRoles() {
   const [newPwd, setNewPwd] = useState("");
   const [resettingPwd, setResettingPwd] = useState(false);
   const [credsPreview, setCredsPreview] = useState<{ fullName: string; identifier: string; password: string; channel: "email" | "phone" } | null>(null);
+  const [rolePermsOpen, setRolePermsOpen] = useState(false);
 
 
   const handleResetMfa = async () => {
@@ -243,6 +245,10 @@ export default function UsersRoles() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => setRolePermsOpen(true)}>
+            <ShieldCheck className="h-4 w-4" />Permissions par rôle
+          </Button>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button><UserPlus className="h-4 w-4" />Créer un utilisateur</Button>
