@@ -47,6 +47,15 @@ export function useSpCandidats() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!ecoleId) return;
+    const channel = supabase
+      .channel(`sp_candidats:${ecoleId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "sp_candidats", filter: `ecole_id=eq.${ecoleId}` }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [ecoleId, load]);
+
   const save = async (patch: Partial<SpCandidat> & { id?: string }) => {
     if (!ecoleId) return;
     const payload = { ...patch, ecole_id: ecoleId };
