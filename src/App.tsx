@@ -357,7 +357,7 @@ const App = () => (
               <Route path="configuration" element={<SchoolsConfig />} />
               <Route path="transition" element={<SchoolsYearTransition />} />
             </Route>
-            <Route path="/emploi-du-temps" element={<RequirePerm module="emploi_du_temps"><TimetableLayout /></RequirePerm>}>
+            <Route path="/emploi-du-temps" element={<RequirePerm module="emploi_temps"><TimetableLayout /></RequirePerm>}>
               <Route path="tableau" element={<TimetableDashboard />} />
               <Route path="hebdomadaire" element={<WeeklyView />} />
               <Route path="generation" element={<AutoGenerate />} />
