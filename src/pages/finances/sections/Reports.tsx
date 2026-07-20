@@ -299,24 +299,64 @@ export default function Reports() {
         const d = getRemises();
         const total = d.lignes.reduce((s, l) => s + l.montant, 0);
         return (
-          <Table>
-            <TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead>Parent</TableHead><TableHead>Téléphone</TableHead><TableHead className="text-right">Remise</TableHead></TableRow></TableHeader>
-            <TableBody>
-              {d.lignes.sort((a, b) => a.classe.localeCompare(b.classe)).map((l, i) => (
-                <TableRow key={i}>
-                  <TableCell>{l.nom} {l.prenom}</TableCell>
-                  <TableCell>{l.classe}</TableCell>
-                  <TableCell>{l.parent}</TableCell>
-                  <TableCell>{l.telephone}</TableCell>
-                  <TableCell className="text-right">{fcfa(l.montant)}</TableCell>
-                </TableRow>
-              ))}
-              <TableRow className="font-bold">
-                <TableCell colSpan={4}>Total — {d.lignes.length} élève(s)</TableCell>
-                <TableCell className="text-right">{fcfa(total)}</TableCell>
-              </TableRow>
-            </TableBody>
-          </Table>
+          <div className="space-y-4">
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Filter className="h-4 w-4 text-primary" />
+                Filtres
+                {remisesFilterActive && (
+                  <Button size="sm" variant="ghost" className="ml-auto h-7 gap-1 text-xs" onClick={resetRemisesFilters}>
+                    <X className="h-3 w-3" />Réinitialiser
+                  </Button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Du</Label>
+                  <Input type="date" value={remiseFrom} onChange={(e) => setRemiseFrom(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Au</Label>
+                  <Input type="date" value={remiseTo} onChange={(e) => setRemiseTo(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Classe</Label>
+                  <Select value={remiseClasse} onValueChange={setRemiseClasse}>
+                    <SelectTrigger><SelectValue placeholder="Toutes les classes" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__all__">Toutes les classes</SelectItem>
+                      {classesList.map((c) => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground">Période appliquée : <span className="font-medium">{remisesPeriodeLabel}</span></p>
+            </div>
+            {d.lignes.length === 0 ? (
+              <div className="text-center text-sm text-muted-foreground py-8">Aucune remise sur ces critères.</div>
+            ) : (
+              <Table>
+                <TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead>Parent</TableHead><TableHead>Téléphone</TableHead><TableHead className="text-right">Remise</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {d.lignes.sort((a, b) => a.classe.localeCompare(b.classe)).map((l, i) => (
+                    <TableRow key={i}>
+                      <TableCell>{l.nom} {l.prenom}</TableCell>
+                      <TableCell>{l.classe}</TableCell>
+                      <TableCell>{l.parent}</TableCell>
+                      <TableCell>{l.telephone}</TableCell>
+                      <TableCell className="text-right">{fcfa(l.montant)}</TableCell>
+                    </TableRow>
+                  ))}
+                  <TableRow className="font-bold">
+                    <TableCell colSpan={4}>Total — {d.lignes.length} élève(s)</TableCell>
+                    <TableCell className="text-right">{fcfa(total)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            )}
+          </div>
         );
       }
       case "flux_tresorerie": {
