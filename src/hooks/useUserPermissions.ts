@@ -169,5 +169,5 @@ export function useUserPermissions(targetUserId: string | null) {
     } finally { setSaving(false); }
   };
 
-  return { modules, perms, loading, saving, toggle, setAllForModule, setAllForAction, setActionForModules, applyPreset, save, reload: load };
+  return { modules, perms, loading, saving, isDefault, toggle, setAllForModule, setAllForAction, setActionForModules, applyPreset, save, reload: load };
 }
