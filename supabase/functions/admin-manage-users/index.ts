@@ -17,6 +17,12 @@ const json = (body: unknown, status = 200) =>
 const PHONE_EMAIL_DOMAIN = "phone.laprovidence.ci";
 const phoneToEmail = (phone: string) => `${phone}@${PHONE_EMAIL_DOMAIN}`;
 const isValidPhone = (p: string) => /^\d{10}$/.test(p);
+// Regex email conforme à celle utilisée par Supabase Auth (format strict).
+const EMAIL_RE = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+const normalizeEmail = (e: string) =>
+  String(e ?? "")
+    .replace(/[\u200B-\u200D\uFEFF\s]+/g, "") // supprime espaces + zero-width
+    .toLowerCase();
 const randomTempPassword = () => {
   // Code numérique à 6 chiffres (100000–999999), sûr côté crypto.
   const buf = new Uint32Array(1);
@@ -132,7 +138,14 @@ Deno.serve(async (req) => {
       }
       if (!pwd) pwd = randomTempPassword();
 
-      const loginEmail = email ? String(email).trim() : phoneToEmail(String(phone));
+      const loginEmail = email ? normalizeEmail(email) : phoneToEmail(String(phone));
+      if (!EMAIL_RE.test(loginEmail)) {
+        return json({
+          error: email
+            ? "Format d'email invalide. Exemple attendu : prenom.nom@exemple.com"
+            : "Identifiant généré invalide (téléphone). Contactez le support.",
+        }, 400);
+      }
 
       const { data: created, error: cErr } = await admin.auth.admin.createUser({
         email: loginEmail,
@@ -189,8 +202,12 @@ Deno.serve(async (req) => {
         await admin.from("profiles").update({ full_name }).eq("id", target_user_id);
       }
       if (email) {
+        const normalized = normalizeEmail(email);
+        if (!EMAIL_RE.test(normalized)) {
+          return json({ error: "Format d'email invalide." }, 400);
+        }
         const { error: uErr } = await admin.auth.admin.updateUserById(target_user_id, {
-          email, email_confirm: true,
+          email: normalized, email_confirm: true,
         });
         if (uErr) return json({ error: uErr.message }, 400);
       }
