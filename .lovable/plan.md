@@ -1,51 +1,47 @@
-## Diagnostic (à confirmer par la 1re étape du plan)
+# Permissions par rôle — masquer modules, fonctions et options
 
-Les logs d'auth Supabase montrent, dans les ~10 s qui suivent la saisie du mot de passe de `secretaire@laprovidence.ci`, **plus de 40 événements `Login` (login_method=token) et `token_revoked`** entrelacés, provenant en parallèle des deux origines `gs-laprovidence.lovable.app` (IP mobile) et `…lovableproject.com` (IP fixe), suivis d'un `429: Request rate limit reached` sur `/token`.
+## Constat
+L'infra existe déjà côté "utilisateur individuel" : tables `app_modules` + `user_permissions`, hook `usePermissions().can(module, action)` et composant `<Can module="..." action="...">`. Ce qui manque :
 
-Cascade probable :
-1. Le compte a **deux onglets/sessions actifs** sur la même identité (prod + preview), et/ou le client GoTrue est instancié deux fois (`@supabase/supabase-js` dans `src/integrations/supabase/client.ts` **et** `createLovableAuth()` dans `src/integrations/lovable/index.ts`). Chacun a son propre `autoRefreshToken` mais partage le même refresh token en `localStorage`.
-2. Rotation single-use : dès qu'un client refresh, l'autre voit son refresh token révoqué → il retente → `token_revoked` → nouveau login token → boucle.
-3. Le pic déclenche le **rate-limit 429** puis un mécanisme serveur qui écrit un événement `suspicious_login_blocked` / `mfa_account_locked` (ou severity `critical`) dans `security_audit_logs`.
-4. Le listener Realtime dans `src/context/AuthContext.tsx` (`SUSPICIOUS_EVENTS`) reçoit cet INSERT et appelle `supabase.auth.signOut()` → toast **« Activité suspecte détectée. Vous avez été déconnecté. »**
+1. **Aucun paramétrage par rôle** (aujourd'hui il faut ouvrir chaque utilisateur un par un).
+2. **La sidebar et les pages ne filtrent pas** encore selon `can(...)` — donc même si on définit des permissions, tout reste visible.
+3. Impossible de masquer une **option fine** (ex. bouton « Supprimer paiement », onglet « Comptabilité ») sans passer par du code.
 
-Autre facteur aggravant : la Realtime `on(INSERT)` filtre uniquement par `user_id`. Si le trigger d'audit journalise en cascade côté RPC/SECURITY DEFINER, tout événement `warning`/`info` mal classé `critical` déclenche aussi la déconnexion.
+## Ce qui va être construit
 
-## Correctifs proposés
+### 1. Permissions par rôle (backend)
+Nouvelle table `role_permissions(ecole_id, role, module_key, can_view/create/update/delete/export)` + RPC :
+- `get_effective_permissions(user_id, ecole_id)` : union `role_permissions` (rôles de l'user) ∪ overrides `user_permissions`.
+- `set_role_permissions(ecole_id, role, permissions[])` (admin/directeur seulement).
+- Seed initial basé sur `ROLE_DEFAULT_MODULES` déjà présent dans `UsersRoles.tsx` (secrétaire = eleves, classes, vie_scolaire en lecture ; comptable = finances plein accès ; etc.).
 
-### 1. Vérifier l'événement déclencheur (obligatoire avant fix)
-Interroger `security_audit_logs` pour le user `86782b46-…` et `14030ae7-…` entre 08:52:55 et 08:54:30 UTC. Confirmer quel `event_type`/`event_severity` déclenche le signOut. Ajuster le reste du plan selon la vraie cause (suspicious_login_blocked, mfa_account_locked, ou un event non-anticipé signalé `critical`).
+`usePermissions` sera modifié pour lire l'effectif via la RPC (rôle + override).
 
-### 2. Rendre le listener « activité suspecte » beaucoup plus strict (`src/context/AuthContext.tsx`)
-- Ne signOut que si `event_severity === "critical"` **ET** `event_type ∈ SUSPICIOUS_EVENTS`, plus jamais sur severity seule.
-- Ignorer explicitement les events déclenchés par la propre session courante (comparer `metadata.session_id` / `metadata.origin` si présent) pour éviter l'auto-déconnexion.
-- Ajouter un délai de garde de 5 s après `SIGNED_IN` pendant lequel on ignore les events (évite qu'un event de la connexion précédente déconnecte immédiatement).
+### 2. Nouvelle page « Rôles & Permissions »
+Sous **Paramètres → Utilisateurs & Rôles**, ajout d'un onglet **« Permissions par rôle »** :
+- Sélecteur de rôle (admin, directeur, secrétaire, comptable, enseignant, éducateur, surveillant, parent).
+- Matrice modules × actions (View / Create / Update / Delete / Export), identique à `PermissionsMatrixDialog`.
+- Presets : Plein accès / Lecture seule / Aucun.
+- Bouton « Réinitialiser aux valeurs par défaut ».
+Le dialog par-utilisateur existant est conservé pour les exceptions individuelles.
 
-### 3. Supprimer la double instance GoTrue
-- Faire en sorte que `createLovableAuth()` n'instancie pas un second client d'auth persistant, ou l'isoler avec `persistSession:false, autoRefreshToken:false, storageKey:"lovable-oauth"` distinct.
-- Vérifier qu'il n'y a qu'un seul `createClient(...)` avec `persistSession:true` dans tout le bundle (`rg createClient src`).
+### 3. Application dans l'UI
+- **Sidebar** (`AppSidebar.tsx`) : chaque item devient conditionnel via `can(module, "view")`. Les sections vides sont masquées.
+- **Router** (`App.tsx`) : garde `<RequirePerm module="..." />` qui redirige vers `/` si l'utilisateur n'a pas l'accès (empêche l'accès par URL directe).
+- **Actions sensibles** : les boutons « Supprimer », « Exporter », « Créer » clés (finances, élèves, notes, etc.) sont wrappés dans `<Can action="delete">…</Can>`. Périmètre du 1ᵉʳ lot : Finances, Élèves, Classes, Notes/Examens, Vie scolaire. Les autres modules pourront être durcis dans un lot suivant.
 
-### 4. Réduire la casse en cas de refresh concurrent
-- Dans `src/context/AuthContext.tsx`, ignorer aussi l'event `USER_UPDATED` sur `setSession` s'il ne change pas d'utilisateur (déjà fait pour TOKEN_REFRESHED — étendre).
-- Ne pas relancer `refresh(true)` du hook `useMfa` sur `SIGNED_IN` si le user est identique (évite un second `getAuthenticatorAssuranceLevel()` qui peut re-déclencher refresh).
-
-### 5. Ajouter un garde côté serveur (optionnel, si l'event fautif est `suspicious_login_blocked` trigger-généré)
-- Assouplir le seuil du trigger côté DB (>N logins/minute) pour ne pas confondre rotation légitime et attaque.
-- OU cesser d'écrire cet event en `critical` quand `login_method='token'` (refresh), ne le garder critique que pour `login_method='password'` répétés.
-
-### 6. Nettoyage de session bloquée pour l'utilisateur affecté
-- Une fois le fix déployé, forcer la déconnexion de toutes les sessions actives via `auth.admin.signOut(user_id, {scope:'global'})` pour repartir sur un état propre.
+### 4. Options fines / sous-modules
+Ajout dans `app_modules` d'entrées sous-modules (ex. `finances.comptabilite`, `finances.relances`, `eleves.suppression`, `parametres.zone_dangereuse`). Ces clés sont utilisables via `<Can module="finances.comptabilite">` pour masquer un onglet ou un bouton précis. Périmètre initial : ~10 sous-clés là où c'est vraiment nécessaire.
 
 ## Détails techniques
+- Nouvelle migration SQL : table `role_permissions`, RPC, GRANTs (`authenticated` SELECT sur `role_permissions`, RPC en SECURITY DEFINER).
+- `usePermissions.load()` remplace le 2ᵉ SELECT par `supabase.rpc("get_effective_permissions", …)`.
+- Nouveau composant `<RequirePerm>` (route guard).
+- Sidebar : filtrage `items.filter(i => can(i.moduleKey, "view"))`, section masquée si vide.
+- Rôle **admin** reste bypass complet (déjà en place dans `can()`).
 
-Fichiers touchés (attendus) :
-- `src/context/AuthContext.tsx` — filtres SUSPICIOUS + delay guard.
-- `src/integrations/lovable/index.ts` — vérifier / isoler le second client.
-- `src/hooks/useMfa.ts` — ne pas re-fetch AAL si user inchangé.
-- Nouvelle migration SQL (si étape 5 confirmée).
+## Hors périmètre de ce lot
+- Migration exhaustive de toutes les pages : on couvre sidebar + routes + actions sensibles des 5 modules critiques ; les autres suivront à la demande.
+- Permissions par classe/cycle (déjà géré ailleurs).
 
-Vérification :
-- Reproduire le login en prod avec `secretaire@laprovidence.ci` puis observer :
-  - un seul `Login` password + 1 `Login` token de rotation (pas 40),
-  - aucun 429 sur `/token`,
-  - pas d'INSERT `suspicious_login_blocked` dans `security_audit_logs`,
-  - session stable > 60 s sans toast rouge.
+Souhaite-tu que je démarre l'implémentation avec ce périmètre, ou tu préfères une portée différente (ex. uniquement sidebar + rôles sans les sous-modules d'abord) ?

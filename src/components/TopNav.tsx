@@ -4,13 +4,14 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const navItems = [
-  { label: "Tableau de bord", to: "/", icon: Home, end: true },
-  { label: "Écoles", to: "/ecoles", icon: School },
-  { label: "Statistiques", to: "/statistiques", icon: BarChart3 },
-  { label: "Cours de vacances", to: "/cours-vacances", icon: Sun },
-  { label: "Paramètres", to: "/parametres", icon: Settings },
+  { label: "Tableau de bord", to: "/", icon: Home, end: true, module: null as string | null },
+  { label: "Écoles", to: "/ecoles", icon: School, module: "parametres" },
+  { label: "Statistiques", to: "/statistiques", icon: BarChart3, module: "statistiques" },
+  { label: "Cours de vacances", to: "/cours-vacances", icon: Sun, module: "cours_vacances" },
+  { label: "Paramètres", to: "/parametres", icon: Settings, module: "parametres" },
 ];
 
 interface TopNavProps {
@@ -19,6 +20,8 @@ interface TopNavProps {
 
 export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" }: TopNavProps) {
   const [open, setOpen] = useState(false);
+  const { can, loading: permsLoading } = usePermissions();
+  const visibleItems = navItems.filter(i => !i.module || permsLoading || can(i.module));
 
   return (
     <nav className="px-2 sm:px-3 md:px-6 pt-2 sm:pt-3 pb-2">
@@ -57,7 +60,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
                   <SheetTitle className="text-left text-sm">{schoolName}</SheetTitle>
                 </SheetHeader>
                 <div className="p-2">
-                  {navItems.map((item) => (
+                  {visibleItems.map((item) => (
                     <NavLink
                       key={item.to}
                       to={item.to}
@@ -83,7 +86,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-1 md:gap-2 overflow-x-auto">
-            {navItems.map((item) => (
+            {visibleItems.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

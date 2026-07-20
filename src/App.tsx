@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+import { RequirePerm } from "@/components/auth/RequirePerm";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
@@ -308,7 +309,7 @@ const App = () => (
               <Route path="rapports" element={<GlobalReports />} />
               <Route path="configuration" element={<StatsConfig />} />
             </Route>
-            <Route path="/eleves" element={<StudentsLayout />}>
+            <Route path="/eleves" element={<RequirePerm module="eleves"><StudentsLayout /></RequirePerm>}>
               <Route path="tableau" element={<StudentsDashboard />} />
               <Route path="liste" element={<StudentsList />} />
               <Route path="inscription" element={<StudentsRegistration />} />
@@ -323,7 +324,7 @@ const App = () => (
               <Route path="sigfne" element={<StudentsSigfne />} />
               <Route path="configuration" element={<StudentsConfig />} />
             </Route>
-            <Route path="/enseignants" element={<StaffLayout />}>
+            <Route path="/enseignants" element={<RequirePerm module="enseignants"><StaffLayout /></RequirePerm>}>
               <Route path="tableau" element={<StaffDashboard />} />
               <Route path="liste" element={<StaffList />} />
               <Route path="recrutement" element={<StaffRecruitment />} />
@@ -336,7 +337,7 @@ const App = () => (
               <Route path="personnel" element={<StaffAdmin />} />
               <Route path="configuration" element={<StaffConfig />} />
             </Route>
-            <Route path="/classes" element={<ClassesLayout />}>
+            <Route path="/classes" element={<RequirePerm module="classes"><ClassesLayout /></RequirePerm>}>
               <Route path="tableau" element={<ClassesDashboard />} />
               <Route path="liste" element={<ClassesList />} />
               <Route path="cycles" element={<ClassesCycles />} />
@@ -348,7 +349,7 @@ const App = () => (
               <Route path="rapports" element={<ClassesReports />} />
               <Route path="configuration" element={<ClassesConfig />} />
             </Route>
-            <Route path="/ecoles" element={<SchoolsLayout />}>
+            <Route path="/ecoles" element={<RequirePerm module="parametres"><SchoolsLayout /></RequirePerm>}>
               <Route path="tableau" element={<SchoolsDashboard />} />
               <Route path="liste" element={<SchoolsList />} />
               <Route path="nouvelle" element={<SchoolsCreate />} />
@@ -356,7 +357,7 @@ const App = () => (
               <Route path="configuration" element={<SchoolsConfig />} />
               <Route path="transition" element={<SchoolsYearTransition />} />
             </Route>
-            <Route path="/emploi-du-temps" element={<TimetableLayout />}>
+            <Route path="/emploi-du-temps" element={<RequirePerm module="emploi_du_temps"><TimetableLayout /></RequirePerm>}>
               <Route path="tableau" element={<TimetableDashboard />} />
               <Route path="hebdomadaire" element={<WeeklyView />} />
               <Route path="generation" element={<AutoGenerate />} />
@@ -369,7 +370,7 @@ const App = () => (
               <Route path="impression" element={<Printing />} />
               <Route path="configuration" element={<TimetableConfig />} />
             </Route>
-            <Route path="/examens" element={<ExamsLayout />}>
+            <Route path="/examens" element={<RequirePerm module="examens"><ExamsLayout /></RequirePerm>}>
               <Route path="tableau" element={<ExamsDashboard />} />
               <Route path="calendrier" element={<ExamsCalendar />} />
               <Route path="evaluations" element={<Evaluations />} />
@@ -386,7 +387,7 @@ const App = () => (
               <Route path="validation" element={<Validation />} />
               <Route path="configuration" element={<ExamsConfig />} />
             </Route>
-            <Route path="/finances" element={<FinanceLayout />}>
+            <Route path="/finances" element={<RequirePerm module="finances"><FinanceLayout /></RequirePerm>}>
               <Route path="tableau" element={<FinanceDashboard />} />
               <Route path="factures" element={<Invoices />} />
               <Route path="paiements" element={<Payments />} />
@@ -404,7 +405,7 @@ const App = () => (
               <Route path="fiscalite" element={<Tax />} />
               <Route path="configuration" element={<FinanceConfig />} />
             </Route>
-            <Route path="/presences" element={<AttendanceLayout />}>
+            <Route path="/presences" element={<RequirePerm module="presences"><AttendanceLayout /></RequirePerm>}>
               <Route path="tableau" element={<AttendanceDashboard />} />
               <Route path="appel" element={<DailyCall />} />
               <Route path="absences" element={<StudentAbsences />} />
@@ -418,7 +419,7 @@ const App = () => (
               <Route path="rapports" element={<AttendanceReports />} />
               <Route path="configuration" element={<AttendanceConfig />} />
             </Route>
-            <Route path="/cantine" element={<CanteenLayout />}>
+            <Route path="/cantine" element={<RequirePerm module="cantine"><CanteenLayout /></RequirePerm>}>
               <Route path="tableau" element={<CanteenDashboard />} />
               <Route path="menus" element={<CanteenMenus />} />
               <Route path="planning" element={<CanteenPlanning />} />
@@ -432,7 +433,7 @@ const App = () => (
               <Route path="rapports" element={<CanteenReports />} />
               <Route path="configuration" element={<CanteenConfig />} />
             </Route>
-            <Route path="/transport" element={<TransportLayout />}>
+            <Route path="/transport" element={<RequirePerm module="transport"><TransportLayout /></RequirePerm>}>
               <Route path="tableau" element={<TransportDashboard />} />
               <Route path="lignes" element={<TransportLines />} />
               <Route path="vehicules" element={<TransportVehicles />} />
@@ -447,7 +448,7 @@ const App = () => (
               <Route path="rapports" element={<TransportReports />} />
               <Route path="configuration" element={<TransportConfig />} />
             </Route>
-            <Route path="/bibliotheque" element={<LibraryLayout />}>
+            <Route path="/bibliotheque" element={<RequirePerm module="bibliotheque"><LibraryLayout /></RequirePerm>}>
               <Route path="tableau" element={<LibraryDashboard />} />
               <Route path="catalogue" element={<LibraryCatalog />} />
               <Route path="recherche" element={<LibrarySearch />} />
@@ -460,7 +461,7 @@ const App = () => (
               <Route path="rapports" element={<LibraryReports />} />
               <Route path="configuration" element={<LibraryConfig />} />
             </Route>
-            <Route path="/communication" element={<CommunicationLayout />}>
+            <Route path="/communication" element={<RequirePerm module="communication"><CommunicationLayout /></RequirePerm>}>
               <Route path="tableau" element={<CommunicationDashboard />} />
               <Route path="boite" element={<InboxSection />} />
               <Route path="messages" element={<DirectMessages />} />
@@ -474,7 +475,7 @@ const App = () => (
               <Route path="envois" element={<SendHistory />} />
               <Route path="configuration" element={<CommunicationConfig />} />
             </Route>
-            <Route path="/cartes" element={<CardsLayout />}>
+            <Route path="/cartes" element={<RequirePerm module="cartes"><CardsLayout /></RequirePerm>}>
               <Route path="tableau" element={<CardsDashboard />} />
               <Route path="liste" element={<CardsList />} />
               <Route path="emission" element={<CardsIssue />} />
@@ -485,7 +486,7 @@ const App = () => (
               <Route path="templates" element={<CardsTemplates />} />
               <Route path="configuration" element={<CardsConfig />} />
             </Route>
-            <Route path="/matieres" element={<SubjectsLayout />}>
+            <Route path="/matieres" element={<RequirePerm module="matieres"><SubjectsLayout /></RequirePerm>}>
               <Route path="tableau" element={<SubjectsDashboard />} />
               <Route path="liste" element={<SubjectsList />} />
               <Route path="categories" element={<SubjectsCategories />} />
@@ -498,7 +499,7 @@ const App = () => (
               <Route path="configuration" element={<SubjectsConfig />} />
             </Route>
             
-            <Route path="/vie-scolaire" element={<VieScolaireLayout />}>
+            <Route path="/vie-scolaire" element={<RequirePerm module="vie_scolaire"><VieScolaireLayout /></RequirePerm>}>
               <Route path="tableau" element={<VieScolaireDashboard />} />
               <Route path="billets" element={<VieScolaireBillets />} />
               <Route path="certificats" element={<VieScolaireCertificats />} />
@@ -506,7 +507,7 @@ const App = () => (
               <Route path="discipline" element={<VieScolaireDiscipline />} />
               <Route path="infirmerie" element={<VieScolaireInfirmerie />} />
             </Route>
-            <Route path="/cours-vacances" element={<VacancesLayout />}>
+            <Route path="/cours-vacances" element={<RequirePerm module="cours_vacances"><VacancesLayout /></RequirePerm>}>
               <Route path="tableau" element={<VacancesDashboard />} />
               <Route path="inscriptions" element={<VacancesInscriptions />} />
               <Route path="classes" element={<VacancesClasses />} />
