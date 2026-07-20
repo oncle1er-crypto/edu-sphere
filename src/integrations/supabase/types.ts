@@ -5527,6 +5527,260 @@ export type Database = {
           },
         ]
       }
+      sp_candidats: {
+        Row: {
+          classe_demandee: string | null
+          converti_eleve_id: string | null
+          created_at: string
+          created_by: string | null
+          date_naissance: string | null
+          date_test: string | null
+          ecole_id: string
+          ecole_origine: string | null
+          id: string
+          nom: string
+          numero: string
+          observations: string | null
+          parent: string | null
+          prenom: string
+          sexe: string | null
+          statut: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          classe_demandee?: string | null
+          converti_eleve_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_naissance?: string | null
+          date_test?: string | null
+          ecole_id: string
+          ecole_origine?: string | null
+          id?: string
+          nom: string
+          numero: string
+          observations?: string | null
+          parent?: string | null
+          prenom: string
+          sexe?: string | null
+          statut?: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classe_demandee?: string | null
+          converti_eleve_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_naissance?: string | null
+          date_test?: string | null
+          ecole_id?: string
+          ecole_origine?: string | null
+          id?: string
+          nom?: string
+          numero?: string
+          observations?: string | null
+          parent?: string | null
+          prenom?: string
+          sexe?: string | null
+          statut?: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sp_paiements: {
+        Row: {
+          annule_le: string | null
+          annule_par: string | null
+          beneficiaire_libre: string | null
+          beneficiaire_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id: string | null
+          candidat_id: string | null
+          created_at: string
+          date_paiement: string
+          ecole_id: string
+          eleve_id: string | null
+          id: string
+          mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du: number
+          montant_paye: number
+          motif_annulation: string | null
+          numero: string
+          observations: string | null
+          remise: number
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          annule_le?: string | null
+          annule_par?: string | null
+          beneficiaire_libre?: string | null
+          beneficiaire_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du?: number
+          montant_paye?: number
+          motif_annulation?: string | null
+          numero: string
+          observations?: string | null
+          remise?: number
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          annule_le?: string | null
+          annule_par?: string | null
+          beneficiaire_libre?: string | null
+          beneficiaire_type?: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id?: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du?: number
+          montant_paye?: number
+          motif_annulation?: string | null
+          numero?: string
+          observations?: string | null
+          remise?: number
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_paiements_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "sp_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_services: {
+        Row: {
+          accepte_partiel: boolean
+          actif: boolean
+          couleur: string
+          created_at: string
+          description: string | null
+          ecole_id: string
+          gere_stock: boolean
+          icone: string
+          id: string
+          nom: string
+          prix: number
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          accepte_partiel?: boolean
+          actif?: boolean
+          couleur?: string
+          created_at?: string
+          description?: string | null
+          ecole_id: string
+          gere_stock?: boolean
+          icone?: string
+          id?: string
+          nom: string
+          prix?: number
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          accepte_partiel?: boolean
+          actif?: boolean
+          couleur?: string
+          created_at?: string
+          description?: string | null
+          ecole_id?: string
+          gere_stock?: boolean
+          icone?: string
+          id?: string
+          nom?: string
+          prix?: number
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sp_ventes_tenues: {
+        Row: {
+          acheteur_libre: string | null
+          acheteur_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le: string | null
+          annule_par: string | null
+          caissier_id: string | null
+          candidat_id: string | null
+          created_at: string
+          ecole_id: string
+          eleve_id: string | null
+          id: string
+          mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total: number
+          motif_annulation: string | null
+          numero: string
+          observations: string | null
+          prix_unitaire: number
+          quantite: number
+          statut: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at: string
+        }
+        Insert: {
+          acheteur_libre?: string | null
+          acheteur_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le?: string | null
+          annule_par?: string | null
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          ecole_id: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total?: number
+          motif_annulation?: string | null
+          numero: string
+          observations?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          statut?: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at?: string
+        }
+        Update: {
+          acheteur_libre?: string | null
+          acheteur_type?: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le?: string | null
+          annule_par?: string | null
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total?: number
+          motif_annulation?: string | null
+          numero?: string
+          observations?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          statut?: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       stocks_cantine: {
         Row: {
           created_at: string
@@ -6811,6 +7065,14 @@ export type Database = {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
         Returns: undefined
       }
+      sp_annuler_paiement: {
+        Args: { _motif: string; _paiement_id: string }
+        Returns: undefined
+      }
+      sp_convertir_candidat: {
+        Args: { _annee_id: string; _candidat_id: string; _classe_id?: string }
+        Returns: string
+      }
       stats_conformite_sigfne: {
         Args: { p_ecole_id: string }
         Returns: {
@@ -6892,6 +7154,23 @@ export type Database = {
       relance_type: "sms" | "email" | "appel" | "courrier"
       remplacement_statut: "a_pourvoir" | "en_attente" | "confirme" | "annule"
       sexe_type: "M" | "F"
+      sp_beneficiaire_type: "eleve" | "candidat" | "libre"
+      sp_candidat_statut:
+        | "en_attente"
+        | "programme"
+        | "absent"
+        | "present"
+        | "admis"
+        | "refuse"
+      sp_mode_paiement:
+        | "especes"
+        | "wave"
+        | "orange_money"
+        | "mtn_money"
+        | "moov_money"
+        | "virement"
+        | "cheque"
+      sp_vente_statut: "paye" | "remis" | "attente" | "annule"
       tranche_statut: "payee" | "partielle" | "due" | "retard"
     }
     CompositeTypes: {
@@ -7066,6 +7345,25 @@ export const Constants = {
       relance_type: ["sms", "email", "appel", "courrier"],
       remplacement_statut: ["a_pourvoir", "en_attente", "confirme", "annule"],
       sexe_type: ["M", "F"],
+      sp_beneficiaire_type: ["eleve", "candidat", "libre"],
+      sp_candidat_statut: [
+        "en_attente",
+        "programme",
+        "absent",
+        "present",
+        "admis",
+        "refuse",
+      ],
+      sp_mode_paiement: [
+        "especes",
+        "wave",
+        "orange_money",
+        "mtn_money",
+        "moov_money",
+        "virement",
+        "cheque",
+      ],
+      sp_vente_statut: ["paye", "remis", "attente", "annule"],
       tranche_statut: ["payee", "partielle", "due", "retard"],
     },
   },
