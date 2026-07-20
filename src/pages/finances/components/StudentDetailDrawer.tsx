@@ -52,11 +52,13 @@ const STATUT_LABEL: Record<Tranche["statut"], string> = {
 export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded, refetching }: Props) {
 
   const { relances, fetchRelances, addRelance } = useRelances(eleve?.id);
+  const { isAdmin } = usePermissions();
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>(undefined);
   const [payOpen, setPayOpen] = useState(false);
   const [discountTrancheNum, setDiscountTrancheNum] = useState<number | undefined>(undefined);
   const [discountOpen, setDiscountOpen] = useState(false);
+  const [editPaiement, setEditPaiement] = useState<PaiementHistorique | null>(null);
 
   useEffect(() => {
     if (eleve) {
