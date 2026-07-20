@@ -70,6 +70,45 @@ export default function SpRapports() {
     download("recettes-services-ponctuels.csv", toCsv(rows));
   };
 
+  const exportPdf = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    doc.setFontSize(14);
+    doc.text("Rapport — Services ponctuels", 14, 15);
+    doc.setFontSize(10);
+    const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
+    doc.text(periode, 14, 22);
+    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 28);
+
+    autoTable(doc, {
+      startY: 34,
+      head: [["Par service", "Total"]],
+      body: parService.map(([n, v]) => [n, fmt(v)]),
+      theme: "striped",
+      headStyles: { fillColor: [110, 26, 44] },
+    });
+    autoTable(doc, {
+      head: [["Mode paiement", "Total"]],
+      body: parMode.map(([n, v]) => [n, fmt(v)]),
+      theme: "striped",
+      headStyles: { fillColor: [110, 26, 44] },
+    });
+    autoTable(doc, {
+      head: [["N°", "Date", "Service", "Bénéficiaire", "Montant", "Mode"]],
+      body: paiementsFiltres.map((p) => [
+        p.numero,
+        new Date(p.date_paiement).toLocaleDateString("fr-FR"),
+        svcMap[p.service_id]?.nom ?? "",
+        p.beneficiaire_libre ?? "",
+        fmt(Number(p.montant_paye)),
+        p.mode_paiement,
+      ]),
+      theme: "grid",
+      headStyles: { fillColor: [110, 26, 44] },
+      styles: { fontSize: 8 },
+    });
+    doc.save("rapport-services-ponctuels.pdf");
+  };
+
   return (
     <div className="space-y-6">
       <Card>
