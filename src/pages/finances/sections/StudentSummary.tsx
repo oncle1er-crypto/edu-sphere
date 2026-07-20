@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Mail, Printer, Plus, FileText, Loader2, Wallet } from "lucide-react";
+import { Search, Users, CheckCircle2, AlertCircle, Clock, Phone, MessageSquare, Mail, Printer, Plus, FileText, Loader2, Wallet, Gift } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -91,7 +91,12 @@ export default function StudentSummary() {
                         }
                       >
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold truncate">{e.nom} {e.prenom}</p>
+                          <p className="text-sm font-semibold truncate flex items-center gap-1">
+                            {e.nom} {e.prenom}
+                            {e.totalRemises > 0 && (
+                              <Gift className="h-3 w-3 text-rose-600 shrink-0" aria-label={`Remise ${fcfa(e.totalRemises)} FCFA`} />
+                            )}
+                          </p>
                           <p className="text-[11px] text-muted-foreground truncate">{e.classe} · {e.cycle}</p>
                         </div>
                         <div className={
@@ -124,6 +129,16 @@ export default function StudentSummary() {
                         {st === "retard" && <AlertCircle className="h-3 w-3" />}
                         <span className="ml-1">{STATUT_LABEL[st]}</span>
                       </Badge>
+                      {eleve.totalRemises > 0 && (
+                        <Badge
+                          variant="outline"
+                          className="bg-rose-100 text-rose-800 border-rose-200 gap-1"
+                          title="Cet élève bénéficie d'une remise, bourse ou prise en charge"
+                        >
+                          <Gift className="h-3 w-3" />
+                          Remise {fcfa(eleve.totalRemises)} FCFA
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground mt-1">
                       <span className="font-mono">{eleve.matricule}</span> · {eleve.classe} · {eleve.cycle}
