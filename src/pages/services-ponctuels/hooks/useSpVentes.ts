@@ -48,9 +48,9 @@ export function useSpVentes() {
 
   useEffect(() => {
     if (!ecoleId) return;
-    const channel = supabase
-      .channel(`sp_ventes:${ecoleId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "sp_ventes_tenues", filter: `ecole_id=eq.${ecoleId}` }, () => load())
+    const channel = supabase.channel(`sp_ventes:${ecoleId}:${Math.random().toString(36).slice(2)}`);
+    channel
+      .on("postgres_changes" as any, { event: "*", schema: "public", table: "sp_ventes_tenues", filter: `ecole_id=eq.${ecoleId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [ecoleId, load]);
