@@ -1,21 +1,39 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Save } from "lucide-react";
-import { toast } from "sonner";
+import { Save, Check, Loader2 } from "lucide-react";
 
 interface Props {
   title: string;
   description?: string;
   icon?: ReactNode;
   children: ReactNode;
-  onSave?: () => void;
+  onSave?: () => void | Promise<void>;
   hideSave?: boolean;
+  saving?: boolean;
 }
 
-export function SettingsSection({ title, description, icon, children, onSave, hideSave }: Props) {
-  const handleSave = () => {
-    onSave?.();
+export function SettingsSection({ title, description, icon, children, onSave, hideSave, saving }: Props) {
+  const [busy, setBusy] = useState(false);
+  const [justSaved, setJustSaved] = useState(false);
+
+  useEffect(() => {
+    if (!justSaved) return;
+    const t = setTimeout(() => setJustSaved(false), 2500);
+    return () => clearTimeout(t);
+  }, [justSaved]);
+
+  const isBusy = saving ?? busy;
+
+  const handleSave = async () => {
+    if (!onSave) return;
+    try {
+      setBusy(true);
+      await onSave();
+      setJustSaved(true);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -35,9 +53,21 @@ export function SettingsSection({ title, description, icon, children, onSave, hi
           </div>
         </div>
         {!hideSave && (
-          <Button onClick={handleSave} size="sm" className="shrink-0">
-            <Save className="h-4 w-4" />
-            Enregistrer
+          <Button
+            type="button"
+            onClick={handleSave}
+            size="sm"
+            className="shrink-0"
+            disabled={isBusy}
+            variant={justSaved ? "outline" : "default"}
+          >
+            {isBusy ? (
+              <><Loader2 className="h-4 w-4 animate-spin" />Enregistrement…</>
+            ) : justSaved ? (
+              <><Check className="h-4 w-4" />Enregistré</>
+            ) : (
+              <><Save className="h-4 w-4" />Enregistrer</>
+            )}
           </Button>
         )}
       </div>
