@@ -239,7 +239,7 @@ export default function Reports() {
         case "impayes": await generateAnalyseImpayes(meta, getImpayes()); break;
         case "masse_salariale": await generateMasseSalariale(meta, periode, getMasseSalariale()); break;
         case "budget_execution": await generateBudgetExecution(meta, periode, getBudgetExecution()); break;
-        case "remises": await generateRemisesAccordees(meta, remisesPeriodeLabel, getRemises()); break;
+        case "remises": await generateRemisesAccordees(meta, periode, getRemises()); break;
       }
       toast.success("PDF généré avec succès");
     } catch (e) {
