@@ -508,6 +508,14 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
         ecoleId={ecoleId}
         onApplied={onPaymentRecorded}
       />
+
+      <EditPaymentDialog
+        eleve={eleve}
+        paiement={editPaiement}
+        open={!!editPaiement}
+        onOpenChange={(o) => { if (!o) setEditPaiement(null); }}
+        onSaved={onPaymentRecorded}
+      />
     </>
   );
 }
