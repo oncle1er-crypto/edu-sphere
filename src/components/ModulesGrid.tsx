@@ -15,12 +15,15 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface ModuleItem {
   title: string;
   description: string;
   icon: LucideIcon;
   to: string;
+  /** Clé du module dans app_modules pour filtrer selon permissions */
+  moduleKey: string;
   /** HSL triplet (no hsl()) used as the dominant accent for this card */
   hue: string;
   /** Secondary HSL triplet used for the gradient end */
@@ -28,24 +31,26 @@ interface ModuleItem {
 }
 
 const modules: ModuleItem[] = [
-  { title: "ÉLÈVES",          description: "Gérer les élèves",            icon: GraduationCap,    to: "/eleves",          hue: "345 65% 38%", hue2: "12 80% 55%" },
-  { title: "ENSEIGNANTS",     description: "Gérer les enseignants",       icon: Users,            to: "/enseignants",     hue: "205 80% 48%", hue2: "190 75% 50%" },
-  { title: "CLASSES",         description: "Gérer les classes",           icon: BookOpen,         to: "/classes",         hue: "265 60% 55%", hue2: "295 60% 55%" },
-  { title: "MATIÈRES",        description: "Gérer les matières",          icon: Library,          to: "/matieres",        hue: "152 60% 38%", hue2: "168 65% 42%" },
-  { title: "NOTES",           description: "Saisir et consulter les notes", icon: ClipboardList,  to: "/examens",         hue: "38 92% 50%",  hue2: "25 90% 55%" },
-  { title: "BULLETINS",       description: "Générer les bulletins",       icon: FileText,         to: "/examens",         hue: "345 65% 35%", hue2: "320 60% 48%" },
-  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps",  icon: Calendar,         to: "/emploi-du-temps", hue: "215 70% 50%", hue2: "245 65% 58%" },
-  { title: "PAIEMENTS",       description: "Gérer les paiements",         icon: DollarSign,       to: "/finances",        hue: "150 65% 38%", hue2: "100 55% 45%" },
-  { title: "CANTINE",         description: "Menus et abonnés",            icon: UtensilsCrossed,  to: "/cantine",         hue: "18 85% 55%",  hue2: "42 90% 55%" },
-  { title: "TRANSPORT",       description: "Lignes et passagers",         icon: Bus,              to: "/transport",       hue: "48 95% 48%",  hue2: "32 90% 50%" },
-  { title: "COMMUNICATION",   description: "Messages et notifications",   icon: MessageSquare,    to: "/communication",   hue: "330 75% 55%", hue2: "280 65% 58%" },
-  { title: "PARAMÈTRES",      description: "Configuration système",       icon: Settings,         to: "/parametres",      hue: "220 15% 40%", hue2: "220 12% 55%" },
+  { title: "ÉLÈVES",          description: "Gérer les élèves",            icon: GraduationCap,    to: "/eleves",          moduleKey: "eleves",          hue: "345 65% 38%", hue2: "12 80% 55%" },
+  { title: "ENSEIGNANTS",     description: "Gérer les enseignants",       icon: Users,            to: "/enseignants",     moduleKey: "enseignants",     hue: "205 80% 48%", hue2: "190 75% 50%" },
+  { title: "CLASSES",         description: "Gérer les classes",           icon: BookOpen,         to: "/classes",         moduleKey: "classes",         hue: "265 60% 55%", hue2: "295 60% 55%" },
+  { title: "MATIÈRES",        description: "Gérer les matières",          icon: Library,          to: "/matieres",        moduleKey: "matieres",        hue: "152 60% 38%", hue2: "168 65% 42%" },
+  { title: "NOTES",           description: "Saisir et consulter les notes", icon: ClipboardList,  to: "/examens",         moduleKey: "examens",         hue: "38 92% 50%",  hue2: "25 90% 55%" },
+  { title: "BULLETINS",       description: "Générer les bulletins",       icon: FileText,         to: "/examens",         moduleKey: "examens",         hue: "345 65% 35%", hue2: "320 60% 48%" },
+  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps",  icon: Calendar,         to: "/emploi-du-temps", moduleKey: "emploi_du_temps", hue: "215 70% 50%", hue2: "245 65% 58%" },
+  { title: "PAIEMENTS",       description: "Gérer les paiements",         icon: DollarSign,       to: "/finances",        moduleKey: "finances",        hue: "150 65% 38%", hue2: "100 55% 45%" },
+  { title: "CANTINE",         description: "Menus et abonnés",            icon: UtensilsCrossed,  to: "/cantine",         moduleKey: "cantine",         hue: "18 85% 55%",  hue2: "42 90% 55%" },
+  { title: "TRANSPORT",       description: "Lignes et passagers",         icon: Bus,              to: "/transport",       moduleKey: "transport",       hue: "48 95% 48%",  hue2: "32 90% 50%" },
+  { title: "COMMUNICATION",   description: "Messages et notifications",   icon: MessageSquare,    to: "/communication",   moduleKey: "communication",   hue: "330 75% 55%", hue2: "280 65% 58%" },
+  { title: "PARAMÈTRES",      description: "Configuration système",       icon: Settings,         to: "/parametres",      moduleKey: "parametres",      hue: "220 15% 40%", hue2: "220 12% 55%" },
 ];
 
 export function ModulesGrid() {
+  const { can, loading } = usePermissions();
+  const visible = modules.filter(m => loading || can(m.moduleKey));
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-      {modules.map((m, i) => (
+      {visible.map((m, i) => (
         <motion.div
           key={m.title}
           initial={{ opacity: 0, y: 12 }}
