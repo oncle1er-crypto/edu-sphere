@@ -19,7 +19,10 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Évènements jugés critiques → déconnexion immédiate des autres sessions. */
+/** Évènements jugés critiques → déconnexion immédiate des autres sessions.
+ *  Doit être STRICTEMENT restrictif : un faux positif déconnecte l'utilisateur
+ *  en pleine session. On n'y met QUE des events qui justifient une révocation
+ *  immédiate de toutes les sessions (compromission avérée). */
 const SUSPICIOUS_EVENTS = new Set([
   "mfa_account_locked",
   "mfa_reset_by_admin",
@@ -28,10 +31,18 @@ const SUSPICIOUS_EVENTS = new Set([
   "suspicious_login_blocked",
 ]);
 
+/** Délai (ms) après SIGNED_IN pendant lequel on ignore les events suspects.
+ *  Évite qu'un event résiduel de la session précédente ne déconnecte
+ *  immédiatement l'utilisateur qui vient de se reconnecter. */
+const SUSPICIOUS_GRACE_MS = 20_000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  // Timestamp du dernier SIGNED_IN — sert de garde anti-faux-positif pour le
+  // listener Realtime « activité suspecte ».
+  const [signedInAt, setSignedInAt] = useState<number>(0);
 
   const refreshMustChangePassword = async () => {
     const uid = session?.user?.id;
@@ -52,20 +63,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        // Ignore les TOKEN_REFRESHED (déclenchés à chaque retour d'onglet) :
-        // ils changent la référence session sans que rien ne change réellement
-        // et provoquent des re-rendus de toute l'app (flash "Vérification…").
+        // Ignore les TOKEN_REFRESHED / USER_UPDATED qui n'apportent aucun
+        // changement d'utilisateur : ils provoquent sinon des re-rendus en
+        // cascade (flash « Vérification… ») à chaque retour d'onglet.
         setSession((prev) => {
-          if (event === "TOKEN_REFRESHED") {
-            // On garde la même référence si l'utilisateur est identique.
+          if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
             if (prev?.user?.id === newSession?.user?.id) return prev;
           }
           return newSession;
         });
         setLoading(false);
-        // Purger le cache navigation uniquement lors d'une vraie transition
-        // d'authentification (jamais sur TOKEN_REFRESHED).
-        if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        if (event === "SIGNED_IN") {
+          setSignedInAt(Date.now());
+          void purgeSensitiveCaches();
+        } else if (event === "SIGNED_OUT") {
+          setSignedInAt(0);
           void purgeSensitiveCaches();
         }
       }
@@ -74,13 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) setSignedInAt(Date.now());
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Écoute Realtime des évènements suspects → déconnexion automatique
+  // Écoute Realtime des évènements suspects → déconnexion automatique.
+  // Filtre STRICT : on exige à la fois un event_type explicitement listé
+  // ET une severity « critical », ET on ignore tout event pendant la
+  // fenêtre de grâce qui suit une connexion (évite les faux positifs
+  // dus à un log résiduel de la session précédente).
   useEffect(() => {
     if (!session?.user?.id) return;
     const userId = session.user.id;
@@ -99,7 +116,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const ev = (payload.new as any)?.event_type as string | undefined;
           const sev = (payload.new as any)?.event_severity as string | undefined;
           if (!ev) return;
-          if (SUSPICIOUS_EVENTS.has(ev) || sev === "critical") {
+          // Fenêtre de grâce post-login
+          if (signedInAt && Date.now() - signedInAt < SUSPICIOUS_GRACE_MS) return;
+          // Filtre strict : event listé ET severity critical
+          if (SUSPICIOUS_EVENTS.has(ev) && sev === "critical") {
             toast.error("Activité suspecte détectée. Vous avez été déconnecté.");
             await supabase.auth.signOut();
           }
@@ -110,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [session?.user?.id]);
+  }, [session?.user?.id, signedInAt]);
 
   // Recharger le flag "must_change_password" à chaque changement d'utilisateur.
   useEffect(() => {

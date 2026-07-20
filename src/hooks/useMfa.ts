@@ -37,12 +37,24 @@ export function useMfa() {
   useEffect(() => {
     // Chargement initial uniquement avec loader plein écran
     refresh(true);
-    // On ne réagit qu'aux vraies transitions d'authentification.
-    // TOKEN_REFRESHED est ignoré car il se déclenche à chaque retour d'onglet
-    // et ne modifie jamais le niveau AAL — le rafraîchir provoque des re-rendus
-    // parasites (flash "Vérification de sécurité…") sans valeur ajoutée.
-    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+    // On ne réagit qu'aux vraies transitions d'authentification, et on ignore
+    // un SIGNED_IN dont l'utilisateur est identique à la session déjà connue
+    // (peut arriver quand plusieurs onglets partagent la même session ou
+    // qu'un refresh de token émet un SIGNED_IN de courtoisie). Cela évite
+    // de relancer une cascade de requêtes AAL/factors et donc des refresh
+    // tokens supplémentaires.
+    let lastUserId: string | null = null;
+    supabase.auth.getSession().then(({ data }) => {
+      lastUserId = data.session?.user?.id ?? null;
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const uid = session?.user?.id ?? null;
+      if (event === "SIGNED_IN") {
+        if (uid && uid === lastUserId) return; // pas de vraie transition
+        lastUserId = uid;
+        refresh(true);
+      } else if (event === "SIGNED_OUT") {
+        lastUserId = null;
         refresh(true);
       } else if (event === "USER_UPDATED" || event === "MFA_CHALLENGE_VERIFIED") {
         refresh(false);
