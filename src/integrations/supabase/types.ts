@@ -3998,42 +3998,54 @@ export type Database = {
       }
       paiements: {
         Row: {
+          annule_le: string | null
+          annule_par: string | null
           created_at: string
           date_paiement: string
           ecole_id: string
           eleve_id: string
+          facture_id: string | null
           id: string
           mode: Database["public"]["Enums"]["paiement_mode"]
           montant: number
           motif: string | null
+          motif_annulation: string | null
           notes: string | null
           recu_par: string | null
           reference: string | null
           tranche_id: string | null
         }
         Insert: {
+          annule_le?: string | null
+          annule_par?: string | null
           created_at?: string
           date_paiement?: string
           ecole_id: string
           eleve_id: string
+          facture_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["paiement_mode"]
           montant: number
           motif?: string | null
+          motif_annulation?: string | null
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
           tranche_id?: string | null
         }
         Update: {
+          annule_le?: string | null
+          annule_par?: string | null
           created_at?: string
           date_paiement?: string
           ecole_id?: string
           eleve_id?: string
+          facture_id?: string | null
           id?: string
           mode?: Database["public"]["Enums"]["paiement_mode"]
           montant?: number
           motif?: string | null
+          motif_annulation?: string | null
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
@@ -4060,6 +4072,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_conformite_sigfne"
             referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "paiements_tranche_id_fkey"
@@ -6503,6 +6522,10 @@ export type Database = {
       admin_reset_user_mfa: {
         Args: { _ecole_id: string; _motif: string; _target_user_id: string }
         Returns: undefined
+      }
+      annuler_paiement_facture: {
+        Args: { _motif: string; _paiement_id: string }
+        Returns: Json
       }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
       appliquer_bon_service: {
