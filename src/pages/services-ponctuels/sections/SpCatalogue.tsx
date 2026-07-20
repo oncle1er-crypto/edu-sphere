@@ -88,6 +88,9 @@ export default function SpCatalogue() {
               </div>
               <div className="flex items-center justify-between rounded border p-2"><Label>Accepte paiement partiel</Label><Switch checked={editing.accepte_partiel ?? false} onCheckedChange={(v) => setEditing({ ...editing, accepte_partiel: v })} /></div>
               <div className="flex items-center justify-between rounded border p-2"><Label>Gère un stock</Label><Switch checked={editing.gere_stock ?? false} onCheckedChange={(v) => setEditing({ ...editing, gere_stock: v })} /></div>
+              {editing.gere_stock && (
+                <div><Label>Stock actuel</Label><Input type="number" value={editing.stock_actuel ?? 0} onChange={(e) => setEditing({ ...editing, stock_actuel: +e.target.value })} /></div>
+              )}
               <div className="flex items-center justify-between rounded border p-2"><Label>Actif</Label><Switch checked={editing.actif ?? true} onCheckedChange={(v) => setEditing({ ...editing, actif: v })} /></div>
             </div>
           )}
