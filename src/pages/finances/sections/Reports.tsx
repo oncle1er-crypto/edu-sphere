@@ -1,19 +1,17 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Download, FileText, Eye, Loader2, Filter, X } from "lucide-react";
+import { BarChart3, Download, FileText, Eye, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useFinanceData, fcfa } from "@/pages/finances/useFinanceData";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { ReportFilters, ALL_CLASSES, isFiltersActive, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
@@ -34,7 +32,6 @@ import { toast } from "sonner";
 
 const ECOLE_NOM = "Complexe Scolaire La Providence de Don Orione";
 
-// ── Helper: group finance data by classe ──
 function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]): RecouvrementData {
   const classeMap = new Map<string, { effectif: number; du: number; paye: number }>();
   for (const e of data) {
@@ -54,11 +51,7 @@ function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]):
 
 type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution" | "remises";
 
-interface ReportDef {
-  id: ReportId;
-  title: string;
-  description: string;
-}
+interface ReportDef { id: ReportId; title: string; description: string; }
 
 const REPORTS: ReportDef[] = [
   { id: "compte_resultat", title: "Compte de résultat", description: "Recettes vs charges sur la période" },
@@ -73,17 +66,23 @@ const REPORTS: ReportDef[] = [
 export default function Reports() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
   const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
-  const { depenses, loading: depLoading } = useDepenses(dateRange);
+
+  const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
+
+  const effectiveRange = useMemo(() => {
+    if (filters.from || filters.to) {
+      return { from: filters.from || activeAnnee?.debut, to: filters.to || activeAnnee?.fin };
+    }
+    return periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  }, [filters.from, filters.to, activeAnnee, periodLoading]);
+
+  const { depenses, loading: depLoading } = useDepenses(effectiveRange);
   const { comptes, mouvements, loading: tresLoading } = useTresorerie();
   const { lignes: budgetLignes, loading: budLoading } = useBudget();
   const { bulletins, loading: paieLoading } = useBulletinsPaie();
 
   const [preview, setPreview] = useState<ReportId | null>(null);
-  const [remiseFrom, setRemiseFrom] = useState<string>("");
-  const [remiseTo, setRemiseTo] = useState<string>("");
-  const [remiseClasse, setRemiseClasse] = useState<string>("__all__");
 
   const classesList = useMemo(() => {
     const s = new Set<string>();
@@ -91,20 +90,17 @@ export default function Reports() {
     return Array.from(s).sort((a, b) => a.localeCompare(b));
   }, [financeData]);
 
+  const scopedFinance = useMemo(() => {
+    if (!filters.classe || filters.classe === ALL_CLASSES) return financeData;
+    return financeData.filter((e) => e.classe === filters.classe);
+  }, [financeData, filters.classe]);
+
   const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
   const now = new Date();
   const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
-  const periode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+  const defaultPeriode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
+  const periode = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
 
-  const remisesFilterActive = !!(remiseFrom || remiseTo || (remiseClasse && remiseClasse !== "__all__"));
-  const remisesPeriodeLabel = (() => {
-    if (!remiseFrom && !remiseTo) return periode;
-    const fmt = (s: string) => new Date(s).toLocaleDateString("fr-FR");
-    if (remiseFrom && remiseTo) return `${fmt(remiseFrom)} → ${fmt(remiseTo)}`;
-    if (remiseFrom) return `Depuis le ${fmt(remiseFrom)}`;
-    return `Jusqu'au ${fmt(remiseTo)}`;
-  })();
-  const resetRemisesFilters = () => { setRemiseFrom(""); setRemiseTo(""); setRemiseClasse("__all__"); };
 
   // ── Data builders ──
   const getCompteResultat = (): CompteResultatData => {
