@@ -5133,6 +5133,66 @@ export type Database = {
         }
         Relationships: []
       }
+      role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_export: boolean
+          can_update: boolean
+          can_view: boolean
+          created_at: string
+          ecole_id: string
+          id: string
+          module_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id: string
+          id?: string
+          module_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          module_key?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "app_modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
       salles: {
         Row: {
           batiment: string | null
@@ -6389,6 +6449,17 @@ export type Database = {
         Args: { _frais_id: string }
         Returns: number
       }
+      get_effective_permissions: {
+        Args: { _ecole_id: string; _user_id: string }
+        Returns: {
+          can_create: boolean
+          can_delete: boolean
+          can_export: boolean
+          can_update: boolean
+          can_view: boolean
+          module_key: string
+        }[]
+      }
       has_permission: {
         Args: {
           _action: string
@@ -6482,6 +6553,18 @@ export type Database = {
       resoudre_niveau_code: { Args: { _classe_nom: string }; Returns: string }
       restaurer_annee: {
         Args: { _annee_id: string; _ecole_id: string }
+        Returns: undefined
+      }
+      seed_role_permissions_for_ecole: {
+        Args: { _ecole_id: string }
+        Returns: undefined
+      }
+      set_role_permissions: {
+        Args: {
+          _ecole_id: string
+          _permissions: Json
+          _role: Database["public"]["Enums"]["app_role"]
+        }
         Returns: undefined
       }
       set_user_permissions: {
