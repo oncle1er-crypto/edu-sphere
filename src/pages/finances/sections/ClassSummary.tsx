@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2, Loader2 } from "lucide-react";
+import { ChevronRight, Search, GraduationCap, TrendingDown, AlertTriangle, Wallet, Eye, Building2, Loader2, Gift } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
