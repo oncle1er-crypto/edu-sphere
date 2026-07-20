@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { AppModule, PermRow } from "./useUserPermissions";
+import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
 
 /** Permissions par défaut pour un rôle donné, à l'échelle d'une école. */
 export function useRolePermissions(role: string | null) {
@@ -11,6 +12,7 @@ export function useRolePermissions(role: string | null) {
   const [perms, setPerms] = useState<Record<string, PermRow>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDefault, setIsDefault] = useState(false);
 
   const load = useCallback(async () => {
     if (!role || !ecoleId) return;
@@ -22,15 +24,29 @@ export function useRolePermissions(role: string | null) {
         .eq("ecole_id", ecoleId).eq("role", role as any),
     ]);
     setModules((mods ?? []) as AppModule[]);
+    const rows = (p ?? []) as any[];
+    const usingDefaults = rows.length === 0;
+    const defaultKeys = new Set(ROLE_DEFAULT_MODULES[role] ?? []);
     const map: Record<string, PermRow> = {};
     (mods ?? []).forEach((m: any) => {
-      const existing = (p ?? []).find((x: any) => x.module_key === m.key);
-      map[m.key] = existing ?? {
-        module_key: m.key,
-        can_view: false, can_create: false, can_update: false, can_delete: false, can_export: false,
-      };
+      const existing = rows.find((x: any) => x.module_key === m.key);
+      if (existing) {
+        map[m.key] = existing;
+      } else if (usingDefaults && defaultKeys.has(m.key)) {
+        // Préréglage « Lecture seule » sur les modules attendus pour ce rôle.
+        map[m.key] = {
+          module_key: m.key,
+          can_view: true, can_create: false, can_update: false, can_delete: false, can_export: true,
+        };
+      } else {
+        map[m.key] = {
+          module_key: m.key,
+          can_view: false, can_create: false, can_update: false, can_delete: false, can_export: false,
+        };
+      }
     });
     setPerms(map);
+    setIsDefault(usingDefaults);
     setLoading(false);
   }, [role, ecoleId]);
 
@@ -91,5 +107,5 @@ export function useRolePermissions(role: string | null) {
     } finally { setSaving(false); }
   };
 
-  return { modules, perms, loading, saving, toggle, setAllForModule, setActionForModules, applyPreset, save, reload: load };
+  return { modules, perms, loading, saving, isDefault, toggle, setAllForModule, setActionForModules, applyPreset, save, reload: load };
 }
