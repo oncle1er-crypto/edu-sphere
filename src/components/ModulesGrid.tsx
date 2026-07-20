@@ -37,7 +37,7 @@ const modules: ModuleItem[] = [
   { title: "MATIÈRES",        description: "Gérer les matières",          icon: Library,          to: "/matieres",        moduleKey: "matieres",        hue: "152 60% 38%", hue2: "168 65% 42%" },
   { title: "NOTES",           description: "Saisir et consulter les notes", icon: ClipboardList,  to: "/examens",         moduleKey: "examens",         hue: "38 92% 50%",  hue2: "25 90% 55%" },
   { title: "BULLETINS",       description: "Générer les bulletins",       icon: FileText,         to: "/examens",         moduleKey: "examens",         hue: "345 65% 35%", hue2: "320 60% 48%" },
-  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps",  icon: Calendar,         to: "/emploi-du-temps", moduleKey: "emploi_du_temps", hue: "215 70% 50%", hue2: "245 65% 58%" },
+  { title: "EMPLOI DU TEMPS", description: "Gérer les emplois du temps",  icon: Calendar,         to: "/emploi-du-temps", moduleKey: "emploi_temps", hue: "215 70% 50%", hue2: "245 65% 58%" },
   { title: "PAIEMENTS",       description: "Gérer les paiements",         icon: DollarSign,       to: "/finances",        moduleKey: "finances",        hue: "150 65% 38%", hue2: "100 55% 45%" },
   { title: "CANTINE",         description: "Menus et abonnés",            icon: UtensilsCrossed,  to: "/cantine",         moduleKey: "cantine",         hue: "18 85% 55%",  hue2: "42 90% 55%" },
   { title: "TRANSPORT",       description: "Lignes et passagers",         icon: Bus,              to: "/transport",       moduleKey: "transport",       hue: "48 95% 48%",  hue2: "32 90% 50%" },

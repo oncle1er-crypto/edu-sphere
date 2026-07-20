@@ -5,7 +5,7 @@
  */
 export const ROLE_DEFAULT_MODULES: Record<string, string[]> = {
   admin: [
-    "eleves", "enseignants", "classes", "matieres", "emploi", "examens",
+    "eleves", "enseignants", "classes", "matieres", "emploi_temps", "examens",
     "finances", "presences", "vie_scolaire", "bibliotheque", "transport",
     "cantine", "communication", "cartes", "statistiques", "cours_vacances",
     "parametres",
