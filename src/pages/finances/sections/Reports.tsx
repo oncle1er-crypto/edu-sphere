@@ -81,6 +81,24 @@ export default function Reports() {
   const { bulletins, loading: paieLoading } = useBulletinsPaie();
 
   const [preview, setPreview] = useState<ReportId | null>(null);
+  const [remiseFrom, setRemiseFrom] = useState<string>("");
+  const [remiseTo, setRemiseTo] = useState<string>("");
+  const [remiseClasse, setRemiseClasse] = useState<string>("__all__");
+
+  const classesList = useMemo(() => {
+    const s = new Set<string>();
+    financeData.forEach((e) => e.classe && s.add(e.classe));
+    return Array.from(s).sort((a, b) => a.localeCompare(b));
+  }, [financeData]);
+
+  const remisesFilterActive = !!(remiseFrom || remiseTo || (remiseClasse && remiseClasse !== "__all__"));
+  const remisesPeriodeLabel = (() => {
+    if (!remiseFrom && !remiseTo) return periode;
+    const fmt = (s: string) => new Date(s).toLocaleDateString("fr-FR");
+    if (remiseFrom && remiseTo) return `${fmt(remiseFrom)} → ${fmt(remiseTo)}`;
+    if (remiseFrom) return `Depuis le ${fmt(remiseFrom)}`;
+    return `Jusqu'au ${fmt(remiseTo)}`;
+  })();
 
   const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
   const now = new Date();
