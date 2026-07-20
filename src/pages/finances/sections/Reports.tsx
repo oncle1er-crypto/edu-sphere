@@ -132,7 +132,7 @@ export default function Reports() {
   });
 
   const getImpayes = (): AnalyseImpayesData => ({
-    lignes: financeData
+    lignes: scopedFinance
       .filter((e) => e.resteDu > 0)
       .map((e) => ({
         nom: e.nom,
@@ -145,12 +145,10 @@ export default function Reports() {
   });
 
   const getRemises = (): RemisesData => {
-    const from = remiseFrom ? new Date(remiseFrom + "T00:00:00") : null;
-    const to = remiseTo ? new Date(remiseTo + "T23:59:59") : null;
-    const classeFilter = remiseClasse && remiseClasse !== "__all__" ? remiseClasse : null;
+    const from = filters.from ? new Date(filters.from + "T00:00:00") : null;
+    const to = filters.to ? new Date(filters.to + "T23:59:59") : null;
     return {
-      lignes: financeData
-        .filter((e) => !classeFilter || e.classe === classeFilter)
+      lignes: scopedFinance
         .map((e) => {
           const remisePaiements = (e.paiements ?? []).filter((p) => {
             if (p.kind !== "remise") return false;
@@ -177,6 +175,7 @@ export default function Reports() {
         .filter((l) => l.montant > 0),
     };
   };
+
 
   const getMasseSalariale = (): MasseSalarialeData => ({
     mois: periode,
