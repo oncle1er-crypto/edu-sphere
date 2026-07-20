@@ -33,6 +33,7 @@ export default function SpCatalogue() {
                   <TableHead>Prix</TableHead>
                   <TableHead>Partiel</TableHead>
                   <TableHead>Stock</TableHead>
+                  <TableHead>Restant</TableHead>
                   <TableHead>Actif</TableHead>
                   <TableHead className="w-24"></TableHead>
                 </TableRow>
