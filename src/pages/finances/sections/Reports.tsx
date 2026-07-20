@@ -261,6 +261,30 @@ export default function Reports() {
             </TableBody></Table>
         );
       }
+      case "remises": {
+        const d = getRemises();
+        const total = d.lignes.reduce((s, l) => s + l.montant, 0);
+        return (
+          <Table>
+            <TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead>Parent</TableHead><TableHead>Téléphone</TableHead><TableHead className="text-right">Remise</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {d.lignes.sort((a, b) => a.classe.localeCompare(b.classe)).map((l, i) => (
+                <TableRow key={i}>
+                  <TableCell>{l.nom} {l.prenom}</TableCell>
+                  <TableCell>{l.classe}</TableCell>
+                  <TableCell>{l.parent}</TableCell>
+                  <TableCell>{l.telephone}</TableCell>
+                  <TableCell className="text-right">{fcfa(l.montant)}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold">
+                <TableCell colSpan={4}>Total — {d.lignes.length} élève(s)</TableCell>
+                <TableCell className="text-right">{fcfa(total)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        );
+      }
       case "flux_tresorerie": {
         const d = getFluxTresorerie();
         return (
