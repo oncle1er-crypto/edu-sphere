@@ -208,12 +208,15 @@ export function useFinanceData(scopedAnneeId?: string) {
     const result: EleveScolarite[] = [];
     for (const [eleveId, entry] of eleveMap) {
       const e = entry.eleve;
-      const totalPaye = entry.tranches.reduce((s, t) => s + t.paye, 0);
       const joursRetard = computeJoursRetard(entry.tranches);
       const parent = parentMap[eleveId];
       const paiements = paiementsByEleve.get(eleveId) ?? [];
       const totalEncaisse = paiements.filter((p) => p.kind === "encaissement").reduce((s, p) => s + p.montant, 0);
       const totalRemises  = paiements.filter((p) => p.kind === "remise").reduce((s, p) => s + p.montant, 0);
+      // `totalPaye` = trésorerie réellement encaissée (hors remises/bourses).
+      // Le dû couvert (encaissé + remises) sert uniquement au calcul du reste à payer.
+      const totalPaye = totalEncaisse;
+      const totalCouvert = totalEncaisse + totalRemises;
 
       result.push({
         id: eleveId,
@@ -226,7 +229,7 @@ export function useFinanceData(scopedAnneeId?: string) {
         telephone: parent?.telephone ?? "—",
         fraisAnnuel: entry.fraisAnnuel,
         totalPaye,
-        resteDu: entry.fraisAnnuel - totalPaye,
+        resteDu: Math.max(0, entry.fraisAnnuel - totalCouvert),
         tranches: entry.tranches.sort((a, b) => a.num - b.num),
         joursRetard,
         derniereRelance: derniereRelanceMap[eleveId],
