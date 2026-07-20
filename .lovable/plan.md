@@ -1,54 +1,73 @@
+## Plan — Rendre 100% fonctionnels les 10 points inertes de Cantine & Transport
 
-# Modifier le montant d'un paiement (admin uniquement)
+### 1. Base de données (une seule migration)
 
-Permettre à un administrateur de corriger un paiement mal saisi (montant, mode, référence, tranche), depuis :
-- le module **Finances → Paiements** (liste),
-- la **fiche élève** (drawer finances / historique des paiements).
+Nouvelles tables (toutes multi-tenant `ecole_id` + RLS + GRANT authenticated/service_role) :
 
-Les non-admins ne voient tout simplement pas le bouton "Modifier".
+- **`transport_carburant`** — plein de carburant : `vehicule_id`, `date_plein`, `litres`, `prix_litre`, `montant`, `km_compteur`, `chauffeur_id?`, `notes`.
+- **`transport_incidents`** — `vehicule_id`, `chauffeur_id?`, `date_incident`, `type` (panne, accident, retard, autre), `gravite`, `description`, `statut` (ouvert/traite).
+- **`transport_maintenance`** — `vehicule_id`, `type` (vidange, révision, réparation, contrôle technique), `date_operation`, `km_compteur`, `cout`, `garage`, `prochaine_echeance_date?`, `prochaine_echeance_km?`, `statut`.
 
-## 1. Backend — RPC `modifier_paiement`
+Nouvelle RPC **`enregistrer_paiement_facture(_facture_id, _montant, _mode, _reference, _recu_par)`** (SECURITY DEFINER) :
+- Contrôle rôle (`admin` / `directeur` / `comptable`), même école.
+- Contrôle `_montant > 0` et `_montant <= montant − montant_paye`.
+- Insère dans `paiements` (avec `facture_id`, `categorie` = celle de la facture).
+- Met à jour `factures.montant_paye` et `statut` (`emise` → `partielle` → `payee`).
+- Retourne l'`id` du paiement.
+- GRANT EXECUTE authenticated.
 
-Nouvelle fonction SQL `SECURITY DEFINER` :
-- Paramètres : `_paiement_id uuid`, `_montant numeric`, `_mode text`, `_reference text`, `_motif text`.
-- Contrôles :
-  - L'appelant doit avoir le rôle `admin` sur l'`ecole_id` du paiement (via `has_role`) — sinon `RAISE EXCEPTION 'not_authorized'`.
-  - Le paiement doit exister et appartenir à l'école.
-  - `_montant > 0`.
-  - Si un `tranche_id` est présent, le nouveau montant ne doit pas faire dépasser le total dû de la tranche : `SUM(paiements) - ancien + nouveau <= tranche.montant`.
-- Effet : `UPDATE paiements SET montant, mode, reference, updated_at = now()`, puis rappel du recalcul de statut de tranche (via le trigger existant qui met à jour `statut/paye` sur la tranche).
-- Journalisation dans `audit_logs` (action `paiement.modifier`, ancien/nouveau montant, motif, `user_id`).
-- Retourne `void`.
+### 2. Encaissement + reçu PDF (Cantine & Transport)
 
-Grants : `GRANT EXECUTE ON FUNCTION public.modifier_paiement ... TO authenticated;`.
+- Nouveau composant partagé **`src/pages/finances/components/InvoicePaymentDialog.tsx`** :
+  moyen de paiement, montant, référence, aperçu reste dû → appelle la RPC → toast + téléchargement automatique du reçu PDF + action WhatsApp + SMS parent (mêmes patterns que `PaymentDialog`).
+- Extension de **`src/lib/downloadReceipt.ts`** / **`generateDocumentsPDF.ts`** : support `type: "facture"` (entête = libellé facture + catégorie cantine/transport, réutilise logo/mentions/souche existants).
+- Dans **`CanteenBilling.tsx`** et **`TransportBilling.tsx`** : colonne « Actions » avec bouton **Encaisser** (masqué si soldée) et bouton **Réimprimer** (dernier paiement lié). Permission `finances.update`.
 
-Aucune modification de la RLS de `paiements` : les writes restent bloqués côté client, seule cette RPC (definer) autorise la correction.
+### 3. Hooks React Query pour les nouvelles tables
 
-## 2. Frontend — composant `EditPaymentDialog`
+- **`useTransportCarburant.ts`**, **`useTransportIncidents.ts`**, **`useTransportMaintenance.ts`** : liste + add + update + delete (patterns existants type `useCantine`).
 
-Nouveau fichier `src/pages/finances/components/EditPaymentDialog.tsx` :
-- Props : `paiement` (id, montant actuel, mode, référence, tranche + reste), `open`, `onOpenChange`, `onSaved`.
-- Champs : montant, mode (mêmes options que `PaymentDialog`), référence, **motif de correction** (obligatoire, min 5 caractères).
-- Validation : `montant > 0` et `montant <= reste_tranche + ancien_montant`.
-- Appelle `supabase.rpc('modifier_paiement', {...})`, toast succès/erreur, `onSaved()`.
+### 4. Réécriture des sections mock
 
-## 3. Intégrations UI (admin uniquement)
+- **`TransportFuel.tsx`** : table réelle + dialog « Ajouter un plein » (véhicule, litres, prix/L auto-calcul du total, km) + total du mois + consommation moyenne.
+- **`TransportIncidents.tsx`** : table réelle + dialog CRUD + filtre par statut, badge gravité.
+- **`TransportMaintenance.tsx`** : table réelle + dialog CRUD + surlignage lignes dont `prochaine_echeance_date` < J+30.
+- **`TransportAlerts.tsx`** : requêtes live sur `vehicules` (`date_assurance`, `date_visite_technique`) + `chauffeurs` (`date_expiration_permis`) → alerte si < 30 jours ; tri par urgence.
+- **`CanteenStats.tsx`** : agrégats réels — repas servis par mois (`cantine_planning`), coût moyen (moyenne `stocks_cantine`), abonnés actifs, incidents.
+- **`TransportStats.tsx`** : consommation par véhicule (agrégat `transport_carburant`), km parcourus, coût moyen par élève (dépenses transport / abonnés), incidents/mois.
 
-Gate via `useIsAdmin()` (déjà existant, couvre `admin` + `directeur` — on restreint ici à `admin` uniquement en utilisant `usePermissions().isAdmin` qui, lui, ne renvoie vrai que pour `admin`).
+### 5. Rapports & exports (branchement des boutons)
 
-- **`src/pages/finances/sections/Payments.tsx`** : dans le tableau des paiements récents, ajouter une colonne "Actions" avec un bouton crayon "Modifier" rendu uniquement si `isAdmin`. Ouvre `EditPaymentDialog`.
-- **`src/pages/finances/components/StudentDetailDrawer.tsx`** : dans la liste "Historique des paiements", ajouter le même bouton crayon par ligne, visible seulement pour admin.
+- **`CanteenReports.tsx`** et **`TransportReports.tsx`** :
+  - « Liste des abonnés (Excel) » → CSV via `abonnements_cantine` / `abonnements_transport` + jointure élèves.
+  - « Factures du mois (PDF) » → PDF groupé via `factures` filtrées par catégorie et période.
+  - « Menus de la semaine (PDF) » (cantine) → PDF de `menus_cantine`.
+  - « Inventaire stock (Excel) » (cantine) → CSV `stocks_cantine`.
+  - « Synthèse financière (PDF) » → total facturé / encaissé / impayés du mois.
+  - « Consommation carburant (Excel) » et « Maintenance (PDF) » (transport).
+  - Rapport HACCP : reste un placeholder (nécessite données HACCP non modélisées) — bouton désactivé + tooltip explicite.
 
-Après édition : rafraîchir les données via les callbacks existants (`onPaymentRecorded` / reload du drawer / `useFinanceData`).
+### 6. Permissions
 
-## 4. Sécurité & traçabilité
+- Nouvelles clés déjà couvertes par `cantine.*` / `transport.*` existants ; on ajoute juste les vérifications `has_permission` sur les boutons **Encaisser** (`update`), **Ajouter/Supprimer** (`create`/`delete`) et **Télécharger** (`export`).
 
-- Toute correction laisse une ligne dans `audit_logs` (qui a modifié, quand, ancien vs nouveau montant, motif).
-- Le contrôle "admin" est fait **dans la RPC** (côté serveur), pas seulement dans l'UI : un utilisateur non-admin qui appellerait la RPC serait rejeté.
-- Pas de suppression de paiement dans cette itération — uniquement correction du montant/mode/référence.
+## Détails techniques
+
+- Aucune modification aux tables existantes (`factures`, `paiements`, `vehicules`, `chauffeurs`) — on lit leurs colonnes actuelles.
+- Utilise `paiements.categorie` (déjà en base) pour distinguer scolarité / cantine / transport dans le grand livre et la trésorerie.
+- Les nouveaux hooks suivent le pattern `useQuery`/`useMutation` avec invalidation par école + année.
+- Les PDF réutilisent le template existant (`generateDocumentsPDF`) → cohérence graphique garantie.
 
 ## Livrables
 
-1. Migration : fonction `modifier_paiement` + grants.
-2. `src/pages/finances/components/EditPaymentDialog.tsx` (nouveau).
-3. Modifs `Payments.tsx` et `StudentDetailDrawer.tsx` : bouton "Modifier" conditionnel + branchement du dialog.
+1. Migration SQL (3 tables + RPC + grants + policies).
+2. `src/pages/finances/components/InvoicePaymentDialog.tsx`.
+3. `src/hooks/useTransportCarburant.ts`, `useTransportIncidents.ts`, `useTransportMaintenance.ts`.
+4. Refonte : `CanteenBilling`, `TransportBilling`, `TransportFuel`, `TransportIncidents`, `TransportMaintenance`, `TransportAlerts`, `CanteenStats`, `TransportStats`, `CanteenReports`, `TransportReports`.
+5. Extension : `src/lib/downloadReceipt.ts` + `src/lib/generateDocumentsPDF.ts` (type facture).
+
+## Hors périmètre
+
+- Génération automatique périodique des factures (cron) — l'utilisateur les crée manuellement aujourd'hui, comportement conservé.
+- Module HACCP complet (formulaires hygiène, températures) — bouton grisé.
+- Géolocalisation temps réel des bus — non demandé.
