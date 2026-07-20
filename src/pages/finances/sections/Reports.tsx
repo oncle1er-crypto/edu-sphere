@@ -275,7 +275,7 @@ export default function Reports() {
         );
       }
       case "recouvrement": {
-        const d = buildRecouvrementData(financeData);
+        const d = buildRecouvrementData(scopedFinance);
         return (
           <Table><TableHeader><TableRow><TableHead>Classe</TableHead><TableHead>Effectif</TableHead><TableHead className="text-right">Dû</TableHead><TableHead className="text-right">Payé</TableHead><TableHead className="text-right">Taux</TableHead></TableRow></TableHeader>
             <TableBody>{d.lignes.map((l, i) => <TableRow key={i}><TableCell>{l.classe}</TableCell><TableCell>{l.effectif}</TableCell><TableCell className="text-right">{fcfa(l.montant_du)}</TableCell><TableCell className="text-right">{fcfa(l.montant_paye)}</TableCell><TableCell className="text-right">{l.montant_du > 0 ? ((l.montant_paye / l.montant_du) * 100).toFixed(1) + "%" : "—"}</TableCell></TableRow>)}
