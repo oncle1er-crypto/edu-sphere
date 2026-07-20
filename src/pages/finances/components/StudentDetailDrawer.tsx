@@ -4,19 +4,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2 } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fcfa, type EleveScolarite, type Tranche } from "../scolarite-data";
+import { fcfa, type EleveScolarite, type Tranche, type PaiementHistorique } from "../scolarite-data";
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
+import { EditPaymentDialog } from "./EditPaymentDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { CustomFeeOverride } from "./CustomFeeOverride";
 import { HelpTooltip } from "@/components/help";
+import { usePermissions } from "@/hooks/usePermissions";
 
 
 interface Props {
@@ -50,11 +52,13 @@ const STATUT_LABEL: Record<Tranche["statut"], string> = {
 export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecoleId, onPaymentRecorded, refetching }: Props) {
 
   const { relances, fetchRelances, addRelance } = useRelances(eleve?.id);
+  const { isAdmin } = usePermissions();
   const trancheRefs = useRef<Record<number, HTMLDivElement | null>>({});
   const [payTrancheNum, setPayTrancheNum] = useState<number | undefined>(undefined);
   const [payOpen, setPayOpen] = useState(false);
   const [discountTrancheNum, setDiscountTrancheNum] = useState<number | undefined>(undefined);
   const [discountOpen, setDiscountOpen] = useState(false);
+  const [editPaiement, setEditPaiement] = useState<PaiementHistorique | null>(null);
 
   useEffect(() => {
     if (eleve) {
@@ -313,6 +317,17 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             >
                               <Download className="h-3.5 w-3.5" />
                             </Button>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 sm:h-7 sm:w-7 text-primary hover:bg-primary/10"
+                                title="Corriger ce paiement (admin)"
+                                onClick={() => setEditPaiement(p)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button
                               size="icon"
                               variant="ghost"
@@ -492,6 +507,14 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
         onOpenChange={(o) => { if (!o) { setDiscountOpen(false); setDiscountTrancheNum(undefined); } }}
         ecoleId={ecoleId}
         onApplied={onPaymentRecorded}
+      />
+
+      <EditPaymentDialog
+        eleve={eleve}
+        paiement={editPaiement}
+        open={!!editPaiement}
+        onOpenChange={(o) => { if (!o) setEditPaiement(null); }}
+        onSaved={onPaymentRecorded}
       />
     </>
   );
