@@ -5681,6 +5681,7 @@ export type Database = {
           nom: string
           prix: number
           slug: string
+          stock_actuel: number | null
           updated_at: string
         }
         Insert: {
@@ -5696,6 +5697,7 @@ export type Database = {
           nom: string
           prix?: number
           slug: string
+          stock_actuel?: number | null
           updated_at?: string
         }
         Update: {
@@ -5711,6 +5713,7 @@ export type Database = {
           nom?: string
           prix?: number
           slug?: string
+          stock_actuel?: number | null
           updated_at?: string
         }
         Relationships: []
