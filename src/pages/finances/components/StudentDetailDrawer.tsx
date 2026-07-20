@@ -317,6 +317,17 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             >
                               <Download className="h-3.5 w-3.5" />
                             </Button>
+                            {isAdmin && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 sm:h-7 sm:w-7 text-primary hover:bg-primary/10"
+                                title="Corriger ce paiement (admin)"
+                                onClick={() => setEditPaiement(p)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
                             <Button
                               size="icon"
                               variant="ghost"
