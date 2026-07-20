@@ -5665,6 +5665,203 @@ export type Database = {
           },
         ]
       }
+      transport_carburant: {
+        Row: {
+          chauffeur_id: string | null
+          created_at: string
+          date_plein: string
+          ecole_id: string
+          id: string
+          km_compteur: number | null
+          litres: number
+          montant: number
+          notes: string | null
+          prix_litre: number
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_plein?: string
+          ecole_id: string
+          id?: string
+          km_compteur?: number | null
+          litres: number
+          montant: number
+          notes?: string | null
+          prix_litre: number
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_plein?: string
+          ecole_id?: string
+          id?: string
+          km_compteur?: number | null
+          litres?: number
+          montant?: number
+          notes?: string | null
+          prix_litre?: number
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_carburant_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_carburant_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_carburant_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_incidents: {
+        Row: {
+          chauffeur_id: string | null
+          created_at: string
+          date_incident: string
+          description: string
+          ecole_id: string
+          gravite: string
+          id: string
+          statut: string
+          type: string
+          updated_at: string
+          vehicule_id: string | null
+        }
+        Insert: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_incident?: string
+          description: string
+          ecole_id: string
+          gravite?: string
+          id?: string
+          statut?: string
+          type?: string
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Update: {
+          chauffeur_id?: string | null
+          created_at?: string
+          date_incident?: string
+          description?: string
+          ecole_id?: string
+          gravite?: string
+          id?: string
+          statut?: string
+          type?: string
+          updated_at?: string
+          vehicule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_incidents_chauffeur_id_fkey"
+            columns: ["chauffeur_id"]
+            isOneToOne: false
+            referencedRelation: "chauffeurs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_incidents_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_incidents_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transport_maintenance: {
+        Row: {
+          cout: number
+          created_at: string
+          date_operation: string
+          description: string | null
+          ecole_id: string
+          garage: string | null
+          id: string
+          km_compteur: number | null
+          prochaine_echeance_date: string | null
+          prochaine_echeance_km: number | null
+          statut: string
+          type: string
+          updated_at: string
+          vehicule_id: string
+        }
+        Insert: {
+          cout?: number
+          created_at?: string
+          date_operation?: string
+          description?: string | null
+          ecole_id: string
+          garage?: string | null
+          id?: string
+          km_compteur?: number | null
+          prochaine_echeance_date?: string | null
+          prochaine_echeance_km?: number | null
+          statut?: string
+          type?: string
+          updated_at?: string
+          vehicule_id: string
+        }
+        Update: {
+          cout?: number
+          created_at?: string
+          date_operation?: string
+          description?: string | null
+          ecole_id?: string
+          garage?: string | null
+          id?: string
+          km_compteur?: number | null
+          prochaine_echeance_date?: string | null
+          prochaine_echeance_km?: number | null
+          statut?: string
+          type?: string
+          updated_at?: string
+          vehicule_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_maintenance_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_maintenance_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trusted_devices: {
         Row: {
           device_fingerprint: string
@@ -6415,6 +6612,16 @@ export type Database = {
           _recu_par?: string
           _reference?: string
           _tranche_id: string
+        }
+        Returns: string
+      }
+      enregistrer_paiement_facture: {
+        Args: {
+          _facture_id: string
+          _mode?: string
+          _montant: number
+          _recu_par?: string
+          _reference?: string
         }
         Returns: string
       }
