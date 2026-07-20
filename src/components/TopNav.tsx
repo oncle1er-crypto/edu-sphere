@@ -4,13 +4,14 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const navItems = [
-  { label: "Tableau de bord", to: "/", icon: Home, end: true },
-  { label: "Écoles", to: "/ecoles", icon: School },
-  { label: "Statistiques", to: "/statistiques", icon: BarChart3 },
-  { label: "Cours de vacances", to: "/cours-vacances", icon: Sun },
-  { label: "Paramètres", to: "/parametres", icon: Settings },
+  { label: "Tableau de bord", to: "/", icon: Home, end: true, module: null as string | null },
+  { label: "Écoles", to: "/ecoles", icon: School, module: "parametres" },
+  { label: "Statistiques", to: "/statistiques", icon: BarChart3, module: "statistiques" },
+  { label: "Cours de vacances", to: "/cours-vacances", icon: Sun, module: "cours_vacances" },
+  { label: "Paramètres", to: "/parametres", icon: Settings, module: "parametres" },
 ];
 
 interface TopNavProps {
