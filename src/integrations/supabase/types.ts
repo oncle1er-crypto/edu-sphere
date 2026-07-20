@@ -6498,6 +6498,16 @@ export type Database = {
         Args: { p_ecole_id: string; p_matricule: string }
         Returns: boolean
       }
+      modifier_paiement: {
+        Args: {
+          _mode: string
+          _montant: number
+          _motif: string
+          _paiement_id: string
+          _reference: string
+        }
+        Returns: undefined
+      }
       normaliser_etat_civil: { Args: { txt: string }; Returns: string }
       promouvoir_eleves_annee: {
         Args: {
