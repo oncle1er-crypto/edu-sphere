@@ -65,6 +65,11 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
             <div><Label>Prix unitaire</Label><Input type="number" value={prix} onChange={(e) => setPrix(+e.target.value)} /></div>
           </div>
           <p className="text-sm">Total : <strong>{(qte * prix).toLocaleString("fr-FR")} FCFA</strong></p>
+          {tenueService?.gere_stock && stock != null && (
+            <p className={`text-xs ${qte > stock ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
+              Stock disponible : {stock} tenue(s){qte > stock ? " — insuffisant !" : ""}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label>Mode</Label>
