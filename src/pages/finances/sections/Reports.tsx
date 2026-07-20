@@ -18,12 +18,14 @@ import {
   generateMasseSalariale,
   generateAnalyseImpayes,
   generateBudgetExecution,
+  generateRemisesAccordees,
   type CompteResultatData,
   type FluxTresorerieData,
   type RecouvrementData,
   type MasseSalarialeData,
   type AnalyseImpayesData,
   type BudgetExecutionData,
+  type RemisesData,
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 
@@ -47,7 +49,7 @@ function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]):
   };
 }
 
-type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution";
+type ReportId = "compte_resultat" | "flux_tresorerie" | "recouvrement" | "impayes" | "masse_salariale" | "budget_execution" | "remises";
 
 interface ReportDef {
   id: ReportId;
@@ -60,6 +62,7 @@ const REPORTS: ReportDef[] = [
   { id: "flux_tresorerie", title: "Flux de trésorerie", description: "Soldes et mouvements des comptes" },
   { id: "recouvrement", title: "Recouvrement scolarité", description: "Taux de paiement par classe" },
   { id: "impayes", title: "Analyse des impayés", description: "Vieillissement de la créance" },
+  { id: "remises", title: "Remises accordées", description: "Élèves bénéficiaires, montant, parent" },
   { id: "masse_salariale", title: "Masse salariale", description: "Détail des salaires versés" },
   { id: "budget_execution", title: "Exécution budgétaire", description: "Prévu vs réalisé" },
 ];
@@ -121,6 +124,28 @@ export default function Reports() {
         paye: e.totalPaye,
         jours_retard: e.joursRetard,
       })),
+  });
+
+  const getRemises = (): RemisesData => ({
+    lignes: financeData
+      .filter((e) => (e.totalRemises ?? 0) > 0)
+      .map((e) => {
+        const remisePaiements = (e.paiements ?? []).filter((p) => p.kind === "remise");
+        const motif = remisePaiements
+          .map((p) => p.motif)
+          .filter(Boolean)
+          .join(" ; ");
+        return {
+          matricule: e.matricule,
+          nom: e.nom,
+          prenom: e.prenom,
+          classe: e.classe,
+          parent: e.parent,
+          telephone: e.telephone,
+          montant: e.totalRemises ?? 0,
+          motif,
+        };
+      }),
   });
 
   const getMasseSalariale = (): MasseSalarialeData => ({
@@ -185,6 +210,7 @@ export default function Reports() {
         case "impayes": await generateAnalyseImpayes(meta, getImpayes()); break;
         case "masse_salariale": await generateMasseSalariale(meta, periode, getMasseSalariale()); break;
         case "budget_execution": await generateBudgetExecution(meta, periode, getBudgetExecution()); break;
+        case "remises": await generateRemisesAccordees(meta, periode, getRemises()); break;
       }
       toast.success("PDF généré avec succès");
     } catch (e) {
@@ -233,6 +259,30 @@ export default function Reports() {
           <Table><TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead className="text-right">Reste</TableHead><TableHead className="text-right">Retard</TableHead></TableRow></TableHeader>
             <TableBody>{d.lignes.sort((a, b) => b.jours_retard - a.jours_retard).slice(0, 30).map((l, i) => <TableRow key={i}><TableCell>{l.nom} {l.prenom}</TableCell><TableCell>{l.classe}</TableCell><TableCell className="text-right">{fcfa(l.montant_du - l.paye)}</TableCell><TableCell className="text-right">{l.jours_retard}j</TableCell></TableRow>)}
             </TableBody></Table>
+        );
+      }
+      case "remises": {
+        const d = getRemises();
+        const total = d.lignes.reduce((s, l) => s + l.montant, 0);
+        return (
+          <Table>
+            <TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead>Parent</TableHead><TableHead>Téléphone</TableHead><TableHead className="text-right">Remise</TableHead></TableRow></TableHeader>
+            <TableBody>
+              {d.lignes.sort((a, b) => a.classe.localeCompare(b.classe)).map((l, i) => (
+                <TableRow key={i}>
+                  <TableCell>{l.nom} {l.prenom}</TableCell>
+                  <TableCell>{l.classe}</TableCell>
+                  <TableCell>{l.parent}</TableCell>
+                  <TableCell>{l.telephone}</TableCell>
+                  <TableCell className="text-right">{fcfa(l.montant)}</TableCell>
+                </TableRow>
+              ))}
+              <TableRow className="font-bold">
+                <TableCell colSpan={4}>Total — {d.lignes.length} élève(s)</TableCell>
+                <TableCell className="text-right">{fcfa(total)}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         );
       }
       case "flux_tresorerie": {
