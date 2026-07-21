@@ -174,18 +174,20 @@ export default function SpRapports() {
   };
 
   // Rapport dédié à un service (caisse par service)
-  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv") => {
+  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv" | "xlsx") => {
     const lignes = paiements.filter((p) => p.service_id === svc.id && !p.annule_le && inRange(p.date_paiement));
     const total = lignes.reduce((s, p) => s + Number(p.montant_paye), 0);
     const parModeMap: Record<string, number> = {};
     for (const p of lignes) parModeMap[p.mode_paiement] = (parModeMap[p.mode_paiement] ?? 0) + Number(p.montant_paye);
 
-    if (format === "csv") {
+    if (format === "csv" || format === "xlsx") {
       const rows: (string | number)[][] = [["N°", "Date", "Bénéficiaire", "Montant dû", "Payé", "Remise", "Mode"]];
       for (const p of lignes) rows.push([p.numero, new Date(p.date_paiement).toLocaleString("fr-FR"), p.beneficiaire_libre ?? "", p.montant_du, p.montant_paye, p.remise, p.mode_paiement]);
-      rows.push(["", "", "", "", total, "", ""]);
-      return download(`caisse-${svc.slug}.csv`, toCsv(rows));
+      rows.push(["", "", "", "Total", total, "", ""]);
+      if (format === "csv") return download(`caisse-${svc.slug}.csv`, toCsv(rows));
+      return downloadXlsx(`caisse-${svc.slug}.xlsx`, rows);
     }
+
 
     const doc = new jsPDF({ orientation: "portrait" });
     const logo = await loadLogo(currentEcole?.logo_url);
