@@ -5530,6 +5530,7 @@ export type Database = {
       sp_candidats: {
         Row: {
           classe_demandee: string | null
+          classe_demandee_id: string | null
           converti_eleve_id: string | null
           created_at: string
           created_by: string | null
@@ -5543,6 +5544,7 @@ export type Database = {
           observations: string | null
           parent: string | null
           prenom: string
+          session_id: string | null
           sexe: string | null
           statut: Database["public"]["Enums"]["sp_candidat_statut"]
           telephone: string | null
@@ -5550,6 +5552,7 @@ export type Database = {
         }
         Insert: {
           classe_demandee?: string | null
+          classe_demandee_id?: string | null
           converti_eleve_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -5563,6 +5566,7 @@ export type Database = {
           observations?: string | null
           parent?: string | null
           prenom: string
+          session_id?: string | null
           sexe?: string | null
           statut?: Database["public"]["Enums"]["sp_candidat_statut"]
           telephone?: string | null
@@ -5570,6 +5574,7 @@ export type Database = {
         }
         Update: {
           classe_demandee?: string | null
+          classe_demandee_id?: string | null
           converti_eleve_id?: string | null
           created_at?: string
           created_by?: string | null
@@ -5583,12 +5588,28 @@ export type Database = {
           observations?: string | null
           parent?: string | null
           prenom?: string
+          session_id?: string | null
           sexe?: string | null
           statut?: Database["public"]["Enums"]["sp_candidat_statut"]
           telephone?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sp_candidats_classe_demandee_id_fkey"
+            columns: ["classe_demandee_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_candidats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sp_test_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sp_paiements: {
         Row: {
@@ -5714,6 +5735,45 @@ export type Database = {
           prix?: number
           slug?: string
           stock_actuel?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sp_test_sessions: {
+        Row: {
+          actif: boolean
+          capacite: number | null
+          created_at: string
+          created_by: string | null
+          date_test: string
+          ecole_id: string
+          id: string
+          libelle: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          capacite?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_test: string
+          ecole_id: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          capacite?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_test?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
           updated_at?: string
         }
         Relationships: []
