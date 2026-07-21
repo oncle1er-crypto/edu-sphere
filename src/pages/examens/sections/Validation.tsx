@@ -29,6 +29,10 @@ export default function Validation() {
       title="Validation & verrouillage"
       description="Verrouillez les périodes de saisie pour empêcher toute modification des notes et bulletins."
     >
+      <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-xs text-primary">
+        <strong>Verrouillage strict actif :</strong> une fois une période verrouillée, la base de données rejette toute création, modification ou suppression de notes, d'évaluations et de bulletins de cette période. Seul un administrateur peut rouvrir la période pour effectuer une correction exceptionnelle.
+      </div>
+
       <div className="space-y-3">
         {loading ? (
           <>
