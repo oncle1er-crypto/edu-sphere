@@ -7,7 +7,7 @@ import { Plus, Printer, XCircle } from "lucide-react";
 import { useSpVentes } from "../hooks/useSpVentes";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
-import { useEcoles } from "@/context/EcoleContext";
+import { useEcoleInfo } from "../hooks/useEcoleInfo";
 import { useClasses } from "@/hooks/useClasses";
 
 const STATUT_COLOR: Record<string, string> = {
@@ -16,13 +16,13 @@ const STATUT_COLOR: Record<string, string> = {
 
 export default function SpVentesTenues() {
   const { ventes, loading, annuler } = useSpVentes();
-  const { currentEcole } = useEcoles();
+  const ecole = useEcoleInfo();
   const { classes } = useClasses();
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
 
   const reprint = async (v: (typeof ventes)[0]) => {
-    const e: any = currentEcole ?? {};
+    const e = ecole ?? {} as any;
     await generateSpReceipt({
       numero: v.numero,
       date: new Date(v.created_at).toLocaleString("fr-FR"),

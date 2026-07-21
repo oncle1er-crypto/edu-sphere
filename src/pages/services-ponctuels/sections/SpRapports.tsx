@@ -12,7 +12,7 @@ import { useSpPaiements } from "../hooks/useSpPaiements";
 import { useSpServices, type SpService } from "../hooks/useSpServices";
 import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpVentes } from "../hooks/useSpVentes";
-import { useEcoles } from "@/context/EcoleContext";
+import { useEcoleInfo } from "../hooks/useEcoleInfo";
 
 // Formatage manuel (jsPDF Helvetica ne rend pas U+202F produit par Intl fr-FR)
 const fmt = (n: number) => {
@@ -76,7 +76,7 @@ export default function SpRapports() {
   const { services } = useSpServices();
   const { candidats } = useSpCandidats();
   const { ventes } = useSpVentes();
-  const { currentEcole } = useEcoles();
+  const currentEcole = useEcoleInfo();
 
   const svcMap = useMemo(() => Object.fromEntries(services.map((s) => [s.id, s])), [services]);
 
