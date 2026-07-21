@@ -14,7 +14,50 @@ import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpVentes } from "../hooks/useSpVentes";
 import { useEcoles } from "@/context/EcoleContext";
 
-const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
+// Formatage manuel (jsPDF Helvetica ne rend pas U+202F produit par Intl fr-FR)
+const fmt = (n: number) => {
+  const v = Math.round(n || 0);
+  const s = String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${v < 0 ? "-" : ""}${s} FCFA`;
+};
+
+async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: number; h: number } | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((r, j) => {
+      const fr = new FileReader();
+      fr.onload = () => r(fr.result as string);
+      fr.onerror = j;
+      fr.readAsDataURL(blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((r) => {
+      const img = new Image();
+      img.onload = () => r({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => r({ w: 1, h: 1 });
+      img.src = dataUrl;
+    });
+    return { dataUrl, w: dims.w, h: dims.h };
+  } catch {
+    return null;
+  }
+}
+
+function drawHeader(doc: jsPDF, logo: { dataUrl: string; w: number; h: number } | null, ecoleNom?: string) {
+  if (logo) {
+    const h = 14;
+    const w = (logo.w / (logo.h || 1)) * h;
+    try { doc.addImage(logo.dataUrl, "PNG", 14, 8, w, h); } catch { /* ignore */ }
+  }
+  if (ecoleNom) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text(ecoleNom.toUpperCase(), doc.internal.pageSize.getWidth() - 14, 14, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
+}
 
 function toCsv(rows: (string | number)[][]) {
   return rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
@@ -75,17 +118,22 @@ export default function SpRapports() {
     download("recettes-services-ponctuels.csv", toCsv(rows));
   };
 
-  const exportPdf = () => {
+  const exportPdf = async () => {
     const doc = new jsPDF({ orientation: "landscape" });
+    const logo = await loadLogo(currentEcole?.logo_url);
+    drawHeader(doc, logo, currentEcole?.nom);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Rapport — Services ponctuels${serviceId !== "all" ? ` — ${svcMap[serviceId]?.nom ?? ""}` : ""}`, 14, 15);
+    doc.text(`Rapport — Services ponctuels${serviceId !== "all" ? ` — ${svcMap[serviceId]?.nom ?? ""}` : ""}`, 14, 30);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
-    doc.text(periode, 14, 22);
-    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 28);
+    doc.text(periode, 14, 37);
+    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 43);
 
     autoTable(doc, {
-      startY: 34,
+      startY: 50,
       head: [["Par service", "Total"]],
       body: parService.map(([n, v]) => [n, fmt(v)]),
       theme: "striped",
@@ -115,7 +163,7 @@ export default function SpRapports() {
   };
 
   // Rapport dédié à un service (caisse par service)
-  const exportServiceReport = (svc: SpService, format: "pdf" | "csv") => {
+  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv") => {
     const lignes = paiements.filter((p) => p.service_id === svc.id && !p.annule_le && inRange(p.date_paiement));
     const total = lignes.reduce((s, p) => s + Number(p.montant_paye), 0);
     const parModeMap: Record<string, number> = {};
@@ -129,16 +177,20 @@ export default function SpRapports() {
     }
 
     const doc = new jsPDF({ orientation: "portrait" });
+    const logo = await loadLogo(currentEcole?.logo_url);
+    drawHeader(doc, logo, currentEcole?.nom);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Caisse — ${svc.nom}`, 14, 15);
+    doc.text(`Caisse — ${svc.nom}`, 14, 30);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    if (currentEcole?.nom) doc.text(currentEcole.nom, 14, 22);
     const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
-    doc.text(periode, 14, 28);
-    doc.text(`Total encaissé : ${fmt(total)} — ${lignes.length} opération(s)`, 14, 34);
+    doc.text(periode, 14, 37);
+    doc.text(`Total encaissé : ${fmt(total)} — ${lignes.length} opération(s)`, 14, 43);
 
     autoTable(doc, {
-      startY: 40, head: [["Mode paiement", "Total"]],
+      startY: 50, head: [["Mode paiement", "Total"]],
       body: Object.entries(parModeMap).map(([m, v]) => [m, fmt(v)]),
       theme: "striped", headStyles: { fillColor: [110, 26, 44] },
     });
