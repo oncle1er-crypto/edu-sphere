@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { KpiCard } from "@/components/KpiCard";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { LayoutDashboard, BookOpen, Users, GraduationCap, Loader2 } from "lucide-react";
+import { LayoutDashboard, BookOpen, Users, GraduationCap, Loader2, Lock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 
