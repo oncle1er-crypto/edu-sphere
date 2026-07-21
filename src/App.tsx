@@ -530,6 +530,7 @@ const App = () => (
               <Route path="inscriptions" element={<VacancesInscriptions />} />
               <Route path="classes" element={<VacancesClasses />} />
               <Route path="paiements" element={<VacancesPaiements />} />
+              <Route path="point-caisse" element={<VacancesPointCaisse />} />
               <Route path="enseignants" element={<VacancesEnseignants />} />
               <Route path="honoraires" element={<VacancesHonoraires />} />
               <Route path="rapports" element={<VacancesRapports />} />
