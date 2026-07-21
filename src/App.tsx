@@ -524,6 +524,7 @@ const App = () => (
               <Route path="ventes-tenues" element={<SpVentesTenues />} />
               <Route path="catalogue" element={<SpCatalogue />} />
               <Route path="rapports" element={<SpRapports />} />
+              <Route path="point-caisse" element={<SpPointCaisse />} />
               <Route path="parametres" element={<SpParametres />} />
             </Route>
             <Route path="/cours-vacances" element={<RequirePerm module="cours_vacances"><VacancesLayout /></RequirePerm>}>
