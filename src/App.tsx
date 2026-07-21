@@ -255,6 +255,7 @@ const VacancesPaiements = lazy(() => import("@/pages/cours-vacances/sections/Vac
 const VacancesEnseignants = lazy(() => import("@/pages/cours-vacances/sections/VacancesEnseignants"));
 const VacancesHonoraires = lazy(() => import("@/pages/cours-vacances/sections/VacancesHonoraires"));
 const VacancesRapports = lazy(() => import("@/pages/cours-vacances/sections/VacancesRapports"));
+const VacancesPointCaisse = lazy(() => import("@/pages/cours-vacances/sections/VacancesPointCaisse"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
