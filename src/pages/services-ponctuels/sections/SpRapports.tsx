@@ -163,7 +163,7 @@ export default function SpRapports() {
   };
 
   // Rapport dédié à un service (caisse par service)
-  const exportServiceReport = (svc: SpService, format: "pdf" | "csv") => {
+  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv") => {
     const lignes = paiements.filter((p) => p.service_id === svc.id && !p.annule_le && inRange(p.date_paiement));
     const total = lignes.reduce((s, p) => s + Number(p.montant_paye), 0);
     const parModeMap: Record<string, number> = {};
@@ -177,16 +177,20 @@ export default function SpRapports() {
     }
 
     const doc = new jsPDF({ orientation: "portrait" });
+    const logo = await loadLogo(currentEcole?.logo_url);
+    drawHeader(doc, logo, currentEcole?.nom);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Caisse — ${svc.nom}`, 14, 15);
+    doc.text(`Caisse — ${svc.nom}`, 14, 30);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
-    if (currentEcole?.nom) doc.text(currentEcole.nom, 14, 22);
     const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
-    doc.text(periode, 14, 28);
-    doc.text(`Total encaissé : ${fmt(total)} — ${lignes.length} opération(s)`, 14, 34);
+    doc.text(periode, 14, 37);
+    doc.text(`Total encaissé : ${fmt(total)} — ${lignes.length} opération(s)`, 14, 43);
 
     autoTable(doc, {
-      startY: 40, head: [["Mode paiement", "Total"]],
+      startY: 50, head: [["Mode paiement", "Total"]],
       body: Object.entries(parModeMap).map(([m, v]) => [m, fmt(v)]),
       theme: "striped", headStyles: { fillColor: [110, 26, 44] },
     });
