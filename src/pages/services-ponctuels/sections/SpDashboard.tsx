@@ -61,14 +61,23 @@ export default function SpDashboard() {
           <Card key={k.label}>
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <k.icon className={`h-8 w-8 ${k.color}`} />
-                <div>
-                  <p className="text-xs text-muted-foreground">{k.label}</p>
-                  <p className="text-lg font-bold">{k.value}</p>
+                <k.icon className={`h-8 w-8 ${k.color} shrink-0`} />
+                <div className="min-w-0">
+                  <p className="text-xs text-muted-foreground truncate">{k.label}</p>
+                  <p className="text-lg font-bold truncate">{k.value}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Card>
-        <CardHeader><CardTitle className="flex items-center gap-2"><Wallet className="h-4 w-4" /> Caisses par service</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wallet className="h-4 w-4" /> Caisses par service
+          </CardTitle>
+        </CardHeader>
         <CardContent>
           {caissesParService.length === 0 ? (
             <p className="text-sm text-muted-foreground">Aucun service configuré.</p>
@@ -84,11 +93,6 @@ export default function SpDashboard() {
           )}
         </CardContent>
       </Card>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
 
       <Card>
         <CardHeader><CardTitle>Dernières opérations</CardTitle></CardHeader>
@@ -118,3 +122,4 @@ export default function SpDashboard() {
     </div>
   );
 }
+
