@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Download, FileText, Eye, Loader2 } from "lucide-react";
+import { BarChart3, Download, FileText, Eye, Loader2, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
