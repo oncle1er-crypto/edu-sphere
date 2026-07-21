@@ -5848,6 +5848,7 @@ export type Database = {
           motif_annulation: string | null
           numero: string
           observations: string | null
+          paiement_id: string | null
           prix_unitaire: number
           quantite: number
           statut: Database["public"]["Enums"]["sp_vente_statut"]
@@ -5871,6 +5872,7 @@ export type Database = {
           motif_annulation?: string | null
           numero: string
           observations?: string | null
+          paiement_id?: string | null
           prix_unitaire?: number
           quantite?: number
           statut?: Database["public"]["Enums"]["sp_vente_statut"]
@@ -5894,6 +5896,7 @@ export type Database = {
           motif_annulation?: string | null
           numero?: string
           observations?: string | null
+          paiement_id?: string | null
           prix_unitaire?: number
           quantite?: number
           statut?: Database["public"]["Enums"]["sp_vente_statut"]
@@ -5905,6 +5908,13 @@ export type Database = {
             columns: ["classe_id"]
             isOneToOne: false
             referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_ventes_tenues_paiement_id_fkey"
+            columns: ["paiement_id"]
+            isOneToOne: false
+            referencedRelation: "sp_paiements"
             referencedColumns: ["id"]
           },
         ]
@@ -7197,9 +7207,17 @@ export type Database = {
         Args: { _motif: string; _paiement_id: string }
         Returns: undefined
       }
+      sp_annuler_vente: {
+        Args: { _motif: string; _vente_id: string }
+        Returns: undefined
+      }
       sp_convertir_candidat: {
         Args: { _annee_id: string; _candidat_id: string; _classe_id?: string }
         Returns: string
+      }
+      sp_supprimer_paiement: {
+        Args: { _paiement_id: string }
+        Returns: undefined
       }
       stats_conformite_sigfne: {
         Args: { p_ecole_id: string }
