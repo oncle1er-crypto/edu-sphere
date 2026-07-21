@@ -286,8 +286,9 @@ export default function SpRapports() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recettes globales ({fmt(totalRecettes)})</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
             <Button variant="outline" size="sm" onClick={exportRecettes}><Download className="h-4 w-4 mr-1" />CSV</Button>
+            <Button variant="outline" size="sm" onClick={exportRecettesXlsx}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+            <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
           </div>
         </CardHeader>
         <CardContent>
