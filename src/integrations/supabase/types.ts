@@ -7053,6 +7053,10 @@ export type Database = {
         }
         Returns: string
       }
+      est_periode_verrouillee: {
+        Args: { _periode_id: string }
+        Returns: boolean
+      }
       executer_passage_classe: {
         Args: {
           _annee_cible: string
