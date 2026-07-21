@@ -6923,6 +6923,7 @@ export type Database = {
         Returns: Json
       }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
+      annuler_transfert: { Args: { _audit_log_id: string }; Returns: Json }
       appliquer_bon_service: {
         Args: { _bon_id: string; _echeance_id: string }
         Returns: Json
@@ -7053,6 +7054,7 @@ export type Database = {
         }
         Returns: string
       }
+      est_annee_cloturee: { Args: { _annee_id: string }; Returns: boolean }
       est_periode_verrouillee: {
         Args: { _periode_id: string }
         Returns: boolean
@@ -7244,6 +7246,24 @@ export type Database = {
       tracer_envoi_bulletin: {
         Args: { _channels: Json; _id: string; _recipients: Json }
         Returns: undefined
+      }
+      transferer_eleve: {
+        Args: {
+          _classe_dest_id: string
+          _eleve_id: string
+          _force?: boolean
+          _motif?: string
+        }
+        Returns: Json
+      }
+      transferer_masse: {
+        Args: {
+          _classe_dest_id: string
+          _eleve_ids: string[]
+          _force?: boolean
+          _motif?: string
+        }
+        Returns: Json
       }
       unaccent: { Args: { "": string }; Returns: string }
       upsert_bulletin_audit: {
