@@ -68,6 +68,12 @@ function download(name: string, csv: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = name; a.click();
 }
+function downloadXlsx(name: string, rows: (string | number)[][]) {
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Données");
+  XLSX.writeFile(wb, name);
+}
 
 export default function SpRapports() {
   const [from, setFrom] = useState("");
