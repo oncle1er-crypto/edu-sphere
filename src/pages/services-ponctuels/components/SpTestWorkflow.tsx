@@ -62,7 +62,7 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
       session_id: activeSessions[0]?.id ?? "", observations: "",
     });
     if (ecoleId) {
-      supabase.from("ecoles").select("nom, adresse, telephone").eq("id", ecoleId).maybeSingle()
+      supabase.from("ecoles").select("nom, sigle, adresse, telephone, email, logo_url").eq("id", ecoleId).maybeSingle()
         .then(({ data }) => setEcole(data));
     }
   }, [open, ecoleId]); // eslint-disable-line
@@ -125,17 +125,20 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
     setStep(3);
   };
 
-  const printRecu = () => {
+  const printRecu = async () => {
     if (!createdPaiement || !createdCandidat) return;
     const paye = Number(createdPaiement.montant_paye);
     const du = Number(createdPaiement.montant_du);
     const remise = Number(createdPaiement.remise) || 0;
-    generateSpReceipt({
+    await generateSpReceipt({
       numero: createdPaiement.numero ?? createdPaiement.id.slice(0, 8).toUpperCase(),
       date: new Date(createdPaiement.created_at ?? Date.now()).toLocaleString("fr-FR"),
       ecoleNom: ecole?.nom ?? "École",
+      ecoleSigle: ecole?.sigle,
       ecoleAdresse: ecole?.adresse,
       ecoleTelephone: ecole?.telephone,
+      ecoleEmail: ecole?.email,
+      logoUrl: ecole?.logo_url,
       service: testService?.nom ?? "Test d'entrée",
       beneficiaire: `${createdCandidat.nom} ${createdCandidat.prenom}`,
       montantDu: du,

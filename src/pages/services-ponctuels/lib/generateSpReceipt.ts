@@ -4,9 +4,11 @@ export interface SpReceiptData {
   numero: string;
   date: string;
   ecoleNom: string;
+  ecoleSigle?: string;
   ecoleAdresse?: string;
   ecoleTelephone?: string;
-  logoUrl?: string;
+  ecoleEmail?: string;
+  logoUrl?: string | null;
   service: string;
   beneficiaire: string;
   quantite?: number;
@@ -17,7 +19,7 @@ export interface SpReceiptData {
   modePaiement: string;
   caissier?: string;
   observations?: string;
-  titre?: string; // "REÇU" | "REÇU DE VENTE" | "REÇU DE CORRECTION"
+  titre?: string;
 }
 
 const fmt = (n: number) =>
@@ -33,91 +35,192 @@ const MODES: Record<string, string> = {
   cheque: "Chèque",
 };
 
-export function generateSpReceipt(d: SpReceiptData) {
-  const doc = new jsPDF({ unit: "mm", format: "a5", orientation: "portrait" });
-  const w = doc.internal.pageSize.getWidth();
-  let y = 12;
+// Bordeaux — seule couleur d'accent
+const ACCENT: [number, number, number] = [110, 26, 44];
+const INK: [number, number, number] = [30, 30, 30];
+const MUTED: [number, number, number] = [110, 110, 110];
+const RULE: [number, number, number] = [200, 200, 200];
 
-  // Header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(d.ecoleNom, w / 2, y, { align: "center" });
-  y += 5;
-  if (d.ecoleAdresse) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.text(d.ecoleAdresse, w / 2, y, { align: "center" });
-    y += 4;
+async function loadImage(url: string): Promise<{ dataUrl: string; w: number; h: number } | null> {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((r, j) => {
+      const fr = new FileReader();
+      fr.onload = () => r(fr.result as string);
+      fr.onerror = j;
+      fr.readAsDataURL(blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((r) => {
+      const img = new Image();
+      img.onload = () => r({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => r({ w: 1, h: 1 });
+      img.src = dataUrl;
+    });
+    return { dataUrl, w: dims.w, h: dims.h };
+  } catch {
+    return null;
   }
-  if (d.ecoleTelephone) {
-    doc.setFontSize(9);
-    doc.text(`Tél. ${d.ecoleTelephone}`, w / 2, y, { align: "center" });
-    y += 4;
-  }
+}
 
-  doc.setDrawColor(110, 26, 44);
-  doc.setLineWidth(0.6);
-  doc.line(10, y + 1, w - 10, y + 1);
-  y += 8;
+/**
+ * Reçu professionnel A4 portrait avec deux souches identiques
+ * (Copie Client + Souche École) séparées par une ligne de coupe.
+ * Palette sobre : bordeaux d'accent uniquement.
+ */
+export async function generateSpReceipt(d: SpReceiptData) {
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const pageW = doc.internal.pageSize.getWidth();   // 210
+  const pageH = doc.internal.pageSize.getHeight();  // 297
+  const half = pageH / 2;                            // 148.5
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(d.titre ?? "REÇU DE PAIEMENT", w / 2, y, { align: "center" });
-  y += 8;
+  const logo = d.logoUrl ? await loadImage(d.logoUrl) : null;
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.text(`N° ${d.numero}`, 12, y);
-  doc.text(`Date : ${d.date}`, w - 12, y, { align: "right" });
-  y += 8;
+  const drawCopy = (top: number, label: "COPIE CLIENT" | "SOUCHE ÉCOLE") => {
+    const left = 14;
+    const right = pageW - 14;
+    let y = top + 12;
 
-  const row = (label: string, value: string) => {
+    // Logo
+    if (logo) {
+      const maxH = 18;
+      const ratio = logo.w / logo.h || 1;
+      const h = maxH;
+      const w = h * ratio;
+      try { doc.addImage(logo.dataUrl, "PNG", left, y - 4, w, h); } catch { /* ignore */ }
+    }
+
+    // En-tête école (centré)
+    doc.setTextColor(...INK);
     doc.setFont("helvetica", "bold");
-    doc.text(label, 12, y);
+    doc.setFontSize(13);
+    doc.text(d.ecoleNom.toUpperCase(), pageW / 2, y, { align: "center" });
+    y += 4.5;
     doc.setFont("helvetica", "normal");
-    doc.text(value, 55, y);
+    doc.setFontSize(8.5);
+    doc.setTextColor(...MUTED);
+    const meta = [d.ecoleAdresse, d.ecoleTelephone && `Tél. ${d.ecoleTelephone}`, d.ecoleEmail]
+      .filter(Boolean).join("  ·  ");
+    if (meta) { doc.text(meta, pageW / 2, y, { align: "center" }); y += 4; }
+
+    // Étiquette souche (à droite)
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(...ACCENT);
+    doc.text(label, right, top + 8, { align: "right" });
+    doc.setTextColor(...INK);
+
+    // Filet séparateur
+    y += 3;
+    doc.setDrawColor(...ACCENT);
+    doc.setLineWidth(0.6);
+    doc.line(left, y, right, y);
+    y += 7;
+
+    // Titre du reçu
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(d.titre ?? "REÇU DE PAIEMENT", pageW / 2, y, { align: "center" });
     y += 6;
+
+    // N° et date
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...MUTED);
+    doc.text(`N°`, left, y);
+    doc.setTextColor(...INK);
+    doc.setFont("helvetica", "bold");
+    doc.text(d.numero, left + 8, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(...MUTED);
+    doc.text(`Date`, right - 42, y);
+    doc.setTextColor(...INK);
+    doc.text(d.date, right, y, { align: "right" });
+    y += 7;
+
+    // Ligne clé/valeur
+    const kv = (label: string, value: string, opts: { bold?: boolean } = {}) => {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(...MUTED);
+      doc.text(label, left, y);
+      doc.setTextColor(...INK);
+      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+      doc.text(value, right, y, { align: "right" });
+      y += 5.5;
+    };
+
+    kv("Service", d.service);
+    kv("Bénéficiaire", d.beneficiaire, { bold: true });
+    if (d.quantite) kv("Quantité", String(d.quantite));
+    kv("Mode de paiement", MODES[d.modePaiement] ?? d.modePaiement);
+    if (d.montantDu != null) kv("Montant dû", fmt(d.montantDu));
+    if (d.remise && d.remise > 0) kv("Remise accordée", fmt(d.remise));
+
+    // Bloc total (sobre : filet + typographie)
+    y += 2;
+    doc.setDrawColor(...RULE);
+    doc.setLineWidth(0.2);
+    doc.line(left, y, right, y);
+    y += 6.5;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(...MUTED);
+    doc.text("TOTAL ENCAISSÉ", left, y);
+    doc.setTextColor(...ACCENT);
+    doc.setFontSize(15);
+    doc.text(fmt(d.montantPaye), right, y, { align: "right" });
+    doc.setTextColor(...INK);
+    y += 6;
+
+    if (d.reste && d.reste > 0) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
+      doc.setTextColor(...MUTED);
+      doc.text(`Reste à payer : ${fmt(d.reste)}`, left, y);
+      doc.setTextColor(...INK);
+      y += 5;
+    }
+
+    if (d.observations) {
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text(`Observations : ${d.observations}`, left, y, { maxWidth: right - left });
+      doc.setTextColor(...INK);
+    }
+
+    // Bas de souche : caissier / signature
+    const footY = top + half - 12;
+    doc.setDrawColor(...RULE);
+    doc.setLineWidth(0.2);
+    doc.line(left, footY - 8, left + 55, footY - 8);
+    doc.line(right - 55, footY - 8, right, footY - 8);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(d.caissier ? `Caissier : ${d.caissier}` : "Caissier", left, footY - 4);
+    doc.text("Signature & cachet", right, footY - 4, { align: "right" });
+    doc.setTextColor(...INK);
   };
 
-  row("Service :", d.service);
-  row("Bénéficiaire :", d.beneficiaire);
-  if (d.quantite) row("Quantité :", String(d.quantite));
-  if (d.montantDu != null) row("Montant dû :", fmt(d.montantDu));
-  if (d.remise) row("Remise :", fmt(d.remise));
-  row("Mode de paiement :", MODES[d.modePaiement] ?? d.modePaiement);
+  // Copie client (haut)
+  drawCopy(0, "COPIE CLIENT");
 
-  y += 2;
-  doc.setDrawColor(200);
-  doc.line(10, y, w - 10, y);
-  y += 6;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.setTextColor(110, 26, 44);
-  doc.text("TOTAL ENCAISSÉ", 12, y);
-  doc.text(fmt(d.montantPaye), w - 12, y, { align: "right" });
-  doc.setTextColor(0);
-  y += 8;
-
-  if (d.reste && d.reste > 0) {
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Reste à payer : ${fmt(d.reste)}`, 12, y);
-    y += 5;
-  }
-
-  if (d.observations) {
-    doc.setFont("helvetica", "italic");
-    doc.setFontSize(9);
-    doc.text(`Obs. : ${d.observations}`, 12, y, { maxWidth: w - 24 });
-    y += 6;
-  }
-
-  y = Math.max(y + 10, 130);
+  // Ligne de coupe pointillée
+  doc.setDrawColor(...MUTED);
+  doc.setLineDashPattern([1.4, 1.4], 0);
+  doc.setLineWidth(0.2);
+  doc.line(10, half, pageW - 10, half);
+  doc.setLineDashPattern([], 0);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  if (d.caissier) doc.text(`Caissier : ${d.caissier}`, 12, y);
-  doc.text("Signature & cachet", w - 12, y, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(...MUTED);
+  doc.text("✂  découper ici", pageW / 2, half - 1, { align: "center" });
+  doc.setTextColor(...INK);
+
+  // Souche école (bas)
+  drawCopy(half, "SOUCHE ÉCOLE");
 
   doc.save(`recu-${d.numero}.pdf`);
 }

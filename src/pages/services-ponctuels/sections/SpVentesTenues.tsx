@@ -18,13 +18,17 @@ export default function SpVentesTenues() {
   const { currentEcole } = useEcoles();
   const [open, setOpen] = useState(false);
 
-  const reprint = (v: (typeof ventes)[0]) => {
-    generateSpReceipt({
+  const reprint = async (v: (typeof ventes)[0]) => {
+    const e: any = currentEcole ?? {};
+    await generateSpReceipt({
       numero: v.numero,
       date: new Date(v.created_at).toLocaleString("fr-FR"),
-      ecoleNom: currentEcole?.nom ?? "",
-      ecoleAdresse: currentEcole?.adresse,
-      ecoleTelephone: currentEcole?.telephone,
+      ecoleNom: e.nom ?? "",
+      ecoleSigle: e.sigle,
+      ecoleAdresse: e.adresse,
+      ecoleTelephone: e.telephone,
+      ecoleEmail: e.email,
+      logoUrl: e.logo_url,
       service: "Tenue scolaire",
       beneficiaire: v.acheteur_libre ?? "—",
       quantite: v.quantite,
