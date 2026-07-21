@@ -9,12 +9,14 @@ export interface Ecole {
   ecole_id: string;
   nom: string;
   code: string;
+  sigle?: string;
   ville: string;
   pays: string;
   adresse: string;
   telephone: string;
   email: string;
   directeur: string;
+  logo_url?: string | null;
   type: "Maternelle" | "Primaire" | "Collège" | "Lycée" | "Groupe scolaire";
   status: EcoleStatus;
   date_creation: string;
@@ -45,12 +47,14 @@ function rowToEcole(row: any, counts?: { eleves: number; enseignants: number; cl
     ecole_id: row.id,
     nom: row.nom,
     code: row.code,
+    sigle: row.sigle ?? undefined,
     ville: row.ville ?? "",
     pays: row.pays ?? "Côte d'Ivoire",
     adresse: row.adresse ?? "",
     telephone: row.telephone ?? "",
     email: row.email ?? "",
     directeur: row.directeur ?? "",
+    logo_url: row.logo_url ?? null,
     type: (row.type as Ecole["type"]) ?? "Groupe scolaire",
     status: (row.status as EcoleStatus) ?? "active",
     date_creation: row.created_at?.slice(0, 10) ?? "",

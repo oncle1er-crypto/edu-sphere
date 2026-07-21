@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useSpVentes } from "../hooks/useSpVentes";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoles } from "@/context/EcoleContext";
+import { useClasses } from "@/hooks/useClasses";
 
 const STATUT_COLOR: Record<string, string> = {
   paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", annule: "bg-destructive",
@@ -16,6 +17,8 @@ const STATUT_COLOR: Record<string, string> = {
 export default function SpVentesTenues() {
   const { ventes, loading, annuler } = useSpVentes();
   const { currentEcole } = useEcoles();
+  const { classes } = useClasses();
+  const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
 
   const reprint = async (v: (typeof ventes)[0]) => {
@@ -54,6 +57,8 @@ export default function SpVentesTenues() {
                   <TableHead>N°</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Acheteur</TableHead>
+                  <TableHead>Classe</TableHead>
+                  <TableHead>Genre</TableHead>
                   <TableHead>Qté</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Mode</TableHead>
@@ -67,6 +72,8 @@ export default function SpVentesTenues() {
                     <TableCell className="font-mono text-xs">{v.numero}</TableCell>
                     <TableCell>{new Date(v.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>{v.acheteur_libre ?? "—"}</TableCell>
+                    <TableCell>{v.classe_id ? (classesMap[v.classe_id] ?? "—") : "—"}</TableCell>
+                    <TableCell>{v.genre === "F" ? "Fille" : v.genre === "G" ? "Garçon" : "—"}</TableCell>
                     <TableCell>{v.quantite}</TableCell>
                     <TableCell className="font-medium">{Number(v.montant_total).toLocaleString("fr-FR")} FCFA</TableCell>
                     <TableCell>{v.mode_paiement}</TableCell>

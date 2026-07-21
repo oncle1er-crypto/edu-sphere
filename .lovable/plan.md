@@ -1,84 +1,82 @@
-## Module « Services ponctuels »
 
-Module autonome pour gérer les paiements exceptionnels (tests d'entrée, ventes de tenues, autres services ponctuels). Aucune table métier existante n'est modifiée ; seule la barre latérale gagne une entrée. Toute la logique tient dans un dossier isolé `src/pages/services-ponctuels/` + nouvelles tables préfixées `sp_`.
+## Contexte
 
-### 1. Base de données (migration unique)
+Sur le module **Services ponctuels**, trois problèmes / demandes :
 
-Nouvelles tables (toutes multi-tenant `ecole_id`, RLS + GRANT complets) :
+1. Chaque service (test d'entrée, tenue, autres) doit avoir sa **caisse dédiée** et ses **rapports imprimables séparément**.
+2. Les **tenues** doivent être suivies par **classe** avec ventilation **Fille / Garçon** ; la vente doit dérouler un workflow : classe → stock F/G affiché → recherche élève → paiement.
+3. Reçus PDF : le **logo ne s'affiche pas** et les montants contiennent des **caractères parasites** (petites cases) dans l'affichage.
 
-- `sp_services` — catalogue : `nom`, `slug`, `description`, `prix`, `actif`, `accepte_partiel`, `gere_stock`, `couleur`, `icone`. Seed : `test_entree`, `tenue_scolaire`.
-- `sp_candidats` — `numero` (séquence par école), `nom`, `prenom`, `sexe`, `date_naissance`, `classe_demandee`, `ecole_origine`, `parent`, `telephone`, `date_test`, `statut` (enum `en_attente|programme|absent|present|admis|refuse`), `converti_eleve_id` (FK `eleves`, nullable).
-- `sp_ventes_tenues` — `acheteur_type` (`eleve|candidat`), `eleve_id`/`candidat_id`, `quantite`, `prix_unitaire`, `montant_total`, `mode_paiement`, `statut` (`paye|remis|attente|annule`), `caissier_id`, `observations`.
-- `sp_paiements` — `numero`, `service_id`, `beneficiaire_type` (`eleve|candidat|libre`), `eleve_id`/`candidat_id`/`beneficiaire_libre`, `montant_du`, `montant_paye`, `remise`, `mode_paiement` (enum incluant Wave/Orange/MTN/Moov/virement/chèque/espèces), `caissier_id`, `date_paiement`, `observations`, `annule_le`, `motif_annulation`.
+## Diagnostic des reçus (confirmé par lecture des fichiers)
 
-RLS : lecture pour tous les rôles de l'école ; écriture selon permissions (`admin`, `directeur`, `comptable`, `secretaire`, `caissier`). Aucune migration touchant `eleves` — la conversion candidat→élève passe par un simple `INSERT` côté client via le hook élèves existant.
+- `SpVentesTenues.tsx` et `SpTestWorkflow`/`SpPaiements` lisent `currentEcole.logo_url` et `.sigle`, mais `EcoleContext` ne les expose PAS (colonnes non sélectionnées). D'où `logoUrl: undefined` → logo absent.
+- `generateSpReceipt.fmt()` utilise `Intl.NumberFormat("fr-FR")` qui insère des **espaces fines insécables (U+202F)** entre milliers ; Helvetica de jsPDF ne les rend pas → cases noires visibles à l'écran.
 
-RPC :
-- `sp_convertir_candidat(_id uuid) returns uuid` — crée un `eleves` à partir des champs du candidat (sans classe s'il n'y a pas d'affectation), stocke `converti_eleve_id`, trace dans `audit_logs`.
-- `sp_annuler_paiement(_id uuid, _motif text)` — admin/directeur, remplit `annule_le`/`motif_annulation`, trace.
+## Plan de correction
 
-### 2. Routes & navigation
+### 1. Fix reçus (immédiat, s'applique à tous les services)
 
-- Ajout d'un item `services-ponctuels` dans `src/lib/roleDefaults.ts` (admin, directeur, comptable, secretaire).
-- Nouvelle route parent `/services-ponctuels` dans `src/App.tsx` protégée par `RequirePerm module="services_ponctuels"`.
-- `AppSidebar.tsx` : nouvelle entrée dans `otherItems` avec icône `Ticket`.
-- `TopNav.tsx` inchangé (le sidebar est le canal principal).
+- `src/pages/services-ponctuels/lib/generateSpReceipt.ts` :
+  - Remplacer `fmt` par un formatage manuel utilisant un **espace normal** (`Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " FCFA"`).
+  - Charger le logo via `loadImage` (déjà en place) — l'appelant doit fournir `logoUrl`.
+- Créer un helper `useEcoleFull()` (ou étendre `EcoleContext`) qui garantit la présence de `logo_url` + `sigle` en interrogeant `ecoles` si absents. Simple : ajouter `logo_url` et `sigle` à la sélection dans `EcoleContext.tsx` (mapping ligne 50-52 + type `Ecole`).
+- Vérifier les 3 appelants (`SpVentesTenues`, `SpPaiements`, `SpTestWorkflow`) : ils passent déjà `e.logo_url` → sera automatiquement corrigé une fois le contexte enrichi.
 
-### 3. Arborescence code
+### 2. Caisse par service + rapports séparés
+
+- Le champ `service_id` existe déjà sur `sp_paiements` ; pas de migration nécessaire.
+- Refonte de `src/pages/services-ponctuels/sections/SpRapports.tsx` :
+  - Ajouter un **sélecteur de service** (Tous / service X) au-dessus des filtres période.
+  - Filtrer paiements + ventes selon le service choisi.
+  - Ajouter un bouton **« Rapport de caisse » par service** dans une nouvelle carte listant chaque service actif avec son total encaissé et 2 boutons (PDF / CSV) — chaque export produit un rapport dédié au service (en-tête, période, table détaillée, totaux par mode de paiement).
+- Étendre `SpDashboard` : afficher les **totaux par caisse** (une tuile par service).
+
+### 3. Stock tenues par classe + genre + workflow de vente
+
+**Migration SQL** :
+
+- Nouvelle table `public.sp_stock_tenues` :
+  - `id`, `ecole_id`, `classe_id` (FK `classes`), `genre` ('F'|'G'), `stock_actuel int`, `seuil_alerte int default 5`, `prix_unitaire numeric` (optionnel — override du service), timestamps.
+  - Unicité `(ecole_id, classe_id, genre)`.
+  - GRANT authenticated + service_role, RLS : `ecole_id = current_ecole` + rôles admin/directeur/comptable/secrétaire pour écrire.
+- Ajouter à `sp_ventes_tenues` : `classe_id uuid` et `genre text check (genre in ('F','G'))`.
+- Trigger de stock : mettre à jour `sp_stock_tenues.stock_actuel -= quantite` à l'insertion d'une vente (statut `paye`/`remis`), et l'inverse à l'annulation. Remplace le trigger actuel qui décrémente `sp_services.stock_actuel`.
+
+**Hook** :
+
+- `useSpStockTenues.ts` : CRUD + realtime (via même pattern qu'existant).
+
+**Paramètres** :
+
+- Ajouter section « Stock tenues par classe » dans `SpParametres.tsx` : tableau éditable (classe × genre) permettant d'ajuster stock/seuil/prix.
+
+**Workflow de vente refondu (`VenteTenueDialog.tsx`)** :
 
 ```text
-src/pages/services-ponctuels/
-  ServicesPonctuelsLayout.tsx     (menu latéral local, style FinanceLayout)
-  hooks/
-    useSpServices.ts
-    useSpCandidats.ts
-    useSpVentes.ts
-    useSpPaiements.ts
-  sections/
-    SpDashboard.tsx
-    SpPaiements.tsx
-    SpTestsEntree.tsx
-    SpVentesTenues.tsx
-    SpCatalogue.tsx
-    SpRapports.tsx
-    SpParametres.tsx
-  components/
-    ServicePaymentDialog.tsx      (encaissement, partiel selon service)
-    CandidatFormDialog.tsx
-    ConvertCandidatButton.tsx
-    VenteTenueDialog.tsx
-  lib/
-    generateSpReceipt.ts          (wrapper autour de generateDocumentsPDF)
+Étape 1 : Sélection classe   → dropdown des classes
+          [affiche stock F : n | stock G : m]
+Étape 2 : Genre + recherche élève
+          → Select genre (auto-filtre les élèves de la classe)
+          → SearchCombobox élève (nom/matricule) parmi les élèves de la classe/genre
+          → Alternative : "Acheteur libre" (texte)
+Étape 3 : Quantité + prix (pré-rempli depuis stock ou service)
+          → contrôle stock disponible pour classe+genre
+          → mode de paiement + statut
+Étape 4 : Validation → insert vente (avec eleve_id/classe_id/genre) → reçu PDF
 ```
 
-### 4. Réutilisation stricte
+- Mettre à jour `useSpVentes.save()` pour accepter `classe_id`, `genre`, `eleve_id`.
 
-- Composants UI : `Card`, `Table`, `Dialog`, `Select`, `Button`, `Badge`, toasts.
-- Filtres rapports : composant partagé `ReportFilters` déjà en place.
-- PDF : réutilisation de `src/lib/generateDocumentsPDF.ts` (type `paiement` existant) + logo/école via `useEcole`.
-- Ticket thermique : réutilisation du chemin existant si présent, sinon A4 uniquement.
-- Permissions : `usePermissions`, `Can`, `RequirePerm`.
-- Modes de paiement : mêmes libellés/typage que le module Finances.
+## Fichiers touchés
 
-### 5. Sécurité & audit
+- **Backend** : 1 migration (table `sp_stock_tenues`, colonnes sur `sp_ventes_tenues`, nouveau trigger).
+- **Contexte** : `src/context/EcoleContext.tsx` (ajout `logo_url`, `sigle`).
+- **Reçus** : `src/pages/services-ponctuels/lib/generateSpReceipt.ts` (fix `fmt`).
+- **Hooks** : nouveau `useSpStockTenues.ts` ; extension `useSpVentes.ts`.
+- **UI** : `VenteTenueDialog.tsx` (refonte workflow), `SpRapports.tsx` (filtre + rapports par service), `SpParametres.tsx` (section stock tenues), `SpDashboard.tsx` (tuiles caisses), `SpVentesTenues.tsx` (colonnes classe/genre).
 
-- Toute mutation via RPC ou requête filtrée par `ecole_id`.
-- Annulation/suppression → insertion dans `audit_logs`.
-- Rôles :
-  - `admin`, `directeur` : tout, y compris annulation.
-  - `comptable`/`caissier` : consulter catalogue, encaisser paiements & ventes, imprimer reçus.
-  - `secretaire` : CRUD candidats, planifier tests, convertir en élève.
+## Hors-scope
 
-### 6. Étapes atomiques
-
-1. Migration SQL (tables, enums, RLS, RPC, seed catalogue).
-2. Ajout du module dans `roleDefaults` + entrée sidebar + route lazy.
-3. `ServicesPonctuelsLayout` + squelette des 7 sections (placeholders).
-4. Hooks CRUD (catalogue → candidats → ventes → paiements).
-5. Dialogs encaissement + génération de reçu.
-6. Dashboard + Rapports (KPIs, filtres période, exports).
-7. Paramètres (édition tarifs/couleurs/icônes/actif) + tests visuels de non‑régression (élèves, finances, cartes, cantine, transport toujours OK).
-
-### 7. Non-régression
-
-- Aucun fichier hors du nouveau dossier n'est modifié sauf : `App.tsx` (ajout route), `AppSidebar.tsx` (ajout item), `roleDefaults.ts` (ajout clé), migration DB. Aucun renommage, aucun changement de logique existante.
+- Pas de refonte visuelle du reçu (déjà validée précédemment).
+- Pas de multi-genre au-delà de F/G.
+- Le stock reste géré manuellement (pas de commandes fournisseurs).

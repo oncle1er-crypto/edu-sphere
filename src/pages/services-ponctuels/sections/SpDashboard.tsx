@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, ClipboardCheck, Shirt, TrendingUp, Clock } from "lucide-react";
+import { Users, CreditCard, ClipboardCheck, Shirt, TrendingUp, Clock, Wallet } from "lucide-react";
 import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { useSpVentes } from "../hooks/useSpVentes";
+import { useSpServices } from "../hooks/useSpServices";
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
@@ -13,6 +14,13 @@ export default function SpDashboard() {
   const { candidats } = useSpCandidats();
   const { paiements } = useSpPaiements();
   const { ventes } = useSpVentes();
+  const { services } = useSpServices();
+
+  const caissesParService = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of paiements) if (!p.annule_le) m[p.service_id] = (m[p.service_id] ?? 0) + Number(p.montant_paye || 0);
+    return services.map((s) => ({ id: s.id, nom: s.nom, total: m[s.id] ?? 0 }));
+  }, [paiements, services]);
 
   const stats = useMemo(() => {
     const today = startOfDay();
@@ -57,7 +65,25 @@ export default function SpDashboard() {
                 <div>
                   <p className="text-xs text-muted-foreground">{k.label}</p>
                   <p className="text-lg font-bold">{k.value}</p>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Wallet className="h-4 w-4" /> Caisses par service</CardTitle></CardHeader>
+        <CardContent>
+          {caissesParService.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun service configuré.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {caissesParService.map((c) => (
+                <div key={c.id} className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground truncate">{c.nom}</p>
+                  <p className="text-lg font-bold text-primary">{fmt(c.total)}</p>
                 </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
               </div>
             </CardContent>
           </Card>

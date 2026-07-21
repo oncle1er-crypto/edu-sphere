@@ -16,6 +16,8 @@ export interface SpVenteTenue {
   eleve_id: string | null;
   candidat_id: string | null;
   acheteur_libre: string | null;
+  classe_id: string | null;
+  genre: "F" | "G" | null;
   quantite: number;
   prix_unitaire: number;
   montant_total: number;

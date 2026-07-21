@@ -22,8 +22,10 @@ export interface SpReceiptData {
   titre?: string;
 }
 
-const fmt = (n: number) =>
-  new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
+const fmt = (n: number) => {
+  const s = String(Math.abs(Math.round(n || 0))).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${(n || 0) < 0 ? "-" : ""}${s} FCFA`;
+};
 
 const MODES: Record<string, string> = {
   especes: "Espèces",
