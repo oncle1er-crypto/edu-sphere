@@ -133,7 +133,7 @@ export default function SpRapports() {
     doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 43);
 
     autoTable(doc, {
-      startY: 34,
+      startY: 50,
       head: [["Par service", "Total"]],
       body: parService.map(([n, v]) => [n, fmt(v)]),
       theme: "striped",
