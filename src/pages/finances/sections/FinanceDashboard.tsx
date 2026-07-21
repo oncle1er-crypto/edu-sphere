@@ -38,7 +38,6 @@ export default function FinanceDashboard() {
   // C'est ce montant qui éteint la dette de la famille, donc c'est lui qui
   // sert au calcul du taux de recouvrement et du reste à recouvrer.
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
-  const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
   const totalEncaisse = ELEVES.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
   const totalRemises = ELEVES.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
   const totalCouvert = totalEncaisse + totalRemises;
