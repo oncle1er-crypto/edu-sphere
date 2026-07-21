@@ -23,7 +23,7 @@ export default function VacancesEnseignants() {
   const [edit, setEdit] = useState<VacEnseignant | null>(null);
   const [form, setForm] = useState<any>({});
 
-  const openNew = () => { setEdit(null); setForm({ nom: "", prenom: "", telephone: "", classe_id: "", matiere: "", honoraire_prevu: 0, observation: "" }); setOpen(true); };
+  const openNew = () => { setEdit(null); setForm({ nom: "", prenom: "", telephone: "", classe_id: "", matiere: "", observation: "" }); setOpen(true); };
   const openEdit = (e: VacEnseignant) => { setEdit(e); setForm({ ...e, classe_id: e.classe_id ?? "" }); setOpen(true); };
   const submit = async () => {
     if (!form.nom?.trim() || !form.prenom?.trim()) return;
@@ -32,8 +32,8 @@ export default function VacancesEnseignants() {
       telephone: form.telephone || null,
       classe_id: form.classe_id || null,
       matiere: form.matiere || null,
-      honoraire_prevu: Number(form.honoraire_prevu) || 0,
       observation: form.observation || null,
+      // honoraire_prevu calculé automatiquement par trigger DB (tarif × nb élèves)
     }, edit?.id);
     setOpen(false);
   };
