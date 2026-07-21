@@ -4,16 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, CreditCard, UserPlus } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, UserPlus, Sparkles } from "lucide-react";
 import { useSpCandidats, type SpCandidat } from "../hooks/useSpCandidats";
 import { CandidatFormDialog } from "../components/CandidatFormDialog";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
 import { useSpServices } from "../hooks/useSpServices";
 import { ConvertCandidatDialog } from "../components/ConvertCandidatDialog";
+import SpTestWorkflow from "../components/SpTestWorkflow";
+import { StatutCandidatLegend } from "../components/StatutCandidatLegend";
 
 const STATUT_COLOR: Record<string, string> = {
-  en_attente: "bg-muted", programme: "bg-blue-500", absent: "bg-orange-500",
-  present: "bg-emerald-500", admis: "bg-emerald-700", refuse: "bg-destructive",
+  en_attente: "bg-muted text-foreground",
+  programme: "bg-blue-500 text-white",
+  absent: "bg-orange-500 text-white",
+  present: "bg-emerald-500 text-white",
+  admis: "bg-emerald-700 text-white",
+  refuse: "bg-destructive text-white",
+};
+const STATUT_LABEL: Record<string, string> = {
+  en_attente: "En attente", programme: "Programmé", absent: "Absent",
+  present: "Présent", admis: "Admis", refuse: "Refusé",
 };
 
 export default function SpTestsEntree() {
@@ -22,6 +32,7 @@ export default function SpTestsEntree() {
   const [editing, setEditing] = useState<Partial<SpCandidat> | null>(null);
   const [pay, setPay] = useState<SpCandidat | null>(null);
   const [convert, setConvert] = useState<SpCandidat | null>(null);
+  const [workflow, setWorkflow] = useState(false);
   const [q, setQ] = useState("");
 
   const testService = services.find((s) => s.slug === "test_entree");
@@ -36,12 +47,19 @@ export default function SpTestsEntree() {
 
   return (
     <div className="space-y-4">
+      <StatutCandidatLegend />
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <CardTitle>Tests d'entrée</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
-            <Button size="sm" onClick={() => setEditing({})}><Plus className="h-4 w-4 mr-1" />Nouveau candidat</Button>
+            <Button size="sm" variant="outline" onClick={() => setEditing({})}>
+              <Plus className="h-4 w-4 mr-1" />Simple
+            </Button>
+            <Button size="sm" onClick={() => setWorkflow(true)} className="gap-1">
+              <Sparkles className="h-4 w-4" />Nouveau parcours (candidat + paiement + reçu)
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -69,7 +87,7 @@ export default function SpTestsEntree() {
                     <TableCell>{c.classe_demandee ?? "—"}</TableCell>
                     <TableCell>{c.parent ?? "—"}<div className="text-xs text-muted-foreground">{c.telephone}</div></TableCell>
                     <TableCell>{c.date_test ? new Date(c.date_test).toLocaleString("fr-FR") : "—"}</TableCell>
-                    <TableCell><Badge className={STATUT_COLOR[c.statut] ?? "bg-muted"}>{c.statut}</Badge></TableCell>
+                    <TableCell><Badge className={STATUT_COLOR[c.statut] ?? "bg-muted"}>{STATUT_LABEL[c.statut] ?? c.statut}</Badge></TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
                         <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
@@ -114,6 +132,8 @@ export default function SpTestsEntree() {
           onConfirm={async (classeId) => { await convertir(convert.id, classeId); }}
         />
       )}
+
+      <SpTestWorkflow open={workflow} onOpenChange={setWorkflow} />
     </div>
   );
 }
