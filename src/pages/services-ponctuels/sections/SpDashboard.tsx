@@ -1,9 +1,10 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, ClipboardCheck, Shirt, TrendingUp, Clock } from "lucide-react";
+import { Users, CreditCard, ClipboardCheck, Shirt, TrendingUp, Clock, Wallet } from "lucide-react";
 import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { useSpVentes } from "../hooks/useSpVentes";
+import { useSpServices } from "../hooks/useSpServices";
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
 const startOfDay = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
