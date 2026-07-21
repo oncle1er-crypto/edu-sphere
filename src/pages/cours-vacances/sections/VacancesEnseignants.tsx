@@ -13,7 +13,12 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
 export default function VacancesEnseignants() {
-  const { classes, enseignants, honoraires, loading, save, remove } = useVacancesData();
+  const { classes, eleves, enseignants, honoraires, loading, save, remove } = useVacancesData();
+  const nbElevesParClasse = useMemo(() => {
+    const m: Record<string, number> = {};
+    eleves.forEach((e) => { m[e.classe_id] = (m[e.classe_id] ?? 0) + 1; });
+    return m;
+  }, [eleves]);
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<VacEnseignant | null>(null);
   const [form, setForm] = useState<any>({});
