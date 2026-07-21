@@ -76,7 +76,7 @@ export default function SpRapports() {
   const { services } = useSpServices();
   const { candidats } = useSpCandidats();
   const { ventes } = useSpVentes();
-  const { currentEcole } = useEcoles();
+  const currentEcole = useEcoleInfo();
 
   const svcMap = useMemo(() => Object.fromEntries(services.map((s) => [s.id, s])), [services]);
 
