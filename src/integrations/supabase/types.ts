@@ -5739,6 +5739,57 @@ export type Database = {
         }
         Relationships: []
       }
+      sp_stock_tenues: {
+        Row: {
+          classe_id: string
+          created_at: string
+          ecole_id: string
+          genre: string
+          id: string
+          prix_unitaire: number | null
+          seuil_alerte: number
+          stock_actuel: number
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          ecole_id: string
+          genre: string
+          id?: string
+          prix_unitaire?: number | null
+          seuil_alerte?: number
+          stock_actuel?: number
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          ecole_id?: string
+          genre?: string
+          id?: string
+          prix_unitaire?: number | null
+          seuil_alerte?: number
+          stock_actuel?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_stock_tenues_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sp_test_sessions: {
         Row: {
           actif: boolean
@@ -5786,9 +5837,11 @@ export type Database = {
           annule_par: string | null
           caissier_id: string | null
           candidat_id: string | null
+          classe_id: string | null
           created_at: string
           ecole_id: string
           eleve_id: string | null
+          genre: string | null
           id: string
           mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
           montant_total: number
@@ -5807,9 +5860,11 @@ export type Database = {
           annule_par?: string | null
           caissier_id?: string | null
           candidat_id?: string | null
+          classe_id?: string | null
           created_at?: string
           ecole_id: string
           eleve_id?: string | null
+          genre?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
           montant_total?: number
@@ -5828,9 +5883,11 @@ export type Database = {
           annule_par?: string | null
           caissier_id?: string | null
           candidat_id?: string | null
+          classe_id?: string | null
           created_at?: string
           ecole_id?: string
           eleve_id?: string | null
+          genre?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
           montant_total?: number
@@ -5842,7 +5899,15 @@ export type Database = {
           statut?: Database["public"]["Enums"]["sp_vente_statut"]
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sp_ventes_tenues_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stocks_cantine: {
         Row: {
