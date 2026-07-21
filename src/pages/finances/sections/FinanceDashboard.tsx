@@ -34,12 +34,15 @@ export default function FinanceDashboard() {
   }
 
   // === Scolarité stats ===
+  // NB : « couvert » = encaissement + remises/bourses/prises en charge.
+  // C'est ce montant qui éteint la dette de la famille, donc c'est lui qui
+  // sert au calcul du taux de recouvrement et du reste à recouvrer.
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
-  const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
   const totalEncaisse = ELEVES.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
   const totalRemises = ELEVES.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
-  const totalDu = totalAttendu - totalPaye;
-  const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
+  const totalCouvert = totalEncaisse + totalRemises;
+  const totalDu = ELEVES.reduce((s, e) => s + e.resteDu, 0);
+  const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalCouvert / totalAttendu) * 100) : 0;
 
   const ajour = ELEVES.filter((e) => statutEleve(e) === "ajour").length;
   const partiel = ELEVES.filter((e) => statutEleve(e) === "partiel").length;
@@ -81,8 +84,9 @@ export default function FinanceDashboard() {
   const parCycle = cycleNames.map((c) => {
     const list = ELEVES.filter((e) => e.cycle === c);
     const att = list.reduce((s, e) => s + e.fraisAnnuel, 0);
-    const pay = list.reduce((s, e) => s + e.totalPaye, 0);
-    return { cycle: c, taux: att > 0 ? Math.round((pay / att) * 100) : 0, eleves: list.length, du: att - pay };
+    const couvert = list.reduce((s, e) => s + (e.totalEncaisse ?? 0) + (e.totalRemises ?? 0), 0);
+    const du = list.reduce((s, e) => s + e.resteDu, 0);
+    return { cycle: c, taux: att > 0 ? Math.round((couvert / att) * 100) : 0, eleves: list.length, du };
   });
 
   const topRetards = [...ELEVES]
@@ -134,7 +138,7 @@ export default function FinanceDashboard() {
         </CardContent></Card>
         <Card className="border shadow-[var(--shadow-card)]"><CardContent className="p-5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground"><CheckCircle2 className="h-3.5 w-3.5 text-success" /> Couvert</div>
-          <p className="text-xl md:text-2xl font-bold font-display text-success mt-2">{fcfa(totalPaye)}</p>
+          <p className="text-xl md:text-2xl font-bold font-display text-success mt-2">{fcfa(totalCouvert)}</p>
           <p className="text-[11px] text-muted-foreground mt-1">dont {fcfa(totalEncaisse)} encaissé · {fcfa(totalRemises)} remises · {tauxRecouvrement}%</p>
 
         </CardContent></Card>
