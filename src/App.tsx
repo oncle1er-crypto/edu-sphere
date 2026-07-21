@@ -87,6 +87,7 @@ const SpTestsEntree = lazy(() => import("@/pages/services-ponctuels/sections/SpT
 const SpVentesTenues = lazy(() => import("@/pages/services-ponctuels/sections/SpVentesTenues"));
 const SpCatalogue = lazy(() => import("@/pages/services-ponctuels/sections/SpCatalogue"));
 const SpRapports = lazy(() => import("@/pages/services-ponctuels/sections/SpRapports"));
+const SpPointCaisse = lazy(() => import("@/pages/services-ponctuels/sections/SpPointCaisse"));
 const SpParametres = lazy(() => import("@/pages/services-ponctuels/sections/SpParametres"));
 const SettingsLayout = lazy(() => import("@/pages/parametres/SettingsLayout"));
 const FinanceLayout = lazy(() => import("@/pages/finances/FinanceLayout"));
