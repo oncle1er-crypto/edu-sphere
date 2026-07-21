@@ -269,8 +269,9 @@ export default function SpRapports() {
                     <TableCell className="text-right font-semibold">{fmt(info.total)}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "pdf")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
                         <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "csv")}><Download className="h-4 w-4 mr-1" />CSV</Button>
+                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "xlsx")}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "pdf")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
                       </div>
                     </TableCell>
                   </TableRow>
