@@ -87,6 +87,7 @@ const SpTestsEntree = lazy(() => import("@/pages/services-ponctuels/sections/SpT
 const SpVentesTenues = lazy(() => import("@/pages/services-ponctuels/sections/SpVentesTenues"));
 const SpCatalogue = lazy(() => import("@/pages/services-ponctuels/sections/SpCatalogue"));
 const SpRapports = lazy(() => import("@/pages/services-ponctuels/sections/SpRapports"));
+const SpPointCaisse = lazy(() => import("@/pages/services-ponctuels/sections/SpPointCaisse"));
 const SpParametres = lazy(() => import("@/pages/services-ponctuels/sections/SpParametres"));
 const SettingsLayout = lazy(() => import("@/pages/parametres/SettingsLayout"));
 const FinanceLayout = lazy(() => import("@/pages/finances/FinanceLayout"));
@@ -523,6 +524,7 @@ const App = () => (
               <Route path="ventes-tenues" element={<SpVentesTenues />} />
               <Route path="catalogue" element={<SpCatalogue />} />
               <Route path="rapports" element={<SpRapports />} />
+              <Route path="point-caisse" element={<SpPointCaisse />} />
               <Route path="parametres" element={<SpParametres />} />
             </Route>
             <Route path="/cours-vacances" element={<RequirePerm module="cours_vacances"><VacancesLayout /></RequirePerm>}>
