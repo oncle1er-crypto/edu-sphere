@@ -65,7 +65,25 @@ export default function SpDashboard() {
                 <div>
                   <p className="text-xs text-muted-foreground">{k.label}</p>
                   <p className="text-lg font-bold">{k.value}</p>
+      </div>
+
+      <Card>
+        <CardHeader><CardTitle className="flex items-center gap-2"><Wallet className="h-4 w-4" /> Caisses par service</CardTitle></CardHeader>
+        <CardContent>
+          {caissesParService.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun service configuré.</p>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {caissesParService.map((c) => (
+                <div key={c.id} className="rounded-lg border p-3">
+                  <p className="text-xs text-muted-foreground truncate">{c.nom}</p>
+                  <p className="text-lg font-bold text-primary">{fmt(c.total)}</p>
                 </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
               </div>
             </CardContent>
           </Card>

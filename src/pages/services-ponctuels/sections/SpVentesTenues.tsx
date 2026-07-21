@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { useSpVentes } from "../hooks/useSpVentes";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoles } from "@/context/EcoleContext";
+import { useClasses } from "@/hooks/useClasses";
 
 const STATUT_COLOR: Record<string, string> = {
   paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", annule: "bg-destructive",
@@ -16,6 +17,8 @@ const STATUT_COLOR: Record<string, string> = {
 export default function SpVentesTenues() {
   const { ventes, loading, annuler } = useSpVentes();
   const { currentEcole } = useEcoles();
+  const { classes } = useClasses();
+  const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
 
   const reprint = async (v: (typeof ventes)[0]) => {
