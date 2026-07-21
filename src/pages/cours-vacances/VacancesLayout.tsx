@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
-  LayoutDashboard, UserPlus, BookOpen, Wallet, GraduationCap, Receipt, FileText, Sun,
+  LayoutDashboard, UserPlus, BookOpen, Wallet, GraduationCap, Receipt, FileText, Sun, Banknote,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -10,6 +10,7 @@ const sections = [
   { to: "inscriptions", label: "Inscriptions", icon: UserPlus, group: "Élèves" },
   { to: "classes", label: "Classes / Tarifs", icon: BookOpen, group: "Élèves" },
   { to: "paiements", label: "Paiements", icon: Wallet, group: "Élèves" },
+  { to: "point-caisse", label: "Point de caisse", icon: Banknote, group: "Élèves" },
   { to: "enseignants", label: "Maîtres / Enseignants", icon: GraduationCap, group: "Personnel" },
   { to: "honoraires", label: "Honoraires", icon: Receipt, group: "Personnel" },
   { to: "rapports", label: "Rapports", icon: FileText, group: "Système" },

@@ -255,6 +255,7 @@ const VacancesPaiements = lazy(() => import("@/pages/cours-vacances/sections/Vac
 const VacancesEnseignants = lazy(() => import("@/pages/cours-vacances/sections/VacancesEnseignants"));
 const VacancesHonoraires = lazy(() => import("@/pages/cours-vacances/sections/VacancesHonoraires"));
 const VacancesRapports = lazy(() => import("@/pages/cours-vacances/sections/VacancesRapports"));
+const VacancesPointCaisse = lazy(() => import("@/pages/cours-vacances/sections/VacancesPointCaisse"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -529,6 +530,7 @@ const App = () => (
               <Route path="inscriptions" element={<VacancesInscriptions />} />
               <Route path="classes" element={<VacancesClasses />} />
               <Route path="paiements" element={<VacancesPaiements />} />
+              <Route path="point-caisse" element={<VacancesPointCaisse />} />
               <Route path="enseignants" element={<VacancesEnseignants />} />
               <Route path="honoraires" element={<VacancesHonoraires />} />
               <Route path="rapports" element={<VacancesRapports />} />
