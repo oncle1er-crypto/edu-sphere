@@ -41,7 +41,8 @@ function buildRecouvrementData(data: ReturnType<typeof useFinanceData>["data"]):
     const entry = classeMap.get(c)!;
     entry.effectif++;
     entry.du += e.fraisAnnuel;
-    entry.paye += e.totalPaye;
+    // Dû couvert = encaissement + remises/bourses/prises en charge.
+    entry.paye += (e.totalEncaisse ?? 0) + (e.totalRemises ?? 0);
   }
   return {
     lignes: Array.from(classeMap.entries())
@@ -140,7 +141,8 @@ export default function Reports() {
         prenom: e.prenom,
         classe: e.classe,
         montant_du: e.fraisAnnuel,
-        paye: e.totalPaye,
+        // Dû couvert (encaissement + remises) pour que « reste » = fraisAnnuel - paye.
+        paye: (e.totalEncaisse ?? 0) + (e.totalRemises ?? 0),
         jours_retard: e.joursRetard,
       })),
   });

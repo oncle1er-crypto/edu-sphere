@@ -49,7 +49,9 @@ function buildClassesSynthese(allEleves: EleveScolarite[]): ClasseSyntheseRow[] 
     }
     row.effectif++;
     row.totalDu += e.fraisAnnuel;
-    row.paye += e.totalPaye;
+    // `paye` agrège le dû couvert (encaissement + remises/bourses/prises en charge)
+    // pour aligner reste et taux de recouvrement sur la somme des restes par élève.
+    row.paye += (e.totalEncaisse ?? 0) + (e.totalRemises ?? 0);
     row.reste += e.resteDu;
     const s = statutEleve(e);
     if (s === "retard") row.enRetard++;
