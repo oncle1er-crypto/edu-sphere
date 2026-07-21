@@ -57,6 +57,8 @@ export default function SpVentesTenues() {
                   <TableHead>N°</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Acheteur</TableHead>
+                  <TableHead>Classe</TableHead>
+                  <TableHead>Genre</TableHead>
                   <TableHead>Qté</TableHead>
                   <TableHead>Total</TableHead>
                   <TableHead>Mode</TableHead>
@@ -70,6 +72,8 @@ export default function SpVentesTenues() {
                     <TableCell className="font-mono text-xs">{v.numero}</TableCell>
                     <TableCell>{new Date(v.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>{v.acheteur_libre ?? "—"}</TableCell>
+                    <TableCell>{v.classe_id ? (classesMap[v.classe_id] ?? "—") : "—"}</TableCell>
+                    <TableCell>{v.genre === "F" ? "Fille" : v.genre === "G" ? "Garçon" : "—"}</TableCell>
                     <TableCell>{v.quantite}</TableCell>
                     <TableCell className="font-medium">{Number(v.montant_total).toLocaleString("fr-FR")} FCFA</TableCell>
                     <TableCell>{v.mode_paiement}</TableCell>
