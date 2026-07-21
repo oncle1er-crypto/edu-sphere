@@ -75,5 +75,12 @@ export function useSpPaiements() {
     await load();
   };
 
-  return { paiements, loading, reload: load, save, annuler };
+  const supprimer = async (id: string) => {
+    const { error } = await (supabase as any).rpc("sp_supprimer_paiement", { _paiement_id: id });
+    if (error) return toast.error(error.message);
+    toast.success("Paiement supprimé définitivement");
+    await load();
+  };
+
+  return { paiements, loading, reload: load, save, annuler, supprimer };
 }
