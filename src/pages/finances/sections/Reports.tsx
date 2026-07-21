@@ -471,12 +471,18 @@ export default function Reports() {
                         <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setPreview(r.id)}>
                         <Eye className="h-4 w-4" />Visualiser
                       </Button>
-                      <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
-                        <Download className="h-4 w-4" />PDF
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadCsv(r.id)}>
+                        <Download className="h-4 w-4" />CSV
+                      </Button>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadXlsx(r.id)}>
+                        <FileSpreadsheet className="h-4 w-4" />Excel
+                      </Button>
+                      <Button size="sm" className="gap-1" onClick={() => handleDownload(r.id)}>
+                        <FileText className="h-4 w-4" />PDF
                       </Button>
                     </div>
                   </CardContent>
