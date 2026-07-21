@@ -2054,6 +2054,7 @@ export type Database = {
           sigle: string | null
           site_web: string | null
           status: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve: number
           telephone: string | null
           type: string
           updated_at: string
@@ -2077,6 +2078,7 @@ export type Database = {
           sigle?: string | null
           site_web?: string | null
           status?: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve?: number
           telephone?: string | null
           type?: string
           updated_at?: string
@@ -2100,6 +2102,7 @@ export type Database = {
           sigle?: string | null
           site_web?: string | null
           status?: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve?: number
           telephone?: string | null
           type?: string
           updated_at?: string
@@ -7153,6 +7156,10 @@ export type Database = {
           _seulement_pre_inscrits?: boolean
         }
         Returns: Json
+      }
+      recalculer_honoraires_vacances: {
+        Args: { p_classe_id: string }
+        Returns: undefined
       }
       reconduire_affectations_pedagogiques: {
         Args: {

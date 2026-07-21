@@ -13,12 +13,17 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
 export default function VacancesEnseignants() {
-  const { classes, enseignants, honoraires, loading, save, remove } = useVacancesData();
+  const { classes, eleves, enseignants, honoraires, loading, save, remove } = useVacancesData();
+  const nbElevesParClasse = useMemo(() => {
+    const m: Record<string, number> = {};
+    eleves.forEach((e) => { m[e.classe_id] = (m[e.classe_id] ?? 0) + 1; });
+    return m;
+  }, [eleves]);
   const [open, setOpen] = useState(false);
   const [edit, setEdit] = useState<VacEnseignant | null>(null);
   const [form, setForm] = useState<any>({});
 
-  const openNew = () => { setEdit(null); setForm({ nom: "", prenom: "", telephone: "", classe_id: "", matiere: "", honoraire_prevu: 0, observation: "" }); setOpen(true); };
+  const openNew = () => { setEdit(null); setForm({ nom: "", prenom: "", telephone: "", classe_id: "", matiere: "", observation: "" }); setOpen(true); };
   const openEdit = (e: VacEnseignant) => { setEdit(e); setForm({ ...e, classe_id: e.classe_id ?? "" }); setOpen(true); };
   const submit = async () => {
     if (!form.nom?.trim() || !form.prenom?.trim()) return;
@@ -27,8 +32,8 @@ export default function VacancesEnseignants() {
       telephone: form.telephone || null,
       classe_id: form.classe_id || null,
       matiere: form.matiere || null,
-      honoraire_prevu: Number(form.honoraire_prevu) || 0,
       observation: form.observation || null,
+      // honoraire_prevu calculé automatiquement par trigger DB (tarif × nb élèves)
     }, edit?.id);
     setOpen(false);
   };
@@ -59,7 +64,9 @@ export default function VacancesEnseignants() {
                 </Select>
               </div>
               <div className="col-span-2"><Label>Matière / Niveau</Label><Input value={form.matiere || ""} onChange={(e) => setForm({ ...form, matiere: e.target.value })} /></div>
-              <div className="col-span-2"><Label>Honoraire prévu (FCFA)</Label><Input type="number" value={form.honoraire_prevu ?? 0} onChange={(e) => setForm({ ...form, honoraire_prevu: Number(e.target.value) })} /></div>
+              <div className="col-span-2 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                💡 Les honoraires prévus sont <strong>calculés automatiquement</strong> : 500 FCFA × nombre d'élèves inscrits dans la classe affectée. Le solde du montant de scolarité revient à l'école.
+              </div>
               <div className="col-span-2"><Label>Observation</Label><Textarea value={form.observation || ""} onChange={(e) => setForm({ ...form, observation: e.target.value })} rows={2} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button onClick={submit}>{edit ? "Enregistrer" : "Créer"}</Button></DialogFooter>
@@ -74,14 +81,16 @@ export default function VacancesEnseignants() {
               <TableHeader><TableRow>
                 <TableHead>Nom</TableHead><TableHead>Prénoms</TableHead><TableHead>Téléphone</TableHead>
                 <TableHead>Classe</TableHead><TableHead>Matière</TableHead>
+                <TableHead>Nb élèves</TableHead>
                 <TableHead>Prévu</TableHead><TableHead>Payé</TableHead><TableHead>Reste</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {enseignants.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Aucun maître.</TableCell></TableRow>}
+                {enseignants.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-6">Aucun maître.</TableCell></TableRow>}
                 {enseignants.map((e) => {
                   const paye = payePar[e.id] ?? 0;
                   const reste = Number(e.honoraire_prevu) - paye;
+                  const nb = e.classe_id ? (nbElevesParClasse[e.classe_id] ?? 0) : 0;
                   return (
                     <TableRow key={e.id}>
                       <TableCell className="font-medium">{e.nom}</TableCell>
@@ -89,6 +98,7 @@ export default function VacancesEnseignants() {
                       <TableCell>{e.telephone ?? "—"}</TableCell>
                       <TableCell>{classes.find(c => c.id === e.classe_id)?.nom ?? "—"}</TableCell>
                       <TableCell>{e.matiere ?? "—"}</TableCell>
+                      <TableCell className="text-center font-semibold">{nb}</TableCell>
                       <TableCell>{fmt(Number(e.honoraire_prevu))}</TableCell>
                       <TableCell className="text-emerald-600 font-semibold">{fmt(paye)}</TableCell>
                       <TableCell className={reste > 0 ? "text-destructive font-semibold" : ""}>{fmt(reste)}</TableCell>

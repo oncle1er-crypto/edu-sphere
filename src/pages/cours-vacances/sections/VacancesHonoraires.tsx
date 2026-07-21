@@ -43,6 +43,9 @@ export default function VacancesHonoraires() {
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">
+        💰 <strong>Calcul automatique</strong> : les honoraires prévus de chaque maître = <strong>500 FCFA × nombre d'élèves inscrits</strong> dans sa classe. Le solde du montant de scolarité revient à l'école. Mise à jour en temps réel à chaque inscription.
+      </div>
       <div className="flex items-center justify-between">
         <div><h2 className="text-lg font-bold">Honoraires</h2><p className="text-sm text-muted-foreground">Suivi et versement des honoraires aux maîtres.</p></div>
         <Dialog open={open} onOpenChange={setOpen}>
