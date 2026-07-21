@@ -64,7 +64,9 @@ export default function VacancesEnseignants() {
                 </Select>
               </div>
               <div className="col-span-2"><Label>Matière / Niveau</Label><Input value={form.matiere || ""} onChange={(e) => setForm({ ...form, matiere: e.target.value })} /></div>
-              <div className="col-span-2"><Label>Honoraire prévu (FCFA)</Label><Input type="number" value={form.honoraire_prevu ?? 0} onChange={(e) => setForm({ ...form, honoraire_prevu: Number(e.target.value) })} /></div>
+              <div className="col-span-2 rounded-md bg-muted/50 p-3 text-xs text-muted-foreground">
+                💡 Les honoraires prévus sont <strong>calculés automatiquement</strong> : 500 FCFA × nombre d'élèves inscrits dans la classe affectée. Le solde du montant de scolarité revient à l'école.
+              </div>
               <div className="col-span-2"><Label>Observation</Label><Textarea value={form.observation || ""} onChange={(e) => setForm({ ...form, observation: e.target.value })} rows={2} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button onClick={submit}>{edit ? "Enregistrer" : "Créer"}</Button></DialogFooter>
