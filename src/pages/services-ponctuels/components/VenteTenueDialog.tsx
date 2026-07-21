@@ -80,7 +80,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
         const eg = eleveGenre(e.sexe);
         return !eg || eg === genre;
       })
-      .filter((e: any) => !q || `${e.nom} ${e.prenoms} ${e.matricule ?? ""}`.toLowerCase().includes(q))
+      .filter((e: any) => !q || `${e.nom} ${e.prenom} ${e.matricule ?? ""}`.toLowerCase().includes(q))
       .slice(0, 30);
   }, [eleves, classeId, genre, searchEleve]);
 
@@ -95,7 +95,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
     }
     setSaving(true);
     const eleve = eleves.find((e: any) => e.id === eleveId);
-    const nomAff = eleve ? `${eleve.nom} ${eleve.prenoms}` : acheteurLibre;
+    const nomAff = eleve ? `${eleve.nom} ${eleve.prenom}` : acheteurLibre;
     const v = await save({
       acheteur_type: eleveId ? "eleve" : "libre",
       eleve_id: eleveId || null,
@@ -172,7 +172,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
                   onClick={() => { setEleveId(e.id); setAcheteurLibre(""); }}
                   className={`w-full text-left px-3 py-2 hover:bg-muted text-sm ${eleveId === e.id ? "bg-muted font-medium" : ""}`}
                 >
-                  {e.nom} {e.prenoms} <span className="text-xs text-muted-foreground">— {e.matricule ?? "—"}</span>
+                  {e.nom} {e.prenom} <span className="text-xs text-muted-foreground">— {e.matricule ?? "—"}</span>
                 </button>
               ))}
             </div>
