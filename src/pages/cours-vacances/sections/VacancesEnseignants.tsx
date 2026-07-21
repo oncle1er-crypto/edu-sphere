@@ -90,6 +90,7 @@ export default function VacancesEnseignants() {
                 {enseignants.map((e) => {
                   const paye = payePar[e.id] ?? 0;
                   const reste = Number(e.honoraire_prevu) - paye;
+                  const nb = e.classe_id ? (nbElevesParClasse[e.classe_id] ?? 0) : 0;
                   return (
                     <TableRow key={e.id}>
                       <TableCell className="font-medium">{e.nom}</TableCell>
@@ -97,6 +98,7 @@ export default function VacancesEnseignants() {
                       <TableCell>{e.telephone ?? "—"}</TableCell>
                       <TableCell>{classes.find(c => c.id === e.classe_id)?.nom ?? "—"}</TableCell>
                       <TableCell>{e.matiere ?? "—"}</TableCell>
+                      <TableCell className="text-center font-semibold">{nb}</TableCell>
                       <TableCell>{fmt(Number(e.honoraire_prevu))}</TableCell>
                       <TableCell className="text-emerald-600 font-semibold">{fmt(paye)}</TableCell>
                       <TableCell className={reste > 0 ? "text-destructive font-semibold" : ""}>{fmt(reste)}</TableCell>
