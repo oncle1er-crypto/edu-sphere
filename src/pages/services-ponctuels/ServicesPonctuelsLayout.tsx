@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
-  LayoutDashboard, CreditCard, ClipboardCheck, Shirt, BookOpen, BarChart3, Settings2, Ticket,
+  LayoutDashboard, CreditCard, ClipboardCheck, Shirt, BookOpen, BarChart3, Settings2, Ticket, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -11,6 +11,7 @@ const sections = [
   { to: "tests-entree", label: "Tests d'entrée", icon: ClipboardCheck, group: "Opérations" },
   { to: "ventes-tenues", label: "Vente de tenues", icon: Shirt, group: "Opérations" },
   { to: "catalogue", label: "Catalogue des services", icon: BookOpen, group: "Configuration" },
+  { to: "point-caisse", label: "Point de caisse", icon: Wallet, group: "Analyses" },
   { to: "rapports", label: "Rapports", icon: BarChart3, group: "Analyses" },
   { to: "parametres", label: "Paramètres", icon: Settings2, group: "Configuration" },
 ];
