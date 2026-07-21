@@ -1,64 +1,60 @@
-# Module « Classes & Niveaux » — Audit fonctionnel
+# Standardisation des exports de rapports (CSV · Excel · PDF)
 
-Sur la base de l'inspection du module (10 sections, ~1600 lignes, hooks `useClasses`/`useCycles`/`useSalles`/`useEmploiDuTemps`, table `passages_classe`, audit_logs pour transferts) :
+## Objectif
+Chaque rapport de l'application propose systématiquement les **3 formats** : CSV, Excel (.xlsx) et PDF, avec un rendu homogène (entête école, logo, filtres appliqués, pagination PDF, formatage FCFA).
 
-## Module ≈ 90 % fonctionnel
+## État actuel (11 pages de rapports)
 
-| Section | État | Détail |
-|---|---|---|
-| Tableau de bord | ✅ 95 % | KPIs classes/effectifs/cycles |
-| Toutes les classes (liste) | ✅ 100 % | CRUD complet, prof principal, salle, capacité |
-| Cycles & niveaux | ✅ 95 % | CRUD cycles opérationnel |
-| Effectifs & remplissage | ✅ 95 % | Progression + bouton « Appliquer scolarité » |
-| Groupes pédagogiques | ✅ 90 % | CRUD groupes + membres |
-| Salles de classe | 🟡 70 % | Vue agrégée en lecture seule — pas de CRUD dédié (renvoie vers la liste des classes) |
-| Emploi du temps | 🟡 75 % | Lecture hebdo par classe uniquement — pas de création/édition ici (renvoie au module Emploi du temps) |
-| Transferts & passages | 🟡 80 % | Transfert manuel opérationnel + journal, mais pas d'historique unifié `passages_classe`, pas d'annulation, pas de transferts en masse |
-| Rapports | ✅ 85 % | Rapports PDF classes/effectifs |
-| Configuration | ✅ 90 % | Paramètres classes (`parametres_classes`) |
+| Page | CSV | Excel | PDF |
+|---|---|---|---|
+| Classes › Rapports | ✅ | ❌ | ❌ |
+| Matières › Rapports | ✅ | ❌ | ❌ |
+| Cours vacances › Rapports | ❌ | ✅ | ✅ |
+| Statistiques › Rapports globaux | ❌ | ✅ (2) | ✅ (4) |
+| Services ponctuels › Rapports | ❌ | ✅ | ✅ |
+| Finances › Rapports | ❌ | partiel | ✅ |
+| Examens › Rapports | ❌ | partiel | ✅ |
+| Bibliothèque › Rapports | ❌ | ❌ | ❌ (boutons factices) |
+| Cantine › Rapports | à auditer | | |
+| Transport › Rapports | à auditer | | |
+| Présences › Rapports | à auditer | | |
 
-## Points restants pour atteindre 100 %
+## Approche
 
-1. **Salles** : passer d'une vue agrégée en lecture seule à un vrai CRUD (créer/modifier/supprimer une salle indépendamment d'une classe, gérer bâtiment/étage/équipements — la table `salles` existe déjà avec 13 colonnes mais n'est pas exploitée dans cette section).
-2. **Emploi du temps de classe** : ajouter une action d'édition rapide d'un créneau depuis cette vue (aujourd'hui purement lecture, redirige vers le module Emploi du temps).
-3. **Transferts** :
-   - unifier historique en lisant aussi `passages_classe` (mouvements inter-années) en plus de `audit_logs`,
-   - permettre l'**annulation** d'un transfert (retour à la classe d'origine avec traçabilité),
-   - ajouter un **transfert en masse** (sélection multi-élèves d'une classe vers une autre),
-   - contrôles anti-erreurs : bloquer si la classe destination dépasse sa capacité (avec bypass admin).
-4. **Effectifs** : ajouter répartition **filles/garçons** par classe et alerte visuelle sur les classes en sur-effectif (>100 %) ou sous-effectif (<50 %).
-5. **Verrouillage année** : empêcher la modification/transfert sur une année scolaire clôturée (aujourd'hui aucun verrou côté DB pour `classes`/`eleves.classe_id`).
+### 1. Utilitaire partagé `src/lib/reports/exporters.ts`
+Trois fonctions génériques prenant `{ title, columns, rows, filename, ecole?, sousTitre? }` :
+- `exportRowsCSV(...)` — BOM UTF-8, séparateur virgule, échappement.
+- `exportRowsXLSX(...)` — via `xlsx`, largeurs auto, entête gras.
+- `exportRowsPDF(...)` — via `jspdf` + `jspdf-autotable`, entête école (logo + sigle + devise), pagination, pied de page, montants formatés manuellement (évite le bug « barre noire »).
 
-## Plan d'exécution proposé (4 vagues)
+### 2. Composant partagé `src/components/reports/ReportExportButtons.tsx`
+Trois boutons compacts (CSV / Excel / PDF) + état `loading` par format. Signature :
+```
+<ReportExportButtons
+  title="Liste nominative"
+  filename="liste_nominative"
+  columns={[...]}
+  getRows={async () => [...]}
+  sousTitre="Période : ..."
+/>
+```
 
-### Vague 1 — Salles CRUD complet
-- Nouveau composant `SallesDialog` (créer/éditer une salle via table `salles`).
-- Réécriture de `ClassesRooms.tsx` : liste des salles avec bâtiment, étage, capacité, équipements, classes rattachées, actions éditer/supprimer.
-- Assignation d'une salle à une classe via `salle_id` (au lieu du texte libre `salle`).
+### 3. Refactor page par page
+Remplacer les boutons existants par `ReportExportButtons`. Pour les rapports qui ne sont aujourd'hui que des CSV (Classes, Matières) ou factices (Bibliothèque), brancher la vraie source de données.
 
-### Vague 2 — Effectifs enrichis
-- Ajout colonnes **F / G** dans `ClassesEffectifs.tsx` (agrégation depuis `eleves.sexe`).
-- Badge d'alerte capacité (rouge > 100 %, ambre > 90 %, gris < 50 %).
-- Rapport PDF « Effectifs détaillés par sexe » ajouté à `ClassesReports.tsx`.
-
-### Vague 3 — Transferts robustes
-- Fusion `audit_logs (transfert_classe)` + `passages_classe` dans la liste (avec filtre par année).
-- Bouton **Annuler** sur chaque transfert récent (< 30 jours) → repositionne l'élève + entrée audit.
-- Dialog **Transfert en masse** : sélection classe source → multi-select élèves → classe destination + motif.
-- Contrôle de capacité côté RPC.
-
-### Vague 4 — Verrouillage & finitions
-- Trigger DB `trg_classes_annee_verrouillee` bloquant UPDATE/DELETE sur `classes` et `eleves.classe_id` quand `annees_scolaires.statut = 'cloturee'` (bypass admin).
-- Édition rapide de créneau depuis `ClassesSchedule.tsx` (petit dialog `CreneauQuickEdit`).
-- Bannière d'information sur le verrouillage dans le Tableau de bord.
+Ordre d'exécution :
+1. Lot A — Utilitaires + composant partagé.
+2. Lot B — Pages déjà branchées : Classes, Matières, Cours vacances, Services ponctuels.
+3. Lot C — Pages mixtes : Statistiques, Finances, Examens.
+4. Lot D — Pages à finaliser (données réelles) : Bibliothèque, Cantine, Transport, Présences.
 
 ## Détails techniques
+- Bibliothèques déjà présentes : `xlsx`, `jspdf`, `jspdf-autotable` → aucune install.
+- Entête PDF réutilise `useEcoleInfo` (logo + sigle + devise + adresse).
+- Formatage FCFA via helper local (pas d'`Intl.NumberFormat` dans jsPDF).
+- Aucune migration DB requise.
 
-- Table `salles` : déjà présente (13 colonnes, 2 policies) — à câbler.
-- Table `passages_classe` : 13 colonnes, historique inter-années — à croiser dans Transferts.
-- Nouvelle RPC `transferer_eleve(eleve_id, classe_dest_id, motif)` : effectue update + insert `passages_classe` + audit + contrôle capacité.
-- Nouvelle RPC `annuler_transfert(audit_log_id)` : lit `details.eleve_id` + `details.de` et rétablit.
-- Nouvelle RPC `transferer_masse(eleve_ids[], classe_dest_id, motif)` : boucle transactionnelle.
-- Trigger verrouillage : fonction `est_annee_cloturee(annee_id)` + trigger BEFORE UPDATE/DELETE.
+## Livrable
+Tous les rapports listés ci-dessus exposent 3 boutons **CSV · Excel · PDF** fonctionnels avec entête école cohérente.
 
-Confirmez « Go » et l'ordre souhaité (les 4 vagues d'un coup, ou vague par vague pour tester entre chaque).
+Confirmez pour lancer les 4 lots (je peux tout enchaîner ou m'arrêter après le Lot B pour test).

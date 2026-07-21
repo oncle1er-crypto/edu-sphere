@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, FileSpreadsheet } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { useSpServices, type SpService } from "../hooks/useSpServices";
 import { useSpCandidats } from "../hooks/useSpCandidats";
@@ -67,6 +68,12 @@ function download(name: string, csv: string) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = name; a.click();
 }
+function downloadXlsx(name: string, rows: (string | number)[][]) {
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Données");
+  XLSX.writeFile(wb, name);
+}
 
 export default function SpRapports() {
   const [from, setFrom] = useState("");
@@ -110,13 +117,17 @@ export default function SpRapports() {
   const totalRecettes = paiementsFiltres.reduce((s, p) => s + Number(p.montant_paye), 0)
     + (serviceId === "all" ? ventesFiltrees.reduce((s, v) => s + Number(v.montant_total), 0) : 0);
 
-  const exportRecettes = () => {
+  const buildRecettesRows = (): (string | number)[][] => {
     const rows: (string | number)[][] = [["N°", "Date", "Service", "Bénéficiaire", "Montant", "Mode"]];
     for (const p of paiementsFiltres) {
       rows.push([p.numero, new Date(p.date_paiement).toLocaleString("fr-FR"), svcMap[p.service_id]?.nom ?? "", p.beneficiaire_libre ?? "", p.montant_paye, p.mode_paiement]);
     }
-    download("recettes-services-ponctuels.csv", toCsv(rows));
+    return rows;
   };
+
+  const exportRecettes = () => download("recettes-services-ponctuels.csv", toCsv(buildRecettesRows()));
+  const exportRecettesXlsx = () => downloadXlsx("recettes-services-ponctuels.xlsx", buildRecettesRows());
+
 
   const exportPdf = async () => {
     const doc = new jsPDF({ orientation: "landscape" });
@@ -163,18 +174,20 @@ export default function SpRapports() {
   };
 
   // Rapport dédié à un service (caisse par service)
-  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv") => {
+  const exportServiceReport = async (svc: SpService, format: "pdf" | "csv" | "xlsx") => {
     const lignes = paiements.filter((p) => p.service_id === svc.id && !p.annule_le && inRange(p.date_paiement));
     const total = lignes.reduce((s, p) => s + Number(p.montant_paye), 0);
     const parModeMap: Record<string, number> = {};
     for (const p of lignes) parModeMap[p.mode_paiement] = (parModeMap[p.mode_paiement] ?? 0) + Number(p.montant_paye);
 
-    if (format === "csv") {
+    if (format === "csv" || format === "xlsx") {
       const rows: (string | number)[][] = [["N°", "Date", "Bénéficiaire", "Montant dû", "Payé", "Remise", "Mode"]];
       for (const p of lignes) rows.push([p.numero, new Date(p.date_paiement).toLocaleString("fr-FR"), p.beneficiaire_libre ?? "", p.montant_du, p.montant_paye, p.remise, p.mode_paiement]);
-      rows.push(["", "", "", "", total, "", ""]);
-      return download(`caisse-${svc.slug}.csv`, toCsv(rows));
+      rows.push(["", "", "", "Total", total, "", ""]);
+      if (format === "csv") return download(`caisse-${svc.slug}.csv`, toCsv(rows));
+      return downloadXlsx(`caisse-${svc.slug}.xlsx`, rows);
     }
+
 
     const doc = new jsPDF({ orientation: "portrait" });
     const logo = await loadLogo(currentEcole?.logo_url);
@@ -256,8 +269,9 @@ export default function SpRapports() {
                     <TableCell className="text-right font-semibold">{fmt(info.total)}</TableCell>
                     <TableCell className="text-right">
                       <div className="inline-flex gap-1">
-                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "pdf")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
                         <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "csv")}><Download className="h-4 w-4 mr-1" />CSV</Button>
+                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "xlsx")}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+                        <Button size="sm" variant="outline" onClick={() => exportServiceReport(s, "pdf")}><FileText className="h-4 w-4 mr-1" />PDF</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -272,8 +286,9 @@ export default function SpRapports() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recettes globales ({fmt(totalRecettes)})</CardTitle>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
             <Button variant="outline" size="sm" onClick={exportRecettes}><Download className="h-4 w-4 mr-1" />CSV</Button>
+            <Button variant="outline" size="sm" onClick={exportRecettesXlsx}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+            <Button variant="outline" size="sm" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
           </div>
         </CardHeader>
         <CardContent>

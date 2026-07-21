@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
-import { BarChart3, Download, FileText, Eye, Loader2 } from "lucide-react";
+import { BarChart3, Download, FileText, Eye, Loader2, FileSpreadsheet } from "lucide-react";
+import * as XLSX from "xlsx";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -248,7 +249,89 @@ export default function Reports() {
     }
   };
 
-  // ── Preview tables ──
+
+  // ── Tabular data for CSV / Excel ──
+  const buildTable = (id: ReportId): { columns: string[]; rows: (string | number)[][] } => {
+    switch (id) {
+      case "compte_resultat": {
+        const d = getCompteResultat();
+        const rows: (string | number)[][] = [];
+        d.recettes.forEach((r) => rows.push(["Recette", r.libelle, r.montant]));
+        d.depenses.forEach((r) => rows.push(["Dépense", r.libelle, r.montant]));
+        return { columns: ["Type", "Libellé", "Montant"], rows };
+      }
+      case "flux_tresorerie": {
+        const d = getFluxTresorerie();
+        const rows: (string | number)[][] = [];
+        d.comptes.forEach((c) => rows.push(["Solde", "", c.nom, "", c.solde, ""]));
+        d.mouvements.forEach((m) => rows.push(["Mouvement", m.date, m.libelle, m.compte, m.montant, m.type]));
+        return { columns: ["Section", "Date", "Libellé", "Compte", "Montant", "Type"], rows };
+      }
+      case "recouvrement": {
+        const d = buildRecouvrementData(scopedFinance);
+        return {
+          columns: ["Classe", "Effectif", "Dû", "Payé", "Taux (%)"],
+          rows: d.lignes.map((l) => [l.classe, l.effectif, l.montant_du, l.montant_paye, l.montant_du > 0 ? Number(((l.montant_paye / l.montant_du) * 100).toFixed(1)) : 0]),
+        };
+      }
+      case "impayes": {
+        const d = getImpayes();
+        return {
+          columns: ["Nom", "Prénom", "Classe", "Dû", "Payé", "Reste", "Jours retard"],
+          rows: d.lignes.map((l) => [l.nom, l.prenom, l.classe, l.montant_du, l.paye, l.montant_du - l.paye, l.jours_retard]),
+        };
+      }
+      case "remises": {
+        const d = getRemises();
+        return {
+          columns: ["Matricule", "Nom", "Prénom", "Classe", "Parent", "Téléphone", "Montant remise", "Motif"],
+          rows: d.lignes.map((l) => [l.matricule, l.nom, l.prenom, l.classe, l.parent, l.telephone, l.montant, l.motif ?? ""]),
+        };
+      }
+      case "masse_salariale": {
+        const d = getMasseSalariale();
+        return {
+          columns: ["Nom", "Fonction", "Brut", "Retenues", "Net"],
+          rows: d.lignes.map((l) => [l.nom, l.fonction, l.brut, l.retenues, l.net]),
+        };
+      }
+      case "budget_execution": {
+        const d = getBudgetExecution();
+        const rows: (string | number)[][] = [];
+        d.recettes.forEach((l) => rows.push(["Recette", l.libelle, l.prevu, l.realise, l.prevu > 0 ? Number(((l.realise / l.prevu) * 100).toFixed(1)) : 0]));
+        d.depenses.forEach((l) => rows.push(["Dépense", l.libelle, l.prevu, l.realise, l.prevu > 0 ? Number(((l.realise / l.prevu) * 100).toFixed(1)) : 0]));
+        return { columns: ["Type", "Libellé", "Prévu", "Réalisé", "Taux (%)"], rows };
+      }
+    }
+  };
+
+  const handleDownloadCsv = (id: ReportId) => {
+    try {
+      const { columns, rows } = buildTable(id);
+      const csv = [columns, ...rows].map((r) => r.map((v) => {
+        const s = String(v ?? "");
+        return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+      }).join(",")).join("\n");
+      const title = REPORTS.find((r) => r.id === id)?.title ?? id;
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob); a.download = `${title}.csv`; a.click();
+      toast.success("CSV généré");
+    } catch (e) { toast.error("Erreur CSV"); console.error(e); }
+  };
+
+  const handleDownloadXlsx = (id: ReportId) => {
+    try {
+      const { columns, rows } = buildTable(id);
+      const ws = XLSX.utils.aoa_to_sheet([columns, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Données");
+      const title = REPORTS.find((r) => r.id === id)?.title ?? id;
+      XLSX.writeFile(wb, `${title}.xlsx`);
+      toast.success("Excel généré");
+    } catch (e) { toast.error("Erreur Excel"); console.error(e); }
+  };
+
   const renderPreview = () => {
     if (!preview) return null;
     switch (preview) {
@@ -388,12 +471,18 @@ export default function Reports() {
                         <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
                       </div>
                     </div>
-                    <div className="flex gap-2 mt-4">
-                      <Button size="sm" variant="outline" className="flex-1 gap-1" onClick={() => setPreview(r.id)}>
+                    <div className="flex flex-wrap gap-2 mt-4">
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => setPreview(r.id)}>
                         <Eye className="h-4 w-4" />Visualiser
                       </Button>
-                      <Button size="sm" className="flex-1 gap-1" onClick={() => handleDownload(r.id)}>
-                        <Download className="h-4 w-4" />PDF
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadCsv(r.id)}>
+                        <Download className="h-4 w-4" />CSV
+                      </Button>
+                      <Button size="sm" variant="outline" className="gap-1" onClick={() => handleDownloadXlsx(r.id)}>
+                        <FileSpreadsheet className="h-4 w-4" />Excel
+                      </Button>
+                      <Button size="sm" className="gap-1" onClick={() => handleDownload(r.id)}>
+                        <FileText className="h-4 w-4" />PDF
                       </Button>
                     </div>
                   </CardContent>
@@ -411,9 +500,15 @@ export default function Reports() {
             <DialogTitle>{REPORTS.find((r) => r.id === preview)?.title}</DialogTitle>
           </DialogHeader>
           {renderPreview()}
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => preview && handleDownloadCsv(preview)} className="gap-2">
+              <Download className="h-4 w-4" />CSV
+            </Button>
+            <Button variant="outline" onClick={() => preview && handleDownloadXlsx(preview)} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />Excel
+            </Button>
             <Button onClick={() => preview && handleDownload(preview)} className="gap-2">
-              <Download className="h-4 w-4" />Télécharger PDF
+              <FileText className="h-4 w-4" />PDF
             </Button>
           </div>
         </DialogContent>
