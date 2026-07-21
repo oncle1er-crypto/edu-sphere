@@ -47,6 +47,15 @@ export default function ClassesDashboard() {
 
   return (
     <div className="space-y-6">
+      {(activeAnnee.statut === "verrouillee" || activeAnnee.statut === "archivee") && (
+        <Alert className="border-amber-500/40 bg-amber-500/5">
+          <Lock className="h-4 w-4 text-amber-600" />
+          <AlertTitle>Année scolaire verrouillée</AlertTitle>
+          <AlertDescription className="text-xs">
+            Les modifications de classes et les transferts d'élèves sont bloqués par la base de données. Seuls les administrateurs peuvent effectuer des corrections exceptionnelles.
+          </AlertDescription>
+        </Alert>
+      )}
       <SettingsSection
         icon={<LayoutDashboard className="h-5 w-5" />}
         title="Vue d'ensemble"
