@@ -85,8 +85,9 @@ export default function FinanceDashboard() {
   const parCycle = cycleNames.map((c) => {
     const list = ELEVES.filter((e) => e.cycle === c);
     const att = list.reduce((s, e) => s + e.fraisAnnuel, 0);
-    const pay = list.reduce((s, e) => s + e.totalPaye, 0);
-    return { cycle: c, taux: att > 0 ? Math.round((pay / att) * 100) : 0, eleves: list.length, du: att - pay };
+    const couvert = list.reduce((s, e) => s + (e.totalEncaisse ?? 0) + (e.totalRemises ?? 0), 0);
+    const du = list.reduce((s, e) => s + e.resteDu, 0);
+    return { cycle: c, taux: att > 0 ? Math.round((couvert / att) * 100) : 0, eleves: list.length, du };
   });
 
   const topRetards = [...ELEVES]
