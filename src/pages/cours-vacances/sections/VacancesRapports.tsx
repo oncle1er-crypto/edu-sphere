@@ -1,31 +1,15 @@
 import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { useVacancesData } from "../hooks/useVacances";
-import { Printer, FileSpreadsheet, FileText as FileTextIcon } from "lucide-react";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
 import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel } from "@/components/reports/ReportFilters";
+import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
+import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
-function exportExcel(rows: any[], filename: string) {
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Données");
-  XLSX.writeFile(wb, `${filename}.xlsx`);
-}
-function exportPDF(title: string, columns: string[], rows: any[][], sousTitre?: string) {
-  const doc = new jsPDF();
-  doc.setFontSize(14); doc.text(title, 14, 15);
-  if (sousTitre) { doc.setFontSize(9); doc.text(sousTitre, 14, 22); }
-  autoTable(doc, { head: [columns], body: rows, startY: sousTitre ? 26 : 20, styles: { fontSize: 8 } });
-  doc.save(`${title}.pdf`);
-}
-
 export default function VacancesRapports() {
   const { classes, eleves, paiements, enseignants, honoraires } = useVacancesData();
+  const ecole = useEcoleInfo();
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
 
   const classesNames = useMemo(() => classes.map((c) => c.nom).filter(Boolean), [classes]);
@@ -48,13 +32,7 @@ export default function VacancesRapports() {
   }, [eleves, classes, filters]);
 
   const periodeLabel = formatPeriodeLabel(filters.from, filters.to, "Toute la période");
-
-  const rapports = useMemo(() => ({
-    inscrits: filteredEleves.map((e) => ({ Nom: e.nom, Prénoms: e.prenom, Sexe: e.sexe ?? "", Classe: classeNomById(e.classe_id), Contact: e.contact_parent ?? "", "Inscrit le": e.date_inscription, Statut: e.statut_paiement })),
-    payes: filteredEleves.filter((e) => e.statut_paiement === "paye").map((e) => ({ Nom: e.nom, Prénoms: e.prenom, Classe: classeNomById(e.classe_id), Contact: e.contact_parent ?? "" })),
-    nonPayes: filteredEleves.filter((e) => e.statut_paiement !== "paye").map((e) => ({ Nom: e.nom, Prénoms: e.prenom, Classe: classeNomById(e.classe_id), Contact: e.contact_parent ?? "", Statut: e.statut_paiement })),
-    maitres: enseignants.map((e) => ({ Nom: e.nom, Prénoms: e.prenom, Téléphone: e.telephone ?? "", Classe: classeNomById(e.classe_id ?? ""), Matière: e.matiere ?? "", "Honoraire prévu": Number(e.honoraire_prevu) })),
-  }), [filteredEleves, enseignants, classes]);
+  const sousTitre = `Période : ${periodeLabel}${filters.classe && filters.classe !== ALL_CLASSES ? ` · Classe : ${filters.classe}` : ""}`;
 
   const financier = useMemo(() => {
     const encaisse = paiements.reduce((s, p) => s + Number(p.montant_paye), 0);
@@ -63,33 +41,55 @@ export default function VacancesRapports() {
   }, [paiements, honoraires]);
 
   const rapportsList = [
-    { titre: "Liste complète des élèves inscrits", data: rapports.inscrits, key: "inscrits", filtered: true },
-    { titre: "Élèves ayant payé", data: rapports.payes, key: "payes", filtered: true },
-    { titre: "Élèves non payés", data: rapports.nonPayes, key: "non-payes", filtered: true },
-    { titre: "Liste des maîtres", data: rapports.maitres, key: "maitres", filtered: false },
+    {
+      key: "inscrits", titre: "Liste complète des élèves inscrits", filtered: true,
+      columns: ["Nom", "Prénoms", "Sexe", "Classe", "Contact", "Inscrit le", "Statut"],
+      getRows: () => filteredEleves.map((e) => [e.nom, e.prenom, e.sexe ?? "", classeNomById(e.classe_id), e.contact_parent ?? "", e.date_inscription ?? "", e.statut_paiement]),
+    },
+    {
+      key: "payes", titre: "Élèves ayant payé", filtered: true,
+      columns: ["Nom", "Prénoms", "Classe", "Contact"],
+      getRows: () => filteredEleves.filter((e) => e.statut_paiement === "paye").map((e) => [e.nom, e.prenom, classeNomById(e.classe_id), e.contact_parent ?? ""]),
+    },
+    {
+      key: "non-payes", titre: "Élèves non payés", filtered: true,
+      columns: ["Nom", "Prénoms", "Classe", "Contact", "Statut"],
+      getRows: () => filteredEleves.filter((e) => e.statut_paiement !== "paye").map((e) => [e.nom, e.prenom, classeNomById(e.classe_id), e.contact_parent ?? "", e.statut_paiement]),
+    },
+    {
+      key: "maitres", titre: "Liste des maîtres", filtered: false,
+      columns: ["Nom", "Prénoms", "Téléphone", "Classe", "Matière", "Honoraire prévu"],
+      getRows: () => enseignants.map((e) => [e.nom, e.prenom, e.telephone ?? "", classeNomById(e.classe_id ?? ""), e.matiere ?? "", Number(e.honoraire_prevu)]),
+    },
   ];
 
   return (
     <div className="space-y-4">
-      <div><h2 className="text-lg font-bold">Rapports</h2><p className="text-sm text-muted-foreground">Impression et export des données.</p></div>
+      <div><h2 className="text-lg font-bold">Rapports</h2><p className="text-sm text-muted-foreground">Exports CSV · Excel · PDF.</p></div>
 
       <ReportFilters value={filters} onChange={setFilters} classes={classesNames} periodeLabel={periodeLabel} />
 
-      {rapportsList.map((r) => (
-        <Card key={r.key} className="border shadow-[var(--shadow-card)]">
-          <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <p className="font-semibold">{r.titre}</p>
-              <p className="text-xs text-muted-foreground">{r.data.length} ligne{r.data.length > 1 ? "s" : ""}{r.filtered ? " · filtres appliqués" : ""}</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => window.print()}><Printer className="h-4 w-4 mr-1" /> Imprimer</Button>
-              <Button size="sm" variant="outline" onClick={() => exportExcel(r.data, r.key)}><FileSpreadsheet className="h-4 w-4 mr-1" /> Excel</Button>
-              <Button size="sm" onClick={() => exportPDF(r.titre, Object.keys(r.data[0] ?? { Vide: "" }), r.data.map(Object.values), r.filtered ? `Période : ${periodeLabel}` : undefined)}><FileTextIcon className="h-4 w-4 mr-1" /> PDF</Button>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+      {rapportsList.map((r) => {
+        const rows = r.getRows();
+        return (
+          <Card key={r.key} className="border shadow-[var(--shadow-card)]">
+            <CardContent className="p-4 flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <p className="font-semibold">{r.titre}</p>
+                <p className="text-xs text-muted-foreground">{rows.length} ligne{rows.length > 1 ? "s" : ""}{r.filtered ? " · filtres appliqués" : ""}</p>
+              </div>
+              <ReportExportButtons
+                title={r.titre}
+                filename={r.key}
+                columns={r.columns}
+                getRows={() => rows}
+                ecole={ecole}
+                sousTitre={r.filtered ? sousTitre : undefined}
+              />
+            </CardContent>
+          </Card>
+        );
+      })}
 
       <Card className="border shadow-[var(--shadow-card)]">
         <CardContent className="p-4">
