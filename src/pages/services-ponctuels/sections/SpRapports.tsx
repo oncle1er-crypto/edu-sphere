@@ -118,14 +118,19 @@ export default function SpRapports() {
     download("recettes-services-ponctuels.csv", toCsv(rows));
   };
 
-  const exportPdf = () => {
+  const exportPdf = async () => {
     const doc = new jsPDF({ orientation: "landscape" });
+    const logo = await loadLogo(currentEcole?.logo_url);
+    drawHeader(doc, logo, currentEcole?.nom);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text(`Rapport — Services ponctuels${serviceId !== "all" ? ` — ${svcMap[serviceId]?.nom ?? ""}` : ""}`, 14, 15);
+    doc.text(`Rapport — Services ponctuels${serviceId !== "all" ? ` — ${svcMap[serviceId]?.nom ?? ""}` : ""}`, 14, 30);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     const periode = (from || to) ? `Période : ${from || "…"} au ${to || "…"}` : "Toutes périodes";
-    doc.text(periode, 14, 22);
-    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 28);
+    doc.text(periode, 14, 37);
+    doc.text(`Total recettes : ${fmt(totalRecettes)}`, 14, 43);
 
     autoTable(doc, {
       startY: 34,
