@@ -81,11 +81,12 @@ export default function VacancesEnseignants() {
               <TableHeader><TableRow>
                 <TableHead>Nom</TableHead><TableHead>Prénoms</TableHead><TableHead>Téléphone</TableHead>
                 <TableHead>Classe</TableHead><TableHead>Matière</TableHead>
+                <TableHead>Nb élèves</TableHead>
                 <TableHead>Prévu</TableHead><TableHead>Payé</TableHead><TableHead>Reste</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow></TableHeader>
               <TableBody>
-                {enseignants.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-6">Aucun maître.</TableCell></TableRow>}
+                {enseignants.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-6">Aucun maître.</TableCell></TableRow>}
                 {enseignants.map((e) => {
                   const paye = payePar[e.id] ?? 0;
                   const reste = Number(e.honoraire_prevu) - paye;
