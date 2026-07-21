@@ -14,6 +14,13 @@ export default function SpDashboard() {
   const { candidats } = useSpCandidats();
   const { paiements } = useSpPaiements();
   const { ventes } = useSpVentes();
+  const { services } = useSpServices();
+
+  const caissesParService = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const p of paiements) if (!p.annule_le) m[p.service_id] = (m[p.service_id] ?? 0) + Number(p.montant_paye || 0);
+    return services.map((s) => ({ id: s.id, nom: s.nom, total: m[s.id] ?? 0 }));
+  }, [paiements, services]);
 
   const stats = useMemo(() => {
     const today = startOfDay();
