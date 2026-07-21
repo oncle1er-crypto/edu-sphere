@@ -34,12 +34,16 @@ export default function FinanceDashboard() {
   }
 
   // === Scolarité stats ===
+  // NB : « couvert » = encaissement + remises/bourses/prises en charge.
+  // C'est ce montant qui éteint la dette de la famille, donc c'est lui qui
+  // sert au calcul du taux de recouvrement et du reste à recouvrer.
   const totalAttendu = ELEVES.reduce((s, e) => s + e.fraisAnnuel, 0);
   const totalPaye = ELEVES.reduce((s, e) => s + e.totalPaye, 0);
   const totalEncaisse = ELEVES.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
   const totalRemises = ELEVES.reduce((s, e) => s + (e.totalRemises ?? 0), 0);
-  const totalDu = totalAttendu - totalPaye;
-  const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalPaye / totalAttendu) * 100) : 0;
+  const totalCouvert = totalEncaisse + totalRemises;
+  const totalDu = ELEVES.reduce((s, e) => s + e.resteDu, 0);
+  const tauxRecouvrement = totalAttendu > 0 ? Math.round((totalCouvert / totalAttendu) * 100) : 0;
 
   const ajour = ELEVES.filter((e) => statutEleve(e) === "ajour").length;
   const partiel = ELEVES.filter((e) => statutEleve(e) === "partiel").length;
