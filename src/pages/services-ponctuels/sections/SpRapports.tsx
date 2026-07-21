@@ -14,7 +14,50 @@ import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpVentes } from "../hooks/useSpVentes";
 import { useEcoles } from "@/context/EcoleContext";
 
-const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
+// Formatage manuel (jsPDF Helvetica ne rend pas U+202F produit par Intl fr-FR)
+const fmt = (n: number) => {
+  const v = Math.round(n || 0);
+  const s = String(Math.abs(v)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return `${v < 0 ? "-" : ""}${s} FCFA`;
+};
+
+async function loadLogo(url?: string | null): Promise<{ dataUrl: string; w: number; h: number } | null> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    const blob = await res.blob();
+    const dataUrl: string = await new Promise((r, j) => {
+      const fr = new FileReader();
+      fr.onload = () => r(fr.result as string);
+      fr.onerror = j;
+      fr.readAsDataURL(blob);
+    });
+    const dims = await new Promise<{ w: number; h: number }>((r) => {
+      const img = new Image();
+      img.onload = () => r({ w: img.naturalWidth, h: img.naturalHeight });
+      img.onerror = () => r({ w: 1, h: 1 });
+      img.src = dataUrl;
+    });
+    return { dataUrl, w: dims.w, h: dims.h };
+  } catch {
+    return null;
+  }
+}
+
+function drawHeader(doc: jsPDF, logo: { dataUrl: string; w: number; h: number } | null, ecoleNom?: string) {
+  if (logo) {
+    const h = 14;
+    const w = (logo.w / (logo.h || 1)) * h;
+    try { doc.addImage(logo.dataUrl, "PNG", 14, 8, w, h); } catch { /* ignore */ }
+  }
+  if (ecoleNom) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.text(ecoleNom.toUpperCase(), doc.internal.pageSize.getWidth() - 14, 14, { align: "right" });
+    doc.setTextColor(0, 0, 0);
+  }
+}
 
 function toCsv(rows: (string | number)[][]) {
   return rows.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
