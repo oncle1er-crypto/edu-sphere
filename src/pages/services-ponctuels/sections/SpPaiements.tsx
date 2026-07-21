@@ -32,14 +32,18 @@ export default function SpPaiements() {
     );
   }, [paiements, q, svcMap]);
 
-  const printReceipt = (p: SpPaiement, correction = false) => {
+  const printReceipt = async (p: SpPaiement, correction = false) => {
     const svc = svcMap[p.service_id];
-    generateSpReceipt({
+    const e: any = currentEcole ?? {};
+    await generateSpReceipt({
       numero: p.numero,
       date: new Date(p.date_paiement).toLocaleString("fr-FR"),
-      ecoleNom: currentEcole?.nom ?? "",
-      ecoleAdresse: currentEcole?.adresse,
-      ecoleTelephone: currentEcole?.telephone,
+      ecoleNom: e.nom ?? "",
+      ecoleSigle: e.sigle,
+      ecoleAdresse: e.adresse,
+      ecoleTelephone: e.telephone,
+      ecoleEmail: e.email,
+      logoUrl: e.logo_url,
       service: svc?.nom ?? "—",
       beneficiaire: p.beneficiaire_libre ?? "—",
       montantDu: Number(p.montant_du),
