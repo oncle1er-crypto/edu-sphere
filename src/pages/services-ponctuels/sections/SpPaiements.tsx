@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle } from "lucide-react";
+import { Plus, Printer, XCircle, Trash2 } from "lucide-react";
 import { useSpPaiements, type SpPaiement } from "../hooks/useSpPaiements";
 import { useSpServices } from "../hooks/useSpServices";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
@@ -15,7 +15,7 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
 
 export default function SpPaiements() {
-  const { paiements, loading, annuler } = useSpPaiements();
+  const { paiements, loading, annuler, supprimer } = useSpPaiements();
   const { services } = useSpServices();
   const ecole = useEcoleInfo();
   const { isAdmin } = useIsAdmin();
@@ -100,6 +100,13 @@ export default function SpPaiements() {
                             <Button size="icon" variant="ghost" onClick={async () => {
                               const m = prompt("Motif d'annulation ?"); if (m && m.length >= 3) await annuler(p.id, m);
                             }} title="Annuler"><XCircle className="h-4 w-4 text-destructive" /></Button>
+                          )}
+                          {isAdmin && (
+                            <Button size="icon" variant="ghost" onClick={async () => {
+                              if (confirm(`Supprimer définitivement le paiement ${p.numero} ?\n\nCe montant disparaîtra des caisses et recettes. Action irréversible.`)) {
+                                await supprimer(p.id);
+                              }
+                            }} title="Supprimer définitivement"><Trash2 className="h-4 w-4 text-destructive" /></Button>
                           )}
                         </div>
                       </TableCell>

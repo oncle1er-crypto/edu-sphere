@@ -73,11 +73,9 @@ export function useSpVentes() {
   };
 
   const annuler = async (id: string, motif: string) => {
-    const { error } = await (supabase as any).from("sp_ventes_tenues")
-      .update({ statut: "annule", annule_le: new Date().toISOString(), motif_annulation: motif })
-      .eq("id", id);
+    const { error } = await (supabase as any).rpc("sp_annuler_vente", { _vente_id: id, _motif: motif });
     if (error) return toast.error(error.message);
-    toast.success("Vente annulée");
+    toast.success("Vente et paiement associés annulés");
     await load();
   };
 
