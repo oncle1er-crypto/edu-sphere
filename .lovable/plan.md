@@ -1,82 +1,35 @@
+## Objectif
+Calculer automatiquement les honoraires prévus de chaque maître = **500 FCFA × nombre d'élèves inscrits dans sa classe affectée**, mis à jour en temps réel à chaque inscription/désinscription/changement de classe. Le solde restant va à l'école.
 
-## Contexte
+## Approche
+Rendre `vacances_enseignants.honoraire_prevu` **calculé automatiquement** côté base de données via un trigger, plutôt que saisi manuellement. Un paramètre `tarif_par_eleve` (défaut 500 FCFA) est stocké par école pour permettre un ajustement futur.
 
-Sur le module **Services ponctuels**, trois problèmes / demandes :
+## Détails techniques
 
-1. Chaque service (test d'entrée, tenue, autres) doit avoir sa **caisse dédiée** et ses **rapports imprimables séparément**.
-2. Les **tenues** doivent être suivies par **classe** avec ventilation **Fille / Garçon** ; la vente doit dérouler un workflow : classe → stock F/G affiché → recherche élève → paiement.
-3. Reçus PDF : le **logo ne s'affiche pas** et les montants contiennent des **caractères parasites** (petites cases) dans l'affichage.
+### 1. Migration SQL
+- Ajouter une colonne `tarif_honoraire_par_eleve` (integer, défaut 500) sur `ecoles` (ou table de config vacances) pour paramétrer le tarif.
+- Créer fonction `recalculer_honoraires_vacances(p_classe_id uuid)` qui met à jour `honoraire_prevu` de tous les enseignants affectés à cette classe :
+  `honoraire_prevu = COUNT(vacances_eleves de la classe) × tarif`.
+- Créer trigger `trg_vac_eleves_honoraires` sur `vacances_eleves` (AFTER INSERT/UPDATE OF classe_id/DELETE) qui appelle la fonction pour la classe concernée (ancienne + nouvelle sur UPDATE).
+- Créer trigger `trg_vac_enseignants_honoraires` sur `vacances_enseignants` (AFTER INSERT/UPDATE OF classe_id) qui recalcule pour l'enseignant nouvellement affecté.
+- Recalcul initial : exécuter la fonction pour toutes les classes existantes.
 
-## Diagnostic des reçus (confirmé par lecture des fichiers)
+### 2. UI — `VacancesEnseignants.tsx`
+- Retirer la saisie manuelle de `honoraire_prevu` du formulaire (ou passer en lecture seule avec message : « Calculé automatiquement : 500 FCFA × nb élèves »).
+- Ajouter une colonne « Nb élèves » dans le tableau des maîtres (dérivée du contexte `eleves` déjà chargé).
 
-- `SpVentesTenues.tsx` et `SpTestWorkflow`/`SpPaiements` lisent `currentEcole.logo_url` et `.sigle`, mais `EcoleContext` ne les expose PAS (colonnes non sélectionnées). D'où `logoUrl: undefined` → logo absent.
-- `generateSpReceipt.fmt()` utilise `Intl.NumberFormat("fr-FR")` qui insère des **espaces fines insécables (U+202F)** entre milliers ; Helvetica de jsPDF ne les rend pas → cases noires visibles à l'écran.
+### 3. UI — `VacancesHonoraires.tsx`
+- Afficher un bandeau informatif : « Tarif : 500 FCFA / élève inscrit. Part école = montant scolarité − honoraires versés. »
+- La colonne « Prévu » reflète automatiquement le calcul.
 
-## Plan de correction
+### 4. Paramétrage (optionnel léger)
+- Dans `VacancesLayout` ou onglet Classes, ajouter un petit champ « Tarif par élève » lisant/écrivant `ecoles.tarif_honoraire_par_eleve` (accessible admin uniquement).
 
-### 1. Fix reçus (immédiat, s'applique à tous les services)
-
-- `src/pages/services-ponctuels/lib/generateSpReceipt.ts` :
-  - Remplacer `fmt` par un formatage manuel utilisant un **espace normal** (`Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " FCFA"`).
-  - Charger le logo via `loadImage` (déjà en place) — l'appelant doit fournir `logoUrl`.
-- Créer un helper `useEcoleFull()` (ou étendre `EcoleContext`) qui garantit la présence de `logo_url` + `sigle` en interrogeant `ecoles` si absents. Simple : ajouter `logo_url` et `sigle` à la sélection dans `EcoleContext.tsx` (mapping ligne 50-52 + type `Ecole`).
-- Vérifier les 3 appelants (`SpVentesTenues`, `SpPaiements`, `SpTestWorkflow`) : ils passent déjà `e.logo_url` → sera automatiquement corrigé une fois le contexte enrichi.
-
-### 2. Caisse par service + rapports séparés
-
-- Le champ `service_id` existe déjà sur `sp_paiements` ; pas de migration nécessaire.
-- Refonte de `src/pages/services-ponctuels/sections/SpRapports.tsx` :
-  - Ajouter un **sélecteur de service** (Tous / service X) au-dessus des filtres période.
-  - Filtrer paiements + ventes selon le service choisi.
-  - Ajouter un bouton **« Rapport de caisse » par service** dans une nouvelle carte listant chaque service actif avec son total encaissé et 2 boutons (PDF / CSV) — chaque export produit un rapport dédié au service (en-tête, période, table détaillée, totaux par mode de paiement).
-- Étendre `SpDashboard` : afficher les **totaux par caisse** (une tuile par service).
-
-### 3. Stock tenues par classe + genre + workflow de vente
-
-**Migration SQL** :
-
-- Nouvelle table `public.sp_stock_tenues` :
-  - `id`, `ecole_id`, `classe_id` (FK `classes`), `genre` ('F'|'G'), `stock_actuel int`, `seuil_alerte int default 5`, `prix_unitaire numeric` (optionnel — override du service), timestamps.
-  - Unicité `(ecole_id, classe_id, genre)`.
-  - GRANT authenticated + service_role, RLS : `ecole_id = current_ecole` + rôles admin/directeur/comptable/secrétaire pour écrire.
-- Ajouter à `sp_ventes_tenues` : `classe_id uuid` et `genre text check (genre in ('F','G'))`.
-- Trigger de stock : mettre à jour `sp_stock_tenues.stock_actuel -= quantite` à l'insertion d'une vente (statut `paye`/`remis`), et l'inverse à l'annulation. Remplace le trigger actuel qui décrémente `sp_services.stock_actuel`.
-
-**Hook** :
-
-- `useSpStockTenues.ts` : CRUD + realtime (via même pattern qu'existant).
-
-**Paramètres** :
-
-- Ajouter section « Stock tenues par classe » dans `SpParametres.tsx` : tableau éditable (classe × genre) permettant d'ajuster stock/seuil/prix.
-
-**Workflow de vente refondu (`VenteTenueDialog.tsx`)** :
-
-```text
-Étape 1 : Sélection classe   → dropdown des classes
-          [affiche stock F : n | stock G : m]
-Étape 2 : Genre + recherche élève
-          → Select genre (auto-filtre les élèves de la classe)
-          → SearchCombobox élève (nom/matricule) parmi les élèves de la classe/genre
-          → Alternative : "Acheteur libre" (texte)
-Étape 3 : Quantité + prix (pré-rempli depuis stock ou service)
-          → contrôle stock disponible pour classe+genre
-          → mode de paiement + statut
-Étape 4 : Validation → insert vente (avec eleve_id/classe_id/genre) → reçu PDF
-```
-
-- Mettre à jour `useSpVentes.save()` pour accepter `classe_id`, `genre`, `eleve_id`.
+### 5. Realtime
+Le hook `useVacancesData` recharge déjà après chaque `save`/`remove`. Les honoraires prévus seront donc à jour dès qu'une inscription est créée via l'app. Aucun changement de hook nécessaire.
 
 ## Fichiers touchés
-
-- **Backend** : 1 migration (table `sp_stock_tenues`, colonnes sur `sp_ventes_tenues`, nouveau trigger).
-- **Contexte** : `src/context/EcoleContext.tsx` (ajout `logo_url`, `sigle`).
-- **Reçus** : `src/pages/services-ponctuels/lib/generateSpReceipt.ts` (fix `fmt`).
-- **Hooks** : nouveau `useSpStockTenues.ts` ; extension `useSpVentes.ts`.
-- **UI** : `VenteTenueDialog.tsx` (refonte workflow), `SpRapports.tsx` (filtre + rapports par service), `SpParametres.tsx` (section stock tenues), `SpDashboard.tsx` (tuiles caisses), `SpVentesTenues.tsx` (colonnes classe/genre).
-
-## Hors-scope
-
-- Pas de refonte visuelle du reçu (déjà validée précédemment).
-- Pas de multi-genre au-delà de F/G.
-- Le stock reste géré manuellement (pas de commandes fournisseurs).
+- Migration SQL (nouveau)
+- `src/pages/cours-vacances/sections/VacancesEnseignants.tsx`
+- `src/pages/cours-vacances/sections/VacancesHonoraires.tsx`
+- (optionnel) `src/pages/cours-vacances/sections/VacancesClasses.tsx` pour paramétrer le tarif
