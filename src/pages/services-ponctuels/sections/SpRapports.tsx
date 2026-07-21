@@ -117,13 +117,17 @@ export default function SpRapports() {
   const totalRecettes = paiementsFiltres.reduce((s, p) => s + Number(p.montant_paye), 0)
     + (serviceId === "all" ? ventesFiltrees.reduce((s, v) => s + Number(v.montant_total), 0) : 0);
 
-  const exportRecettes = () => {
+  const buildRecettesRows = (): (string | number)[][] => {
     const rows: (string | number)[][] = [["N°", "Date", "Service", "Bénéficiaire", "Montant", "Mode"]];
     for (const p of paiementsFiltres) {
       rows.push([p.numero, new Date(p.date_paiement).toLocaleString("fr-FR"), svcMap[p.service_id]?.nom ?? "", p.beneficiaire_libre ?? "", p.montant_paye, p.mode_paiement]);
     }
-    download("recettes-services-ponctuels.csv", toCsv(rows));
+    return rows;
   };
+
+  const exportRecettes = () => download("recettes-services-ponctuels.csv", toCsv(buildRecettesRows()));
+  const exportRecettesXlsx = () => downloadXlsx("recettes-services-ponctuels.xlsx", buildRecettesRows());
+
 
   const exportPdf = async () => {
     const doc = new jsPDF({ orientation: "landscape" });
