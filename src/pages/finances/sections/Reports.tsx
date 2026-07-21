@@ -500,9 +500,15 @@ export default function Reports() {
             <DialogTitle>{REPORTS.find((r) => r.id === preview)?.title}</DialogTitle>
           </DialogHeader>
           {renderPreview()}
-          <div className="flex justify-end pt-4 border-t">
+          <div className="flex flex-wrap justify-end gap-2 pt-4 border-t">
+            <Button variant="outline" onClick={() => preview && handleDownloadCsv(preview)} className="gap-2">
+              <Download className="h-4 w-4" />CSV
+            </Button>
+            <Button variant="outline" onClick={() => preview && handleDownloadXlsx(preview)} className="gap-2">
+              <FileSpreadsheet className="h-4 w-4" />Excel
+            </Button>
             <Button onClick={() => preview && handleDownload(preview)} className="gap-2">
-              <Download className="h-4 w-4" />Télécharger PDF
+              <FileText className="h-4 w-4" />PDF
             </Button>
           </div>
         </DialogContent>
