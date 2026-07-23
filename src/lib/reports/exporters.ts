@@ -172,26 +172,7 @@ export async function exportRowsPDF(p: ExportPayload) {
     },
   });
 
-  autoTable(doc, {
-    head: [p.columns],
-    body: p.rows.map((r) => r.map((v) => (v == null ? "" : String(v)))),
-    startY: cursorY + 2,
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [110, 26, 44], textColor: 255 },
-    didDrawPage: () => {
-      const pageCount = doc.getNumberOfPages();
-      const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
-      doc.setFontSize(8);
-      doc.setTextColor(120, 120, 120);
-      doc.text(
-        `Page ${current} / ${pageCount}`,
-        pageW - 14,
-        doc.internal.pageSize.getHeight() - 6,
-        { align: "right" },
-      );
-      doc.setTextColor(0, 0, 0);
-    },
-  });
+
 
   // ---------- Résumé & Total mis en valeur ----------
   if (p.pdfSummary && (p.pdfSummary.modes?.length || p.pdfSummary.grandTotal != null)) {
