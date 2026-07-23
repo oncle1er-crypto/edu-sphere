@@ -201,9 +201,14 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
             </div>
             <p className="text-sm">Total : <strong>{(qte * prix).toLocaleString("fr-FR")} FCFA</strong></p>
             {stockCourant && (
-              <p className={`text-xs ${qte > stockDispo ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                Stock disponible : {stockDispo} tenue(s){qte > stockDispo ? " — insuffisant !" : ""}
+              <p className={`text-xs ${enRupture ? "text-orange-600 font-semibold" : "text-muted-foreground"}`}>
+                Stock disponible : {stockDispo} tenue(s){enRupture ? ` — insuffisant. La vente sera enregistrée en RÉSERVATION et la tenue sera remise dès réapprovisionnement.` : ""}
               </p>
+            )}
+            {enRupture && (
+              <div className="rounded-md border border-orange-300 bg-orange-50 p-2 text-xs text-orange-800">
+                ⚠️ Rupture de stock — statut forcé sur <strong>réservation</strong>. Le stock ne sera pas décrémenté maintenant. Un bouton « Valider retrait » apparaîtra dans la liste des ventes une fois le stock réapprovisionné.
+              </div>
             )}
             <div className="grid grid-cols-2 gap-2">
               <div>
