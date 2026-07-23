@@ -3,23 +3,38 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle } from "lucide-react";
+import { Plus, Printer, XCircle, PackageCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useSpVentes } from "../hooks/useSpVentes";
+import { useSpStockTenues } from "../hooks/useSpStockTenues";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoleInfo } from "../hooks/useEcoleInfo";
 import { useClasses } from "@/hooks/useClasses";
 
 const STATUT_COLOR: Record<string, string> = {
-  paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", annule: "bg-destructive",
+  paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", reservation: "bg-amber-500", annule: "bg-destructive",
 };
 
 export default function SpVentesTenues() {
-  const { ventes, loading, annuler } = useSpVentes();
+  const { ventes, loading, annuler, save } = useSpVentes();
+  const { findFor } = useSpStockTenues();
   const ecole = useEcoleInfo();
   const { classes } = useClasses();
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
+
+  const validerRetrait = async (v: (typeof ventes)[0]) => {
+    if (!v.classe_id || !v.genre) return;
+    const stock = findFor(v.classe_id, v.genre as "F" | "G");
+    const dispo = stock?.stock_actuel ?? 0;
+    if (dispo < v.quantite) {
+      return toast.error(`Stock encore insuffisant : ${dispo} tenue(s) disponible(s), ${v.quantite} demandée(s).`);
+    }
+    await save({ id: v.id, statut: "remis" } as any);
+  };
+
+
 
   const reprint = async (v: (typeof ventes)[0]) => {
     const e = ecole ?? {} as any;
@@ -80,6 +95,11 @@ export default function SpVentesTenues() {
                     <TableCell><Badge className={STATUT_COLOR[v.statut]}>{v.statut}</Badge></TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        {v.statut === "reservation" && (
+                          <Button size="sm" variant="default" className="h-8" onClick={() => validerRetrait(v)} title="Valider le retrait">
+                            <PackageCheck className="h-4 w-4 mr-1" /> Retrait
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => reprint(v)} title="Reçu"><Printer className="h-4 w-4" /></Button>
                         {v.statut !== "annule" && (
                           <Button size="icon" variant="ghost" onClick={async () => {

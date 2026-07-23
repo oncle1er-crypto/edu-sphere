@@ -7375,7 +7375,7 @@ export type Database = {
         | "moov_money"
         | "virement"
         | "cheque"
-      sp_vente_statut: "paye" | "remis" | "attente" | "annule"
+      sp_vente_statut: "paye" | "remis" | "attente" | "annule" | "reservation"
       tranche_statut: "payee" | "partielle" | "due" | "retard"
     }
     CompositeTypes: {
@@ -7568,7 +7568,7 @@ export const Constants = {
         "virement",
         "cheque",
       ],
-      sp_vente_statut: ["paye", "remis", "attente", "annule"],
+      sp_vente_statut: ["paye", "remis", "attente", "annule", "reservation"],
       tranche_statut: ["payee", "partielle", "due", "retard"],
     },
   },

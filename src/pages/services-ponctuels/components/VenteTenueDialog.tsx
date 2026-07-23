@@ -14,7 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
-const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "annule"];
+const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "reservation", "annule"];
 
 interface Props {
   open: boolean;
@@ -64,11 +64,22 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const stockG = classeId ? findFor(classeId, "G") : null;
   const stockCourant = genre ? findFor(classeId, genre) : null;
   const stockDispo = stockCourant?.stock_actuel ?? 0;
+  const enRupture = qte > stockDispo;
 
   useEffect(() => {
     if (stockCourant?.prix_unitaire) setPrix(Number(stockCourant.prix_unitaire));
     else if (tenueService?.prix) setPrix(Number(tenueService.prix));
   }, [stockCourant, tenueService]);
+
+  // Bascule automatique en réservation dès qu'il y a rupture
+  useEffect(() => {
+    if (enRupture && statut !== "reservation" && statut !== "annule") {
+      setStatut("reservation");
+    } else if (!enRupture && statut === "reservation") {
+      setStatut("paye");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enRupture]);
 
   const elevesFiltres = useMemo(() => {
     if (!classeId) return [];
@@ -89,10 +100,8 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
 
   const submit = async () => {
     if (!canValidate) return;
-    if (stockCourant && qte > stockDispo) {
-      const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "";
-      return toast.error(`Stock insuffisant : ${stockDispo} tenue(s) disponible(s) pour ${genre === "F" ? "Fille" : "Garçon"} en ${classeNom}`);
-    }
+    // Rupture ⇒ on force la réservation (pas de blocage)
+    const finalStatut: SpVenteStatut = enRupture && statut !== "annule" ? "reservation" : statut;
     setSaving(true);
     const eleve = eleves.find((e: any) => e.id === eleveId);
     const nomAff = eleve ? `${eleve.nom} ${eleve.prenom}` : acheteurLibre;
@@ -106,7 +115,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
       prix_unitaire: prix,
       montant_total: qte * prix,
       mode_paiement: mode,
-      statut,
+      statut: finalStatut,
       observations: obs || null,
     } as any);
     setSaving(false);
@@ -192,9 +201,14 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
             </div>
             <p className="text-sm">Total : <strong>{(qte * prix).toLocaleString("fr-FR")} FCFA</strong></p>
             {stockCourant && (
-              <p className={`text-xs ${qte > stockDispo ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
-                Stock disponible : {stockDispo} tenue(s){qte > stockDispo ? " — insuffisant !" : ""}
+              <p className={`text-xs ${enRupture ? "text-orange-600 font-semibold" : "text-muted-foreground"}`}>
+                Stock disponible : {stockDispo} tenue(s){enRupture ? ` — insuffisant. La vente sera enregistrée en RÉSERVATION et la tenue sera remise dès réapprovisionnement.` : ""}
               </p>
+            )}
+            {enRupture && (
+              <div className="rounded-md border border-orange-300 bg-orange-50 p-2 text-xs text-orange-800">
+                ⚠️ Rupture de stock — statut forcé sur <strong>réservation</strong>. Le stock ne sera pas décrémenté maintenant. Un bouton « Valider retrait » apparaîtra dans la liste des ventes une fois le stock réapprovisionné.
+              </div>
             )}
             <div className="grid grid-cols-2 gap-2">
               <div>
