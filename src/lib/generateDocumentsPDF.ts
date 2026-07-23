@@ -30,6 +30,14 @@ export interface RecuData {
   souche?: boolean;
   /** Masquer la ligne « Versement reçu / Dont ce versement » (ex: réimpression). */
   hideVersementLine?: boolean;
+  /** Sous-titre personnalisé (ex: « Reçu Cantine ») remplaçant le libellé par défaut. */
+  subtitleOverride?: string;
+  /** Titre principal personnalisé (ex: « REÇU CANTINE »). */
+  titleOverride?: string;
+  /** Période couverte par le paiement (ex: « Octobre 2025 » ou « Trimestre 1 »). */
+  periode?: string;
+  /** Date d'échéance de la facture (ISO). */
+  date_echeance?: string;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
@@ -121,15 +129,17 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       annulation:       { title: "REÇU DE CORRECTION",    subtitle: "Annulation / Remboursement" },
     };
     const typeInfo = TYPE_LABEL[data.type ?? "encaissement"] ?? TYPE_LABEL.encaissement;
+    const finalTitle = data.titleOverride ?? typeInfo.title;
+    const finalSubtitle = data.subtitleOverride ?? typeInfo.subtitle;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
-    doc.text(`${label.toUpperCase()} • ${typeInfo.subtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
+    doc.text(`${label.toUpperCase()} • ${finalSubtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
     doc.setFont("times", "bold");
     doc.setFontSize(13);
-    doc.setTextColor(...ink);
-    doc.text(typeInfo.title, W - M, y + 9, { align: "right" });
+    doc.setTextColor(...primary);
+    doc.text(finalTitle, W - M, y + 9, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
@@ -175,8 +185,16 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       (data.mode || "").replace(/_/g, " ").toUpperCase(), M, y + 24);
     drawField(isRemise ? "Accordée par" : "Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
 
+    // Row 4 — Période & échéance (cantine/transport)
+    let extraRow = 0;
+    if (data.periode || data.date_echeance) {
+      drawField("Période concernée", data.periode || "—", M, y + 36);
+      drawField("Échéance", data.date_echeance ? formatDateLong(data.date_echeance) : "—", M + colW, y + 36);
+      extraRow = 12;
+    }
+
     // ── Amount line ──
-    y += 36;
+    y += 36 + extraRow;
     doc.setDrawColor(...line);
     doc.setLineWidth(0.3);
     doc.line(M, y, W - M, y);
