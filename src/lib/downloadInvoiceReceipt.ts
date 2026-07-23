@@ -131,7 +131,9 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       titleOverride,
       subtitleOverride,
       periode: isService ? periode : undefined,
-      date_echeance: isService ? (facture as any).date_echeance ?? undefined : undefined,
+      date_echeance: isService
+        ? (datePaiement ?? new Date().toISOString().slice(0, 10))
+        : undefined,
     });
 
     const prefix = annulation ? "annulation" : "recu";
