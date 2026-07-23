@@ -59,8 +59,27 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       : facture.categorie === "scolarite" ? "Scolarité"
       : String(facture.categorie ?? "Divers");
 
+    // Période : extrait du libellé après « — » (RPC generer_factures_service)
+    const rawLibelle = String(facture.libelle ?? "");
+    const periode = rawLibelle.includes("—")
+      ? rawLibelle.split("—").slice(1).join("—").trim()
+      : rawLibelle;
+
+    const isService = facture.categorie === "cantine" || facture.categorie === "transport";
+    const titleOverride = annulation
+      ? undefined
+      : isService
+        ? `REÇU ${catLabel.toUpperCase()}`
+        : undefined;
+    const subtitleOverride = annulation
+      ? undefined
+      : isService
+        ? `Encaissement ${catLabel.toLowerCase()}`
+        : undefined;
+
     const motifLine = annulation
-      ? `ANNULATION — ${catLabel} — ${facture.libelle} (Facture ${facture.numero})${motifAnnulation ? ` · Motif : ${motifAnnulation}` : ""}`
+      ? `ANNULATION — ${catLabel} — ${facture.libelle} (Facture ${facture.numero})`
+        + (motifAnnulation ? ` · Motif : ${motifAnnulation}` : "")
       : `${catLabel} — ${facture.libelle} (Facture ${facture.numero})`;
 
     const pdf = await generateRecuPDF({
@@ -91,6 +110,10 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       type: annulation ? "annulation" : "encaissement",
       motif: motifLine,
       souche,
+      titleOverride,
+      subtitleOverride,
+      periode: isService ? periode : undefined,
+      date_echeance: isService ? (facture as any).date_echeance ?? undefined : undefined,
     });
 
     const prefix = annulation ? "annulation" : "recu";
