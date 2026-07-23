@@ -3,15 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle } from "lucide-react";
+import { Plus, Printer, XCircle, PackageCheck } from "lucide-react";
+import { toast } from "sonner";
 import { useSpVentes } from "../hooks/useSpVentes";
+import { useSpStockTenues } from "../hooks/useSpStockTenues";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoleInfo } from "../hooks/useEcoleInfo";
 import { useClasses } from "@/hooks/useClasses";
 
 const STATUT_COLOR: Record<string, string> = {
-  paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", annule: "bg-destructive",
+  paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", reservation: "bg-amber-500", annule: "bg-destructive",
 };
 
 export default function SpVentesTenues() {
