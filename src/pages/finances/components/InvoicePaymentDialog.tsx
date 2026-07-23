@@ -90,6 +90,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         montant: montantNum,
         reference: reference || (typeof paiementId === "string" ? `REC-${paiementId.slice(0, 8).toUpperCase()}` : null),
         mode: moyen,
+        datePaiement,
       });
 
       onOpenChange(false);
