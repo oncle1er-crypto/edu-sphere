@@ -48,6 +48,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   const [montant, setMontant] = useState("");
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
+  const [datePaiement, setDatePaiement] = useState(new Date().toISOString().slice(0, 10));
 
   const restant = facture ? Math.max(0, facture.montant - facture.montant_paye) : 0;
   const montantNum = Number(montant) || 0;
@@ -59,6 +60,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
     setMontant(String(restant));
     setMoyen("especes");
     setReference("");
+    setDatePaiement(new Date().toISOString().slice(0, 10));
   }, [open, facture, restant]);
 
   if (!facture) return null;
@@ -88,6 +90,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         montant: montantNum,
         reference: reference || (typeof paiementId === "string" ? `REC-${paiementId.slice(0, 8).toUpperCase()}` : null),
         mode: moyen,
+        datePaiement,
       });
 
       onOpenChange(false);
@@ -145,8 +148,13 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
             <div className="space-y-1.5">
               <Label className="text-xs">Référence</Label>
               <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date du paiement (échéance sur le reçu)</Label>
+            <Input type="date" value={datePaiement} onChange={(e) => setDatePaiement(e.target.value)} />
+          </div>
+        </div>
         </div>
 
         <DialogFooter>
