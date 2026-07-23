@@ -40,6 +40,10 @@ export default function SpPointCaisse() {
   const candidatsMap = useMemo(() => Object.fromEntries(candidats.map((c) => [c.id, c])), [candidats]);
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const testServiceId = useMemo(() => services.find((s) => s.slug === "test_entree")?.id, [services]);
+  const tenueServiceIds = useMemo(
+    () => new Set(services.filter((s) => s.slug === "tenue" || s.gere_stock === true).map((s) => s.id)),
+    [services],
+  );
 
   const inRange = (iso: string | null | undefined) => {
     if (!iso) return false;
@@ -61,22 +65,21 @@ export default function SpPointCaisse() {
     .map((p) => {
       const svc = servicesMap[p.service_id];
       const isTest = svc?.slug === "test_entree" || (testServiceId && p.service_id === testServiceId);
+      const isTenue = tenueServiceIds.has(p.service_id);
       const cand = p.candidat_id ? candidatsMap[p.candidat_id] : null;
       return {
         id: p.id,
         date: p.date_paiement,
         numero: p.numero,
-        type: isTest ? "test" : "service",
+        type: isTest ? "test" : isTenue ? "tenue" : "service",
         libelle: svc?.nom ?? "Service",
         beneficiaire: p.beneficiaire_libre ?? (cand ? `${cand.nom} ${cand.prenom}` : "—"),
         classe: cand?.classe_demandee ?? "—",
         mode: p.mode_paiement,
-        montant: Number(p.montant_paye) - Number(p.remise ?? 0) > 0
-          ? Number(p.montant_paye)
-          : Number(p.montant_paye),
+        montant: Number(p.montant_paye),
         statut: "Encaissé",
       } as Ligne;
-    }), [paiements, servicesMap, candidatsMap, testServiceId, from, to]);
+    }), [paiements, servicesMap, candidatsMap, testServiceId, tenueServiceIds, from, to]);
 
   const lignesVentes: Ligne[] = useMemo(() => ventes
     .filter((v) => v.statut !== "annule" && inRange(v.created_at))
@@ -96,7 +99,7 @@ export default function SpPointCaisse() {
   const filtered = useMemo(() => {
     let base: Ligne[] = [];
     if (scope === "tests") base = lignesPaiements.filter((l) => l.type === "test");
-    else if (scope === "tenues") base = lignesVentes;
+    else if (scope === "tenues") base = [...lignesVentes, ...lignesPaiements.filter((l) => l.type === "tenue")];
     else base = [...lignesPaiements, ...lignesVentes];
     return base.sort((a, b) => (a.date < b.date ? -1 : 1));
   }, [scope, lignesPaiements, lignesVentes]);

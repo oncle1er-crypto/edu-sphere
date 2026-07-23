@@ -5813,6 +5813,73 @@ export type Database = {
           },
         ]
       }
+      sp_stock_tenues_mouvements: {
+        Row: {
+          classe_id: string
+          created_at: string
+          ecole_id: string
+          genre: string
+          id: string
+          motif: string | null
+          quantite: number
+          stock_apres: number | null
+          stock_avant: number | null
+          type: string
+          user_id: string | null
+          vente_id: string | null
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          ecole_id: string
+          genre: string
+          id?: string
+          motif?: string | null
+          quantite: number
+          stock_apres?: number | null
+          stock_avant?: number | null
+          type: string
+          user_id?: string | null
+          vente_id?: string | null
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          ecole_id?: string
+          genre?: string
+          id?: string
+          motif?: string | null
+          quantite?: number
+          stock_apres?: number | null
+          stock_avant?: number | null
+          type?: string
+          user_id?: string | null
+          vente_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "sp_ventes_tenues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sp_test_sessions: {
         Row: {
           actif: boolean

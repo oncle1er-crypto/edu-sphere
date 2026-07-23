@@ -12,6 +12,7 @@ import { useSpServices } from "../hooks/useSpServices";
 import { useSpStockTenues, type SpGenre } from "../hooks/useSpStockTenues";
 import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
+import { useAnneeId } from "@/hooks/useAnneeId";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
 const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "reservation", "annule"];
@@ -34,7 +35,18 @@ function eleveGenre(sexe?: string | null): SpGenre | null {
 export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const { save } = useSpVentes();
   const { services } = useSpServices();
-  const { classes } = useClasses();
+  const { anneeId } = useAnneeId();
+  const { classes: classesAll } = useClasses(anneeId ?? undefined);
+  // Dédoublonnage défensif si aucune année active n'est trouvée
+  const classes = useMemo(() => {
+    const seen = new Set<string>();
+    return classesAll.filter((c: any) => {
+      const k = (c.nom ?? "").trim().toLowerCase();
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [classesAll]);
   const { eleves } = useEleves();
   const { findFor } = useSpStockTenues();
 
