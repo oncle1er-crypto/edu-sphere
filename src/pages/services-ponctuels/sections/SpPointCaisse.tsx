@@ -14,7 +14,7 @@ import { useSpServices } from "../hooks/useSpServices";
 import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useClasses } from "@/hooks/useClasses";
 
-const fmt = (n: number) => `${Math.round(n || 0).toLocaleString("fr-FR")} FCFA`;
+const fmt = (n: number) => `${Math.round(n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ")} FCFA`;
 const today = () => new Date().toISOString().slice(0, 10);
 
 const MODE_LABEL: Record<string, string> = {
@@ -175,6 +175,16 @@ export default function SpPointCaisse() {
           sousTitre={sousTitre}
           orientation="landscape"
           disabled={loading || filtered.length === 0}
+          pdfSummary={{
+            modes: Object.entries(parMode).map(([k, v]) => ({
+              label: MODE_LABEL[k] ?? k,
+              count: v.count,
+              total: v.total,
+            })),
+            grandTotal: total,
+            grandTotalLabel: `TOTAL ENCAISSÉ — ${scopeLabel.toUpperCase()}`,
+            operationsCount: filtered.length,
+          }}
         />
       </div>
 
