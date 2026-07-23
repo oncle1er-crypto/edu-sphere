@@ -106,8 +106,9 @@ export default function Reports() {
 
   // ── Data builders ──
   const getCompteResultat = (): CompteResultatData => {
-    const recouv = buildRecouvrementData(financeData);
-    const totalScolarite = recouv.lignes.reduce((s, l) => s + l.montant_paye, 0);
+    // Recettes = cash uniquement. Les remises/bourses ne sont pas des encaissements
+    // et ne doivent pas gonfler le résultat net.
+    const totalScolarite = financeData.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
     const recettes = [{ libelle: "Scolarité encaissée", montant: totalScolarite }];
 
     const catMap = new Map<string, number>();
