@@ -60,6 +60,7 @@ const CanteenDiets = lazy(() => import("@/pages/cantine/sections/CanteenDiets"))
 const CanteenTeam = lazy(() => import("@/pages/cantine/sections/CanteenTeam"));
 const CanteenSubscribers = lazy(() => import("@/pages/cantine/sections/CanteenSubscribers"));
 const CanteenBilling = lazy(() => import("@/pages/cantine/sections/CanteenBilling"));
+const CanteenPointCaisse = lazy(() => import("@/pages/cantine/sections/CanteenPointCaisse"));
 const CanteenStock = lazy(() => import("@/pages/cantine/sections/CanteenStock"));
 const CanteenIncidents = lazy(() => import("@/pages/cantine/sections/CanteenIncidents"));
 const CanteenStats = lazy(() => import("@/pages/cantine/sections/CanteenStats"));
@@ -74,6 +75,7 @@ const TransportMaintenance = lazy(() => import("@/pages/transport/sections/Trans
 const TransportFuel = lazy(() => import("@/pages/transport/sections/TransportFuel"));
 const TransportSubscribers = lazy(() => import("@/pages/transport/sections/TransportSubscribers"));
 const TransportBilling = lazy(() => import("@/pages/transport/sections/TransportBilling"));
+const TransportPointCaisse = lazy(() => import("@/pages/transport/sections/TransportPointCaisse"));
 const TransportIncidents = lazy(() => import("@/pages/transport/sections/TransportIncidents"));
 const TransportAlerts = lazy(() => import("@/pages/transport/sections/TransportAlerts"));
 const TransportStats = lazy(() => import("@/pages/transport/sections/TransportStats"));
@@ -437,6 +439,7 @@ const App = () => (
               <Route path="cuisine" element={<CanteenTeam />} />
               <Route path="abonnes" element={<CanteenSubscribers />} />
               <Route path="facturation" element={<CanteenBilling />} />
+              <Route path="point-caisse" element={<CanteenPointCaisse />} />
               <Route path="stock" element={<CanteenStock />} />
               <Route path="incidents" element={<CanteenIncidents />} />
               <Route path="statistiques" element={<CanteenStats />} />
@@ -452,6 +455,7 @@ const App = () => (
               <Route path="carburant" element={<TransportFuel />} />
               <Route path="abonnes" element={<TransportSubscribers />} />
               <Route path="facturation" element={<TransportBilling />} />
+              <Route path="point-caisse" element={<TransportPointCaisse />} />
               <Route path="incidents" element={<TransportIncidents />} />
               <Route path="alertes" element={<TransportAlerts />} />
               <Route path="statistiques" element={<TransportStats />} />
