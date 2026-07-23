@@ -12,6 +12,23 @@ export interface EcoleHeaderInfo {
   devise?: string | null;
 }
 
+export interface PdfSummaryMode {
+  label: string;
+  count: number;
+  total: number;
+}
+
+export interface PdfSummary {
+  /** Répartition par mode de paiement à afficher sous le tableau. */
+  modes?: PdfSummaryMode[];
+  /** Montant total à mettre en valeur (encadré coloré). */
+  grandTotal?: number;
+  /** Libellé du total (défaut "TOTAL ENCAISSÉ"). */
+  grandTotalLabel?: string;
+  /** Nombre d'opérations (facultatif). */
+  operationsCount?: number;
+}
+
 export interface ExportPayload {
   title: string;
   filename: string; // sans extension
@@ -20,6 +37,7 @@ export interface ExportPayload {
   sousTitre?: string;
   ecole?: EcoleHeaderInfo | null;
   orientation?: "portrait" | "landscape";
+  pdfSummary?: PdfSummary;
 }
 
 // ---------- CSV ----------
