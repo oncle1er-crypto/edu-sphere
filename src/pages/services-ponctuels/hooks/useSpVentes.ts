@@ -6,7 +6,7 @@ import { toast } from "sonner";
 export type SpModePaiement =
   | "especes" | "wave" | "orange_money" | "mtn_money" | "moov_money" | "virement" | "cheque";
 
-export type SpVenteStatut = "paye" | "remis" | "attente" | "annule";
+export type SpVenteStatut = "paye" | "remis" | "attente" | "reservation" | "annule";
 
 export interface SpVenteTenue {
   id: string;
