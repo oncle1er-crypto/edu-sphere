@@ -59,13 +59,31 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
       : facture.categorie === "scolarite" ? "Scolarité"
       : String(facture.categorie ?? "Divers");
 
-    // Période : extrait du libellé après « — » (RPC generer_factures_service)
-    const rawLibelle = String(facture.libelle ?? "");
-    const periode = rawLibelle.includes("—")
-      ? rawLibelle.split("—").slice(1).join("—").trim()
-      : rawLibelle;
-
     const isService = facture.categorie === "cantine" || facture.categorie === "transport";
+
+    // ── Période concernée : nombre de mois payés ─────────────────────────────
+    // Récupère la périodicité (mensuel/trimestriel) via l'abonnement de l'élève,
+    // puis dérive prix mensuel = montant tranche / (1 si mensuel, 3 si trimestriel).
+    // Nombre de mois payés = round(versement / prix mensuel).
+    let periode: string | undefined;
+    if (isService) {
+      const table = facture.categorie === "cantine" ? "abonnements_cantine" : "abonnements_transport";
+      const { data: ab } = await supabase
+        .from(table as any)
+        .select("grille_tarifs_services(periodicite)")
+        .eq("ecole_id", ecoleId)
+        .eq("eleve_id", (facture as any).eleve_id)
+        .limit(1)
+        .maybeSingle();
+      const periodicite = (ab as any)?.grille_tarifs_services?.periodicite ?? "mensuel";
+      const moisParTranche = periodicite === "trimestriel" ? 3 : 1;
+      const prixMensuel = Number(facture.montant) / moisParTranche;
+      const nbMois = prixMensuel > 0
+        ? Math.max(1, Math.round(Number(montantVersement) / prixMensuel))
+        : moisParTranche;
+      periode = `${nbMois} mois payé${nbMois > 1 ? "s" : ""}`;
+    }
+
     const titleOverride = annulation
       ? undefined
       : isService
