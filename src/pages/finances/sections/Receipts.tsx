@@ -546,6 +546,7 @@ export default function Receipts() {
   // ── Récap journalier PDF ──
   const genererRecapJournalier = async (previewOnly: boolean) => {
     if (!ecoleId || !recapDate) return;
+    if (!activeAnnee?.id) { toast.error("Année scolaire active introuvable"); return; }
     setRecapBusy(true);
     try {
       const start = `${recapDate}T00:00:00`;
@@ -554,14 +555,16 @@ export default function Receipts() {
         .from("paiements")
         .select(
           "id, reference, montant, date_paiement, mode, " +
-          "tranches(numero), " +
+          "tranches!inner(numero, frais_scolarite!inner(annee_id)), " +
           "eleves(nom, prenom, matricule, classes(nom))"
         )
         .eq("ecole_id", ecoleId)
+        .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
         .gte("date_paiement", start)
         .lte("date_paiement", end)
         .order("date_paiement", { ascending: true });
       if (error) throw error;
+
       const paiements = (data ?? []).map((p: any) => {
         const d = new Date(p.date_paiement);
         return {
