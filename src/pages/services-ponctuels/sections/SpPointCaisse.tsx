@@ -65,22 +65,21 @@ export default function SpPointCaisse() {
     .map((p) => {
       const svc = servicesMap[p.service_id];
       const isTest = svc?.slug === "test_entree" || (testServiceId && p.service_id === testServiceId);
+      const isTenue = tenueServiceIds.has(p.service_id);
       const cand = p.candidat_id ? candidatsMap[p.candidat_id] : null;
       return {
         id: p.id,
         date: p.date_paiement,
         numero: p.numero,
-        type: isTest ? "test" : "service",
+        type: isTest ? "test" : isTenue ? "tenue" : "service",
         libelle: svc?.nom ?? "Service",
         beneficiaire: p.beneficiaire_libre ?? (cand ? `${cand.nom} ${cand.prenom}` : "—"),
         classe: cand?.classe_demandee ?? "—",
         mode: p.mode_paiement,
-        montant: Number(p.montant_paye) - Number(p.remise ?? 0) > 0
-          ? Number(p.montant_paye)
-          : Number(p.montant_paye),
+        montant: Number(p.montant_paye),
         statut: "Encaissé",
       } as Ligne;
-    }), [paiements, servicesMap, candidatsMap, testServiceId, from, to]);
+    }), [paiements, servicesMap, candidatsMap, testServiceId, tenueServiceIds, from, to]);
 
   const lignesVentes: Ligne[] = useMemo(() => ventes
     .filter((v) => v.statut !== "annule" && inRange(v.created_at))
