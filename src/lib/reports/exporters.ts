@@ -172,6 +172,96 @@ export async function exportRowsPDF(p: ExportPayload) {
     },
   });
 
+  autoTable(doc, {
+    head: [p.columns],
+    body: p.rows.map((r) => r.map((v) => (v == null ? "" : String(v)))),
+    startY: cursorY + 2,
+    styles: { fontSize: 8, cellPadding: 2 },
+    headStyles: { fillColor: [110, 26, 44], textColor: 255 },
+    didDrawPage: () => {
+      const pageCount = doc.getNumberOfPages();
+      const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+      doc.setFontSize(8);
+      doc.setTextColor(120, 120, 120);
+      doc.text(
+        `Page ${current} / ${pageCount}`,
+        pageW - 14,
+        doc.internal.pageSize.getHeight() - 6,
+        { align: "right" },
+      );
+      doc.setTextColor(0, 0, 0);
+    },
+  });
+
+  // ---------- Résumé & Total mis en valeur ----------
+  if (p.pdfSummary && (p.pdfSummary.modes?.length || p.pdfSummary.grandTotal != null)) {
+    const finalY = (doc as any).lastAutoTable?.finalY ?? cursorY + 10;
+    const pageH = doc.internal.pageSize.getHeight();
+    let y = finalY + 8;
+
+    // Répartition par mode
+    if (p.pdfSummary.modes && p.pdfSummary.modes.length > 0) {
+      if (y > pageH - 60) { doc.addPage(); y = 20; }
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Répartition par mode de paiement", 14, y);
+      y += 3;
+      autoTable(doc, {
+        startY: y,
+        head: [["Mode de paiement", "Nb", "Montant"]],
+        body: p.pdfSummary.modes.map((m) => [m.label, String(m.count), fmtFCFA(m.total)]),
+        styles: { fontSize: 9, cellPadding: 2.5 },
+        headStyles: { fillColor: [110, 26, 44], textColor: 255 },
+        columnStyles: {
+          1: { halign: "right", cellWidth: 20 },
+          2: { halign: "right", cellWidth: 45, fontStyle: "bold" },
+        },
+        theme: "grid",
+        margin: { left: 14, right: 14 },
+        tableWidth: "wrap",
+      });
+      y = (doc as any).lastAutoTable?.finalY ?? y + 20;
+    }
+
+    // Total mis en valeur — encadré Bordeaux/Jaune
+    if (p.pdfSummary.grandTotal != null) {
+      y += 6;
+      if (y > pageH - 30) { doc.addPage(); y = 20; }
+      const boxX = 14;
+      const boxW = pageW - 28;
+      const boxH = 18;
+      // Fond bordeaux
+      doc.setFillColor(110, 26, 44);
+      doc.rect(boxX, y, boxW, boxH, "F");
+      // Bande jaune à gauche
+      doc.setFillColor(252, 227, 77);
+      doc.rect(boxX, y, 4, boxH, "F");
+      // Libellé
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(255, 255, 255);
+      const label = p.pdfSummary.grandTotalLabel ?? "TOTAL ENCAISSÉ";
+      doc.text(label, boxX + 10, y + boxH / 2 + 1, { baseline: "middle" });
+      if (p.pdfSummary.operationsCount != null) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(252, 227, 77);
+        doc.text(`${p.pdfSummary.operationsCount} opération(s)`, boxX + 10, y + boxH - 3);
+      }
+      // Montant
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(252, 227, 77);
+      doc.text(fmtFCFA(p.pdfSummary.grandTotal), boxX + boxW - 6, y + boxH / 2 + 1, {
+        align: "right",
+        baseline: "middle",
+      });
+      doc.setTextColor(0, 0, 0);
+      doc.setFont("helvetica", "normal");
+    }
+  }
+
   doc.save(`${p.filename}.pdf`);
 }
 
