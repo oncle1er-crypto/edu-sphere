@@ -30,6 +30,14 @@ export interface RecuData {
   souche?: boolean;
   /** Masquer la ligne « Versement reçu / Dont ce versement » (ex: réimpression). */
   hideVersementLine?: boolean;
+  /** Sous-titre personnalisé (ex: « Reçu Cantine ») remplaçant le libellé par défaut. */
+  subtitleOverride?: string;
+  /** Titre principal personnalisé (ex: « REÇU CANTINE »). */
+  titleOverride?: string;
+  /** Période couverte par le paiement (ex: « Octobre 2025 » ou « Trimestre 1 »). */
+  periode?: string;
+  /** Date d'échéance de la facture (ISO). */
+  date_echeance?: string;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
