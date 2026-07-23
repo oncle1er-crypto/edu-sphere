@@ -38,6 +38,23 @@ export default function SpVentesTenues() {
 
   const reprint = async (v: (typeof ventes)[0]) => {
     const e = ecole ?? {} as any;
+    const titre =
+      v.statut === "annule" ? "REÇU DE CORRECTION" :
+      v.statut === "reservation" ? "REÇU — PAYÉ & RÉSERVÉ" :
+      v.statut === "attente" ? "REÇU — EN ATTENTE DE PAIEMENT" :
+      (v.statut === "paye" || v.statut === "remis") ? "REÇU — PAYÉ & RETIRÉ" :
+      "REÇU DE VENTE";
+    const mention =
+      v.statut === "reservation"
+        ? "Tenue réservée — à retirer dès réapprovisionnement du stock."
+        : (v.statut === "paye" || v.statut === "remis")
+        ? "Tenue payée et retirée par l'acheteur."
+        : v.statut === "attente"
+        ? "Vente enregistrée, paiement en attente."
+        : v.statut === "annule"
+        ? "Opération annulée."
+        : "";
+    const obs = [v.observations, mention].filter(Boolean).join(" — ");
     await generateSpReceipt({
       numero: v.numero,
       date: new Date(v.created_at).toLocaleString("fr-FR"),
@@ -51,9 +68,10 @@ export default function SpVentesTenues() {
       beneficiaire: v.acheteur_libre ?? "—",
       quantite: v.quantite,
       montantDu: v.montant_total,
-      montantPaye: v.statut === "annule" ? 0 : v.montant_total,
+      montantPaye: v.statut === "annule" || v.statut === "attente" ? 0 : v.montant_total,
       modePaiement: v.mode_paiement,
-      titre: v.statut === "annule" ? "REÇU DE CORRECTION" : "REÇU DE VENTE",
+      titre,
+      observations: obs || undefined,
     });
   };
 
