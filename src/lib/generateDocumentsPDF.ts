@@ -129,15 +129,17 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       annulation:       { title: "REÇU DE CORRECTION",    subtitle: "Annulation / Remboursement" },
     };
     const typeInfo = TYPE_LABEL[data.type ?? "encaissement"] ?? TYPE_LABEL.encaissement;
+    const finalTitle = data.titleOverride ?? typeInfo.title;
+    const finalSubtitle = data.subtitleOverride ?? typeInfo.subtitle;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(7.5);
     doc.setTextColor(...muted);
-    doc.text(`${label.toUpperCase()} • ${typeInfo.subtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
+    doc.text(`${label.toUpperCase()} • ${finalSubtitle.toUpperCase()}`, W - M, y + 2, { align: "right" });
     doc.setFont("times", "bold");
     doc.setFontSize(13);
-    doc.setTextColor(...ink);
-    doc.text(typeInfo.title, W - M, y + 9, { align: "right" });
+    doc.setTextColor(...primary);
+    doc.text(finalTitle, W - M, y + 9, { align: "right" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...muted);
