@@ -40,6 +40,10 @@ export default function SpPointCaisse() {
   const candidatsMap = useMemo(() => Object.fromEntries(candidats.map((c) => [c.id, c])), [candidats]);
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const testServiceId = useMemo(() => services.find((s) => s.slug === "test_entree")?.id, [services]);
+  const tenueServiceIds = useMemo(
+    () => new Set(services.filter((s) => s.slug === "tenue" || s.gere_stock === true).map((s) => s.id)),
+    [services],
+  );
 
   const inRange = (iso: string | null | undefined) => {
     if (!iso) return false;
