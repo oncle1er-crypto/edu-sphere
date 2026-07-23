@@ -99,7 +99,7 @@ export default function SpPointCaisse() {
   const filtered = useMemo(() => {
     let base: Ligne[] = [];
     if (scope === "tests") base = lignesPaiements.filter((l) => l.type === "test");
-    else if (scope === "tenues") base = lignesVentes;
+    else if (scope === "tenues") base = [...lignesVentes, ...lignesPaiements.filter((l) => l.type === "tenue")];
     else base = [...lignesPaiements, ...lignesVentes];
     return base.sort((a, b) => (a.date < b.date ? -1 : 1));
   }, [scope, lignesPaiements, lignesVentes]);
