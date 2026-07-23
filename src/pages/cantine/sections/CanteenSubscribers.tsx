@@ -46,7 +46,7 @@ export default function CanteenSubscribers() {
   const { eleves } = useEleves();
   const { anneeId } = useAnneeId();
   const { lignes: grilles } = useGrilleServices("cantine");
-  const { generateFor, isGenerating, generateBulk, isBulkGenerating } = useServiceInvoicing("cantine");
+  const { generateFor, isGenerating, generateBulk, isBulkGenerating } = useServiceInvoicing("cantine", () => fetchData());
   const { isAdmin } = useIsAdmin();
 
   const [abonnements, setAbonnements] = useState<Abonnement[]>([]);
