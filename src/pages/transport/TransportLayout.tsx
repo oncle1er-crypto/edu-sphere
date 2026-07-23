@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, Bus, MapPin, Users, UserCog, Wrench,
-  Fuel, Receipt, AlertTriangle, BarChart3, FileText, Settings2, ShieldAlert,
+  Fuel, Receipt, AlertTriangle, BarChart3, FileText, Settings2, ShieldAlert, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ const sections = [
 
   { to: "abonnes", label: "Élèves abonnés", icon: Users, group: "Gestion" },
   { to: "facturation", label: "Facturation", icon: Receipt, group: "Gestion" },
+  { to: "point-caisse", label: "Point de caisse", icon: Wallet, group: "Gestion" },
   { to: "incidents", label: "Incidents & sécurité", icon: ShieldAlert, group: "Gestion" },
   { to: "alertes", label: "Alertes temps réel", icon: AlertTriangle, group: "Gestion" },
 

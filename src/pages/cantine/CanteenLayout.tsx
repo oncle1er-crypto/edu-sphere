@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, UtensilsCrossed, CalendarDays, Users, Receipt,
-  Package, AlertCircle, BarChart3, FileText, Settings2, Apple, ChefHat,
+  Package, AlertCircle, BarChart3, FileText, Settings2, Apple, ChefHat, Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -16,6 +16,7 @@ const sections = [
 
   { to: "abonnes", label: "Abonnés", icon: Users, group: "Gestion" },
   { to: "facturation", label: "Facturation cantine", icon: Receipt, group: "Gestion" },
+  { to: "point-caisse", label: "Point de caisse", icon: Wallet, group: "Gestion" },
   { to: "stock", label: "Stock & approvisionnement", icon: Package, group: "Gestion" },
   { to: "incidents", label: "Incidents", icon: AlertCircle, group: "Gestion" },
 
