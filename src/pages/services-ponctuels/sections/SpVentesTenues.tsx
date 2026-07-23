@@ -95,6 +95,11 @@ export default function SpVentesTenues() {
                     <TableCell><Badge className={STATUT_COLOR[v.statut]}>{v.statut}</Badge></TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        {v.statut === "reservation" && (
+                          <Button size="sm" variant="default" className="h-8" onClick={() => validerRetrait(v)} title="Valider le retrait">
+                            <PackageCheck className="h-4 w-4 mr-1" /> Retrait
+                          </Button>
+                        )}
                         <Button size="icon" variant="ghost" onClick={() => reprint(v)} title="Reçu"><Printer className="h-4 w-4" /></Button>
                         {v.statut !== "annule" && (
                           <Button size="icon" variant="ghost" onClick={async () => {
