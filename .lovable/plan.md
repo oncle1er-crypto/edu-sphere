@@ -1,60 +1,49 @@
-# Standardisation des exports de rapports (CSV · Excel · PDF)
-
 ## Objectif
-Chaque rapport de l'application propose systématiquement les **3 formats** : CSV, Excel (.xlsx) et PDF, avec un rendu homogène (entête école, logo, filtres appliqués, pagination PDF, formatage FCFA).
 
-## État actuel (11 pages de rapports)
+Rendre les modules **Cantine** et **Transport** cohérents avec la grille tarifaire (mensuel/trimestriel), permettre à l'administrateur de supprimer un abonnement, et rendre l'impression / réimpression du reçu double-souche accessible partout.
 
-| Page | CSV | Excel | PDF |
-|---|---|---|---|
-| Classes › Rapports | ✅ | ❌ | ❌ |
-| Matières › Rapports | ✅ | ❌ | ❌ |
-| Cours vacances › Rapports | ❌ | ✅ | ✅ |
-| Statistiques › Rapports globaux | ❌ | ✅ (2) | ✅ (4) |
-| Services ponctuels › Rapports | ❌ | ✅ | ✅ |
-| Finances › Rapports | ❌ | partiel | ✅ |
-| Examens › Rapports | ❌ | partiel | ✅ |
-| Bibliothèque › Rapports | ❌ | ❌ | ❌ (boutons factices) |
-| Cantine › Rapports | à auditer | | |
-| Transport › Rapports | à auditer | | |
-| Présences › Rapports | à auditer | | |
+## 1. Réimpression du reçu (double-souche)
 
-## Approche
+Le bouton **imprimante** existe déjà dans « Facturation cantine » et « Facturation transport » (colonne Actions, dès qu'un versement a été fait). Il régénère le reçu double-souche via `downloadInvoiceReceipt`.
 
-### 1. Utilitaire partagé `src/lib/reports/exporters.ts`
-Trois fonctions génériques prenant `{ title, columns, rows, filename, ecole?, sousTitre? }` :
-- `exportRowsCSV(...)` — BOM UTF-8, séparateur virgule, échappement.
-- `exportRowsXLSX(...)` — via `xlsx`, largeurs auto, entête gras.
-- `exportRowsPDF(...)` — via `jspdf` + `jspdf-autotable`, entête école (logo + sigle + devise), pagination, pied de page, montants formatés manuellement (évite le bug « barre noire »).
+Ajouts prévus :
+- Ajouter la même colonne **Actions → Réimprimer / Historique** sur la page **Abonnés cantine** et **Abonnés transport**, en listant en dessous les factures liées à l'élève (dépliable).
+- Petit encart d'aide « Où trouver un reçu ? » qui pointe vers `Facturation → icône imprimante`.
 
-### 2. Composant partagé `src/components/reports/ReportExportButtons.tsx`
-Trois boutons compacts (CSV / Excel / PDF) + état `loading` par format. Signature :
-```
-<ReportExportButtons
-  title="Liste nominative"
-  filename="liste_nominative"
-  columns={[...]}
-  getRows={async () => [...]}
-  sousTitre="Période : ..."
-/>
-```
+## 2. Périodicité selon la grille tarifaire
 
-### 3. Refactor page par page
-Remplacer les boutons existants par `ReportExportButtons`. Pour les rapports qui ne sont aujourd'hui que des CSV (Classes, Matières) ou factices (Bibliothèque), brancher la vraie source de données.
+Aujourd'hui, la création d'un abonnement demande un « montant mensuel » figé. Il faut brancher la **grille tarifaire services** (`grille_tarifs_services`, périodicité `mensuel` | `trimestriel`).
 
-Ordre d'exécution :
-1. Lot A — Utilitaires + composant partagé.
-2. Lot B — Pages déjà branchées : Classes, Matières, Cours vacances, Services ponctuels.
-3. Lot C — Pages mixtes : Statistiques, Finances, Examens.
-4. Lot D — Pages à finaliser (données réelles) : Bibliothèque, Cantine, Transport, Présences.
+Comportement :
+- Dans le dialog « Nouvel abonnement » (cantine et transport), remplacer la saisie manuelle par un **choix de tarif** issu de la grille tarifaire de l'année en cours.
+- Le tarif choisi impose :
+  - la **périodicité** (mensuelle ou trimestrielle),
+  - le **libellé**,
+  - les **tranches** (dates + montants).
+- Un bouton **« Générer les factures »** sur la ligne de l'abonné crée automatiquement une facture par tranche (une par mois OU une par trimestre) via la table `factures` catégorie `cantine`/`transport`. Chaque facture reprend le montant et la date d'échéance de la tranche.
+- Bouton « Générer les factures en masse » en tête de tableau pour créer les échéances de tous les abonnés actifs d'un coup.
+
+## 3. Suppression admin
+
+- Bouton corbeille sur chaque abonné, visible uniquement pour les rôles `admin` / `direction` (via `useIsAdmin`).
+- Confirmation obligatoire.
+- Deux options dans le dialog :
+  - **Désactiver** (statut = `resilie`) — recommandé si des factures existent déjà.
+  - **Supprimer définitivement** — bloqué si des factures avec paiement existent (message d'erreur clair), sinon `DELETE` cascade sur `abonnements_cantine` / `abonnements_transport`.
 
 ## Détails techniques
-- Bibliothèques déjà présentes : `xlsx`, `jspdf`, `jspdf-autotable` → aucune install.
-- Entête PDF réutilise `useEcoleInfo` (logo + sigle + devise + adresse).
-- Formatage FCFA via helper local (pas d'`Intl.NumberFormat` dans jsPDF).
-- Aucune migration DB requise.
 
-## Livrable
-Tous les rapports listés ci-dessus exposent 3 boutons **CSV · Excel · PDF** fonctionnels avec entête école cohérente.
+- Nouveau hook `useServiceInvoicing.ts` : `genererFacturesAbonnement(abonnementId)` et `genererFacturesEnMasse(serviceType)` — insère les rangs `factures` à partir des tranches de la grille.
+- Nouvelle RPC SQL `generer_factures_service(_ecole_id, _abonnement_id, _service_type)` pour idempotence (skip si numéro déjà existant sur la tranche).
+- Colonnes `abonnements_cantine` / `abonnements_transport` : ajouter `grille_id uuid` (FK vers `grille_tarifs_services`).
+- `CanteenSubscribers.tsx`, `TransportSubscribers.tsx` : refonte du dialog + colonne Actions (Générer factures, Historique, Réimprimer, Désactiver, Supprimer).
+- Réutiliser `downloadInvoiceReceipt` + `InvoicePaymentsHistoryDialog` déjà existants.
 
-Confirmez pour lancer les 4 lots (je peux tout enchaîner ou m'arrêter après le Lot B pour test).
+## Fichiers touchés
+
+- `supabase/migrations/…_service_subscriptions.sql` (nouvelle colonne + RPC)
+- `src/hooks/useServiceInvoicing.ts` (nouveau)
+- `src/pages/cantine/sections/CanteenSubscribers.tsx`
+- `src/pages/transport/sections/TransportSubscribers.tsx`
+
+Confirmez-vous ce plan ? Je peux enchaîner directement avec la migration puis les écrans.

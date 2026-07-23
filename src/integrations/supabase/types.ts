@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           ecole_id: string
           eleve_id: string
+          grille_id: string | null
           id: string
           montant_mensuel: number | null
           regime: string | null
@@ -31,6 +32,7 @@ export type Database = {
           created_at?: string
           ecole_id: string
           eleve_id: string
+          grille_id?: string | null
           id?: string
           montant_mensuel?: number | null
           regime?: string | null
@@ -42,6 +44,7 @@ export type Database = {
           created_at?: string
           ecole_id?: string
           eleve_id?: string
+          grille_id?: string | null
           id?: string
           montant_mensuel?: number | null
           regime?: string | null
@@ -77,6 +80,13 @@ export type Database = {
             referencedRelation: "v_conformite_sigfne"
             referencedColumns: ["eleve_id"]
           },
+          {
+            foreignKeyName: "abonnements_cantine_grille_id_fkey"
+            columns: ["grille_id"]
+            isOneToOne: false
+            referencedRelation: "grille_tarifs_services"
+            referencedColumns: ["id"]
+          },
         ]
       }
       abonnements_transport: {
@@ -85,6 +95,7 @@ export type Database = {
           created_at: string
           ecole_id: string
           eleve_id: string
+          grille_id: string | null
           id: string
           ligne_id: string
           statut: string
@@ -94,6 +105,7 @@ export type Database = {
           created_at?: string
           ecole_id: string
           eleve_id: string
+          grille_id?: string | null
           id?: string
           ligne_id: string
           statut?: string
@@ -103,6 +115,7 @@ export type Database = {
           created_at?: string
           ecole_id?: string
           eleve_id?: string
+          grille_id?: string | null
           id?: string
           ligne_id?: string
           statut?: string
@@ -135,6 +148,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "v_conformite_sigfne"
             referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "abonnements_transport_grille_id_fkey"
+            columns: ["grille_id"]
+            isOneToOne: false
+            referencedRelation: "grille_tarifs_services"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "abonnements_transport_ligne_id_fkey"
@@ -7070,6 +7090,14 @@ export type Database = {
       }
       generer_echeances_service: {
         Args: { _eleve_id: string; _grille_id: string; _service_type: string }
+        Returns: number
+      }
+      generer_factures_service: {
+        Args: {
+          _abonnement_id: string
+          _ecole_id: string
+          _service_type: string
+        }
         Returns: number
       }
       generer_tranches_eleve: {
