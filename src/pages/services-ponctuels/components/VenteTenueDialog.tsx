@@ -115,7 +115,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
       prix_unitaire: prix,
       montant_total: qte * prix,
       mode_paiement: mode,
-      statut,
+      statut: finalStatut,
       observations: obs || null,
     } as any);
     setSaving(false);
