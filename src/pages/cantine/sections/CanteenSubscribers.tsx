@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -250,7 +250,7 @@ export default function CanteenSubscribers() {
               const eleveFacs = factures[a.eleve_id] ?? [];
               const isOpen = expanded === a.id;
               return (
-                <>
+                <Fragment key={a.id}>
                   <TableRow key={a.id}>
                     <TableCell className="font-medium">{a.eleve_nom}</TableCell>
                     <TableCell><Badge variant="secondary">{a.classe_nom}</Badge></TableCell>
@@ -334,7 +334,7 @@ export default function CanteenSubscribers() {
                       </TableCell>
                     </TableRow>
                   )}
-                </>
+                </Fragment>
               );
             })}
             {filtered.length === 0 && (
