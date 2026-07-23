@@ -64,11 +64,22 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const stockG = classeId ? findFor(classeId, "G") : null;
   const stockCourant = genre ? findFor(classeId, genre) : null;
   const stockDispo = stockCourant?.stock_actuel ?? 0;
+  const enRupture = qte > stockDispo;
 
   useEffect(() => {
     if (stockCourant?.prix_unitaire) setPrix(Number(stockCourant.prix_unitaire));
     else if (tenueService?.prix) setPrix(Number(tenueService.prix));
   }, [stockCourant, tenueService]);
+
+  // Bascule automatique en réservation dès qu'il y a rupture
+  useEffect(() => {
+    if (enRupture && statut !== "reservation" && statut !== "annule") {
+      setStatut("reservation");
+    } else if (!enRupture && statut === "reservation") {
+      setStatut("paye");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enRupture]);
 
   const elevesFiltres = useMemo(() => {
     if (!classeId) return [];
@@ -89,10 +100,8 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
 
   const submit = async () => {
     if (!canValidate) return;
-    if (stockCourant && qte > stockDispo) {
-      const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "";
-      return toast.error(`Stock insuffisant : ${stockDispo} tenue(s) disponible(s) pour ${genre === "F" ? "Fille" : "Garçon"} en ${classeNom}`);
-    }
+    // Rupture ⇒ on force la réservation (pas de blocage)
+    const finalStatut: SpVenteStatut = enRupture && statut !== "annule" ? "reservation" : statut;
     setSaving(true);
     const eleve = eleves.find((e: any) => e.id === eleveId);
     const nomAff = eleve ? `${eleve.nom} ${eleve.prenom}` : acheteurLibre;
