@@ -185,8 +185,16 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
       (data.mode || "").replace(/_/g, " ").toUpperCase(), M, y + 24);
     drawField(isRemise ? "Accordée par" : "Reçu par", data.recu_par || "Caisse", M + colW, y + 24);
 
+    // Row 4 — Période & échéance (cantine/transport)
+    let extraRow = 0;
+    if (data.periode || data.date_echeance) {
+      drawField("Période concernée", data.periode || "—", M, y + 36);
+      drawField("Échéance", data.date_echeance ? formatDateLong(data.date_echeance) : "—", M + colW, y + 36);
+      extraRow = 12;
+    }
+
     // ── Amount line ──
-    y += 36;
+    y += 36 + extraRow;
     doc.setDrawColor(...line);
     doc.setLineWidth(0.3);
     doc.line(M, y, W - M, y);
