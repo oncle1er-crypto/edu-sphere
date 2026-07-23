@@ -17,9 +17,22 @@ const STATUT_COLOR: Record<string, string> = {
 };
 
 export default function SpVentesTenues() {
-  const { ventes, loading, annuler } = useSpVentes();
+  const { ventes, loading, annuler, save } = useSpVentes();
+  const { findFor } = useSpStockTenues();
   const ecole = useEcoleInfo();
   const { classes } = useClasses();
+  const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
+  const [open, setOpen] = useState(false);
+
+  const validerRetrait = async (v: (typeof ventes)[0]) => {
+    if (!v.classe_id || !v.genre) return;
+    const stock = findFor(v.classe_id, v.genre as "F" | "G");
+    const dispo = stock?.stock_actuel ?? 0;
+    if (dispo < v.quantite) {
+      return toast.error(`Stock encore insuffisant : ${dispo} tenue(s) disponible(s), ${v.quantite} demandée(s).`);
+    }
+    await save({ id: v.id, statut: "remis" } as any);
+  };
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
 
