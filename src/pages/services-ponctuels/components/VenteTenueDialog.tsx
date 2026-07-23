@@ -14,7 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
-const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "annule"];
+const STATUTS: SpVenteStatut[] = ["paye", "remis", "attente", "reservation", "annule"];
 
 interface Props {
   open: boolean;
