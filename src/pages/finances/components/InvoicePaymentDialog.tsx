@@ -48,6 +48,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   const [montant, setMontant] = useState("");
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
+  const [datePaiement, setDatePaiement] = useState(new Date().toISOString().slice(0, 10));
 
   const restant = facture ? Math.max(0, facture.montant - facture.montant_paye) : 0;
   const montantNum = Number(montant) || 0;
@@ -59,6 +60,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
     setMontant(String(restant));
     setMoyen("especes");
     setReference("");
+    setDatePaiement(new Date().toISOString().slice(0, 10));
   }, [open, facture, restant]);
 
   if (!facture) return null;
