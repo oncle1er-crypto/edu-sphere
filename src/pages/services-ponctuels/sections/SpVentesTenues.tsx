@@ -33,8 +33,8 @@ export default function SpVentesTenues() {
     }
     await save({ id: v.id, statut: "remis" } as any);
   };
-  const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
-  const [open, setOpen] = useState(false);
+
+
 
   const reprint = async (v: (typeof ventes)[0]) => {
     const e = ecole ?? {} as any;
