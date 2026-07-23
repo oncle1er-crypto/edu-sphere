@@ -148,8 +148,13 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
             <div className="space-y-1.5">
               <Label className="text-xs">Référence</Label>
               <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
           </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs">Date du paiement (échéance sur le reçu)</Label>
+            <Input type="date" value={datePaiement} onChange={(e) => setDatePaiement(e.target.value)} />
+          </div>
+        </div>
         </div>
 
         <DialogFooter>
