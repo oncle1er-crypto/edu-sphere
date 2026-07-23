@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 export type ServiceType = "cantine" | "transport";
 
-export function useServiceInvoicing(serviceType: ServiceType) {
+export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => void | Promise<void>) {
   const { ecoleId } = useEcoleId();
   const qc = useQueryClient();
 
@@ -19,8 +19,9 @@ export function useServiceInvoicing(serviceType: ServiceType) {
       if (error) throw error;
       return (data as unknown as number) ?? 0;
     },
-    onSuccess: (n) => {
+    onSuccess: async (n) => {
       qc.invalidateQueries({ queryKey: ["factures"] });
+      await onDone?.();
       toast.success(n > 0 ? `${n} facture(s) générée(s)` : "Aucune nouvelle facture (déjà à jour)");
     },
     onError: (e: Error) => toast.error(e.message),
@@ -40,8 +41,9 @@ export function useServiceInvoicing(serviceType: ServiceType) {
       }
       return total;
     },
-    onSuccess: (n) => {
+    onSuccess: async (n) => {
       qc.invalidateQueries({ queryKey: ["factures"] });
+      await onDone?.();
       toast.success(`${n} facture(s) générée(s) au total`);
     },
     onError: (e: Error) => toast.error(e.message),

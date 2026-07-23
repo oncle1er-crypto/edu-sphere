@@ -47,7 +47,7 @@ export default function TransportSubscribers() {
   const { eleves } = useEleves();
   const { anneeId } = useAnneeId();
   const { lignes: grilles } = useGrilleServices("transport");
-  const { generateFor, isGenerating, generateBulk, isBulkGenerating } = useServiceInvoicing("transport");
+  const { generateFor, isGenerating, generateBulk, isBulkGenerating } = useServiceInvoicing("transport", () => fetchData());
   const { isAdmin } = useIsAdmin();
 
   const [rows, setRows] = useState<Row[]>([]);
