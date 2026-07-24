@@ -13,6 +13,9 @@ import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { ReportFilters, ALL_CLASSES, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
+import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
+import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import { Users } from "lucide-react";
 import {
   generateCompteResultat,
   generateFluxTresorerie,
