@@ -25,7 +25,10 @@ export interface ReportExportButtonsProps {
   hide?: Array<"csv" | "xlsx" | "pdf">;
   disabled?: boolean;
   /** Résumé mis en valeur sous le tableau du PDF (répartition modes + total). */
+  /** Résumé mis en valeur sous le tableau du PDF (répartition modes + total). */
   pdfSummary?: PdfSummary;
+  /** Groupement PDF : une section (+ page) par valeur distincte d'une colonne. */
+  pdfGroupBy?: PdfGroupBy;
 }
 
 export function ReportExportButtons({
