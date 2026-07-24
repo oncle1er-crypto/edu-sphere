@@ -8,6 +8,7 @@ import {
   exportRowsPDF,
   type EcoleHeaderInfo,
   type PdfSummary,
+  type PdfGroupBy,
 } from "@/lib/reports/exporters";
 
 export interface ReportExportButtonsProps {
