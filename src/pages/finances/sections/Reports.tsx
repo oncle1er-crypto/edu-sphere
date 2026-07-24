@@ -90,11 +90,16 @@ export default function Reports() {
 
   const [preview, setPreview] = useState<ReportId | null>(null);
 
+  // Liste des classes : union entre les classes de l'année (useClasses) et
+  // celles présentes dans les données financières, afin que le filtre reste
+  // utilisable même si financeData n'est pas encore chargé.
+  const { classes: classesAnnee } = useClasses(activeAnnee?.id);
   const classesList = useMemo(() => {
     const s = new Set<string>();
+    classesAnnee.forEach((c) => c.nom && s.add(c.nom));
     financeData.forEach((e) => e.classe && s.add(e.classe));
     return Array.from(s).sort((a, b) => a.localeCompare(b));
-  }, [financeData]);
+  }, [classesAnnee, financeData]);
 
   const scopedFinance = useMemo(() => {
     if (!filters.classe || filters.classe === ALL_CLASSES) return financeData;
