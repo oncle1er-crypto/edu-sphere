@@ -100,6 +100,7 @@ export default function Reports() {
     return financeData.filter((e) => e.classe === filters.classe);
   }, [financeData, filters.classe]);
 
+  const ecoleInfo = useEcoleInfo();
   const loading = finLoading || depLoading || tresLoading || budLoading || paieLoading;
   const now = new Date();
   const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
