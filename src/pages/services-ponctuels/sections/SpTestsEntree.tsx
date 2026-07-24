@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,8 +52,32 @@ export default function SpTestsEntree() {
   const [notesOn, setNotesOn] = useState<SpCandidat | null>(null);
   const [workflow, setWorkflow] = useState(false);
   const [q, setQ] = useState("");
+  const [paidMap, setPaidMap] = useState<Record<string, boolean>>({});
 
   const testService = services.find((s) => s.slug === "test_entree");
+
+  useEffect(() => {
+    const ids = candidats.map((c) => c.id);
+    if (!ids.length || !testService) { setPaidMap({}); return; }
+    (async () => {
+      const { data } = await (supabase as any)
+        .from("sp_paiements")
+        .select("candidat_id, montant_du, montant_paye, remise, annule_le, service_id")
+        .in("candidat_id", ids)
+        .eq("service_id", testService.id)
+        .is("annule_le", null);
+      const agg: Record<string, { du: number; paye: number }> = {};
+      for (const r of (data ?? []) as any[]) {
+        const k = r.candidat_id as string;
+        agg[k] = agg[k] ?? { du: 0, paye: 0 };
+        agg[k].du += Number(r.montant_du ?? 0);
+        agg[k].paye += Number(r.montant_paye ?? 0) + Number(r.remise ?? 0);
+      }
+      const map: Record<string, boolean> = {};
+      for (const [k, v] of Object.entries(agg)) map[k] = v.paye >= v.du && v.du > 0;
+      setPaidMap(map);
+    })();
+  }, [candidats, testService?.id]);
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase();
@@ -206,7 +230,9 @@ export default function SpTestsEntree() {
                         <Button size="icon" variant="ghost" title="Saisir les notes" onClick={() => setNotesOn(c)}>
                           <ClipboardCheck className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
+                        {!paidMap[c.id] && (
+                          <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
+                        )}
                         <Button size="icon" variant="ghost" title="Convertir en élève" disabled={!!c.converti_eleve_id} onClick={() => setConvert(c)}>
                           <UserPlus className="h-4 w-4" />
                         </Button>
