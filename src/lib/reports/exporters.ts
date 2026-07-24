@@ -29,6 +29,17 @@ export interface PdfSummary {
   operationsCount?: number;
 }
 
+export interface PdfGroupBy {
+  /** Index de la colonne servant à grouper (les valeurs deviennent des titres de section). */
+  columnIndex: number;
+  /** Libellé utilisé devant la valeur du groupe. Ex: "Classe". */
+  label?: string;
+  /** Retire la colonne de groupe du tableau (activé par défaut). */
+  hideColumn?: boolean;
+  /** Force un saut de page entre chaque groupe (activé par défaut). */
+  pageBreak?: boolean;
+}
+
 export interface ExportPayload {
   title: string;
   filename: string; // sans extension
@@ -38,6 +49,8 @@ export interface ExportPayload {
   ecole?: EcoleHeaderInfo | null;
   orientation?: "portrait" | "landscape";
   pdfSummary?: PdfSummary;
+  /** Groupement PDF : une section (+ page) par valeur distincte de la colonne. */
+  pdfGroupBy?: PdfGroupBy;
 }
 
 // ---------- CSV ----------
