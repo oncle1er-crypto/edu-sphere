@@ -230,7 +230,9 @@ export default function SpTestsEntree() {
                         <Button size="icon" variant="ghost" title="Saisir les notes" onClick={() => setNotesOn(c)}>
                           <ClipboardCheck className="h-4 w-4" />
                         </Button>
-                        <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
+                        {!paidMap[c.id] && (
+                          <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
+                        )}
                         <Button size="icon" variant="ghost" title="Convertir en élève" disabled={!!c.converti_eleve_id} onClick={() => setConvert(c)}>
                           <UserPlus className="h-4 w-4" />
                         </Button>
