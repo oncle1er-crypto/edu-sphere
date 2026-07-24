@@ -24,6 +24,11 @@ export interface SpCandidat {
   converti_eleve_id: string | null;
   observations: string | null;
   created_at: string;
+  note_francais?: number | null;
+  note_maths?: number | null;
+  note_anglais?: number | null;
+  moyenne_test?: number | null;
+  classe_demandee_id?: string | null;
 }
 
 export function useSpCandidats() {

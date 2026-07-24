@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, CreditCard, UserPlus, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, UserPlus, Sparkles, ClipboardCheck, Printer } from "lucide-react";
 import { useSpCandidats, type SpCandidat } from "../hooks/useSpCandidats";
 import { CandidatFormDialog } from "../components/CandidatFormDialog";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
@@ -12,6 +12,19 @@ import { useSpServices } from "../hooks/useSpServices";
 import { ConvertCandidatDialog } from "../components/ConvertCandidatDialog";
 import SpTestWorkflow from "../components/SpTestWorkflow";
 import { StatutCandidatLegend } from "../components/StatutCandidatLegend";
+import { CandidatNotesDialog } from "../components/CandidatNotesDialog";
+import { useEcoleInfo } from "../hooks/useEcoleInfo";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { exportRowsCSV, exportRowsPDF, exportRowsXLSX } from "@/lib/reports/exporters";
 
 const STATUT_COLOR: Record<string, string> = {
   en_attente: "bg-muted text-foreground",
@@ -26,12 +39,17 @@ const STATUT_LABEL: Record<string, string> = {
   present: "Présent", admis: "Admis", refuse: "Refusé",
 };
 
+const fmtMoy = (n: number | null | undefined) =>
+  n == null ? "—" : n.toFixed(2).replace(".", ",");
+
 export default function SpTestsEntree() {
-  const { candidats, loading, save, remove, convertir } = useSpCandidats();
+  const { candidats, loading, save, remove, convertir, reload } = useSpCandidats();
   const { services } = useSpServices();
+  const ecole = useEcoleInfo();
   const [editing, setEditing] = useState<Partial<SpCandidat> | null>(null);
   const [pay, setPay] = useState<SpCandidat | null>(null);
   const [convert, setConvert] = useState<SpCandidat | null>(null);
+  const [notesOn, setNotesOn] = useState<SpCandidat | null>(null);
   const [workflow, setWorkflow] = useState(false);
   const [q, setQ] = useState("");
 
@@ -45,6 +63,77 @@ export default function SpTestsEntree() {
     );
   }, [candidats, q]);
 
+  const saveNotes = async (
+    id: string,
+    notes: { note_francais: number | null; note_maths: number | null; note_anglais: number | null }
+  ) => {
+    const { error } = await (supabase as any).from("sp_candidats").update(notes).eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Notes enregistrées");
+    await reload();
+  };
+
+  const columns = [
+    "N°", "Nom", "Prénom", "Sexe", "Classe demandée",
+    "Parent", "Téléphone", "Date test",
+    "Français /20", "Maths /20", "Anglais /20", "Moyenne /20", "Statut",
+  ];
+  const buildRows = (list: SpCandidat[]) =>
+    list.map((c) => [
+      c.numero,
+      c.nom,
+      c.prenom,
+      c.sexe ?? "",
+      c.classe_demandee ?? "",
+      c.parent ?? "",
+      c.telephone ?? "",
+      c.date_test ? new Date(c.date_test).toLocaleString("fr-FR") : "",
+      fmtMoy(c.note_francais),
+      fmtMoy(c.note_maths),
+      fmtMoy(c.note_anglais),
+      fmtMoy(c.moyenne_test),
+      STATUT_LABEL[c.statut] ?? c.statut,
+    ]);
+
+  const exportBy = async (
+    fmt: "csv" | "xlsx" | "pdf",
+    mode: "classe" | "statut"
+  ) => {
+    if (filtered.length === 0) {
+      toast.warning("Aucun candidat à exporter");
+      return;
+    }
+    const sortKey = (c: SpCandidat) =>
+      (mode === "classe" ? (c.classe_demandee ?? "—") : STATUT_LABEL[c.statut] ?? c.statut).toLowerCase();
+    const sorted = [...filtered].sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+
+    const payload = {
+      title: "Liste des candidats — Tests d'entrée",
+      sousTitre:
+        mode === "classe" ? "Groupé par classe demandée" : "Groupé par statut",
+      filename: `tests-entree-${mode}-${new Date().toISOString().slice(0, 10)}`,
+      columns,
+      rows: buildRows(sorted),
+      ecole,
+      orientation: "landscape" as const,
+      pdfGroupBy: {
+        columnIndex: mode === "classe" ? 4 : 12,
+        label: mode === "classe" ? "Classe" : "Statut",
+        hideColumn: true,
+        pageBreak: true,
+      },
+    };
+
+    try {
+      if (fmt === "csv") exportRowsCSV(payload);
+      else if (fmt === "xlsx") exportRowsXLSX(payload);
+      else await exportRowsPDF(payload);
+      toast.success(`Export ${fmt.toUpperCase()} téléchargé`);
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur export");
+    }
+  };
+
   return (
     <div className="space-y-4">
       <StatutCandidatLegend />
@@ -54,6 +143,26 @@ export default function SpTestsEntree() {
           <CardTitle>Tests d'entrée</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="outline" className="gap-1">
+                  <Printer className="h-4 w-4" /> Imprimer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Par classe demandée</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => exportBy("pdf", "classe")}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBy("xlsx", "classe")}>Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBy("csv", "classe")}>CSV</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Par statut</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => exportBy("pdf", "statut")}>PDF</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBy("xlsx", "statut")}>Excel</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => exportBy("csv", "statut")}>CSV</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Button size="sm" variant="outline" onClick={() => setEditing({})}>
               <Plus className="h-4 w-4 mr-1" />Simple
             </Button>
@@ -72,8 +181,9 @@ export default function SpTestsEntree() {
                   <TableHead>Classe demandée</TableHead>
                   <TableHead>Parent / Tél.</TableHead>
                   <TableHead>Date test</TableHead>
+                  <TableHead className="text-center">Moyenne</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="w-40 text-right">Actions</TableHead>
+                  <TableHead className="w-48 text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -87,9 +197,15 @@ export default function SpTestsEntree() {
                     <TableCell>{c.classe_demandee ?? "—"}</TableCell>
                     <TableCell>{c.parent ?? "—"}<div className="text-xs text-muted-foreground">{c.telephone}</div></TableCell>
                     <TableCell>{c.date_test ? new Date(c.date_test).toLocaleString("fr-FR") : "—"}</TableCell>
+                    <TableCell className="text-center tabular-nums font-semibold">
+                      {fmtMoy(c.moyenne_test)}
+                    </TableCell>
                     <TableCell><Badge className={STATUT_COLOR[c.statut] ?? "bg-muted"}>{STATUT_LABEL[c.statut] ?? c.statut}</Badge></TableCell>
                     <TableCell>
                       <div className="flex justify-end gap-1">
+                        <Button size="icon" variant="ghost" title="Saisir les notes" onClick={() => setNotesOn(c)}>
+                          <ClipboardCheck className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" title="Encaisser" onClick={() => setPay(c)}><CreditCard className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Convertir en élève" disabled={!!c.converti_eleve_id} onClick={() => setConvert(c)}>
                           <UserPlus className="h-4 w-4" />
@@ -132,6 +248,13 @@ export default function SpTestsEntree() {
           onConfirm={async (classeId) => { await convertir(convert.id, classeId); }}
         />
       )}
+
+      <CandidatNotesDialog
+        open={!!notesOn}
+        onOpenChange={(v) => !v && setNotesOn(null)}
+        candidat={notesOn}
+        onSubmit={async (notes) => { if (notesOn) await saveNotes(notesOn.id, notes); }}
+      />
 
       <SpTestWorkflow open={workflow} onOpenChange={setWorkflow} />
     </div>

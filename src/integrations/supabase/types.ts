@@ -5562,7 +5562,11 @@ export type Database = {
           ecole_id: string
           ecole_origine: string | null
           id: string
+          moyenne_test: number | null
           nom: string
+          note_anglais: number | null
+          note_francais: number | null
+          note_maths: number | null
           numero: string
           observations: string | null
           parent: string | null
@@ -5584,7 +5588,11 @@ export type Database = {
           ecole_id: string
           ecole_origine?: string | null
           id?: string
+          moyenne_test?: number | null
           nom: string
+          note_anglais?: number | null
+          note_francais?: number | null
+          note_maths?: number | null
           numero: string
           observations?: string | null
           parent?: string | null
@@ -5606,7 +5614,11 @@ export type Database = {
           ecole_id?: string
           ecole_origine?: string | null
           id?: string
+          moyenne_test?: number | null
           nom?: string
+          note_anglais?: number | null
+          note_francais?: number | null
+          note_maths?: number | null
           numero?: string
           observations?: string | null
           parent?: string | null
