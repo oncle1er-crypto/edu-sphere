@@ -8,6 +8,7 @@ import {
   exportRowsPDF,
   type EcoleHeaderInfo,
   type PdfSummary,
+  type PdfGroupBy,
 } from "@/lib/reports/exporters";
 
 export interface ReportExportButtonsProps {
@@ -24,7 +25,10 @@ export interface ReportExportButtonsProps {
   hide?: Array<"csv" | "xlsx" | "pdf">;
   disabled?: boolean;
   /** Résumé mis en valeur sous le tableau du PDF (répartition modes + total). */
+  /** Résumé mis en valeur sous le tableau du PDF (répartition modes + total). */
   pdfSummary?: PdfSummary;
+  /** Groupement PDF : une section (+ page) par valeur distincte d'une colonne. */
+  pdfGroupBy?: PdfGroupBy;
 }
 
 export function ReportExportButtons({
@@ -39,6 +43,7 @@ export function ReportExportButtons({
   hide = [],
   disabled,
   pdfSummary,
+  pdfGroupBy,
 }: ReportExportButtonsProps) {
   const [busy, setBusy] = useState<null | "csv" | "xlsx" | "pdf">(null);
 
@@ -51,7 +56,7 @@ export function ReportExportButtons({
         toast.warning("Aucune donnée à exporter");
         return;
       }
-      const payload = { title, filename, columns, rows, sousTitre, ecole, orientation, pdfSummary };
+      const payload = { title, filename, columns, rows, sousTitre, ecole, orientation, pdfSummary, pdfGroupBy };
       if (fmt === "csv") exportRowsCSV(payload);
       else if (fmt === "xlsx") exportRowsXLSX(payload);
       else await exportRowsPDF(payload);

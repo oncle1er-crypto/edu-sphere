@@ -29,6 +29,17 @@ export interface PdfSummary {
   operationsCount?: number;
 }
 
+export interface PdfGroupBy {
+  /** Index de la colonne servant à grouper (les valeurs deviennent des titres de section). */
+  columnIndex: number;
+  /** Libellé utilisé devant la valeur du groupe. Ex: "Classe". */
+  label?: string;
+  /** Retire la colonne de groupe du tableau (activé par défaut). */
+  hideColumn?: boolean;
+  /** Force un saut de page entre chaque groupe (activé par défaut). */
+  pageBreak?: boolean;
+}
+
 export interface ExportPayload {
   title: string;
   filename: string; // sans extension
@@ -38,6 +49,8 @@ export interface ExportPayload {
   ecole?: EcoleHeaderInfo | null;
   orientation?: "portrait" | "landscape";
   pdfSummary?: PdfSummary;
+  /** Groupement PDF : une section (+ page) par valeur distincte de la colonne. */
+  pdfGroupBy?: PdfGroupBy;
 }
 
 // ---------- CSV ----------
@@ -151,26 +164,73 @@ export async function exportRowsPDF(p: ExportPayload) {
   doc.setTextColor(0, 0, 0);
   cursorY += 3;
 
-  autoTable(doc, {
-    head: [p.columns],
-    body: p.rows.map((r) => r.map((v) => (v == null ? "" : String(v)))),
-    startY: cursorY + 2,
-    styles: { fontSize: 8, cellPadding: 2 },
-    headStyles: { fillColor: [110, 26, 44], textColor: 255 },
-    didDrawPage: () => {
-      const pageCount = doc.getNumberOfPages();
-      const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+  const drawFooter = () => {
+    const pageCount = doc.getNumberOfPages();
+    const current = (doc as any).internal.getCurrentPageInfo().pageNumber;
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(
+      `Page ${current} / ${pageCount}`,
+      pageW - 14,
+      doc.internal.pageSize.getHeight() - 6,
+      { align: "right" },
+    );
+    doc.setTextColor(0, 0, 0);
+  };
+
+  const group = p.pdfGroupBy;
+  if (group && p.rows.length > 0) {
+    const gi = group.columnIndex;
+    const hideCol = group.hideColumn !== false;
+    const pageBreak = group.pageBreak !== false;
+    const label = group.label ?? p.columns[gi] ?? "Groupe";
+    const displayCols = hideCol ? p.columns.filter((_, i) => i !== gi) : p.columns;
+
+    // Regrouper en préservant l'ordre d'apparition
+    const groupsMap = new Map<string, (string | number | null | undefined)[][]>();
+    for (const r of p.rows) {
+      const key = r[gi] == null || r[gi] === "" ? "— Non renseigné —" : String(r[gi]);
+      if (!groupsMap.has(key)) groupsMap.set(key, []);
+      groupsMap.get(key)!.push(hideCol ? r.filter((_, i) => i !== gi) : r);
+    }
+
+    let first = true;
+    for (const [key, rows] of groupsMap) {
+      if (!first && pageBreak) {
+        doc.addPage();
+        cursorY = 20;
+      }
+      first = false;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11);
+      doc.setTextColor(110, 26, 44);
+      doc.text(`${label} : ${key}`, 14, cursorY + 6);
+      doc.setFont("helvetica", "normal");
       doc.setFontSize(8);
       doc.setTextColor(120, 120, 120);
-      doc.text(
-        `Page ${current} / ${pageCount}`,
-        pageW - 14,
-        doc.internal.pageSize.getHeight() - 6,
-        { align: "right" },
-      );
+      doc.text(`${rows.length} élément(s)`, pageW - 14, cursorY + 6, { align: "right" });
       doc.setTextColor(0, 0, 0);
-    },
-  });
+
+      autoTable(doc, {
+        head: [displayCols],
+        body: rows.map((r) => r.map((v) => (v == null ? "" : String(v)))),
+        startY: cursorY + 9,
+        styles: { fontSize: 8, cellPadding: 2 },
+        headStyles: { fillColor: [110, 26, 44], textColor: 255 },
+        didDrawPage: drawFooter,
+      });
+      cursorY = (doc as any).lastAutoTable?.finalY ?? cursorY + 20;
+    }
+  } else {
+    autoTable(doc, {
+      head: [p.columns],
+      body: p.rows.map((r) => r.map((v) => (v == null ? "" : String(v)))),
+      startY: cursorY + 2,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [110, 26, 44], textColor: 255 },
+      didDrawPage: drawFooter,
+    });
+  }
 
 
 

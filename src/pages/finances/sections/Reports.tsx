@@ -659,6 +659,11 @@ export default function Reports() {
                             sousTitre={sousTitre}
                             ecole={ecoleInfo}
                             orientation={l.columns.length > 6 ? "landscape" : "portrait"}
+                            pdfGroupBy={
+                              l.key !== "synthese_classe" && l.columns[0] === "Classe"
+                                ? { columnIndex: 0, label: "Classe" }
+                                : undefined
+                            }
                           />
                         </div>
                       </CardContent>
