@@ -496,6 +496,171 @@ export default function Reports() {
                 </Card>
               ))}
             </div>
+
+            {/* ────── Listes par classe ────── */}
+            <div className="pt-4 border-t">
+              <div className="flex items-center gap-2 mb-3">
+                <Users className="h-5 w-5 text-primary" />
+                <h3 className="font-display font-bold text-primary">Listes par classe</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Exports (CSV · Excel · PDF) — filtrés selon la classe et la période choisies ci-dessus.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {(() => {
+                  const suffix = filters.classe && filters.classe !== ALL_CLASSES ? ` — ${filters.classe}` : "";
+                  const sousTitre = `Période : ${periode}${suffix ? ` · Classe : ${filters.classe}` : ""}`;
+                  const groupByClasse = <T extends { classe: string }>(arr: T[]) =>
+                    arr.slice().sort((a, b) => a.classe.localeCompare(b.classe) || 0);
+
+                  const listes: Array<{
+                    key: string;
+                    titre: string;
+                    desc: string;
+                    filename: string;
+                    columns: string[];
+                    getRows: () => (string | number)[][];
+                  }> = [
+                    {
+                      key: "eleves_ayant_paye",
+                      titre: `Élèves ayant fait au moins un versement${suffix}`,
+                      desc: "Liste par classe, avec parent, téléphone et montant déjà encaissé.",
+                      filename: `eleves_ayant_paye${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Matricule", "Nom", "Prénom", "Parent", "Téléphone", "Payé", "Reste"],
+                      getRows: () =>
+                        groupByClasse(scopedFinance)
+                          .filter((e) => (e.totalEncaisse ?? 0) > 0)
+                          .map((e) => [e.classe, e.matricule, e.nom, e.prenom, e.parent, e.telephone, e.totalEncaisse ?? 0, e.resteDu]),
+                    },
+                    {
+                      key: "liste_eleves_classe",
+                      titre: `Liste des élèves par classe${suffix}`,
+                      desc: "Annuaire complet avec coordonnées parent.",
+                      filename: `liste_eleves_par_classe${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Matricule", "Nom", "Prénom", "Parent", "Téléphone"],
+                      getRows: () =>
+                        groupByClasse(scopedFinance).map((e) => [e.classe, e.matricule, e.nom, e.prenom, e.parent, e.telephone]),
+                    },
+                    {
+                      key: "eleves_a_jour",
+                      titre: `Élèves à jour (sans reste à payer)${suffix}`,
+                      desc: "Élèves dont la scolarité est intégralement couverte.",
+                      filename: `eleves_a_jour${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Matricule", "Nom", "Prénom", "Parent", "Téléphone", "Payé"],
+                      getRows: () =>
+                        groupByClasse(scopedFinance)
+                          .filter((e) => e.resteDu <= 0)
+                          .map((e) => [e.classe, e.matricule, e.nom, e.prenom, e.parent, e.telephone, e.totalEncaisse ?? 0]),
+                    },
+                    {
+                      key: "eleves_impayes",
+                      titre: `Élèves n'ayant rien versé${suffix}`,
+                      desc: "Liste par classe des élèves sans aucun encaissement.",
+                      filename: `eleves_sans_versement${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Matricule", "Nom", "Prénom", "Parent", "Téléphone", "Dû", "Jours retard"],
+                      getRows: () =>
+                        groupByClasse(scopedFinance)
+                          .filter((e) => (e.totalEncaisse ?? 0) === 0)
+                          .map((e) => [e.classe, e.matricule, e.nom, e.prenom, e.parent, e.telephone, e.fraisAnnuel, e.joursRetard]),
+                    },
+                    {
+                      key: "synthese_classe",
+                      titre: "Synthèse financière par classe",
+                      desc: "Effectif, dû, encaissé, reste, taux de recouvrement.",
+                      filename: "synthese_financiere_classes",
+                      columns: ["Classe", "Effectif", "Dû", "Encaissé", "Remises", "Reste", "Taux (%)"],
+                      getRows: () => {
+                        const map = new Map<string, { effectif: number; du: number; enc: number; rem: number; reste: number }>();
+                        for (const e of scopedFinance) {
+                          const c = e.classe;
+                          if (!map.has(c)) map.set(c, { effectif: 0, du: 0, enc: 0, rem: 0, reste: 0 });
+                          const v = map.get(c)!;
+                          v.effectif++;
+                          v.du += e.fraisAnnuel;
+                          v.enc += e.totalEncaisse ?? 0;
+                          v.rem += e.totalRemises ?? 0;
+                          v.reste += e.resteDu;
+                        }
+                        return Array.from(map.entries())
+                          .sort((a, b) => a[0].localeCompare(b[0]))
+                          .map(([c, v]) => [c, v.effectif, v.du, v.enc, v.rem, v.reste, v.du > 0 ? Number((((v.enc + v.rem) / v.du) * 100).toFixed(1)) : 0]);
+                      },
+                    },
+                    {
+                      key: "detail_paiements",
+                      titre: `Détail des versements par élève${suffix}`,
+                      desc: "Historique de chaque encaissement (date, mode, montant).",
+                      filename: `detail_versements${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Matricule", "Nom", "Prénom", "Date", "Mode", "Référence", "Montant"],
+                      getRows: () => {
+                        const from = filters.from ? new Date(filters.from + "T00:00:00") : null;
+                        const to = filters.to ? new Date(filters.to + "T23:59:59") : null;
+                        const rows: (string | number)[][] = [];
+                        for (const e of groupByClasse(scopedFinance)) {
+                          for (const p of e.paiements ?? []) {
+                            if (p.kind !== "encaissement") continue;
+                            const d = p.date ? new Date(p.date) : null;
+                            if (from && d && d < from) continue;
+                            if (to && d && d > to) continue;
+                            rows.push([
+                              e.classe, e.matricule, e.nom, e.prenom,
+                              d ? d.toLocaleDateString("fr-FR") : "",
+                              (p as any).mode ?? "—",
+                              (p as any).reference ?? "",
+                              p.montant ?? 0,
+                            ]);
+                          }
+                        }
+                        return rows;
+                      },
+                    },
+                    {
+                      key: "contacts_parents",
+                      titre: `Contacts parents par classe${suffix}`,
+                      desc: "Annuaire téléphonique pour relances / communications.",
+                      filename: `contacts_parents${suffix.replace(/\s|—/g, "_")}`,
+                      columns: ["Classe", "Élève", "Parent", "Téléphone", "Reste dû"],
+                      getRows: () =>
+                        groupByClasse(scopedFinance).map((e) => [
+                          e.classe,
+                          `${e.nom} ${e.prenom}`,
+                          e.parent,
+                          e.telephone,
+                          e.resteDu,
+                        ]),
+                    },
+                  ];
+
+                  return listes.map((l) => (
+                    <Card key={l.key} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
+                      <CardContent className="p-5">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <Users className="h-5 w-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold font-display text-primary">{l.titre}</p>
+                            <p className="text-sm text-muted-foreground mt-0.5">{l.desc}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Période : {periode}</p>
+                          </div>
+                        </div>
+                        <div className="mt-4">
+                          <ReportExportButtons
+                            title={l.titre}
+                            filename={l.filename}
+                            columns={l.columns}
+                            getRows={l.getRows}
+                            sousTitre={sousTitre}
+                            ecole={ecoleInfo}
+                            orientation={l.columns.length > 6 ? "landscape" : "portrait"}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ));
+                })()}
+              </div>
+            </div>
           </div>
         )}
 
