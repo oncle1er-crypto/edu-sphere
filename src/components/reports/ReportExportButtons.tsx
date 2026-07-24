@@ -43,6 +43,7 @@ export function ReportExportButtons({
   hide = [],
   disabled,
   pdfSummary,
+  pdfGroupBy,
 }: ReportExportButtonsProps) {
   const [busy, setBusy] = useState<null | "csv" | "xlsx" | "pdf">(null);
 
@@ -55,7 +56,7 @@ export function ReportExportButtons({
         toast.warning("Aucune donnée à exporter");
         return;
       }
-      const payload = { title, filename, columns, rows, sousTitre, ecole, orientation, pdfSummary };
+      const payload = { title, filename, columns, rows, sousTitre, ecole, orientation, pdfSummary, pdfGroupBy };
       if (fmt === "csv") exportRowsCSV(payload);
       else if (fmt === "xlsx") exportRowsXLSX(payload);
       else await exportRowsPDF(payload);
