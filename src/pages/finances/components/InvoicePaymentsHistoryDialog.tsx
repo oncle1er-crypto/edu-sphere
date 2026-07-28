@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { History, Printer, Ban, Loader2, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useAuth } from "@/context/AuthContext";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import type { InvoiceForPayment } from "./InvoicePaymentDialog";
@@ -36,6 +37,19 @@ const fcfa = (n: number) => `${Math.round(n).toLocaleString("fr-FR").replace(/\u
 
 export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onChanged }: Props) {
   const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
+  const [canEditMode, setCanEditMode] = useState(false);
+  useEffect(() => {
+    if (!user) { setCanEditMode(false); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["admin","directeur","comptable"] as any);
+      setCanEditMode((data ?? []).length > 0);
+    })();
+  }, [user]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
@@ -181,9 +195,9 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           <Button size="sm" variant="ghost" onClick={() => reprint(p)} title="Réimprimer">
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
-                          {!isCancelled && isAdmin && editMode?.id !== p.id && (
-                            <Button size="sm" variant="ghost" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode">
-                              <Pencil className="h-3.5 w-3.5" />
+                          {!isCancelled && canEditMode && editMode?.id !== p.id && (
+                            <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode de paiement">
+                              <Pencil className="h-3 w-3" /> Mode
                             </Button>
                           )}
                           {!isCancelled && isAdmin && (
