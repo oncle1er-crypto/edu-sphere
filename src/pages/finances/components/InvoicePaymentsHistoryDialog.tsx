@@ -37,6 +37,19 @@ const fcfa = (n: number) => `${Math.round(n).toLocaleString("fr-FR").replace(/\u
 
 export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onChanged }: Props) {
   const { isAdmin } = useIsAdmin();
+  const { user } = useAuth();
+  const [canEditMode, setCanEditMode] = useState(false);
+  useEffect(() => {
+    if (!user) { setCanEditMode(false); return; }
+    (async () => {
+      const { data } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user.id)
+        .in("role", ["admin","directeur","comptable"] as any);
+      setCanEditMode((data ?? []).length > 0);
+    })();
+  }, [user]);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [loading, setLoading] = useState(false);
   const [cancelling, setCancelling] = useState<string | null>(null);
