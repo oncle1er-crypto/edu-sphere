@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
-import { Receipt, Plus, Loader2, Wallet, Printer, History } from "lucide-react";
+import { Receipt, Plus, Loader2, Wallet, Printer, History, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -13,6 +13,7 @@ import { useAnneeId } from "@/hooks/useAnneeId";
 import { useEleves } from "@/hooks/useEleves";
 import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/components/InvoicePaymentDialog";
 import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/InvoicePaymentsHistoryDialog";
+import { InvoiceEditDialog, type EditableInvoice } from "@/pages/finances/components/InvoiceEditDialog";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 
@@ -29,6 +30,9 @@ interface Row {
   categorie: string;
 }
 
+type SortKey = "date_echeance" | "libelle" | "statut";
+type SortDir = "asc" | "desc";
+
 export default function TransportBilling() {
   const { ecoleId } = useEcoleId();
   const { anneeId } = useAnneeId();
@@ -39,6 +43,10 @@ export default function TransportBilling() {
   const [saving, setSaving] = useState(false);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
+  const [editFor, setEditFor] = useState<EditableInvoice | null>(null);
+  const [statutFilter, setStatutFilter] = useState<string>("all");
+  const [sortKey, setSortKey] = useState<SortKey>("date_echeance");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [form, setForm] = useState({ eleve_id: "", libelle: "Transport - Mensuel", montant: "18000", date_echeance: new Date().toISOString().slice(0,10) });
 
   const fetchData = async () => {
@@ -58,6 +66,32 @@ export default function TransportBilling() {
   };
 
   useEffect(() => { fetchData(); }, [ecoleId]);
+
+  const effectiveStatus = (f: Row) => f.montant_paye >= f.montant ? "payee" : f.montant_paye > 0 ? "partielle" : f.statut;
+
+  const displayed = useMemo(() => {
+    let list = rows.slice();
+    if (statutFilter !== "all") list = list.filter((r) => effectiveStatus(r) === statutFilter);
+    list.sort((a, b) => {
+      let av: any, bv: any;
+      if (sortKey === "date_echeance") { av = a.date_echeance; bv = b.date_echeance; }
+      else if (sortKey === "libelle") { av = a.libelle?.toLowerCase() ?? ""; bv = b.libelle?.toLowerCase() ?? ""; }
+      else { av = effectiveStatus(a); bv = effectiveStatus(b); }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [rows, statutFilter, sortKey, sortDir]);
+
+  const toggleSort = (k: SortKey) => {
+    if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(k); setSortDir("asc"); }
+  };
+
+  const SortIcon = ({ k }: { k: SortKey }) => sortKey !== k
+    ? <ArrowUpDown className="h-3 w-3 inline ml-1 opacity-40" />
+    : sortDir === "asc" ? <ArrowUp className="h-3 w-3 inline ml-1" /> : <ArrowDown className="h-3 w-3 inline ml-1" />;
 
   const handleAdd = async () => {
     if (!form.eleve_id || !ecoleId || !anneeId) return;
@@ -90,7 +124,18 @@ export default function TransportBilling() {
 
   return (
     <SettingsSection title="Facturation transport" description="Génération, encaissement et suivi des factures d'abonnement." icon={<Receipt className="h-5 w-5" />} hideSave>
-      <div className="flex justify-end">
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <div className="flex items-center gap-2">
+          <Select value={statutFilter} onValueChange={setStatutFilter}>
+            <SelectTrigger className="w-44 h-9"><SelectValue placeholder="Statut" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les statuts</SelectItem>
+              <SelectItem value="emise">Émise</SelectItem>
+              <SelectItem value="partielle">Partielle</SelectItem>
+              <SelectItem value="payee">Payée</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouvelle facture</Button></DialogTrigger>
           <DialogContent>
@@ -118,16 +163,16 @@ export default function TransportBilling() {
             <TableRow>
               <TableHead>N°</TableHead>
               <TableHead>Élève</TableHead>
-              <TableHead>Libellé</TableHead>
-              <TableHead>Échéance</TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("libelle")}>Libellé<SortIcon k="libelle" /></TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("date_echeance")}>Échéance / Période<SortIcon k="date_echeance" /></TableHead>
               <TableHead className="text-right">Montant</TableHead>
               <TableHead className="text-right">Réglé</TableHead>
-              <TableHead>Statut</TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("statut")}>Statut<SortIcon k="statut" /></TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map((f) => {
+            {displayed.map((f) => {
               const solde = f.montant_paye >= f.montant;
               return (
                 <TableRow key={f.id}>
@@ -139,6 +184,9 @@ export default function TransportBilling() {
                   <TableCell className="text-right text-primary">{f.montant_paye.toLocaleString("fr-FR")}</TableCell>
                   <TableCell><Badge variant={solde ? "default" : f.montant_paye > 0 ? "secondary" : "destructive"}>{solde ? "Payée" : f.montant_paye > 0 ? "Partielle" : f.statut}</Badge></TableCell>
                   <TableCell className="text-right space-x-1">
+                    <Button size="sm" variant="ghost" onClick={() => setEditFor({ id: f.id, numero: f.numero, libelle: f.libelle, date_echeance: f.date_echeance })} title="Modifier">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </Button>
                     {!solde && (
                       <Button size="sm" variant="outline" onClick={() => openPayDialog(f)}>
                         <Wallet className="h-3.5 w-3.5" /> Encaisser
@@ -162,7 +210,7 @@ export default function TransportBilling() {
                 </TableRow>
               );
             })}
-            {rows.length === 0 && (
+            {displayed.length === 0 && (
               <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">Aucune facture transport.</TableCell></TableRow>
             )}
           </TableBody>
@@ -181,6 +229,13 @@ export default function TransportBilling() {
         open={!!historyFor}
         onOpenChange={(o) => !o && setHistoryFor(null)}
         onChanged={fetchData}
+      />
+
+      <InvoiceEditDialog
+        facture={editFor}
+        open={!!editFor}
+        onOpenChange={(o) => !o && setEditFor(null)}
+        onSaved={fetchData}
       />
     </SettingsSection>
   );
