@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { History, Printer, Ban, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { History, Printer, Ban, Loader2, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import type { InvoiceForPayment } from "./InvoicePaymentDialog";
+
+const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
 interface Props {
   facture: InvoiceForPayment | null;
