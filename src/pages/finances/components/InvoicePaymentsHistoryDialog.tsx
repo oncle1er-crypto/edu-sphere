@@ -41,6 +41,20 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [motifFor, setMotifFor] = useState<string | null>(null);
   const [motif, setMotif] = useState("");
+  const [editMode, setEditMode] = useState<{ id: string; mode: string } | null>(null);
+  const [savingMode, setSavingMode] = useState(false);
+
+  const saveMode = async () => {
+    if (!editMode) return;
+    setSavingMode(true);
+    const { error } = await supabase.from("paiements").update({ mode: editMode.mode as any }).eq("id", editMode.id);
+    setSavingMode(false);
+    if (error) return toast.error(error.message);
+    toast.success("Mode de paiement modifié");
+    setEditMode(null);
+    await fetchPaiements();
+    onChanged?.();
+  };
 
   const fetchPaiements = async () => {
     if (!facture) return;
