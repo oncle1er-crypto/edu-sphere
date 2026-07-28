@@ -5,12 +5,15 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { History, Printer, Ban, Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { History, Printer, Ban, Loader2, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import type { InvoiceForPayment } from "./InvoicePaymentDialog";
+
+const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
 interface Props {
   facture: InvoiceForPayment | null;
@@ -38,6 +41,20 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [motifFor, setMotifFor] = useState<string | null>(null);
   const [motif, setMotif] = useState("");
+  const [editMode, setEditMode] = useState<{ id: string; mode: string } | null>(null);
+  const [savingMode, setSavingMode] = useState(false);
+
+  const saveMode = async () => {
+    if (!editMode) return;
+    setSavingMode(true);
+    const { error } = await supabase.from("paiements").update({ mode: editMode.mode as any }).eq("id", editMode.id);
+    setSavingMode(false);
+    if (error) return toast.error(error.message);
+    toast.success("Mode de paiement modifié");
+    setEditMode(null);
+    await fetchPaiements();
+    onChanged?.();
+  };
 
   const fetchPaiements = async () => {
     if (!facture) return;
@@ -139,7 +156,19 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                       <TableRow key={p.id} className={isCancelled ? "opacity-60" : ""}>
                         <TableCell className="text-xs">{p.date_paiement}</TableCell>
                         <TableCell className="font-mono text-xs">{p.reference ?? "—"}</TableCell>
-                        <TableCell className="text-xs uppercase">{p.mode}</TableCell>
+                        <TableCell className="text-xs uppercase">
+                          {editMode?.id === p.id ? (
+                            <div className="flex items-center gap-1">
+                              <Select value={editMode.mode} onValueChange={(v) => setEditMode({ id: p.id, mode: v })}>
+                                <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>{MODES.map((m) => <SelectItem key={m} value={m} className="text-xs uppercase">{m}</SelectItem>)}</SelectContent>
+                              </Select>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveMode} disabled={savingMode}>
+                                {savingMode ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5 text-primary" />}
+                              </Button>
+                            </div>
+                          ) : p.mode}
+                        </TableCell>
                         <TableCell className={`text-right font-medium ${isCancelled ? "line-through text-muted-foreground" : "text-primary"}`}>
                           {fcfa(Number(p.montant))}
                         </TableCell>
@@ -152,6 +181,11 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           <Button size="sm" variant="ghost" onClick={() => reprint(p)} title="Réimprimer">
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
+                          {!isCancelled && isAdmin && editMode?.id !== p.id && (
+                            <Button size="sm" variant="ghost" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           {!isCancelled && isAdmin && (
                             <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { setMotifFor(p.id); setMotif(""); }} title="Annuler ce paiement">
                               <Ban className="h-3.5 w-3.5" />
