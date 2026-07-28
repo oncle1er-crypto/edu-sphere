@@ -156,7 +156,19 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                       <TableRow key={p.id} className={isCancelled ? "opacity-60" : ""}>
                         <TableCell className="text-xs">{p.date_paiement}</TableCell>
                         <TableCell className="font-mono text-xs">{p.reference ?? "—"}</TableCell>
-                        <TableCell className="text-xs uppercase">{p.mode}</TableCell>
+                        <TableCell className="text-xs uppercase">
+                          {editMode?.id === p.id ? (
+                            <div className="flex items-center gap-1">
+                              <Select value={editMode.mode} onValueChange={(v) => setEditMode({ id: p.id, mode: v })}>
+                                <SelectTrigger className="h-7 w-32 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>{MODES.map((m) => <SelectItem key={m} value={m} className="text-xs uppercase">{m}</SelectItem>)}</SelectContent>
+                              </Select>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveMode} disabled={savingMode}>
+                                {savingMode ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5 text-primary" />}
+                              </Button>
+                            </div>
+                          ) : p.mode}
+                        </TableCell>
                         <TableCell className={`text-right font-medium ${isCancelled ? "line-through text-muted-foreground" : "text-primary"}`}>
                           {fcfa(Number(p.montant))}
                         </TableCell>
@@ -169,6 +181,11 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           <Button size="sm" variant="ghost" onClick={() => reprint(p)} title="Réimprimer">
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
+                          {!isCancelled && isAdmin && editMode?.id !== p.id && (
+                            <Button size="sm" variant="ghost" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode">
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
                           {!isCancelled && isAdmin && (
                             <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { setMotifFor(p.id); setMotif(""); }} title="Annuler ce paiement">
                               <Ban className="h-3.5 w-3.5" />
