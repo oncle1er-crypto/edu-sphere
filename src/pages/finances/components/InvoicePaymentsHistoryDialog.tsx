@@ -195,9 +195,9 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           <Button size="sm" variant="ghost" onClick={() => reprint(p)} title="Réimprimer">
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
-                          {!isCancelled && isAdmin && editMode?.id !== p.id && (
-                            <Button size="sm" variant="ghost" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode">
-                              <Pencil className="h-3.5 w-3.5" />
+                          {!isCancelled && canEditMode && editMode?.id !== p.id && (
+                            <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode de paiement">
+                              <Pencil className="h-3 w-3" /> Mode
                             </Button>
                           )}
                           {!isCancelled && isAdmin && (
