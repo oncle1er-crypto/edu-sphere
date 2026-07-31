@@ -15,6 +15,9 @@ export interface HomeAgendaItem {
   titre: string;
   sub: string;
   at: string;
+  /** bornes de période (utilisées pour le badge En cours / À venir / Terminé) */
+  debut?: string;
+  fin?: string;
 }
 
 /** Ligne générique affichée dans le dialogue d'une alerte */
@@ -235,6 +238,8 @@ export function useHomeOverview() {
           titre: p.nom,
           sub: `${new Date(p.debut).toLocaleDateString("fr-FR")} → ${new Date(p.fin).toLocaleDateString("fr-FR")}`,
           at: p.debut,
+          debut: p.debut,
+          fin: p.fin,
         }));
 
       const agenda: HomeAgendaItem[] = [
