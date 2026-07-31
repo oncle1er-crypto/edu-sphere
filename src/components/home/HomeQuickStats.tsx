@@ -69,7 +69,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
           <span className={`absolute inset-x-0 top-0 h-1 ${t.bar}`} />
           <div className="flex items-start gap-2.5 pt-1.5">
             <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${t.ring} shadow-sm`}>
-              <t.icon className="h-4.5 w-4.5 h-[18px] w-[18px]" />
+              <t.icon className="h-[18px] w-[18px]" />
             </span>
             <div className="min-w-0">
               <p className="text-[11px] font-medium text-muted-foreground truncate">{t.label}</p>
