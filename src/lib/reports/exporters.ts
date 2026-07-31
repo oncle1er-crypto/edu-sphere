@@ -161,7 +161,7 @@ function analyseColumns(columns: string[], rows: (string | number | null | undef
     const percent = PERCENT_RE.test(header);
     const money = numeric && !percent && MONEY_RE.test(header);
     const count = numeric && !percent && !money && COUNT_RE.test(header);
-    const sum = numeric ? values.reduce((s, v) => s + toNumber(v), 0) : 0;
+    const sum = numeric ? values.reduce<number>((s, v) => s + toNumber(v), 0) : 0;
     return { numeric, money, percent, count, sum };
   });
 }
