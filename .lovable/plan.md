@@ -1,14 +1,16 @@
-# Filtrage global par niveau (Maternelle / Primaire / Secondaire / Global)
+# Filtrage global par niveau (Primaire / Secondaire / Global)
 
 Objectif : un sélecteur de niveau dans l'en-tête qui filtre les données de tous les modules, sauf Communication et Paramètres. Option « Tous les niveaux » (global) disponible.
 
 ## Ce que verra l'utilisateur
 
-- Dans l'en-tête, à côté de l'année scolaire : un sélecteur **Niveau** avec 4 choix — Tous les niveaux, Maternelle, Primaire, Secondaire (basé sur les cycles existants : Maternelle 6 classes, Primaire 12, Secondaire 16).
+- Dans l'en-tête, à côté de l'année scolaire : un sélecteur **Niveau** avec 3 choix — Tous les niveaux, Primaire (Maternelle incluse), Secondaire. La Maternelle (6 classes) est regroupée avec le Primaire (12 classes) ; le Secondaire compte 16 classes.
 - Le choix est mémorisé (localStorage) et conservé d'une page à l'autre.
 - Dès qu'un niveau est choisi, listes, compteurs, tableaux de bord, rapports et PDF ne contiennent que les données de ce niveau ; les intitulés de rapports mentionnent le niveau.
 - Un utilisateur restreint à un niveau (ex. directeur du primaire) voit le sélecteur verrouillé sur son niveau, sans option globale.
 - Communication et Paramètres restent inchangés (toujours tout l'établissement).
+- En mode global, chaque saisie de dépense demande son niveau d'affectation : **Primaire**, **Secondaire** ou **Commun** (dépense partagée). En mode niveau, le niveau est pré-rempli et modifiable.
+
 
 ## Découpage du travail
 
