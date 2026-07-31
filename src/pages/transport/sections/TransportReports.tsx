@@ -4,20 +4,22 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 
 export default function TransportReports() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const ecole = useEcoleInfo();
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
   const [classes, setClasses] = useState<string[]>([]);
 
   useEffect(() => {
     if (!ecoleId) return;
-    supabase.from("classes").select("nom").eq("ecole_id", ecoleId).order("nom").then(({ data }) => {
-      setClasses(Array.from(new Set(((data ?? []) as any[]).map((c) => c.nom).filter(Boolean))));
+    supabase.from("classes").select("id, nom").eq("ecole_id", ecoleId).order("nom").then(({ data }) => {
+      setClasses(Array.from(new Set(((data ?? []) as any[]).filter((c) => keepClasse(c.id)).map((c) => c.nom).filter(Boolean))));
     });
   }, [ecoleId]);
 
@@ -30,12 +32,12 @@ export default function TransportReports() {
 
   const fetchFactures = async () => {
     let q = supabase.from("factures")
-      .select("numero, libelle, montant, montant_paye, statut, date_emission, eleves(nom, prenom, classes(nom))")
+      .select("numero, libelle, montant, montant_paye, statut, date_emission, eleves(nom, prenom, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId!).eq("categorie", "transport")
       .gte("date_emission", dateFrom);
     if (dateTo) q = q.lte("date_emission", dateTo);
     const { data } = await q;
-    let rows = ((data ?? []) as any[]);
+    let rows = ((data ?? []) as any[]).filter((f) => keepClasse(f.eleves?.classe_id));
     if (classeFilter) rows = rows.filter((f) => f.eleves?.classes?.nom === classeFilter);
     return rows;
   };
@@ -46,8 +48,8 @@ export default function TransportReports() {
       columns: ["Élève", "Classe", "Ligne", "Statut"],
       getRows: async () => {
         const { data } = await supabase.from("abonnements_transport")
-          .select("statut, lignes_transport(nom), eleves(nom, prenom, classes(nom))").eq("ecole_id", ecoleId!);
-        let rows = ((data ?? []) as any[]).map((r) => ({
+          .select("statut, lignes_transport(nom), eleves(nom, prenom, classe_id, classes(nom))").eq("ecole_id", ecoleId!);
+        let rows = ((data ?? []) as any[]).filter((r) => keepClasse(r.eleves?.classe_id)).map((r) => ({
           eleve: `${r.eleves?.nom ?? ""} ${r.eleves?.prenom ?? ""}`.trim(),
           classe: r.eleves?.classes?.nom ?? "",
           ligne: r.lignes_transport?.nom ?? "", statut: r.statut,

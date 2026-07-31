@@ -4,11 +4,13 @@ import { BarChart3, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
 
 export default function CanteenStats() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const [loading, setLoading] = useState(true);
   const [repasParMois, setRepasParMois] = useState<{ mois: string; nb: number }[]>([]);
   const [abonnes, setAbonnes] = useState(0);
@@ -20,7 +22,7 @@ export default function CanteenStats() {
     (async () => {
       const [planning, ab, inc, st] = await Promise.all([
         supabase.from("cantine_planning").select("date_service, nombre_eleves").eq("ecole_id", ecoleId),
-        supabase.from("abonnements_cantine").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
+        supabase.from("abonnements_cantine").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("cantine_incidents").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
         supabase.from("stocks_cantine").select("quantite, prix_unitaire").eq("ecole_id", ecoleId),
       ]);
@@ -36,12 +38,12 @@ export default function CanteenStats() {
         return { mois: MONTHS[m], nb: buckets.get(m) ?? 0 };
       });
       setRepasParMois(arr);
-      setAbonnes(ab.count ?? 0);
+      setAbonnes(((ab.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length);
       setIncidents(inc.count ?? 0);
       setStockValeur(((st.data ?? []) as any[]).reduce((s, x) => s + (Number(x.quantite) || 0) * (Number(x.prix_unitaire) || 0), 0));
       setLoading(false);
     })();
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 animate-spin text-primary" /></div>;
 

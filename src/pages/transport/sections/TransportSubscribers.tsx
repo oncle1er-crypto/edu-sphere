@@ -20,12 +20,14 @@ import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/c
 import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/InvoicePaymentsHistoryDialog";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 interface Row {
   id: string;
   eleve_id: string;
   eleve_nom: string;
   classe_nom: string;
+  classe_id: string | null;
   ligne_id: string | null;
   ligne_nom: string;
   grille_id: string | null;
@@ -44,6 +46,7 @@ interface FactureLite {
 
 export default function TransportSubscribers() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const { eleves } = useEleves();
   const { anneeId } = useAnneeId();
   const { lignes: grilles } = useGrilleServices("transport");
@@ -67,7 +70,7 @@ export default function TransportSubscribers() {
     if (!ecoleId) return;
     const [{ data: ab }, { data: lg }] = await Promise.all([
       supabase.from("abonnements_transport")
-        .select("id, eleve_id, ligne_id, statut, grille_id, eleves(nom, prenom, classes(nom)), lignes_transport(nom), grille_tarifs_services(libelle, periodicite, montant_total)")
+        .select("id, eleve_id, ligne_id, statut, grille_id, eleves(nom, prenom, classe_id, classes(nom)), lignes_transport(nom), grille_tarifs_services(libelle, periodicite, montant_total)")
         .eq("ecole_id", ecoleId).order("created_at", { ascending: false }),
       supabase.from("lignes_transport").select("id, nom").eq("ecole_id", ecoleId).order("nom"),
     ]);
@@ -75,6 +78,7 @@ export default function TransportSubscribers() {
       id: a.id, eleve_id: a.eleve_id, statut: a.statut,
       eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
       classe_nom: a.eleves?.classes?.nom ?? "—",
+      classe_id: a.eleves?.classe_id ?? null,
       ligne_id: a.ligne_id, ligne_nom: a.lignes_transport?.nom ?? "—",
       grille_id: a.grille_id,
       grille_libelle: a.grille_tarifs_services?.libelle ?? null,
@@ -148,8 +152,9 @@ export default function TransportSubscribers() {
   };
 
   const filtered = rows.filter((a) =>
-    a.eleve_nom.toLowerCase().includes(search.toLowerCase()) ||
-    a.classe_nom.toLowerCase().includes(search.toLowerCase())
+    keepClasse(a.classe_id) && (
+      a.eleve_nom.toLowerCase().includes(search.toLowerCase()) ||
+    a.classe_nom.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;

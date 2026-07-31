@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useNiveau } from "@/context/NiveauContext";
 
 /**
@@ -24,11 +24,17 @@ export function useNiveauFilters() {
   const applyCycle = <Q extends { in: (c: string, v: string[]) => Q }>(q: Q, col = "cycle_id"): Q =>
     isGlobal ? q : q.in(col, cycleIds.length ? cycleIds : ["00000000-0000-0000-0000-000000000000"]);
 
-  const keepClasse = (classeId: string | null | undefined) =>
-    isGlobal || !classeIdSet ? true : !!classeId && classeIdSet.has(classeId);
+  const keepClasse = useCallback(
+    (classeId: string | null | undefined) =>
+      isGlobal || !classeIdSet ? true : !!classeId && classeIdSet.has(classeId),
+    [isGlobal, classeIdSet],
+  );
 
-  const keepEleve = (eleveId: string | null | undefined) =>
-    isGlobal || !eleveIdSet ? true : !!eleveId && eleveIdSet.has(eleveId);
+  const keepEleve = useCallback(
+    (eleveId: string | null | undefined) =>
+      isGlobal || !eleveIdSet ? true : !!eleveId && eleveIdSet.has(eleveId),
+    [isGlobal, eleveIdSet],
+  );
 
   return {
     niveau,

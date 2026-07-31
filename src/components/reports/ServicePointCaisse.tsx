@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Wallet, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 
@@ -35,6 +36,7 @@ interface Ligne {
   facture_libelle: string;
   eleve: string;
   classe: string;
+  classe_id: string | null;
 }
 
 export default function ServicePointCaisse({
@@ -45,6 +47,7 @@ export default function ServicePointCaisse({
   moduleLabel: string;
 }) {
   const { ecoleId } = useEcoleId();
+  const { keepClasse, isGlobal } = useNiveauFilters();
   const ecole = useEcoleInfo();
   const [from, setFrom] = useState<string>(today());
   const [to, setTo] = useState<string>(today());
@@ -57,7 +60,7 @@ export default function ServicePointCaisse({
     (async () => {
       const { data } = await supabase
         .from("paiements")
-        .select("id, date_paiement, montant, mode, reference, factures!inner(numero, libelle, categorie, eleves(nom, prenom, classes(nom)))")
+        .select("id, date_paiement, montant, mode, reference, factures!inner(numero, libelle, categorie, eleves(nom, prenom, classe_id, classes(nom)))")
         .eq("ecole_id", ecoleId)
         .eq("factures.categorie", categorie)
         .is("annule_le", null)
@@ -75,10 +78,11 @@ export default function ServicePointCaisse({
         facture_libelle: p.factures?.libelle ?? "—",
         eleve: p.factures?.eleves ? `${p.factures.eleves.nom} ${p.factures.eleves.prenom}` : "—",
         classe: p.factures?.eleves?.classes?.nom ?? "—",
-      })));
+        classe_id: p.factures?.eleves?.classe_id ?? null,
+      })).filter((l) => keepClasse(l.classe_id)));
       setLoading(false);
     })();
-  }, [ecoleId, categorie, from, to]);
+  }, [ecoleId, categorie, from, to, isGlobal, keepClasse]);
 
   const total = lignes.reduce((s, l) => s + l.montant, 0);
 
