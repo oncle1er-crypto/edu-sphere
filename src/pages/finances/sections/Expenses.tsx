@@ -12,17 +12,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDepenses } from "@/hooks/useDepenses";
 import { useFournisseurs } from "@/hooks/useFournisseurs";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
-import { useState } from "react";
+import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext";
+import { useEffect, useState } from "react";
 
 const CATEGORIES = ["Fournitures pédagogiques", "Énergie & utilities", "Maintenance & entretien", "Transport scolaire", "Cantine", "Télécoms", "Autre"];
+
+const COMMUN = "__commun__";
 
 export default function Expenses() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const range = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
   const { depenses, loading, addDepense, updateStatut } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
+  const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+  const emptyForm = {
+    libelle: "",
+    categorie: "",
+    montant: "",
+    fournisseur_id: "",
+    cycle_id: COMMUN,
+    date_depense: new Date().toISOString().slice(0, 10),
+  };
+  const [form, setForm] = useState(emptyForm);
+
+  const cycleName = (id?: string | null) => cycles.find((c) => c.id === id)?.nom ?? null;
+
+  // En vue niveau, on préselectionne le premier cycle du niveau courant
+  useEffect(() => {
+    if (!open) return;
+    setForm((f) => ({ ...f, cycle_id: isGlobal ? COMMUN : cycleIds[0] ?? COMMUN }));
+  }, [open, isGlobal, cycleIds.join(",")]);
 
   // Budget tracking by category
   const parCategorie = CATEGORIES.map((cat) => {
@@ -38,12 +58,13 @@ export default function Expenses() {
       categorie: form.categorie || null,
       montant: Number(form.montant),
       fournisseur_id: form.fournisseur_id || null,
+      cycle_id: form.cycle_id === COMMUN ? null : form.cycle_id,
       date_depense: form.date_depense,
       statut: "en_attente",
       reference: null,
       notes: null,
     });
-    setForm({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+    setForm(emptyForm);
     setOpen(false);
   };
 
