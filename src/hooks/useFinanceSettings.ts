@@ -17,7 +17,11 @@ export interface FinanceSettingsData {
   modes_paiement: string[];
   rappel_auto: boolean;
   penalite_retard: number;
+  frais_inscription: number;
+  frais_uniformes: number;
+  frais_activites: number;
 }
+
 
 const DEFAULTS: FinanceSettingsData = {
   devise: "XAF",
