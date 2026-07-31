@@ -224,6 +224,7 @@ export function useFinanceData(scopedAnneeId?: string) {
         nom: e.nom,
         prenom: e.prenom,
         classe: e.classes?.nom ?? "Non affecté",
+        classeId: e.classe_id ?? null,
         cycle: (e.classes?.cycles?.nom ?? "Primaire") as Cycle,
         parent: parent?.nom ?? "—",
         telephone: parent?.telephone ?? "—",
