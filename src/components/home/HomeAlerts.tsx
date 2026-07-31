@@ -14,6 +14,8 @@ interface AlertGroup {
   to: string;
   mod: string;
   actionLabel: string;
+  /** paramètre d'URL utilisé pour ouvrir directement la ligne concernée */
+  param?: string;
 }
 
 const fmt = (n: number) => `${n.toLocaleString("fr-FR")} F`;
@@ -25,11 +27,11 @@ export function HomeAlerts({ data }: { data: HomeOverview }) {
   const a = data.alertes;
 
   const groups: AlertGroup[] = [
-    { key: "impayes", label: "élèves avec impayés (scolarité)", rows: a.impayes, to: "/finances/impayes", mod: "finances", actionLabel: "Encaisser" },
-    { key: "cantine", label: "factures cantine impayées", rows: a.impayesCantine, to: "/cantine/facturation", mod: "cantine", actionLabel: "Encaisser" },
-    { key: "transport", label: "factures transport impayées", rows: a.impayesTransport, to: "/transport/facturation", mod: "transport", actionLabel: "Encaisser" },
-    { key: "docs", label: "dossiers sans document", rows: a.dossiersIncomplets, to: "/eleves/documents", mod: "eleves", actionLabel: "Compléter" },
-    { key: "reservations", label: "tenues réservées à retirer", rows: a.tenuesReservees, to: "/services-ponctuels/ventes-tenues", mod: "services_ponctuels", actionLabel: "Retirer" },
+    { key: "impayes", label: "élèves avec impayés (scolarité)", rows: a.impayes, to: "/finances/impayes", mod: "finances", actionLabel: "Encaisser", param: "eleve" },
+    { key: "cantine", label: "factures cantine impayées", rows: a.impayesCantine, to: "/cantine/facturation", mod: "cantine", actionLabel: "Encaisser", param: "facture" },
+    { key: "transport", label: "factures transport impayées", rows: a.impayesTransport, to: "/transport/facturation", mod: "transport", actionLabel: "Encaisser", param: "facture" },
+    { key: "docs", label: "dossiers sans document", rows: a.dossiersIncomplets, to: "/eleves/documents", mod: "eleves", actionLabel: "Compléter", param: "eleve" },
+    { key: "reservations", label: "tenues réservées à retirer", rows: a.tenuesReservees, to: "/services-ponctuels/ventes-tenues", mod: "services_ponctuels", actionLabel: "Retirer", param: "vente" },
     { key: "stocks", label: "stocks de tenues bas", rows: a.stocksBas, to: "/services-ponctuels/catalogue", mod: "services_ponctuels", actionLabel: "Réapprovisionner" },
   ].filter((g) => g.rows.length > 0 && can(g.mod, "view"));
 
@@ -88,7 +90,10 @@ export function HomeAlerts({ data }: { data: HomeOverview }) {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => { navigate(open.to); setOpen(null); }}
+                          onClick={() => {
+                            navigate(open.param ? `${open.to}?${open.param}=${encodeURIComponent(r.id)}` : open.to);
+                            setOpen(null);
+                          }}
                         >
                           {open.actionLabel}
                         </Button>
