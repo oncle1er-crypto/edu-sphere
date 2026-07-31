@@ -68,7 +68,7 @@ export function useHomeOverview() {
   const classeKey = (classeIds ?? []).join(",");
 
   useEffect(() => {
-    if (ecoleLoading || periodLoading) return;
+    if (ecoleLoading || periodLoading || niveauLoading) return;
     if (!ecoleId) {
       setData(null);
       setLoading(false);
