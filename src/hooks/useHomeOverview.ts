@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { useNiveau } from "@/context/NiveauContext";
 
 export interface HomeActivityItem {
   kind: "paiement" | "inscription" | "incident";
