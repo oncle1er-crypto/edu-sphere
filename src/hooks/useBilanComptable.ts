@@ -280,17 +280,50 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       const ts = sum(lignesSorties);
       const so = te.map((v, i) => v - ts[i]);
       let run = 0;
-      const soldeCumule = so.map((v) => (run += v));
+      const soldeCumuleFull = so.map((v) => (run += v));
+
+      // ── Découpage en trimestres (3 blocs de colonnes) ──
+      const taille = Math.ceil(nbMois / 3);
+      const trimestres = [0, 1, 2]
+        .map((t) => {
+          const f = t * taille;
+          const l = Math.min(nbMois - 1, f + taille - 1);
+          return {
+            label: `T${t + 1} — ${mois[f]?.label ?? ""} à ${mois[l]?.label ?? ""}`,
+            from: f,
+            to: l,
+          };
+        })
+        .filter((t) => t.from < nbMois);
+
+      // ── Restriction à la période choisie ──
+      let f = 0;
+      let l = nbMois - 1;
+      if (periode.mode === "trimestre") {
+        const t = trimestres[Math.min(periode.index, trimestres.length - 1)];
+        if (t) { f = t.from; l = t.to; }
+      } else if (periode.mode === "mois") {
+        f = Math.min(Math.max(0, periode.index), nbMois - 1);
+        l = f;
+      }
+
+      const slice = (r: BilanLigne): BilanLigne => {
+        const valeurs = r.valeurs.slice(f, l + 1);
+        return { libelle: r.libelle, valeurs, total: valeurs.reduce((s, v) => s + v, 0) };
+      };
 
       return {
-        mois,
-        entrees: lignesEntrees,
-        sorties: lignesSorties,
-        totalEntrees: mkLigne("TOTAL ENTRÉES", te),
-        totalSorties: mkLigne("TOTAL SORTIES", ts),
-        solde: mkLigne("SOLDE DE CAISSE", so),
-        soldeCumule,
+        mois: mois.slice(f, l + 1),
+        moisExercice: mois,
+        trimestres,
+        entrees: lignesEntrees.map(slice),
+        sorties: lignesSorties.map(slice).filter((r) => r.total !== 0),
+        totalEntrees: slice(mkLigne("TOTAL ENTRÉES", te)),
+        totalSorties: slice(mkLigne("TOTAL SORTIES", ts)),
+        solde: slice(mkLigne("SOLDE DE CAISSE", so)),
+        soldeCumule: soldeCumuleFull.slice(f, l + 1),
       };
+
     },
   });
 }
