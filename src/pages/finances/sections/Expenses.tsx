@@ -124,6 +124,25 @@ export default function Expenses() {
                     </Select>
                   </div>
                 )}
+                {cycles.length > 0 && (
+                  <div>
+                    <Label>Imputation par niveau</Label>
+                    <Select value={form.cycle_id} onValueChange={(v) => setForm({ ...form, cycle_id: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={COMMUN}>Commun (réparti entre les niveaux)</SelectItem>
+                        {cycles.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nom} — {NIVEAU_LABELS[niveauOfCycle(c)]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      « Commun » : la dépense sera répartie au prorata dans les bilans par niveau.
+                    </p>
+                  </div>
+                )}
                 <Button onClick={handleSubmit} className="w-full">Enregistrer</Button>
               </div>
             </DialogContent>
