@@ -9,7 +9,13 @@ const fmtMontant = (n: number) =>
 
 export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const tiles = [
-    { label: "Élèves", value: data.totalEleves.toLocaleString("fr-FR"), icon: GraduationCap, tone: "text-primary bg-primary/10" },
+    {
+      label: "Élèves inscrits",
+      value: data.totalInscrits.toLocaleString("fr-FR"),
+      icon: GraduationCap,
+      tone: "text-primary bg-primary/10",
+      sub: `${data.totalEleves.toLocaleString("fr-FR")} au total (pré-inscrits inclus)`,
+    },
     { label: "Enseignants", value: data.totalEnseignants.toLocaleString("fr-FR"), icon: Users, tone: "text-[hsl(205_80%_40%)] bg-[hsl(205_80%_45%)]/10" },
     { label: "Encaissé aujourd'hui", value: `${fmtMontant(data.encaisseJour)} F`, icon: Wallet, tone: "text-success bg-success/10" },
     {
