@@ -4,9 +4,10 @@
  *
  * Falls back to mock data from scolarite-data.ts when DB is empty.
  */
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveau } from "@/context/NiveauContext";
 import type {
   EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique,
 } from "./scolarite-data";
@@ -258,6 +259,14 @@ export function useFinanceData(scopedAnneeId?: string) {
     }
   }, [ecoleLoading, ecoleId, fetchData]);
 
-  return { data, loading: loading || ecoleLoading, refetching, usingMock, refetch: fetchData, ecoleId };
+  // Filtrage par niveau (Primaire = Maternelle + Primaire / Secondaire)
+  const scopedData = useMemo(() => {
+    if (isGlobal || !classeIds) return data;
+    const set = new Set(classeIds);
+    return data.filter((d) => d.classeId && set.has(d.classeId));
+  }, [data, isGlobal, classeIds]);
+
+  return { data: scopedData, loading: loading || ecoleLoading, refetching, usingMock, refetch: fetchData, ecoleId };
 }
+
 
