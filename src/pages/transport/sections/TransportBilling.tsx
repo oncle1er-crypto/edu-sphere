@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useEleves } from "@/hooks/useEleves";
 import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/components/InvoicePaymentDialog";
@@ -29,6 +30,7 @@ interface Row {
   date_echeance: string;
   ecole_id: string;
   categorie: string;
+  classe_id?: string | null;
 }
 
 type SortKey = "date_echeance" | "libelle" | "statut";
@@ -36,6 +38,7 @@ type SortDir = "asc" | "desc";
 
 export default function TransportBilling() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const { anneeId } = useAnneeId();
   const { eleves } = useEleves();
   const [rows, setRows] = useState<Row[]>([]);
@@ -53,7 +56,7 @@ export default function TransportBilling() {
   const fetchData = async () => {
     if (!ecoleId) return;
     const { data } = await supabase.from("factures")
-      .select("id, numero, libelle, montant, montant_paye, statut, date_echeance, ecole_id, categorie, eleves(nom, prenom)")
+      .select("id, numero, libelle, montant, montant_paye, statut, date_echeance, ecole_id, categorie, eleves(nom, prenom, classe_id)")
       .eq("ecole_id", ecoleId).eq("categorie", "transport")
       .order("created_at", { ascending: false });
     setRows(((data ?? []) as any[]).map((f) => ({
@@ -62,6 +65,7 @@ export default function TransportBilling() {
       statut: f.statut, date_echeance: f.date_echeance,
       ecole_id: f.ecole_id, categorie: f.categorie,
       eleve_nom: f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "?",
+      classe_id: f.eleves?.classe_id ?? null,
     })));
     setLoading(false);
   };
@@ -71,7 +75,7 @@ export default function TransportBilling() {
   const effectiveStatus = (f: Row) => f.montant_paye >= f.montant ? "payee" : f.montant_paye > 0 ? "partielle" : f.statut;
 
   const displayed = useMemo(() => {
-    let list = rows.slice();
+    let list = rows.filter((r) => keepClasse(r.classe_id));
     if (statutFilter !== "all") list = list.filter((r) => effectiveStatus(r) === statutFilter);
     list.sort((a, b) => {
       let av: any, bv: any;
