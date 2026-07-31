@@ -75,7 +75,7 @@ export default function Reports() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
   const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
-  const { isGlobal, matchesCycle } = useNiveau();
+  const { isGlobal, matchesCycle, label: niveauLabel } = useNiveau();
   const { ratio, mention } = useQuotePartCommune();
 
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
@@ -115,7 +115,11 @@ export default function Reports() {
   const now = new Date();
   const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
   const defaultPeriode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
-  const periode = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
+  const periodeBase = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
+  // Le périmètre (niveau + quote-part des charges communes) est imprimé sur les documents.
+  const periode = isGlobal
+    ? `${periodeBase} — Tous les niveaux`
+    : `${periodeBase} — ${niveauLabel} (quote-part communes ${(ratio * 100).toFixed(1)} %)`;
 
 
   // ── Data builders ──
