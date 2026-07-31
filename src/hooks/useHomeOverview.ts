@@ -269,7 +269,9 @@ export function useHomeOverview() {
       setData({
         totalEleves: eleves.length,
         totalInscrits: eleves.filter((e) => e.statut === "inscrit").length,
-        totalEnseignants: ensRes.count ?? 0,
+        totalEnseignants: ((ensRes.data ?? []) as any[]).filter(
+          (t) => isGlobal || !t.cycle_id || cycleIds.includes(t.cycle_id)
+        ).length,
         encaisseJour,
         tauxPresence,
         presencesSaisies: presences.length,
