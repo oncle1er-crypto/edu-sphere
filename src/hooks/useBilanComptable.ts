@@ -30,7 +30,16 @@ export interface BilanComptable {
   totalSorties: BilanLigne;
   solde: BilanLigne;
   soldeCumule: number[];
+  /** Tous les mois de l'exercice (avant filtrage période) */
+  moisExercice: BilanMois[];
+  /** Découpage en trimestres : indices de colonnes */
+  trimestres: { label: string; from: number; to: number }[];
 }
+
+export type BilanPeriode =
+  | { mode: "annee" }
+  | { mode: "trimestre"; index: number }
+  | { mode: "mois"; index: number };
 
 const MOIS_LABELS = [
   "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
@@ -50,11 +59,18 @@ const ENTREES_LIBELLES = [
 
 type EntreeKey = (typeof ENTREES_LIBELLES)[number];
 
-function buildMois(debut: string): BilanMois[] {
+/** Nombre de mois d'anticipation avant la rentrée (inscriptions anticipées) */
+const MOIS_ANTICIPATION = 2;
+
+function buildMois(debut: string, fin: string): BilanMois[] {
   const d = new Date(debut);
+  const f = new Date(fin);
+  const start = new Date(d.getFullYear(), d.getMonth() - MOIS_ANTICIPATION, 1);
+  const nb =
+    (f.getFullYear() - start.getFullYear()) * 12 + (f.getMonth() - start.getMonth()) + 1;
   const out: BilanMois[] = [];
-  for (let i = 0; i < 12; i++) {
-    const m = new Date(d.getFullYear(), d.getMonth() + i, 1);
+  for (let i = 0; i < Math.max(1, nb); i++) {
+    const m = new Date(start.getFullYear(), start.getMonth() + i, 1);
     const label = MOIS_LABELS[m.getMonth()];
     out.push({
       label,
@@ -67,7 +83,7 @@ function buildMois(debut: string): BilanMois[] {
 
 const monthKey = (date?: string | null) => (date ? String(date).slice(0, 7) : null);
 
-export function useBilanComptable() {
+export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
   const { ecoleId } = useEcoleId();
   const { activeAnnee } = useAcademicPeriod();
   const { settings } = useFinanceSettings();
@@ -79,15 +95,28 @@ export function useBilanComptable() {
   };
 
   return useQuery<BilanComptable>({
-    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params],
+    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params, periode],
     enabled: !!ecoleId && !!activeAnnee,
     queryFn: async () => {
-      const mois = buildMois(activeAnnee!.debut);
+      const mois = buildMois(activeAnnee!.debut, activeAnnee!.fin);
+      const nbMois = mois.length;
       const idx = new Map(mois.map((m, i) => [m.key, i]));
-      const zeros = () => Array(12).fill(0) as number[];
+      const zeros = () => Array(nbMois).fill(0) as number[];
 
-      const from = activeAnnee!.debut;
+      /** Index de colonne, borné aux limites de l'exercice (rien n'est perdu) */
+      const colIndex = (date?: string | null): number | undefined => {
+        const mk = monthKey(date);
+        if (!mk) return undefined;
+        const hit = idx.get(mk);
+        if (hit !== undefined) return hit;
+        if (mk < mois[0].key) return 0;
+        if (mk > mois[nbMois - 1].key) return nbMois - 1;
+        return undefined;
+      };
+
+      const from = mois[0].key + "-01";
       const to = activeAnnee!.fin;
+
 
       // ── Tranches de scolarité de l'année (total dû par élève) ──
       const { data: tranches } = await supabase
