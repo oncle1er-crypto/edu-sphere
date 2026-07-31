@@ -27,6 +27,7 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
+import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
 
 const statutLabels: Record<string, string> = {
   active: "Active",
@@ -151,6 +152,12 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
         )}
 
         <div className="flex items-center gap-3">
+          <InstallPWAButton
+            size="sm"
+            variant="secondary"
+            hideWhenUnsupported
+            label="Installer l'app"
+          />
           <div className="hidden sm:flex flex-col items-end leading-tight">
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
               Bienvenue
