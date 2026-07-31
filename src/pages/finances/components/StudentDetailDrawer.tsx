@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche, type PaiementHistorique } from "../scolarite-data";
+import VentilationScolariteCard from "./VentilationScolariteCard";
+
 import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
@@ -267,6 +269,11 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                     <p className="text-sm font-bold text-destructive">{fcfa(eleve.resteDu)}</p>
                   </CardContent></Card>
                 </div>
+
+                {/* Ventilation par poste (inscription → scolarité → annexes) */}
+                <VentilationScolariteCard total={eleve.fraisAnnuel} couvert={eleve.totalPaye} />
+
+
 
                 {/* Historique des paiements & remises */}
                 {eleve.paiements && eleve.paiements.length > 0 && (

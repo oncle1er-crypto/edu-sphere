@@ -17,7 +17,11 @@ export interface FinanceSettingsData {
   modes_paiement: string[];
   rappel_auto: boolean;
   penalite_retard: number;
+  frais_inscription: number;
+  frais_uniformes: number;
+  frais_activites: number;
 }
+
 
 const DEFAULTS: FinanceSettingsData = {
   devise: "XAF",
@@ -33,7 +37,11 @@ const DEFAULTS: FinanceSettingsData = {
   modes_paiement: ["cash", "momo", "om", "bank"],
   rappel_auto: true,
   penalite_retard: 5,
+  frais_inscription: 25000,
+  frais_uniformes: 15000,
+  frais_activites: 15000,
 };
+
 
 export function useFinanceSettings() {
   const { ecoleId } = useEcoleId();

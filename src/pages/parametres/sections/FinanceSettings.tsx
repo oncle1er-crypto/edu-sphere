@@ -155,6 +155,43 @@ export default function FinanceSettings() {
         </FieldRow>
       </SettingsSection>
 
+      <SettingsSection
+        title="Composition & ventilation de la scolarité"
+        description="Répartition automatique des encaissements : Frais d'inscription → Frais de scolarité → Frais annexes."
+        icon={<Wallet className="h-5 w-5" />}
+      >
+        <FieldRow label="Frais d'inscription / réinscription (FCFA)" hint="Servis en priorité par tout versement">
+          <Input
+            type="number"
+            value={form.frais_inscription}
+            onChange={(e) => update("frais_inscription", Number(e.target.value))}
+            className="w-40"
+          />
+        </FieldRow>
+        <FieldRow label="Frais d'uniformes & fournitures (FCFA)">
+          <Input
+            type="number"
+            value={form.frais_uniformes}
+            onChange={(e) => update("frais_uniformes", Number(e.target.value))}
+            className="w-40"
+          />
+        </FieldRow>
+        <FieldRow label="Frais d'activités extrascolaires (FCFA)">
+          <Input
+            type="number"
+            value={form.frais_activites}
+            onChange={(e) => update("frais_activites", Number(e.target.value))}
+            className="w-40"
+          />
+        </FieldRow>
+        <FieldRow label="Total frais annexes" hint="Uniformes + activités extrascolaires">
+          <div className="text-sm font-bold text-primary">
+            {(Number(form.frais_uniformes) + Number(form.frais_activites)).toLocaleString("fr-FR")} FCFA
+          </div>
+        </FieldRow>
+      </SettingsSection>
+
+
       <div className="flex justify-end">
         <Button onClick={handleSave} disabled={!dirty || isSaving} className="gap-2">
           {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}

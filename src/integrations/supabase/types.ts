@@ -3040,6 +3040,9 @@ export type Database = {
           created_at: string
           devise: string
           ecole_id: string
+          frais_activites: number
+          frais_inscription: number
+          frais_uniformes: number
           id: string
           modes_paiement: string[] | null
           numero_momo: string | null
@@ -3060,6 +3063,9 @@ export type Database = {
           created_at?: string
           devise?: string
           ecole_id: string
+          frais_activites?: number
+          frais_inscription?: number
+          frais_uniformes?: number
           id?: string
           modes_paiement?: string[] | null
           numero_momo?: string | null
@@ -3080,6 +3086,9 @@ export type Database = {
           created_at?: string
           devise?: string
           ecole_id?: string
+          frais_activites?: number
+          frais_inscription?: number
+          frais_uniformes?: number
           id?: string
           modes_paiement?: string[] | null
           numero_momo?: string | null
