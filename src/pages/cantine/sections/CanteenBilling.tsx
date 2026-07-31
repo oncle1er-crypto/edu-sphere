@@ -87,7 +87,7 @@ export default function CanteenBilling() {
       return 0;
     });
     return list;
-  }, [rows, statutFilter, sortKey, sortDir]);
+  }, [rows, statutFilter, sortKey, sortDir, keepClasse]);
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
