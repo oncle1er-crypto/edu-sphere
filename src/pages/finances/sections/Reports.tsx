@@ -12,6 +12,8 @@ import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { useNiveau } from "@/context/NiveauContext";
+import { useQuotePartCommune } from "@/hooks/useQuotePartCommune";
 import { useClasses } from "@/hooks/useClasses";
 import { ReportFilters, ALL_CLASSES, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
@@ -73,6 +75,8 @@ export default function Reports() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
   const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
+  const { isGlobal, matchesCycle } = useNiveau();
+  const { ratio, mention } = useQuotePartCommune();
 
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
 
