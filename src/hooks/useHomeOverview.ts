@@ -81,21 +81,25 @@ export function useHomeOverview() {
       const todayIso = today.toISOString();
       const todayDate = todayIso.slice(0, 10);
 
+      // Filtrage par niveau : ensemble des classes du niveau actif (null = global)
+      const clSet = isGlobal || !classeIds ? null : new Set(classeIds);
+      const okClasse = (id: string | null | undefined) => !clSet || (!!id && clSet.has(id));
+
       const elevesQ = supabase
         .from("eleves")
-        .select("id, nom, prenom, statut, classes(nom)")
+        .select("id, nom, prenom, statut, classe_id, classes(nom)")
         .eq("ecole_id", ecoleId);
       if (anneeId) elevesQ.eq("annee_id", anneeId);
 
       const presencesQ = supabase
         .from("presences")
-        .select("statut")
+        .select("statut, classe_id")
         .eq("ecole_id", ecoleId)
         .eq("date_presence", todayDate);
 
       const facturesQ = supabase
         .from("factures")
-        .select("id, numero, libelle, montant, montant_paye, date_echeance, categorie, eleves(nom, prenom)")
+        .select("id, numero, libelle, montant, montant_paye, date_echeance, categorie, eleves(nom, prenom, classe_id)")
         .eq("ecole_id", ecoleId)
         .neq("statut", "payee")
         .order("date_echeance", { ascending: true })
