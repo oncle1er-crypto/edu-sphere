@@ -4,7 +4,7 @@ Objectif : un sélecteur de niveau dans l'en-tête qui filtre les données de to
 
 ## Ce que verra l'utilisateur
 
-- Dans l'en-tête, à côté de l'année scolaire : un sélecteur **Niveau** avec 3 choix — Tous les niveaux, Primaire (Maternelle incluse), Secondaire. La Maternelle (6 classes) est regroupée avec le Primaire (12 classes) ; le Secondaire compte 16 classes.
+- Dans l'en-tête, à côté de l'année scolaire : un sélecteur **Niveau** avec 3 choix — Tous les niveaux, Primaire (Maternelle incluse), Secondaire. Sur l'année active 2026-2027 : Maternelle 3 classes + Primaire 6 classes = 9 classes pour le niveau Primaire, et Secondaire 8 classes. Le filtre niveau se combine toujours avec l'année scolaire active.
 - Le choix est mémorisé (localStorage) et conservé d'une page à l'autre.
 - Dès qu'un niveau est choisi, listes, compteurs, tableaux de bord, rapports et PDF ne contiennent que les données de ce niveau ; les intitulés de rapports mentionnent le niveau.
 - Un utilisateur restreint à un niveau (ex. directeur du primaire) voit le sélecteur verrouillé sur son niveau, sans option globale.
