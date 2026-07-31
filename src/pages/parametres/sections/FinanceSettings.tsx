@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Wallet, Save, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Wallet, Save, Loader2, AlertTriangle, Info } from "lucide-react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -9,6 +9,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import { validateVentilationParams } from "@/lib/ventilationValidation";
+import { toast } from "sonner";
+
 
 const PAYMENT_METHODS = [
   { id: "cash", label: "Espèces" },
