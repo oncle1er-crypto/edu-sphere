@@ -56,4 +56,6 @@ Pour chaque module : filtrage des requêtes, des KPI et des exports (CSV/Excel/P
 
 ## Vérification
 - Sélection d'un niveau puis contrôle des effectifs, du total encaissé et d'un PDF de rapport contre une requête SQL équivalente.
+- Contrôles comptables systématiques : total global = Primaire + Secondaire + Commun ; somme des quote-parts communes = total des charges communes ; débit = crédit dans le grand livre ; solde de caisse identique avant/après activation du filtre.
 - Contrôle qu'un utilisateur restreint ne peut pas lire les données de l'autre niveau (test RLS).
+
