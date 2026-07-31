@@ -154,6 +154,7 @@ export default function Expenses() {
               <TableRow className="bg-muted/40">
                 <TableHead>Libellé</TableHead>
                 <TableHead>Catégorie</TableHead>
+                <TableHead>Niveau</TableHead>
                 <TableHead>Fournisseur</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
                 <TableHead>Date</TableHead>
@@ -165,6 +166,11 @@ export default function Expenses() {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium">{e.libelle}</TableCell>
                   <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={e.cycle_id ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"}>
+                      {cycleName(e.cycle_id) ?? "Commun"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{e.fournisseur_nom ?? "—"}</TableCell>
                   <TableCell className="text-right font-semibold">{e.montant.toLocaleString("fr-FR")} FCFA</TableCell>
                   <TableCell className="text-muted-foreground">{new Date(e.date_depense).toLocaleDateString("fr-FR")}</TableCell>
