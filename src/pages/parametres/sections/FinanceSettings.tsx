@@ -25,20 +25,65 @@ const PAYMENT_METHODS = [
   { id: "check", label: "Chèque" },
 ];
 
+const VENT_FIELDS = ["frais_inscription", "frais_uniformes", "frais_activites"] as const;
+
 export default function FinanceSettings() {
   const { settings, isLoading, save, isSaving } = useFinanceSettings();
+  const { ecoleId } = useEcoleId();
   const [form, setForm] = useState<FinanceSettingsData>(settings);
   const [dirty, setDirty] = useState(false);
+  const [raw, setRaw] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setForm(settings);
+    setRaw({
+      frais_inscription: String(settings.frais_inscription ?? ""),
+      frais_uniformes: String(settings.frais_uniformes ?? ""),
+      frais_activites: String(settings.frais_activites ?? ""),
+    });
     setDirty(false);
   }, [settings]);
+
+  // Plus petit total annuel de la grille tarifaire (garde-fou anti-solde négatif)
+  const { data: tarifMin } = useQuery({
+    queryKey: ["frais_scolarite_min", ecoleId],
+    enabled: !!ecoleId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("frais_scolarite")
+        .select("libelle, montant_annuel")
+        .eq("ecole_id", ecoleId!)
+        .order("montant_annuel", { ascending: true })
+        .limit(1);
+      if (error) throw error;
+      const row = data?.[0];
+      return row ? { total: Number(row.montant_annuel), libelle: row.libelle as string } : null;
+    },
+  });
 
   const update = <K extends keyof FinanceSettingsData>(key: K, value: FinanceSettingsData[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     setDirty(true);
   };
+
+  const updateVent = (key: (typeof VENT_FIELDS)[number], value: string) => {
+    setRaw((prev) => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: Number(value) }));
+    setDirty(true);
+  };
+
+  const validation = useMemo(
+    () =>
+      validateVentilationParams(
+        {
+          frais_inscription: raw.frais_inscription ?? form.frais_inscription,
+          frais_uniformes: raw.frais_uniformes ?? form.frais_uniformes,
+          frais_activites: raw.frais_activites ?? form.frais_activites,
+        },
+        { totalMinScolarite: tarifMin?.total ?? null, totalMinLabel: tarifMin?.libelle },
+      ),
+    [raw, form.frais_inscription, form.frais_uniformes, form.frais_activites, tarifMin],
+  );
 
   const togglePayment = (id: string, checked: boolean) => {
     const next = checked
@@ -47,7 +92,19 @@ export default function FinanceSettings() {
     update("modes_paiement", next);
   };
 
-  const handleSave = () => save(form);
+  const handleSave = () => {
+    if (!validation.ok) {
+      toast.error("Ventilation incohérente", { description: validation.errors[0].message });
+      return;
+    }
+    save({
+      ...form,
+      frais_inscription: Number(form.frais_inscription) || 0,
+      frais_uniformes: Number(form.frais_uniformes) || 0,
+      frais_activites: Number(form.frais_activites) || 0,
+    });
+  };
+
 
   if (isLoading) {
     return (
