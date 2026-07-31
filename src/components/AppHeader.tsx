@@ -54,6 +54,9 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
   const location = useLocation();
   const canGoBack = location.pathname !== "/" && location.pathname !== "/index";
   const { annees, activeAnneeId, setActiveAnneeId, activeAnnee, loading } = useAcademicPeriod();
+  // Le filtre de niveau ne s'applique pas aux modules Communication et Paramètres
+  const isSettingsScope =
+    location.pathname.startsWith("/parametres") || location.pathname.startsWith("/communication");
 
   const sortedAnnees = annees.slice().sort((a, b) => b.debut.localeCompare(a.debut));
   const isConsultation = activeAnnee.statut !== "active";
