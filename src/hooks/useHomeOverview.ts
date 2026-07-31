@@ -290,7 +290,7 @@ export function useHomeOverview() {
     })();
 
     return () => { cancelled = true; };
-  }, [ecoleId, ecoleLoading, periodLoading, anneeId]);
+  }, [ecoleId, ecoleLoading, periodLoading, niveauLoading, anneeId, isGlobal, classeKey, cycleIds.join(",")]);
 
-  return { data, loading: loading || ecoleLoading || periodLoading };
+  return { data, loading: loading || ecoleLoading || periodLoading || niveauLoading };
 }
