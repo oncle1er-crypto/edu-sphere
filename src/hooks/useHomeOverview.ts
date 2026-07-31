@@ -153,24 +153,25 @@ export function useHomeOverview() {
 
       if (cancelled) return;
 
-      const eleves = (elevesRes.data ?? []) as any[];
+      const eleves = ((elevesRes.data ?? []) as any[]).filter((e) => okClasse(e.classe_id));
       const withDoc = new Set(((docsRes.data ?? []) as any[]).map((d) => d.eleve_id));
       const dossiersIncomplets: AlertRow[] = eleves
         .filter((e) => !withDoc.has(e.id))
         .map((e) => ({ id: e.id, titre: nomOf(e), sub: e.classes?.nom ?? "Sans classe" }));
 
       const encaisseJour =
-        ((paiementsJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant), 0) +
-        ((spJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant_paye), 0) +
-        ((servJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant), 0);
+        ((paiementsJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant), 0) +
+        ((spJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant_paye), 0) +
+        ((servJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant), 0);
 
-      const presences = (presencesRes.data ?? []) as any[];
+      const presences = ((presencesRes.data ?? []) as any[]).filter((p) => okClasse(p.classe_id));
       const presentsCount = presences.filter((p) => p.statut === "present" || p.statut === "retard").length;
       const tauxPresence = presences.length > 0 ? Math.round((presentsCount / presences.length) * 100) : null;
 
       // Impayés scolarité : agrégés par élève
       const byEleve = new Map<string, AlertRow>();
       for (const t of (tranchesRes.data ?? []) as any[]) {
+        if (!okClasse(t.eleves?.classe_id)) continue;
         const reste = Math.max(0, num(t.montant) - num(t.paye));
         if (reste <= 0) continue;
         const prev = byEleve.get(t.eleve_id);
@@ -187,7 +188,9 @@ export function useHomeOverview() {
       }
       const impayes = [...byEleve.values()].sort((a, b) => (b.montant ?? 0) - (a.montant ?? 0));
 
-      const facturesRows = ((facturesRes.data ?? []) as any[]).map((f) => ({
+      const facturesRows = ((facturesRes.data ?? []) as any[])
+        .filter((f) => okClasse(f.eleves?.classe_id))
+        .map((f) => ({
         categorie: (f.categorie ?? "").toLowerCase(),
         row: {
           id: f.id,
@@ -199,7 +202,9 @@ export function useHomeOverview() {
       const impayesCantine = facturesRows.filter((f) => f.categorie === "cantine").map((f) => f.row);
       const impayesTransport = facturesRows.filter((f) => f.categorie === "transport").map((f) => f.row);
 
-      const tenuesReservees: AlertRow[] = ((reservationsRes.data ?? []) as any[]).map((v) => ({
+      const tenuesReservees: AlertRow[] = ((reservationsRes.data ?? []) as any[])
+        .filter((v) => okClasse(v.classe_id))
+        .map((v) => ({
         id: v.id,
         titre: nomOf(v.eleves) || v.acheteur_libre || v.numero,
         sub: `${v.classes?.nom ?? ""} · réservation`,
@@ -207,7 +212,7 @@ export function useHomeOverview() {
       }));
 
       const stocksBas: AlertRow[] = ((stocksRes.data ?? []) as any[])
-        .filter((s) => num(s.stock_actuel) <= num(s.seuil_alerte))
+        .filter((s) => okClasse(s.classe_id) && num(s.stock_actuel) <= num(s.seuil_alerte))
         .map((s) => ({
           id: s.id,
           titre: `${s.classes?.nom ?? "Classe"} · ${s.genre === "F" ? "Fille" : s.genre === "M" ? "Garçon" : "—"}`,
@@ -215,19 +220,19 @@ export function useHomeOverview() {
         }));
 
       const activite: HomeActivityItem[] = [
-        ...((recentPaiementsRes.data ?? []) as any[]).map((p) => ({
+        ...((recentPaiementsRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).map((p) => ({
           kind: "paiement" as const,
           label: nomOf(p.eleves) || "Paiement",
           sub: `${num(p.montant).toLocaleString("fr-FR")} FCFA`,
           at: p.date_paiement,
         })),
-        ...((recentElevesRes.data ?? []) as any[]).map((e) => ({
+        ...((recentElevesRes.data ?? []) as any[]).filter((e) => okClasse(e.classe_id)).map((e) => ({
           kind: "inscription" as const,
           label: nomOf(e),
           sub: e.classes?.nom ?? "Nouvelle inscription",
           at: e.created_at,
         })),
-        ...((recentIncidentsRes.data ?? []) as any[]).map((i) => ({
+        ...((recentIncidentsRes.data ?? []) as any[]).filter((i) => okClasse(i.eleves?.classe_id)).map((i) => ({
           kind: "incident" as const,
           label: nomOf(i.eleves) || "Incident",
           sub: i.motif || i.type || "Incident",
