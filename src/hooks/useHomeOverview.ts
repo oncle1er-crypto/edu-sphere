@@ -124,7 +124,7 @@ export function useHomeOverview() {
         annoncesRes,
       ] = await Promise.all([
         elevesQ,
-        supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
+        supabase.from("enseignants").select("id, cycle_id").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("paiements").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
         supabase.from("sp_paiements").select("montant_paye, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
         supabase.from("paiements_services").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).gte("created_at", todayIso),
