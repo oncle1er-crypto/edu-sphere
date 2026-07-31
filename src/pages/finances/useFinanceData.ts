@@ -45,6 +45,7 @@ function mapTrancheStatut(dbStatut: string, paye: number, montant: number, echea
 
 export function useFinanceData(scopedAnneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, classeIds } = useNiveau();
   const [data, setData] = useState<EleveScolarite[]>([]);
   const [loading, setLoading] = useState(true);
   const [refetching, setRefetching] = useState(false);
