@@ -118,20 +118,35 @@ export default function Reports() {
   const getCompteResultat = (): CompteResultatData => {
     // Recettes = cash uniquement. Les remises/bourses ne sont pas des encaissements
     // et ne doivent pas gonfler le résultat net.
+    // `financeData` est déjà restreint au niveau actif (voir useFinanceData).
     const totalScolarite = financeData.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
     const recettes = [{ libelle: "Scolarité encaissée", montant: totalScolarite }];
 
+    // Charges : dépenses du niveau à 100 %, charges communes au prorata
+    // (ratio = 1 en vue « Tous les niveaux » → aucun double comptage).
     const catMap = new Map<string, number>();
     for (const d of depenses) {
-      const cat = d.categorie || "Autres";
-      catMap.set(cat, (catMap.get(cat) || 0) + d.montant);
+      const commun = !d.cycle_id;
+      const cat = (d.categorie || "Autres") + (commun && !isGlobal ? " (quote-part commune)" : "");
+      const montant = commun ? d.montant * ratio : d.montant;
+      catMap.set(cat, (catMap.get(cat) || 0) + montant);
     }
-    const totalSalaires = bulletins.filter((b) => b.statut === "paye").reduce((s, b) => s + b.net_a_payer, 0);
+    const totalSalaires = bulletins
+      .filter((b) => b.statut === "paye")
+      .reduce((s, b) => {
+        const cycleId = (b as any).cycle_id as string | null | undefined;
+        if (!cycleId) return s + b.net_a_payer * ratio; // salaire commun → prorata
+        if (!matchesCycle(cycleId)) return s;
+        return s + b.net_a_payer;
+      }, 0);
     if (totalSalaires > 0) catMap.set("Masse salariale", (catMap.get("Masse salariale") || 0) + totalSalaires);
 
-    const depensesList = Array.from(catMap.entries()).map(([libelle, montant]) => ({ libelle, montant })).sort((a, b) => b.montant - a.montant);
+    const depensesList = Array.from(catMap.entries())
+      .map(([libelle, montant]) => ({ libelle, montant: Math.round(montant) }))
+      .sort((a, b) => b.montant - a.montant);
     return { recettes, depenses: depensesList };
   };
+
 
   const getFluxTresorerie = (): FluxTresorerieData => ({
     comptes: comptes.map((c) => ({ nom: c.nom, solde: c.solde })),
