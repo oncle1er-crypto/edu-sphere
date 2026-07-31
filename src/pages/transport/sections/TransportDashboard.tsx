@@ -4,9 +4,11 @@ import { KpiCard } from "@/components/KpiCard";
 import { LayoutDashboard, Bus, Users, MapPin, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function TransportDashboard() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const [stats, setStats] = useState({ lignes: 0, vehicules: 0, abonnes: 0 });
   const [loading, setLoading] = useState(true);
 
@@ -16,7 +18,7 @@ export default function TransportDashboard() {
       const [lRes, vRes, aRes] = await Promise.all([
         supabase.from("lignes_transport").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
         supabase.from("vehicules").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
-        supabase.from("abonnements_transport").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
+        supabase.from("abonnements_transport").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
       ]);
       setStats({ lignes: lRes.count ?? 0, vehicules: vRes.count ?? 0, abonnes: aRes.count ?? 0 });
       setLoading(false);

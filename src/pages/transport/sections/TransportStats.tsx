@@ -4,9 +4,11 @@ import { BarChart3, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function TransportStats() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const [loading, setLoading] = useState(true);
   const [conso, setConso] = useState<{ vehicule: string; litres: number; montant: number }[]>([]);
   const [abonnes, setAbonnes] = useState(0);
@@ -19,7 +21,7 @@ export default function TransportStats() {
     (async () => {
       const [carb, ab, inc] = await Promise.all([
         supabase.from("transport_carburant" as any).select("litres, montant, vehicules(immatriculation)").eq("ecole_id", ecoleId),
-        supabase.from("abonnements_transport").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
+        supabase.from("abonnements_transport").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("transport_incidents" as any).select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
       ]);
       const map = new Map<string, { litres: number; montant: number }>();
