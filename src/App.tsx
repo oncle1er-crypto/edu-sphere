@@ -572,6 +572,7 @@ const App = () => (
               </RequireAuth>
             } />
           </Routes>
+        </NiveauProvider>
         </AcademicPeriodProvider>
         </EcoleProvider>
         </AuthProvider>

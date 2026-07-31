@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
+import { NiveauSwitcher } from "@/components/NiveauSwitcher";
 
 const statutLabels: Record<string, string> = {
   active: "Active",
