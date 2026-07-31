@@ -268,6 +268,11 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                   </CardContent></Card>
                 </div>
 
+                {/* Ventilation par poste (inscription → scolarité → annexes) */}
+                <VentilationScolariteCard total={eleve.fraisAnnuel} couvert={eleve.totalPaye} />
+
+
+
                 {/* Historique des paiements & remises */}
                 {eleve.paiements && eleve.paiements.length > 0 && (
                   <div>
