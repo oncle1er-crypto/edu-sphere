@@ -36,12 +36,12 @@ export default function TransportStats() {
         ct += Number(r.montant) || 0;
       });
       setConso(Array.from(map.entries()).map(([vehicule, v]) => ({ vehicule, ...v })).sort((a, b) => b.litres - a.litres));
-      setAbonnes(ab.count ?? 0);
+      setAbonnes(((ab.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length);
       setIncidents((inc as any).count ?? 0);
       setLitresTotal(lt); setCoutTotal(ct);
       setLoading(false);
     })();
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 animate-spin text-primary" /></div>;
 

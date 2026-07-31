@@ -20,10 +20,10 @@ export default function TransportDashboard() {
         supabase.from("vehicules").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
         supabase.from("abonnements_transport").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
       ]);
-      setStats({ lignes: lRes.count ?? 0, vehicules: vRes.count ?? 0, abonnes: aRes.count ?? 0 });
+      setStats({ lignes: lRes.count ?? 0, vehicules: vRes.count ?? 0, abonnes: ((aRes.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length });
       setLoading(false);
     })();
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

@@ -38,12 +38,12 @@ export default function CanteenStats() {
         return { mois: MONTHS[m], nb: buckets.get(m) ?? 0 };
       });
       setRepasParMois(arr);
-      setAbonnes(ab.count ?? 0);
+      setAbonnes(((ab.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length);
       setIncidents(inc.count ?? 0);
       setStockValeur(((st.data ?? []) as any[]).reduce((s, x) => s + (Number(x.quantite) || 0) * (Number(x.prix_unitaire) || 0), 0));
       setLoading(false);
     })();
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 animate-spin text-primary" /></div>;
 
