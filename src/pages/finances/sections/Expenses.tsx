@@ -186,7 +186,7 @@ export default function Expenses() {
                 </TableRow>
               ))}
               {depenses.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Aucune dépense enregistrée.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Aucune dépense enregistrée.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
