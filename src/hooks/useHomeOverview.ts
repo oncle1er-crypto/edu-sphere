@@ -59,10 +59,12 @@ const nomOf = (e: any) => `${e?.prenom ?? ""} ${e?.nom ?? ""}`.trim();
 export function useHomeOverview() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const { isGlobal, classeIds, loading: niveauLoading } = useNiveau();
   const [data, setData] = useState<HomeOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   const anneeId = activeAnnee?.id ?? null;
+  const classeKey = (classeIds ?? []).join(",");
 
   useEffect(() => {
     if (ecoleLoading || periodLoading) return;
