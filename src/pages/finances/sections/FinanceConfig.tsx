@@ -64,6 +64,11 @@ export default function FinanceConfig() {
       {/* ─── Grille tarifaire scolarité (CRUD en base) ─── */}
       <GrilleTarifaireSection />
 
+      {/* ─── Composition & ventilation de la scolarité ─── */}
+      <VentilationSettingsSection />
+
+
+
       {/* ─── Grille tarifaire Cantine (CRUD en base) ─── */}
       <GrilleServicesSection serviceType="cantine" />
 
