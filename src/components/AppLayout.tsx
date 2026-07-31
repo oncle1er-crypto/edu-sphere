@@ -4,7 +4,7 @@ import { TopNav } from "@/components/TopNav";
 import { AppFooter } from "@/components/AppFooter";
 import { AIAssistant } from "@/components/AIAssistant";
 import { ScrollToTopButton } from "@/components/ScrollToTopButton";
-import MfaEnforcementBanner from "@/components/security/MfaEnforcementBanner";
+
 import OfflineIndicator from "@/components/OfflineIndicator";
 import { ReportQueuePanel } from "@/components/reports/ReportQueuePanel";
 import { useAuth } from "@/context/AuthContext";
@@ -31,7 +31,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
-      <MfaEnforcementBanner />
+      
       <div className="sticky top-0 z-40 shadow-md">
         <AppHeader userName={displayName || user?.email || "Utilisateur"} />
         <TopNav schoolName="COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" />
