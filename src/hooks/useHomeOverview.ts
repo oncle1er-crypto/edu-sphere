@@ -125,13 +125,13 @@ export function useHomeOverview() {
       ] = await Promise.all([
         elevesQ,
         supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
-        supabase.from("paiements").select("montant").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
-        supabase.from("sp_paiements").select("montant_paye").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
-        supabase.from("paiements_services").select("montant").eq("ecole_id", ecoleId).gte("created_at", todayIso),
+        supabase.from("paiements").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
+        supabase.from("sp_paiements").select("montant_paye, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
+        supabase.from("paiements_services").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).gte("created_at", todayIso),
         presencesQ,
         supabase
           .from("tranches")
-          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classes(nom))")
+          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classe_id, classes(nom))")
           .eq("ecole_id", ecoleId)
           .in("statut", ["due", "retard"])
           .limit(1000),
@@ -139,15 +139,15 @@ export function useHomeOverview() {
         supabase.from("documents_eleves").select("eleve_id").eq("ecole_id", ecoleId),
         supabase
           .from("sp_ventes_tenues")
-          .select("id, numero, acheteur_libre, montant_total, created_at, eleves(nom, prenom), classes(nom)")
+          .select("id, numero, acheteur_libre, montant_total, created_at, classe_id, eleves(nom, prenom), classes(nom)")
           .eq("ecole_id", ecoleId)
           .eq("statut", "reservation")
           .order("created_at", { ascending: false })
           .limit(100),
-        supabase.from("sp_stock_tenues").select("id, genre, stock_actuel, seuil_alerte, classes(nom)").eq("ecole_id", ecoleId),
-        supabase.from("paiements").select("montant, date_paiement, eleves(nom, prenom)").eq("ecole_id", ecoleId).is("annule_le", null).order("date_paiement", { ascending: false }).limit(6),
-        supabase.from("eleves").select("nom, prenom, created_at, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(6),
-        supabase.from("incidents_discipline").select("type, motif, date_incident, eleves(nom, prenom)").eq("ecole_id", ecoleId).order("date_incident", { ascending: false }).limit(6),
+        supabase.from("sp_stock_tenues").select("id, genre, stock_actuel, seuil_alerte, classe_id, classes(nom)").eq("ecole_id", ecoleId),
+        supabase.from("paiements").select("montant, date_paiement, eleves(nom, prenom, classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).order("date_paiement", { ascending: false }).limit(40),
+        supabase.from("eleves").select("nom, prenom, created_at, classe_id, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(40),
+        supabase.from("incidents_discipline").select("type, motif, date_incident, eleves(nom, prenom, classe_id)").eq("ecole_id", ecoleId).order("date_incident", { ascending: false }).limit(40),
         supabase.from("annonces").select("titre, contenu, publie_le, created_at").eq("ecole_id", ecoleId).eq("publie", true).order("created_at", { ascending: false }).limit(6),
       ]);
 
