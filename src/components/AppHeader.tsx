@@ -152,6 +152,10 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
           </div>
         )}
 
+        {!isSettingsScope && <NiveauSwitcher />}
+
+
+
         <div className="flex items-center gap-3">
           <InstallPWAButton
             size="sm"
