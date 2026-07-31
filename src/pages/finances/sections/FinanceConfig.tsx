@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
 import GrilleTarifaireSection from "../components/GrilleTarifaireSection";
 import GrilleServicesSection from "../components/GrilleServicesSection";
+import VentilationSettingsSection from "../components/VentilationSettingsSection";
+
 
 const paymentMethods = [
   { id: "cash", label: "Espèces" },
@@ -61,6 +63,11 @@ export default function FinanceConfig() {
     <div className="space-y-6">
       {/* ─── Grille tarifaire scolarité (CRUD en base) ─── */}
       <GrilleTarifaireSection />
+
+      {/* ─── Composition & ventilation de la scolarité ─── */}
+      <VentilationSettingsSection />
+
+
 
       {/* ─── Grille tarifaire Cantine (CRUD en base) ─── */}
       <GrilleServicesSection serviceType="cantine" />

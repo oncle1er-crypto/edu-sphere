@@ -15,7 +15,7 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext";
 import { useEffect, useState } from "react";
 
-const CATEGORIES = ["Fournitures pédagogiques", "Énergie & utilities", "Maintenance & entretien", "Transport scolaire", "Cantine", "Télécoms", "Autre"];
+import { EXPENSE_CATEGORIES as CATEGORIES } from "@/lib/expenseCategories";
 
 const COMMUN = "__commun__";
 
