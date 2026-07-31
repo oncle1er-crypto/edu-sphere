@@ -23,6 +23,7 @@ const sections = [
   { to: "budget", label: "Budget annuel", icon: PiggyBank, group: "Comptabilité" },
   { to: "tresorerie", label: "Trésorerie & banques", icon: Landmark, group: "Comptabilité" },
   { to: "grand-livre", label: "Grand livre", icon: FileSpreadsheet, group: "Comptabilité" },
+  { to: "bilan", label: "Bilan comptable", icon: FileSpreadsheet, group: "Comptabilité" },
 
   { to: "rapports", label: "Rapports financiers", icon: BarChart3, group: "Analyses" },
   { to: "fiscalite", label: "Fiscalité & TVA", icon: FileSpreadsheet, group: "Analyses" },
