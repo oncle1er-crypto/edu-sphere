@@ -543,6 +543,7 @@ export type Database = {
           actif: boolean
           code: string
           created_at: string
+          cycle_id: string | null
           date_debut: string | null
           date_fin: string | null
           ecole_id: string
@@ -559,6 +560,7 @@ export type Database = {
           actif?: boolean
           code: string
           created_at?: string
+          cycle_id?: string | null
           date_debut?: string | null
           date_fin?: string | null
           ecole_id: string
@@ -575,6 +577,7 @@ export type Database = {
           actif?: boolean
           code?: string
           created_at?: string
+          cycle_id?: string | null
           date_debut?: string | null
           date_fin?: string | null
           ecole_id?: string
@@ -588,6 +591,13 @@ export type Database = {
           valeur?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "bons_reduction_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bons_reduction_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -873,6 +883,7 @@ export type Database = {
           actif: boolean
           certifications: string[] | null
           created_at: string
+          cycle_id: string | null
           date_embauche: string | null
           ecole_id: string
           email: string | null
@@ -887,6 +898,7 @@ export type Database = {
           actif?: boolean
           certifications?: string[] | null
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           ecole_id: string
           email?: string | null
@@ -901,6 +913,7 @@ export type Database = {
           actif?: boolean
           certifications?: string[] | null
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           ecole_id?: string
           email?: string | null
@@ -912,6 +925,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "cantine_personnel_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "cantine_personnel_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -1204,6 +1224,7 @@ export type Database = {
       chauffeurs: {
         Row: {
           created_at: string
+          cycle_id: string | null
           date_embauche: string | null
           date_expiration_permis: string | null
           ecole_id: string
@@ -1218,6 +1239,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           date_expiration_permis?: string | null
           ecole_id: string
@@ -1232,6 +1254,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           date_expiration_permis?: string | null
           ecole_id?: string
@@ -1245,6 +1268,13 @@ export type Database = {
           vehicule_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "chauffeurs_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "chauffeurs_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -1823,6 +1853,7 @@ export type Database = {
         Row: {
           categorie: string | null
           created_at: string
+          cycle_id: string | null
           date_depense: string
           ecole_id: string
           enregistre_par: string | null
@@ -1838,6 +1869,7 @@ export type Database = {
         Insert: {
           categorie?: string | null
           created_at?: string
+          cycle_id?: string | null
           date_depense?: string
           ecole_id: string
           enregistre_par?: string | null
@@ -1853,6 +1885,7 @@ export type Database = {
         Update: {
           categorie?: string | null
           created_at?: string
+          cycle_id?: string | null
           date_depense?: string
           ecole_id?: string
           enregistre_par?: string | null
@@ -1866,6 +1899,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "depenses_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "depenses_fournisseur_id_fkey"
             columns: ["fournisseur_id"]
@@ -2436,6 +2476,7 @@ export type Database = {
       enseignants: {
         Row: {
           created_at: string
+          cycle_id: string | null
           date_embauche: string | null
           diplome: string | null
           ecole_id: string
@@ -2457,6 +2498,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           diplome?: string | null
           ecole_id: string
@@ -2478,6 +2520,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cycle_id?: string | null
           date_embauche?: string | null
           diplome?: string | null
           ecole_id?: string
@@ -2498,6 +2541,13 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "enseignants_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "enseignants_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -2986,6 +3036,7 @@ export type Database = {
       finance_settings: {
         Row: {
           banque: string | null
+          cle_repartition_commune: string
           created_at: string
           devise: string
           ecole_id: string
@@ -3005,6 +3056,7 @@ export type Database = {
         }
         Insert: {
           banque?: string | null
+          cle_repartition_commune?: string
           created_at?: string
           devise?: string
           ecole_id: string
@@ -3024,6 +3076,7 @@ export type Database = {
         }
         Update: {
           banque?: string | null
+          cle_repartition_commune?: string
           created_at?: string
           devise?: string
           ecole_id?: string
@@ -3057,6 +3110,7 @@ export type Database = {
           categorie: string | null
           contact: string | null
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           email: string | null
           id: string
@@ -3070,6 +3124,7 @@ export type Database = {
           categorie?: string | null
           contact?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           email?: string | null
           id?: string
@@ -3083,6 +3138,7 @@ export type Database = {
           categorie?: string | null
           contact?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           email?: string | null
           id?: string
@@ -3091,7 +3147,15 @@ export type Database = {
           statut?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fournisseurs_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       frais_scolarite: {
         Row: {
@@ -3155,6 +3219,7 @@ export type Database = {
         Row: {
           annee_id: string
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           libelle: string
@@ -3167,6 +3232,7 @@ export type Database = {
         Insert: {
           annee_id: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           libelle: string
@@ -3179,6 +3245,7 @@ export type Database = {
         Update: {
           annee_id?: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           libelle?: string
@@ -3197,6 +3264,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "grille_tarifs_niveaux_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "grille_tarifs_niveaux_ecole_id_fkey"
             columns: ["ecole_id"]
             isOneToOne: false
@@ -3210,6 +3284,7 @@ export type Database = {
           actif: boolean
           annee_id: string
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           libelle: string
@@ -3223,6 +3298,7 @@ export type Database = {
           actif?: boolean
           annee_id: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           libelle: string
@@ -3236,6 +3312,7 @@ export type Database = {
           actif?: boolean
           annee_id?: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           libelle?: string
@@ -3251,6 +3328,13 @@ export type Database = {
             columns: ["annee_id"]
             isOneToOne: false
             referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_services_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
             referencedColumns: ["id"]
           },
           {
@@ -3298,6 +3382,7 @@ export type Database = {
         Row: {
           annee_id: string | null
           created_at: string
+          cycle_id: string | null
           description: string | null
           ecole_id: string
           enseignant_id: string | null
@@ -3309,6 +3394,7 @@ export type Database = {
         Insert: {
           annee_id?: string | null
           created_at?: string
+          cycle_id?: string | null
           description?: string | null
           ecole_id: string
           enseignant_id?: string | null
@@ -3320,6 +3406,7 @@ export type Database = {
         Update: {
           annee_id?: string | null
           created_at?: string
+          cycle_id?: string | null
           description?: string | null
           ecole_id?: string
           enseignant_id?: string | null
@@ -3328,7 +3415,15 @@ export type Database = {
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "groupes_pedagogiques_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       incidents_discipline: {
         Row: {
@@ -3424,6 +3519,7 @@ export type Database = {
         Row: {
           annee_id: string
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           libelle: string
@@ -3435,6 +3531,7 @@ export type Database = {
         Insert: {
           annee_id: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           libelle: string
@@ -3446,6 +3543,7 @@ export type Database = {
         Update: {
           annee_id?: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           libelle?: string
@@ -3454,12 +3552,21 @@ export type Database = {
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lignes_budget_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lignes_transport: {
         Row: {
           arrivee: string
           created_at: string
+          cycle_id: string | null
           depart: string
           ecole_id: string
           heure_arrivee: string | null
@@ -3472,6 +3579,7 @@ export type Database = {
         Insert: {
           arrivee: string
           created_at?: string
+          cycle_id?: string | null
           depart: string
           ecole_id: string
           heure_arrivee?: string | null
@@ -3484,6 +3592,7 @@ export type Database = {
         Update: {
           arrivee?: string
           created_at?: string
+          cycle_id?: string | null
           depart?: string
           ecole_id?: string
           heure_arrivee?: string | null
@@ -3494,6 +3603,13 @@ export type Database = {
           vehicule_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "lignes_transport_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lignes_transport_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -3515,6 +3631,7 @@ export type Database = {
           auteur: string | null
           categorie: string | null
           created_at: string
+          cycle_id: string | null
           disponible: number
           ecole_id: string
           editeur: string | null
@@ -3529,6 +3646,7 @@ export type Database = {
           auteur?: string | null
           categorie?: string | null
           created_at?: string
+          cycle_id?: string | null
           disponible?: number
           ecole_id: string
           editeur?: string | null
@@ -3543,6 +3661,7 @@ export type Database = {
           auteur?: string | null
           categorie?: string | null
           created_at?: string
+          cycle_id?: string | null
           disponible?: number
           ecole_id?: string
           editeur?: string | null
@@ -3554,6 +3673,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "livres_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "livres_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -3571,6 +3697,7 @@ export type Database = {
           coefficient: number
           couleur: string
           created_at: string
+          cycle_id: string | null
           cycles: string[]
           ecole_id: string
           id: string
@@ -3586,6 +3713,7 @@ export type Database = {
           coefficient?: number
           couleur?: string
           created_at?: string
+          cycle_id?: string | null
           cycles?: string[]
           ecole_id: string
           id?: string
@@ -3601,6 +3729,7 @@ export type Database = {
           coefficient?: number
           couleur?: string
           created_at?: string
+          cycle_id?: string | null
           cycles?: string[]
           ecole_id?: string
           id?: string
@@ -3610,6 +3739,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "matieres_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "matieres_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -3622,6 +3758,7 @@ export type Database = {
       menus_cantine: {
         Row: {
           created_at: string
+          cycle_id: string | null
           date_menu: string
           description: string | null
           ecole_id: string
@@ -3631,6 +3768,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cycle_id?: string | null
           date_menu: string
           description?: string | null
           ecole_id: string
@@ -3640,6 +3778,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cycle_id?: string | null
           date_menu?: string
           description?: string | null
           ecole_id?: string
@@ -3647,7 +3786,15 @@ export type Database = {
           repas?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "menus_cantine_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       messages: {
         Row: {
@@ -4823,6 +4970,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          cycle_id: string | null
           ecole_id: string | null
           fonction: string | null
           full_name: string | null
@@ -4836,6 +4984,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string | null
           fonction?: string | null
           full_name?: string | null
@@ -4849,6 +4998,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string | null
           fonction?: string | null
           full_name?: string | null
@@ -4860,6 +5010,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -5241,6 +5398,7 @@ export type Database = {
           capacite: number
           code: string
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           equipements: string[] | null
           etage: string | null
@@ -5256,6 +5414,7 @@ export type Database = {
           capacite?: number
           code: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           equipements?: string[] | null
           etage?: string | null
@@ -5271,6 +5430,7 @@ export type Database = {
           capacite?: number
           code?: string
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           equipements?: string[] | null
           etage?: string | null
@@ -5282,6 +5442,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "salles_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "salles_ecole_id_fkey"
             columns: ["ecole_id"]
@@ -5729,6 +5896,7 @@ export type Database = {
           actif: boolean
           couleur: string
           created_at: string
+          cycle_id: string | null
           description: string | null
           ecole_id: string
           gere_stock: boolean
@@ -5745,6 +5913,7 @@ export type Database = {
           actif?: boolean
           couleur?: string
           created_at?: string
+          cycle_id?: string | null
           description?: string | null
           ecole_id: string
           gere_stock?: boolean
@@ -5761,6 +5930,7 @@ export type Database = {
           actif?: boolean
           couleur?: string
           created_at?: string
+          cycle_id?: string | null
           description?: string | null
           ecole_id?: string
           gere_stock?: boolean
@@ -5772,7 +5942,15 @@ export type Database = {
           stock_actuel?: number | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sp_services_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sp_stock_tenues: {
         Row: {
@@ -6024,6 +6202,7 @@ export type Database = {
       stocks_cantine: {
         Row: {
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           produit: string
@@ -6034,6 +6213,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           produit: string
@@ -6044,6 +6224,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           produit?: string
@@ -6052,7 +6233,15 @@ export type Database = {
           unite?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stocks_cantine_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       teacher_invitations: {
         Row: {
@@ -6813,6 +7002,7 @@ export type Database = {
           capacite: number | null
           chauffeur: string | null
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           immatriculation: string
@@ -6826,6 +7016,7 @@ export type Database = {
           capacite?: number | null
           chauffeur?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           immatriculation: string
@@ -6839,6 +7030,7 @@ export type Database = {
           capacite?: number | null
           chauffeur?: string | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           immatriculation?: string
@@ -6849,6 +7041,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vehicules_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vehicules_ecole_id_fkey"
             columns: ["ecole_id"]

@@ -12,6 +12,8 @@ import { useTresorerie } from "@/hooks/useTresorerie";
 import { useBudget } from "@/hooks/useBudget";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { useNiveau } from "@/context/NiveauContext";
+import { useQuotePartCommune } from "@/hooks/useQuotePartCommune";
 import { useClasses } from "@/hooks/useClasses";
 import { ReportFilters, ALL_CLASSES, formatPeriodeLabel, type ReportFiltersValue } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
@@ -73,6 +75,8 @@ export default function Reports() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
   const { data: financeData, loading: finLoading } = useFinanceData(scopedAnneeId);
+  const { isGlobal, matchesCycle, label: niveauLabel } = useNiveau();
+  const { ratio, mention } = useQuotePartCommune();
 
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
 
@@ -111,27 +115,46 @@ export default function Reports() {
   const now = new Date();
   const moisNoms = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
   const defaultPeriode = `${moisNoms[now.getMonth()]} ${now.getFullYear()}`;
-  const periode = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
+  const periodeBase = formatPeriodeLabel(filters.from, filters.to, defaultPeriode);
+  // Le périmètre (niveau + quote-part des charges communes) est imprimé sur les documents.
+  const periode = isGlobal
+    ? `${periodeBase} — Tous les niveaux`
+    : `${periodeBase} — ${niveauLabel} (quote-part communes ${(ratio * 100).toFixed(1)} %)`;
 
 
   // ── Data builders ──
   const getCompteResultat = (): CompteResultatData => {
     // Recettes = cash uniquement. Les remises/bourses ne sont pas des encaissements
     // et ne doivent pas gonfler le résultat net.
+    // `financeData` est déjà restreint au niveau actif (voir useFinanceData).
     const totalScolarite = financeData.reduce((s, e) => s + (e.totalEncaisse ?? 0), 0);
     const recettes = [{ libelle: "Scolarité encaissée", montant: totalScolarite }];
 
+    // Charges : dépenses du niveau à 100 %, charges communes au prorata
+    // (ratio = 1 en vue « Tous les niveaux » → aucun double comptage).
     const catMap = new Map<string, number>();
     for (const d of depenses) {
-      const cat = d.categorie || "Autres";
-      catMap.set(cat, (catMap.get(cat) || 0) + d.montant);
+      const commun = !d.cycle_id;
+      const cat = (d.categorie || "Autres") + (commun && !isGlobal ? " (quote-part commune)" : "");
+      const montant = commun ? d.montant * ratio : d.montant;
+      catMap.set(cat, (catMap.get(cat) || 0) + montant);
     }
-    const totalSalaires = bulletins.filter((b) => b.statut === "paye").reduce((s, b) => s + b.net_a_payer, 0);
+    const totalSalaires = bulletins
+      .filter((b) => b.statut === "paye")
+      .reduce((s, b) => {
+        const cycleId = (b as any).cycle_id as string | null | undefined;
+        if (!cycleId) return s + b.net_a_payer * ratio; // salaire commun → prorata
+        if (!matchesCycle(cycleId)) return s;
+        return s + b.net_a_payer;
+      }, 0);
     if (totalSalaires > 0) catMap.set("Masse salariale", (catMap.get("Masse salariale") || 0) + totalSalaires);
 
-    const depensesList = Array.from(catMap.entries()).map(([libelle, montant]) => ({ libelle, montant })).sort((a, b) => b.montant - a.montant);
+    const depensesList = Array.from(catMap.entries())
+      .map(([libelle, montant]) => ({ libelle, montant: Math.round(montant) }))
+      .sort((a, b) => b.montant - a.montant);
     return { recettes, depenses: depensesList };
   };
+
 
   const getFluxTresorerie = (): FluxTresorerieData => ({
     comptes: comptes.map((c) => ({ nom: c.nom, solde: c.solde })),
@@ -470,6 +493,9 @@ export default function Reports() {
               classes={classesList}
               periodeLabel={periode}
             />
+            <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              {mention}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {REPORTS.map((r) => (
                 <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">

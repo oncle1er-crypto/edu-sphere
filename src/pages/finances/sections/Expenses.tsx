@@ -12,17 +12,37 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useDepenses } from "@/hooks/useDepenses";
 import { useFournisseurs } from "@/hooks/useFournisseurs";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
-import { useState } from "react";
+import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext";
+import { useEffect, useState } from "react";
 
 const CATEGORIES = ["Fournitures pédagogiques", "Énergie & utilities", "Maintenance & entretien", "Transport scolaire", "Cantine", "Télécoms", "Autre"];
+
+const COMMUN = "__commun__";
 
 export default function Expenses() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const range = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
   const { depenses, loading, addDepense, updateStatut } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
+  const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+  const emptyForm = {
+    libelle: "",
+    categorie: "",
+    montant: "",
+    fournisseur_id: "",
+    cycle_id: COMMUN,
+    date_depense: new Date().toISOString().slice(0, 10),
+  };
+  const [form, setForm] = useState(emptyForm);
+
+  const cycleName = (id?: string | null) => cycles.find((c) => c.id === id)?.nom ?? null;
+
+  // En vue niveau, on préselectionne le premier cycle du niveau courant
+  useEffect(() => {
+    if (!open) return;
+    setForm((f) => ({ ...f, cycle_id: isGlobal ? COMMUN : cycleIds[0] ?? COMMUN }));
+  }, [open, isGlobal, cycleIds.join(",")]);
 
   // Budget tracking by category
   const parCategorie = CATEGORIES.map((cat) => {
@@ -38,12 +58,13 @@ export default function Expenses() {
       categorie: form.categorie || null,
       montant: Number(form.montant),
       fournisseur_id: form.fournisseur_id || null,
+      cycle_id: form.cycle_id === COMMUN ? null : form.cycle_id,
       date_depense: form.date_depense,
       statut: "en_attente",
       reference: null,
       notes: null,
     });
-    setForm({ libelle: "", categorie: "", montant: "", fournisseur_id: "", date_depense: new Date().toISOString().slice(0, 10) });
+    setForm(emptyForm);
     setOpen(false);
   };
 
@@ -103,6 +124,25 @@ export default function Expenses() {
                     </Select>
                   </div>
                 )}
+                {cycles.length > 0 && (
+                  <div>
+                    <Label>Imputation par niveau</Label>
+                    <Select value={form.cycle_id} onValueChange={(v) => setForm({ ...form, cycle_id: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={COMMUN}>Commun (réparti entre les niveaux)</SelectItem>
+                        {cycles.map((c) => (
+                          <SelectItem key={c.id} value={c.id}>
+                            {c.nom} — {NIVEAU_LABELS[niveauOfCycle(c)]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      « Commun » : la dépense sera répartie au prorata dans les bilans par niveau.
+                    </p>
+                  </div>
+                )}
                 <Button onClick={handleSubmit} className="w-full">Enregistrer</Button>
               </div>
             </DialogContent>
@@ -114,6 +154,7 @@ export default function Expenses() {
               <TableRow className="bg-muted/40">
                 <TableHead>Libellé</TableHead>
                 <TableHead>Catégorie</TableHead>
+                <TableHead>Niveau</TableHead>
                 <TableHead>Fournisseur</TableHead>
                 <TableHead className="text-right">Montant</TableHead>
                 <TableHead>Date</TableHead>
@@ -125,6 +166,11 @@ export default function Expenses() {
                 <TableRow key={e.id}>
                   <TableCell className="font-medium">{e.libelle}</TableCell>
                   <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={e.cycle_id ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"}>
+                      {cycleName(e.cycle_id) ?? "Commun"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{e.fournisseur_nom ?? "—"}</TableCell>
                   <TableCell className="text-right font-semibold">{e.montant.toLocaleString("fr-FR")} FCFA</TableCell>
                   <TableCell className="text-muted-foreground">{new Date(e.date_depense).toLocaleDateString("fr-FR")}</TableCell>
@@ -140,7 +186,7 @@ export default function Expenses() {
                 </TableRow>
               ))}
               {depenses.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">Aucune dépense enregistrée.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">Aucune dépense enregistrée.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

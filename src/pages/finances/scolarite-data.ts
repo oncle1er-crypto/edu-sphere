@@ -126,6 +126,8 @@ export interface EleveScolarite {
   nom: string;
   prenom: string;
   classe: string;
+  /** Id de la classe (sert au filtrage par niveau). */
+  classeId?: string | null;
   cycle: Cycle;
   parent: string;
   telephone: string;

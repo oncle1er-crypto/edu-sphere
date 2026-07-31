@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
+import { NiveauSwitcher } from "@/components/NiveauSwitcher";
 
 const statutLabels: Record<string, string> = {
   active: "Active",
@@ -53,6 +54,9 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
   const location = useLocation();
   const canGoBack = location.pathname !== "/" && location.pathname !== "/index";
   const { annees, activeAnneeId, setActiveAnneeId, activeAnnee, loading } = useAcademicPeriod();
+  // Le filtre de niveau ne s'applique pas aux modules Communication et Paramètres
+  const isSettingsScope =
+    location.pathname.startsWith("/parametres") || location.pathname.startsWith("/communication");
 
   const sortedAnnees = annees.slice().sort((a, b) => b.debut.localeCompare(a.debut));
   const isConsultation = activeAnnee.statut !== "active";
@@ -150,6 +154,10 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             )}
           </div>
         )}
+
+        {!isSettingsScope && <NiveauSwitcher />}
+
+
 
         <div className="flex items-center gap-3">
           <InstallPWAButton

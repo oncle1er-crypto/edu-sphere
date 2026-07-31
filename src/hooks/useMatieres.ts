@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
+import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -9,8 +10,15 @@ type MatiereUpdate = Database["public"]["Tables"]["matieres"]["Update"];
 
 export function useMatieres() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [matieres, setMatieres] = useState<MatiereRow[]>([]);
+  const { isGlobal, matchesCycle } = useNiveau();
+  const [matieresRaw, setMatieres] = useState<MatiereRow[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Vue niveau : matières du niveau + matières communes (cycle_id null)
+  const matieres = useMemo(
+    () => (isGlobal ? matieresRaw : matieresRaw.filter((m) => matchesCycle((m as any).cycle_id))),
+    [matieresRaw, isGlobal, matchesCycle],
+  );
 
   const fetchMatieres = useCallback(async () => {
     if (!ecoleId) return;

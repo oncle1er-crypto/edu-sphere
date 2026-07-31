@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 
 export interface Depense {
@@ -11,6 +12,8 @@ export interface Depense {
   montant: number;
   fournisseur_id: string | null;
   fournisseur_nom?: string;
+  /** Niveau imputé — null = dépense commune (répartie entre les niveaux). */
+  cycle_id?: string | null;
   date_depense: string;
   statut: string;
   notes: string | null;
@@ -19,11 +22,21 @@ export interface Depense {
 
 export function useDepenses(range?: { from?: string; to?: string }) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [depenses, setDepenses] = useState<Depense[]>([]);
+  const { isGlobal, matchesCycle } = useNiveau();
+  const [depensesRaw, setDepenses] = useState<Depense[]>([]);
   const [loading, setLoading] = useState(true);
   const rangeProvided = range !== undefined;
   const from = range?.from;
   const to = range?.to;
+
+  /**
+   * Vue niveau : dépenses du niveau + dépenses communes (cycle_id null).
+   * La quote-part des communes est calculée dans les rapports comptables.
+   */
+  const depenses = useMemo(
+    () => (isGlobal ? depensesRaw : depensesRaw.filter((d) => matchesCycle(d.cycle_id))),
+    [depensesRaw, isGlobal, matchesCycle],
+  );
 
   const fetch = useCallback(async () => {
     if (!ecoleId) return;

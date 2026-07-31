@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { useNiveau } from "@/context/NiveauContext";
 
 export interface HomeActivityItem {
   kind: "paiement" | "inscription" | "incident";
@@ -59,13 +60,15 @@ const nomOf = (e: any) => `${e?.prenom ?? ""} ${e?.nom ?? ""}`.trim();
 export function useHomeOverview() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const { isGlobal, classeIds, cycleIds, loading: niveauLoading } = useNiveau();
   const [data, setData] = useState<HomeOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   const anneeId = activeAnnee?.id ?? null;
+  const classeKey = (classeIds ?? []).join(",");
 
   useEffect(() => {
-    if (ecoleLoading || periodLoading) return;
+    if (ecoleLoading || periodLoading || niveauLoading) return;
     if (!ecoleId) {
       setData(null);
       setLoading(false);
@@ -78,21 +81,25 @@ export function useHomeOverview() {
       const todayIso = today.toISOString();
       const todayDate = todayIso.slice(0, 10);
 
+      // Filtrage par niveau : ensemble des classes du niveau actif (null = global)
+      const clSet = isGlobal || !classeIds ? null : new Set(classeIds);
+      const okClasse = (id: string | null | undefined) => !clSet || (!!id && clSet.has(id));
+
       const elevesQ = supabase
         .from("eleves")
-        .select("id, nom, prenom, statut, classes(nom)")
+        .select("id, nom, prenom, statut, classe_id, classes(nom)")
         .eq("ecole_id", ecoleId);
       if (anneeId) elevesQ.eq("annee_id", anneeId);
 
       const presencesQ = supabase
         .from("presences")
-        .select("statut")
+        .select("statut, classe_id")
         .eq("ecole_id", ecoleId)
         .eq("date_presence", todayDate);
 
       const facturesQ = supabase
         .from("factures")
-        .select("id, numero, libelle, montant, montant_paye, date_echeance, categorie, eleves(nom, prenom)")
+        .select("id, numero, libelle, montant, montant_paye, date_echeance, categorie, eleves(nom, prenom, classe_id)")
         .eq("ecole_id", ecoleId)
         .neq("statut", "payee")
         .order("date_echeance", { ascending: true })
@@ -117,14 +124,14 @@ export function useHomeOverview() {
         annoncesRes,
       ] = await Promise.all([
         elevesQ,
-        supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
-        supabase.from("paiements").select("montant").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
-        supabase.from("sp_paiements").select("montant_paye").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
-        supabase.from("paiements_services").select("montant").eq("ecole_id", ecoleId).gte("created_at", todayIso),
+        supabase.from("enseignants").select("id, cycle_id").eq("ecole_id", ecoleId).eq("statut", "actif"),
+        supabase.from("paiements").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
+        supabase.from("sp_paiements").select("montant_paye, eleves(classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).gte("date_paiement", todayIso),
+        supabase.from("paiements_services").select("montant, eleves(classe_id)").eq("ecole_id", ecoleId).gte("created_at", todayIso),
         presencesQ,
         supabase
           .from("tranches")
-          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classes(nom))")
+          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classe_id, classes(nom))")
           .eq("ecole_id", ecoleId)
           .in("statut", ["due", "retard"])
           .limit(1000),
@@ -132,38 +139,39 @@ export function useHomeOverview() {
         supabase.from("documents_eleves").select("eleve_id").eq("ecole_id", ecoleId),
         supabase
           .from("sp_ventes_tenues")
-          .select("id, numero, acheteur_libre, montant_total, created_at, eleves(nom, prenom), classes(nom)")
+          .select("id, numero, acheteur_libre, montant_total, created_at, classe_id, eleves(nom, prenom), classes(nom)")
           .eq("ecole_id", ecoleId)
           .eq("statut", "reservation")
           .order("created_at", { ascending: false })
           .limit(100),
-        supabase.from("sp_stock_tenues").select("id, genre, stock_actuel, seuil_alerte, classes(nom)").eq("ecole_id", ecoleId),
-        supabase.from("paiements").select("montant, date_paiement, eleves(nom, prenom)").eq("ecole_id", ecoleId).is("annule_le", null).order("date_paiement", { ascending: false }).limit(6),
-        supabase.from("eleves").select("nom, prenom, created_at, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(6),
-        supabase.from("incidents_discipline").select("type, motif, date_incident, eleves(nom, prenom)").eq("ecole_id", ecoleId).order("date_incident", { ascending: false }).limit(6),
+        supabase.from("sp_stock_tenues").select("id, genre, stock_actuel, seuil_alerte, classe_id, classes(nom)").eq("ecole_id", ecoleId),
+        supabase.from("paiements").select("montant, date_paiement, eleves(nom, prenom, classe_id)").eq("ecole_id", ecoleId).is("annule_le", null).order("date_paiement", { ascending: false }).limit(40),
+        supabase.from("eleves").select("nom, prenom, created_at, classe_id, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(40),
+        supabase.from("incidents_discipline").select("type, motif, date_incident, eleves(nom, prenom, classe_id)").eq("ecole_id", ecoleId).order("date_incident", { ascending: false }).limit(40),
         supabase.from("annonces").select("titre, contenu, publie_le, created_at").eq("ecole_id", ecoleId).eq("publie", true).order("created_at", { ascending: false }).limit(6),
       ]);
 
       if (cancelled) return;
 
-      const eleves = (elevesRes.data ?? []) as any[];
+      const eleves = ((elevesRes.data ?? []) as any[]).filter((e) => okClasse(e.classe_id));
       const withDoc = new Set(((docsRes.data ?? []) as any[]).map((d) => d.eleve_id));
       const dossiersIncomplets: AlertRow[] = eleves
         .filter((e) => !withDoc.has(e.id))
         .map((e) => ({ id: e.id, titre: nomOf(e), sub: e.classes?.nom ?? "Sans classe" }));
 
       const encaisseJour =
-        ((paiementsJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant), 0) +
-        ((spJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant_paye), 0) +
-        ((servJourRes.data ?? []) as any[]).reduce((s, p) => s + num(p.montant), 0);
+        ((paiementsJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant), 0) +
+        ((spJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant_paye), 0) +
+        ((servJourRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).reduce((s, p) => s + num(p.montant), 0);
 
-      const presences = (presencesRes.data ?? []) as any[];
+      const presences = ((presencesRes.data ?? []) as any[]).filter((p) => okClasse(p.classe_id));
       const presentsCount = presences.filter((p) => p.statut === "present" || p.statut === "retard").length;
       const tauxPresence = presences.length > 0 ? Math.round((presentsCount / presences.length) * 100) : null;
 
       // Impayés scolarité : agrégés par élève
       const byEleve = new Map<string, AlertRow>();
       for (const t of (tranchesRes.data ?? []) as any[]) {
+        if (!okClasse(t.eleves?.classe_id)) continue;
         const reste = Math.max(0, num(t.montant) - num(t.paye));
         if (reste <= 0) continue;
         const prev = byEleve.get(t.eleve_id);
@@ -180,7 +188,9 @@ export function useHomeOverview() {
       }
       const impayes = [...byEleve.values()].sort((a, b) => (b.montant ?? 0) - (a.montant ?? 0));
 
-      const facturesRows = ((facturesRes.data ?? []) as any[]).map((f) => ({
+      const facturesRows = ((facturesRes.data ?? []) as any[])
+        .filter((f) => okClasse(f.eleves?.classe_id))
+        .map((f) => ({
         categorie: (f.categorie ?? "").toLowerCase(),
         row: {
           id: f.id,
@@ -192,7 +202,9 @@ export function useHomeOverview() {
       const impayesCantine = facturesRows.filter((f) => f.categorie === "cantine").map((f) => f.row);
       const impayesTransport = facturesRows.filter((f) => f.categorie === "transport").map((f) => f.row);
 
-      const tenuesReservees: AlertRow[] = ((reservationsRes.data ?? []) as any[]).map((v) => ({
+      const tenuesReservees: AlertRow[] = ((reservationsRes.data ?? []) as any[])
+        .filter((v) => okClasse(v.classe_id))
+        .map((v) => ({
         id: v.id,
         titre: nomOf(v.eleves) || v.acheteur_libre || v.numero,
         sub: `${v.classes?.nom ?? ""} · réservation`,
@@ -200,7 +212,7 @@ export function useHomeOverview() {
       }));
 
       const stocksBas: AlertRow[] = ((stocksRes.data ?? []) as any[])
-        .filter((s) => num(s.stock_actuel) <= num(s.seuil_alerte))
+        .filter((s) => okClasse(s.classe_id) && num(s.stock_actuel) <= num(s.seuil_alerte))
         .map((s) => ({
           id: s.id,
           titre: `${s.classes?.nom ?? "Classe"} · ${s.genre === "F" ? "Fille" : s.genre === "M" ? "Garçon" : "—"}`,
@@ -208,19 +220,19 @@ export function useHomeOverview() {
         }));
 
       const activite: HomeActivityItem[] = [
-        ...((recentPaiementsRes.data ?? []) as any[]).map((p) => ({
+        ...((recentPaiementsRes.data ?? []) as any[]).filter((p) => okClasse(p.eleves?.classe_id)).map((p) => ({
           kind: "paiement" as const,
           label: nomOf(p.eleves) || "Paiement",
           sub: `${num(p.montant).toLocaleString("fr-FR")} FCFA`,
           at: p.date_paiement,
         })),
-        ...((recentElevesRes.data ?? []) as any[]).map((e) => ({
+        ...((recentElevesRes.data ?? []) as any[]).filter((e) => okClasse(e.classe_id)).map((e) => ({
           kind: "inscription" as const,
           label: nomOf(e),
           sub: e.classes?.nom ?? "Nouvelle inscription",
           at: e.created_at,
         })),
-        ...((recentIncidentsRes.data ?? []) as any[]).map((i) => ({
+        ...((recentIncidentsRes.data ?? []) as any[]).filter((i) => okClasse(i.eleves?.classe_id)).map((i) => ({
           kind: "incident" as const,
           label: nomOf(i.eleves) || "Incident",
           sub: i.motif || i.type || "Incident",
@@ -257,7 +269,9 @@ export function useHomeOverview() {
       setData({
         totalEleves: eleves.length,
         totalInscrits: eleves.filter((e) => e.statut === "inscrit").length,
-        totalEnseignants: ensRes.count ?? 0,
+        totalEnseignants: ((ensRes.data ?? []) as any[]).filter(
+          (t) => isGlobal || !t.cycle_id || cycleIds.includes(t.cycle_id)
+        ).length,
         encaisseJour,
         tauxPresence,
         presencesSaisies: presences.length,
@@ -276,7 +290,7 @@ export function useHomeOverview() {
     })();
 
     return () => { cancelled = true; };
-  }, [ecoleId, ecoleLoading, periodLoading, anneeId]);
+  }, [ecoleId, ecoleLoading, periodLoading, niveauLoading, anneeId, isGlobal, classeKey, cycleIds.join(",")]);
 
-  return { data, loading: loading || ecoleLoading || periodLoading };
+  return { data, loading: loading || ecoleLoading || periodLoading || niveauLoading };
 }

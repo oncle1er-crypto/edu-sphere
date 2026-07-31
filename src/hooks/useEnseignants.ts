@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
+import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -12,8 +13,15 @@ export interface Enseignant extends EnseignantRow {
 
 export function useEnseignants() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [enseignants, setEnseignants] = useState<Enseignant[]>([]);
+  const { isGlobal, matchesCycle } = useNiveau();
+  const [enseignantsRaw, setEnseignants] = useState<Enseignant[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Vue niveau : enseignants du niveau + enseignants communs (cycle_id null)
+  const enseignants = useMemo(
+    () => (isGlobal ? enseignantsRaw : enseignantsRaw.filter((e) => matchesCycle((e as any).cycle_id))),
+    [enseignantsRaw, isGlobal, matchesCycle],
+  );
 
   const fetchEnseignants = useCallback(async () => {
     if (!ecoleId) return;

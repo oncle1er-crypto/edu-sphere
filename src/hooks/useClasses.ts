@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
+import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -14,8 +15,16 @@ export interface Classe extends ClasseRow {
 
 export function useClasses(anneeId?: string) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [classes, setClasses] = useState<Classe[]>([]);
+  const { isGlobal, cycleIds } = useNiveau();
+  const [classesRaw, setClasses] = useState<Classe[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filtrage par niveau (Primaire = Maternelle + Primaire / Secondaire)
+  const classes = useMemo(() => {
+    if (isGlobal) return classesRaw;
+    const set = new Set(cycleIds);
+    return classesRaw.filter((c) => c.cycle_id && set.has(c.cycle_id));
+  }, [classesRaw, isGlobal, cycleIds]);
 
   const fetchClasses = useCallback(async () => {
     if (!ecoleId) return;
