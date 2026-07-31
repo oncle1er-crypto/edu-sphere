@@ -20,12 +20,14 @@ import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/c
 import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/InvoicePaymentsHistoryDialog";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 interface Abonnement {
   id: string;
   eleve_id: string;
   eleve_nom: string;
   classe_nom: string;
+  classe_id: string | null;
   regime: string | null;
   grille_id: string | null;
   grille_libelle: string | null;
@@ -43,6 +45,7 @@ interface FactureLite {
 
 export default function CanteenSubscribers() {
   const { ecoleId } = useEcoleId();
+  const { keepClasse } = useNiveauFilters();
   const { eleves } = useEleves();
   const { anneeId } = useAnneeId();
   const { lignes: grilles } = useGrilleServices("cantine");
@@ -65,7 +68,7 @@ export default function CanteenSubscribers() {
     if (!ecoleId) return;
     const { data } = await supabase
       .from("abonnements_cantine")
-      .select("id, eleve_id, regime, statut, grille_id, eleves(nom, prenom, classes(nom)), grille_tarifs_services(libelle, periodicite, montant_total)")
+      .select("id, eleve_id, regime, statut, grille_id, eleves(nom, prenom, classe_id, classes(nom)), grille_tarifs_services(libelle, periodicite, montant_total)")
       .eq("ecole_id", ecoleId)
       .order("created_at", { ascending: false });
 
@@ -74,6 +77,7 @@ export default function CanteenSubscribers() {
       eleve_id: a.eleve_id,
       eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
       classe_nom: a.eleves?.classes?.nom ?? "—",
+      classe_id: a.eleves?.classe_id ?? null,
       regime: a.regime,
       grille_id: a.grille_id,
       grille_libelle: a.grille_tarifs_services?.libelle ?? null,
@@ -153,8 +157,9 @@ export default function CanteenSubscribers() {
   };
 
   const filtered = abonnements.filter((a) =>
-    a.eleve_nom.toLowerCase().includes(search.toLowerCase()) ||
-    a.classe_nom.toLowerCase().includes(search.toLowerCase())
+    keepClasse(a.classe_id) && (
+      a.eleve_nom.toLowerCase().includes(search.toLowerCase()) ||
+    a.classe_nom.toLowerCase().includes(search.toLowerCase()))
   );
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
