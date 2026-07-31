@@ -1,4 +1,5 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AlertTriangle, Bell, MessageSquare, Calendar, Clock, TrendingDown, Search, ArrowUp, ArrowDown, ArrowUpDown, Eye, Wallet, Tag, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner, StatusLegend, STATUTS_TRANCHE } from "@/components/help";
@@ -77,6 +78,20 @@ export default function Unpaid() {
   const setStatusEleve = (e: EleveScolarite | null) => setStatusEleveId(e?.id ?? null);
 
   useEffect(() => { fetchRelances(); }, [fetchRelances]);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusHandled = useRef(false);
+  useEffect(() => {
+    const id = searchParams.get("eleve");
+    if (!id || finLoading || focusHandled.current) return;
+    const found = ELEVES_SCOLARITE.find((e) => e.id === id);
+    if (!found) return;
+    focusHandled.current = true;
+    setPaymentEleveId(id);
+    const next = new URLSearchParams(searchParams);
+    next.delete("eleve");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, ELEVES_SCOLARITE, finLoading]);
 
   const classesDispo = useMemo((): string[] => {
     const src = cycle === "all" ? ELEVES_SCOLARITE : ELEVES_SCOLARITE.filter((e) => e.cycle === cycle);

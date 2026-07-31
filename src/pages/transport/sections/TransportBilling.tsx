@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Receipt, Plus, Loader2, Wallet, Printer, History, Pencil, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -106,6 +107,20 @@ export default function TransportBilling() {
     else { toast.success("Facture créée"); await fetchData(); }
     setOpen(false); setSaving(false);
   };
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusHandled = useRef(false);
+  useEffect(() => {
+    const fid = searchParams.get("facture");
+    if (!fid || loading || focusHandled.current) return;
+    const r = rows.find((x) => x.id === fid);
+    if (!r) return;
+    focusHandled.current = true;
+    openPayDialog(r);
+    const next = new URLSearchParams(searchParams);
+    next.delete("facture");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, rows, loading]);
 
   const openPayDialog = (r: Row) => {
     setPayFor({

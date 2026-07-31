@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,23 @@ export default function SpVentesTenues() {
   const { classes } = useClasses();
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [focusId, setFocusId] = useState<string | null>(null);
+  const focusHandled = useRef(false);
+  useEffect(() => {
+    const id = searchParams.get("vente");
+    if (!id || loading || focusHandled.current) return;
+    if (!ventes.some((v) => v.id === id)) return;
+    focusHandled.current = true;
+    setFocusId(id);
+    const next = new URLSearchParams(searchParams);
+    next.delete("vente");
+    setSearchParams(next, { replace: true });
+    setTimeout(() => {
+      document.getElementById(`vente-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+  }, [searchParams, ventes, loading]);
 
   const validerRetrait = async (v: (typeof ventes)[0]) => {
     if (!v.classe_id || !v.genre) return;
@@ -101,7 +119,7 @@ export default function SpVentesTenues() {
               </TableHeader>
               <TableBody>
                 {ventes.map((v) => (
-                  <TableRow key={v.id}>
+                  <TableRow key={v.id} id={`vente-${v.id}`} className={focusId === v.id ? "bg-accent/20 ring-2 ring-accent" : undefined}>
                     <TableCell className="font-mono text-xs">{v.numero}</TableCell>
                     <TableCell>{new Date(v.created_at).toLocaleDateString("fr-FR")}</TableCell>
                     <TableCell>{v.acheteur_libre ?? "—"}</TableCell>

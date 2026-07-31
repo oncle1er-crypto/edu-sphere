@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,19 @@ export default function StudentsDocuments() {
   const [previewDoc, setPreviewDoc] = useState<DocumentEleve | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [searchParams, setSearchParams] = useSearchParams();
+  const focusHandled = useRef(false);
+  useEffect(() => {
+    const id = searchParams.get("eleve");
+    if (!id || loadingEleves || focusHandled.current) return;
+    if (!eleves.some((e) => e.id === id)) return;
+    focusHandled.current = true;
+    setSelectedEleve(id);
+    const next = new URLSearchParams(searchParams);
+    next.delete("eleve");
+    setSearchParams(next, { replace: true });
+  }, [searchParams, eleves, loadingEleves]);
 
   const { documents, loading: loadingDocs, uploadDocument, deleteDocument, downloadDocument } =
     useDocumentsEleves(selectedEleve || undefined);
