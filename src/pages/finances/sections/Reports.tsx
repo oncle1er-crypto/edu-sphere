@@ -489,6 +489,9 @@ export default function Reports() {
               classes={classesList}
               periodeLabel={periode}
             />
+            <div className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+              {mention}
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {REPORTS.map((r) => (
                 <Card key={r.id} className="border hover:shadow-[var(--shadow-card)] transition-shadow">
