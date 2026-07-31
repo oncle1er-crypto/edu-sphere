@@ -129,12 +129,12 @@ export function useHomeOverview() {
         supabase.from("documents_eleves").select("eleve_id").eq("ecole_id", ecoleId),
         supabase
           .from("sp_ventes_tenues")
-          .select("id, numero, beneficiaire_nom, classe_nom, montant_total, created_at")
+          .select("id, numero, acheteur_libre, montant_total, created_at, eleves(nom, prenom), classes(nom)")
           .eq("ecole_id", ecoleId)
           .eq("statut", "reservation")
           .order("created_at", { ascending: false })
           .limit(100),
-        supabase.from("sp_stock_tenues").select("id, classe_nom, sexe, stock_actuel, seuil_alerte").eq("ecole_id", ecoleId),
+        supabase.from("sp_stock_tenues").select("id, genre, stock_actuel, seuil_alerte, classes(nom)").eq("ecole_id", ecoleId),
         supabase.from("paiements").select("montant, date_paiement, eleves(nom, prenom)").eq("ecole_id", ecoleId).is("annule_le", null).order("date_paiement", { ascending: false }).limit(6),
         supabase.from("eleves").select("nom, prenom, created_at, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(6),
         supabase.from("incidents_discipline").select("type, motif, date_incident, eleves(nom, prenom)").eq("ecole_id", ecoleId).order("date_incident", { ascending: false }).limit(6),
@@ -191,8 +191,8 @@ export function useHomeOverview() {
 
       const tenuesReservees: AlertRow[] = ((reservationsRes.data ?? []) as any[]).map((v) => ({
         id: v.id,
-        titre: v.beneficiaire_nom || v.numero,
-        sub: `${v.classe_nom ?? ""} · réservation`,
+        titre: nomOf(v.eleves) || v.acheteur_libre || v.numero,
+        sub: `${v.classes?.nom ?? ""} · réservation`,
         montant: num(v.montant_total),
       }));
 
@@ -200,7 +200,7 @@ export function useHomeOverview() {
         .filter((s) => num(s.stock_actuel) <= num(s.seuil_alerte))
         .map((s) => ({
           id: s.id,
-          titre: `${s.classe_nom ?? "Classe"} · ${s.sexe === "F" ? "Fille" : s.sexe === "M" ? "Garçon" : "—"}`,
+          titre: `${s.classes?.nom ?? "Classe"} · ${s.genre === "F" ? "Fille" : s.genre === "M" ? "Garçon" : "—"}`,
           sub: `Stock ${num(s.stock_actuel)} / seuil ${num(s.seuil_alerte)}`,
         }));
 
