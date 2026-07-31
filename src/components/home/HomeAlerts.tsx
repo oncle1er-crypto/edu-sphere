@@ -25,12 +25,12 @@ export function HomeAlerts({ data }: { data: HomeOverview }) {
   const a = data.alertes;
 
   const groups: AlertGroup[] = [
-    { key: "impayes", label: "élèves avec impayés (scolarité)", rows: a.impayes, to: "/finances/scolarite", mod: "finances", actionLabel: "Encaisser" },
+    { key: "impayes", label: "élèves avec impayés (scolarité)", rows: a.impayes, to: "/finances/impayes", mod: "finances", actionLabel: "Encaisser" },
     { key: "cantine", label: "factures cantine impayées", rows: a.impayesCantine, to: "/cantine/facturation", mod: "cantine", actionLabel: "Encaisser" },
     { key: "transport", label: "factures transport impayées", rows: a.impayesTransport, to: "/transport/facturation", mod: "transport", actionLabel: "Encaisser" },
     { key: "docs", label: "dossiers sans document", rows: a.dossiersIncomplets, to: "/eleves/documents", mod: "eleves", actionLabel: "Compléter" },
     { key: "reservations", label: "tenues réservées à retirer", rows: a.tenuesReservees, to: "/services-ponctuels/ventes-tenues", mod: "services_ponctuels", actionLabel: "Retirer" },
-    { key: "stocks", label: "stocks de tenues bas", rows: a.stocksBas, to: "/services-ponctuels/stocks", mod: "services_ponctuels", actionLabel: "Réapprovisionner" },
+    { key: "stocks", label: "stocks de tenues bas", rows: a.stocksBas, to: "/services-ponctuels/catalogue", mod: "services_ponctuels", actionLabel: "Réapprovisionner" },
   ].filter((g) => g.rows.length > 0 && can(g.mod, "view"));
 
   return (
