@@ -204,6 +204,7 @@ const SchoolsConfig = lazy(() => import("@/pages/ecoles/sections/SchoolsConfig")
 const SchoolsYearTransition = lazy(() => import("@/pages/ecoles/sections/SchoolsYearTransition"));
 import { EcoleProvider } from "@/context/EcoleContext";
 import { AcademicPeriodProvider } from "@/context/AcademicPeriodContext";
+import { NiveauProvider } from "@/context/NiveauContext";
 const CardsLayout = lazy(() => import("@/pages/cartes/CardsLayout"));
 const CardsDashboard = lazy(() => import("@/pages/cartes/sections/CardsDashboard"));
 const CardsList = lazy(() => import("@/pages/cartes/sections/CardsList"));
@@ -290,6 +291,7 @@ const App = () => (
         <AuthProvider>
         <EcoleProvider>
         <AcademicPeriodProvider>
+        <NiveauProvider>
           <Routes>
             <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
             <Route path="/connexion" element={<LoginPage />} />
