@@ -30,7 +30,16 @@ export interface BilanComptable {
   totalSorties: BilanLigne;
   solde: BilanLigne;
   soldeCumule: number[];
+  /** Tous les mois de l'exercice (avant filtrage période) */
+  moisExercice: BilanMois[];
+  /** Découpage en trimestres : indices de colonnes */
+  trimestres: { label: string; from: number; to: number }[];
 }
+
+export type BilanPeriode =
+  | { mode: "annee" }
+  | { mode: "trimestre"; index: number }
+  | { mode: "mois"; index: number };
 
 const MOIS_LABELS = [
   "JANVIER", "FÉVRIER", "MARS", "AVRIL", "MAI", "JUIN",
@@ -50,11 +59,18 @@ const ENTREES_LIBELLES = [
 
 type EntreeKey = (typeof ENTREES_LIBELLES)[number];
 
-function buildMois(debut: string): BilanMois[] {
+/** Nombre de mois d'anticipation avant la rentrée (inscriptions anticipées) */
+const MOIS_ANTICIPATION = 2;
+
+function buildMois(debut: string, fin: string): BilanMois[] {
   const d = new Date(debut);
+  const f = new Date(fin);
+  const start = new Date(d.getFullYear(), d.getMonth() - MOIS_ANTICIPATION, 1);
+  const nb =
+    (f.getFullYear() - start.getFullYear()) * 12 + (f.getMonth() - start.getMonth()) + 1;
   const out: BilanMois[] = [];
-  for (let i = 0; i < 12; i++) {
-    const m = new Date(d.getFullYear(), d.getMonth() + i, 1);
+  for (let i = 0; i < Math.max(1, nb); i++) {
+    const m = new Date(start.getFullYear(), start.getMonth() + i, 1);
     const label = MOIS_LABELS[m.getMonth()];
     out.push({
       label,
@@ -67,7 +83,7 @@ function buildMois(debut: string): BilanMois[] {
 
 const monthKey = (date?: string | null) => (date ? String(date).slice(0, 7) : null);
 
-export function useBilanComptable() {
+export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
   const { ecoleId } = useEcoleId();
   const { activeAnnee } = useAcademicPeriod();
   const { settings } = useFinanceSettings();
@@ -79,15 +95,28 @@ export function useBilanComptable() {
   };
 
   return useQuery<BilanComptable>({
-    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params],
+    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params, periode],
     enabled: !!ecoleId && !!activeAnnee,
     queryFn: async () => {
-      const mois = buildMois(activeAnnee!.debut);
+      const mois = buildMois(activeAnnee!.debut, activeAnnee!.fin);
+      const nbMois = mois.length;
       const idx = new Map(mois.map((m, i) => [m.key, i]));
-      const zeros = () => Array(12).fill(0) as number[];
+      const zeros = () => Array(nbMois).fill(0) as number[];
 
-      const from = activeAnnee!.debut;
+      /** Index de colonne, borné aux limites de l'exercice (rien n'est perdu) */
+      const colIndex = (date?: string | null): number | undefined => {
+        const mk = monthKey(date);
+        if (!mk) return undefined;
+        const hit = idx.get(mk);
+        if (hit !== undefined) return hit;
+        if (mk < mois[0].key) return 0;
+        if (mk > mois[nbMois - 1].key) return nbMois - 1;
+        return undefined;
+      };
+
+      const from = mois[0].key + "-01";
       const to = activeAnnee!.fin;
+
 
       // ── Tranches de scolarité de l'année (total dû par élève) ──
       const { data: tranches } = await supabase
@@ -120,8 +149,7 @@ export function useBilanComptable() {
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
       for (const p of (paiements ?? []) as any[]) {
-        const mk = monthKey(p.date_paiement);
-        const i = mk ? idx.get(mk) : undefined;
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
 
         if (p.tranche_id && trancheIds.has(p.tranche_id)) {
@@ -139,7 +167,7 @@ export function useBilanComptable() {
         const totalDu = totalDuParEleve.get(eleveId) ?? list.reduce((s, p) => s + Number(p.montant || 0), 0);
         let cumul = 0;
         for (const p of list) {
-          const i = idx.get(monthKey(p.date_paiement)!)!;
+          const i = colIndex(p.date_paiement)!;
           const m = Number(p.montant || 0);
           const avant = ventilerScolarite(totalDu, cumul, params);
           const apres = ventilerScolarite(totalDu, cumul + m, params);
@@ -170,7 +198,7 @@ export function useBilanComptable() {
         .gte("created_at", from)
         .lte("created_at", `${to}T23:59:59`);
       for (const p of (paiementsServices ?? []) as any[]) {
-        const i = idx.get(monthKey(p.created_at)!);
+        const i = colIndex(p.created_at);
         if (i === undefined) continue;
         const key: EntreeKey =
           p.service_type === "transport" ? "Frais de transport scolaire" : "Frais de cantine";
@@ -190,7 +218,7 @@ export function useBilanComptable() {
       ]);
       const slugById = new Map(((services ?? []) as any[]).map((s) => [s.id, `${s.slug} ${s.nom}`.toLowerCase()]));
       for (const p of (spPaiements ?? []) as any[]) {
-        const i = idx.get(monthKey(p.date_paiement)!);
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         const s = slugById.get(p.service_id) ?? "";
         const key: EntreeKey = /tenue|uniforme|fourniture/.test(s)
@@ -207,7 +235,7 @@ export function useBilanComptable() {
         .gte("date_paiement", from)
         .lte("date_paiement", to);
       for (const p of (vac ?? []) as any[]) {
-        const i = idx.get(monthKey(p.date_paiement)!);
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
       }
@@ -223,7 +251,7 @@ export function useBilanComptable() {
       const sortiesMap = new Map<string, number[]>();
       for (const d of (depenses ?? []) as any[]) {
         if (["rejetee", "annulee"].includes(String(d.statut))) continue;
-        const i = idx.get(monthKey(d.date_depense)!);
+        const i = colIndex(d.date_depense);
         if (i === undefined) continue;
         const cat = EXPENSE_CATEGORIES.includes(d.categorie) ? d.categorie : "Autres charges";
         if (!sortiesMap.has(cat)) sortiesMap.set(cat, zeros());
@@ -252,17 +280,50 @@ export function useBilanComptable() {
       const ts = sum(lignesSorties);
       const so = te.map((v, i) => v - ts[i]);
       let run = 0;
-      const soldeCumule = so.map((v) => (run += v));
+      const soldeCumuleFull = so.map((v) => (run += v));
+
+      // ── Découpage en trimestres (3 blocs de colonnes) ──
+      const taille = Math.ceil(nbMois / 3);
+      const trimestres = [0, 1, 2]
+        .map((t) => {
+          const f = t * taille;
+          const l = Math.min(nbMois - 1, f + taille - 1);
+          return {
+            label: `T${t + 1} — ${mois[f]?.label ?? ""} à ${mois[l]?.label ?? ""}`,
+            from: f,
+            to: l,
+          };
+        })
+        .filter((t) => t.from < nbMois);
+
+      // ── Restriction à la période choisie ──
+      let f = 0;
+      let l = nbMois - 1;
+      if (periode.mode === "trimestre") {
+        const t = trimestres[Math.min(periode.index, trimestres.length - 1)];
+        if (t) { f = t.from; l = t.to; }
+      } else if (periode.mode === "mois") {
+        f = Math.min(Math.max(0, periode.index), nbMois - 1);
+        l = f;
+      }
+
+      const slice = (r: BilanLigne): BilanLigne => {
+        const valeurs = r.valeurs.slice(f, l + 1);
+        return { libelle: r.libelle, valeurs, total: valeurs.reduce((s, v) => s + v, 0) };
+      };
 
       return {
-        mois,
-        entrees: lignesEntrees,
-        sorties: lignesSorties,
-        totalEntrees: mkLigne("TOTAL ENTRÉES", te),
-        totalSorties: mkLigne("TOTAL SORTIES", ts),
-        solde: mkLigne("SOLDE DE CAISSE", so),
-        soldeCumule,
+        mois: mois.slice(f, l + 1),
+        moisExercice: mois,
+        trimestres,
+        entrees: lignesEntrees.map(slice),
+        sorties: lignesSorties.map(slice).filter((r) => r.total !== 0),
+        totalEntrees: slice(mkLigne("TOTAL ENTRÉES", te)),
+        totalSorties: slice(mkLigne("TOTAL SORTIES", ts)),
+        solde: slice(mkLigne("SOLDE DE CAISSE", so)),
+        soldeCumule: soldeCumuleFull.slice(f, l + 1),
       };
+
     },
   });
 }
