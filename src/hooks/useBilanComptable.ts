@@ -149,8 +149,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
       for (const p of (paiements ?? []) as any[]) {
-        const mk = monthKey(p.date_paiement);
-        const i = mk ? idx.get(mk) : undefined;
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
 
         if (p.tranche_id && trancheIds.has(p.tranche_id)) {
@@ -168,7 +167,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const totalDu = totalDuParEleve.get(eleveId) ?? list.reduce((s, p) => s + Number(p.montant || 0), 0);
         let cumul = 0;
         for (const p of list) {
-          const i = idx.get(monthKey(p.date_paiement)!)!;
+          const i = colIndex(p.date_paiement)!;
           const m = Number(p.montant || 0);
           const avant = ventilerScolarite(totalDu, cumul, params);
           const apres = ventilerScolarite(totalDu, cumul + m, params);
@@ -199,7 +198,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         .gte("created_at", from)
         .lte("created_at", `${to}T23:59:59`);
       for (const p of (paiementsServices ?? []) as any[]) {
-        const i = idx.get(monthKey(p.created_at)!);
+        const i = colIndex(p.created_at);
         if (i === undefined) continue;
         const key: EntreeKey =
           p.service_type === "transport" ? "Frais de transport scolaire" : "Frais de cantine";
@@ -219,7 +218,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       ]);
       const slugById = new Map(((services ?? []) as any[]).map((s) => [s.id, `${s.slug} ${s.nom}`.toLowerCase()]));
       for (const p of (spPaiements ?? []) as any[]) {
-        const i = idx.get(monthKey(p.date_paiement)!);
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         const s = slugById.get(p.service_id) ?? "";
         const key: EntreeKey = /tenue|uniforme|fourniture/.test(s)
@@ -236,7 +235,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         .gte("date_paiement", from)
         .lte("date_paiement", to);
       for (const p of (vac ?? []) as any[]) {
-        const i = idx.get(monthKey(p.date_paiement)!);
+        const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
       }
@@ -252,7 +251,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       const sortiesMap = new Map<string, number[]>();
       for (const d of (depenses ?? []) as any[]) {
         if (["rejetee", "annulee"].includes(String(d.statut))) continue;
-        const i = idx.get(monthKey(d.date_depense)!);
+        const i = colIndex(d.date_depense);
         if (i === undefined) continue;
         const cat = EXPENSE_CATEGORIES.includes(d.categorie) ? d.categorie : "Autres charges";
         if (!sortiesMap.has(cat)) sortiesMap.set(cat, zeros());
