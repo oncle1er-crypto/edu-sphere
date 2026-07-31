@@ -10,6 +10,8 @@ import { useEffect, useState } from "react";
 import { useFinanceSettings, type FinanceSettingsData } from "@/hooks/useFinanceSettings";
 import GrilleTarifaireSection from "../components/GrilleTarifaireSection";
 import GrilleServicesSection from "../components/GrilleServicesSection";
+import VentilationSettingsSection from "../components/VentilationSettingsSection";
+
 
 const paymentMethods = [
   { id: "cash", label: "Espèces" },
