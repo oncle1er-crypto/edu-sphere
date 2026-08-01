@@ -422,12 +422,13 @@ export async function exportRowsPDF(p: ExportPayload) {
 
       const metas = analyseColumns(displayCols, rows);
       const foot = p.hideFootTotal ? null : buildFootRow(displayCols, metas, rows);
+      const body = rows.map((r) => r.map((v, i) => formatCell(v, metas[i])));
       autoTable(doc, {
         head: [displayCols],
-        body: rows.map((r) => r.map((v, i) => formatCell(v, metas[i]))),
+        body,
         foot: foot ? [foot] : undefined,
         startY: cursorY + 11,
-        ...commonTableOptions(displayCols, metas),
+        ...commonTableOptions(displayCols, metas, body, foot),
       });
       cursorY = ((doc as any).lastAutoTable?.finalY ?? cursorY + 20) + 6;
     }
@@ -444,20 +445,22 @@ export async function exportRowsPDF(p: ExportPayload) {
       doc.setTextColor(...BORDEAUX);
       doc.text("TOTAL GÉNÉRAL", M, cursorY + 5);
       doc.setTextColor(0, 0, 0);
+      const totalBody = [totalRow.map((c, i) => (i === 0 && !c ? "Toutes classes" : c))];
+      const opts = commonTableOptions(displayCols, allMetas, totalBody);
       autoTable(doc, {
         head: [displayCols],
-        body: [totalRow.map((c, i) => (i === 0 && !c ? "Toutes classes" : c))],
+        body: totalBody,
         startY: cursorY + 8,
-        ...commonTableOptions(displayCols, allMetas),
+        ...opts,
         headStyles: {
-          ...commonTableOptions(displayCols, allMetas).headStyles,
+          ...opts.headStyles,
           fillColor: [40, 24, 28] as [number, number, number],
         },
         bodyStyles: {
           fillColor: [245, 238, 240] as [number, number, number],
           fontStyle: "bold" as const,
           textColor: BORDEAUX,
-          fontSize: baseFont + 0.5,
+          fontSize: opts._fontSize + 0.5,
         },
         alternateRowStyles: {},
       });
@@ -466,16 +469,18 @@ export async function exportRowsPDF(p: ExportPayload) {
   } else {
     const metas = analyseColumns(p.columns, p.rows);
     const foot = p.hideFootTotal ? null : buildFootRow(p.columns, metas, p.rows);
+    const body: any[][] = p.rows.length
+      ? p.rows.map((r) => r.map((v, i) => formatCell(v, metas[i])))
+      : [[{ content: "Aucune donnée pour ces critères.", colSpan: p.columns.length, styles: { halign: "center", textColor: [130, 130, 130] } } as any]];
     autoTable(doc, {
       head: [p.columns],
-      body: p.rows.length
-        ? p.rows.map((r) => r.map((v, i) => formatCell(v, metas[i])))
-        : [[{ content: "Aucune donnée pour ces critères.", colSpan: p.columns.length, styles: { halign: "center", textColor: [130, 130, 130] } } as any]],
+      body,
       foot: foot ? [foot] : undefined,
       startY: cursorY,
-      ...commonTableOptions(p.columns, metas),
+      ...commonTableOptions(p.columns, metas, p.rows.length ? (body as string[][]) : [], foot),
     });
   }
+
 
   // ---------- Résumé & Total mis en valeur ----------
   if (p.pdfSummary && (p.pdfSummary.modes?.length || p.pdfSummary.grandTotal != null)) {
