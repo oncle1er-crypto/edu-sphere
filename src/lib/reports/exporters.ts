@@ -278,51 +278,111 @@ export async function exportRowsPDF(p: ExportPayload) {
     doc.setTextColor(0, 0, 0);
   };
 
-  const baseFont = p.columns.length > 9 ? 7.5 : p.columns.length > 6 ? 8 : 9;
+  const availW = pageW - 2 * M;
 
-  const buildColumnStyles = (cols: string[], metas: ColMeta[]) => {
+  /** Largeur (mm) d'un texte pour une taille de police donnée. */
+  const textW = (s: string, fs: number, bold = false) => {
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(fs);
+    return doc.getTextWidth(s);
+  };
+
+  /**
+   * Calcule la police + les largeurs de colonnes de sorte que les montants
+   * ne soient jamais coupés ni retournés à la ligne.
+   */
+  const layoutTable = (cols: string[], metas: ColMeta[], body: string[][], foot?: string[] | null) => {
+    const PAD = 5; // cellPadding gauche + droite
+    const start = cols.length > 9 ? 7.5 : cols.length > 6 ? 8 : 9;
+    const needFor = (i: number, fs: number) => {
+      let max = textW(cols[i] ?? "", fs, true);
+      for (const r of body) max = Math.max(max, textW(String(r[i] ?? ""), fs, true));
+      if (foot) max = Math.max(max, textW(String(foot[i] ?? ""), fs + 0.5, true));
+      return max + PAD;
+    };
+
+    const numIdx = cols.map((_, i) => i).filter((i) => metas[i]?.numeric);
+    const txtIdx = cols.map((_, i) => i).filter((i) => !metas[i]?.numeric);
+
+    let fs = start;
+    let widths: number[] = [];
+    for (; fs >= 4.5; fs -= 0.25) {
+      const w: number[] = [];
+      let numSum = 0;
+      for (const i of numIdx) {
+        w[i] = needFor(i, fs);
+        numSum += w[i];
+      }
+      const minText = txtIdx.reduce((s, i) => s + Math.min(needFor(i, fs), 22), 0);
+      if (numSum + minText <= availW || fs <= 4.5) {
+        const rest = availW - numSum;
+        const wanted = txtIdx.map((i) => needFor(i, fs));
+        const wantedSum = wanted.reduce((s, v) => s + v, 0) || 1;
+        txtIdx.forEach((i, k) => {
+          w[i] = wantedSum <= rest ? wanted[k] : Math.max(14, (wanted[k] / wantedSum) * rest);
+        });
+        widths = w;
+        break;
+      }
+    }
+    if (!widths.length) widths = cols.map(() => availW / cols.length);
+    return { fontSize: Math.max(fs, 4.5), widths };
+  };
+
+  const buildColumnStyles = (cols: string[], metas: ColMeta[], widths: number[]) => {
     const styles: Record<number, any> = {};
     cols.forEach((_, i) => {
       const m = metas[i];
-      if (m.money) styles[i] = { halign: "right", fontStyle: "bold", cellWidth: "auto" };
-      else if (m.numeric) styles[i] = { halign: "right", cellWidth: "auto" };
-      else styles[i] = { halign: "left", cellWidth: "auto" };
+      const base: any = { cellWidth: widths[i] };
+      if (m?.money) styles[i] = { ...base, halign: "right", fontStyle: "bold", overflow: "visible" };
+      else if (m?.numeric) styles[i] = { ...base, halign: "right", overflow: "visible" };
+      else styles[i] = { ...base, halign: "left" };
     });
-    styles[0] = { ...(styles[0] ?? {}), halign: styles[0]?.halign ?? "left", cellWidth: "auto" };
     return styles;
   };
 
-  const commonTableOptions = (cols: string[], metas: ColMeta[]) => ({
-    styles: {
-      font: "helvetica",
-      fontSize: baseFont,
-      cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
-      overflow: "linebreak" as const,
-      valign: "middle" as const,
-      lineColor: [228, 222, 224] as [number, number, number],
-      lineWidth: 0.1,
-      textColor: [40, 40, 40] as [number, number, number],
-    },
-    headStyles: {
-      fillColor: BORDEAUX,
-      textColor: 255,
-      fontStyle: "bold" as const,
-      fontSize: baseFont,
-      halign: "left" as const,
-      cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 },
-    },
-    footStyles: {
-      fillColor: [40, 24, 28] as [number, number, number],
-      textColor: JAUNE,
-      fontStyle: "bold" as const,
-      fontSize: baseFont + 0.5,
-    },
-    alternateRowStyles: { fillColor: GRIS_LIGNE },
-    theme: "grid" as const,
-    margin: { left: M, right: M, bottom: 16 },
-    columnStyles: buildColumnStyles(cols, metas),
-    didDrawPage: drawFooter,
-  });
+  const commonTableOptions = (
+    cols: string[],
+    metas: ColMeta[],
+    body: string[][],
+    foot?: string[] | null,
+  ) => {
+    const { fontSize, widths } = layoutTable(cols, metas, body, foot);
+    return {
+      styles: {
+        font: "helvetica",
+        fontSize,
+        cellPadding: { top: 2.2, bottom: 2.2, left: 2.5, right: 2.5 },
+        overflow: "linebreak" as const,
+        valign: "middle" as const,
+        lineColor: [228, 222, 224] as [number, number, number],
+        lineWidth: 0.1,
+        textColor: [40, 40, 40] as [number, number, number],
+      },
+      headStyles: {
+        fillColor: BORDEAUX,
+        textColor: 255,
+        fontStyle: "bold" as const,
+        fontSize,
+        halign: "left" as const,
+        cellPadding: { top: 3, bottom: 3, left: 2.5, right: 2.5 },
+      },
+      footStyles: {
+        fillColor: [40, 24, 28] as [number, number, number],
+        textColor: JAUNE,
+        fontStyle: "bold" as const,
+        fontSize: fontSize + 0.5,
+      },
+      alternateRowStyles: { fillColor: GRIS_LIGNE },
+      theme: "grid" as const,
+      tableWidth: "wrap" as const,
+      margin: { left: M, right: M, bottom: 16 },
+      columnStyles: buildColumnStyles(cols, metas, widths),
+      didDrawPage: drawFooter,
+      _fontSize: fontSize,
+    };
+  };
+
 
   const group = p.pdfGroupBy;
   if (group && p.rows.length > 0) {
@@ -362,12 +422,13 @@ export async function exportRowsPDF(p: ExportPayload) {
 
       const metas = analyseColumns(displayCols, rows);
       const foot = p.hideFootTotal ? null : buildFootRow(displayCols, metas, rows);
+      const body = rows.map((r) => r.map((v, i) => formatCell(v, metas[i])));
       autoTable(doc, {
         head: [displayCols],
-        body: rows.map((r) => r.map((v, i) => formatCell(v, metas[i]))),
+        body,
         foot: foot ? [foot] : undefined,
         startY: cursorY + 11,
-        ...commonTableOptions(displayCols, metas),
+        ...commonTableOptions(displayCols, metas, body, foot),
       });
       cursorY = ((doc as any).lastAutoTable?.finalY ?? cursorY + 20) + 6;
     }
@@ -384,20 +445,22 @@ export async function exportRowsPDF(p: ExportPayload) {
       doc.setTextColor(...BORDEAUX);
       doc.text("TOTAL GÉNÉRAL", M, cursorY + 5);
       doc.setTextColor(0, 0, 0);
+      const totalBody = [totalRow.map((c, i) => (i === 0 && !c ? "Toutes classes" : c))];
+      const opts = commonTableOptions(displayCols, allMetas, totalBody);
       autoTable(doc, {
         head: [displayCols],
-        body: [totalRow.map((c, i) => (i === 0 && !c ? "Toutes classes" : c))],
+        body: totalBody,
         startY: cursorY + 8,
-        ...commonTableOptions(displayCols, allMetas),
+        ...opts,
         headStyles: {
-          ...commonTableOptions(displayCols, allMetas).headStyles,
+          ...opts.headStyles,
           fillColor: [40, 24, 28] as [number, number, number],
         },
         bodyStyles: {
           fillColor: [245, 238, 240] as [number, number, number],
           fontStyle: "bold" as const,
           textColor: BORDEAUX,
-          fontSize: baseFont + 0.5,
+          fontSize: opts._fontSize + 0.5,
         },
         alternateRowStyles: {},
       });
@@ -406,16 +469,18 @@ export async function exportRowsPDF(p: ExportPayload) {
   } else {
     const metas = analyseColumns(p.columns, p.rows);
     const foot = p.hideFootTotal ? null : buildFootRow(p.columns, metas, p.rows);
+    const body: any[][] = p.rows.length
+      ? p.rows.map((r) => r.map((v, i) => formatCell(v, metas[i])))
+      : [[{ content: "Aucune donnée pour ces critères.", colSpan: p.columns.length, styles: { halign: "center", textColor: [130, 130, 130] } } as any]];
     autoTable(doc, {
       head: [p.columns],
-      body: p.rows.length
-        ? p.rows.map((r) => r.map((v, i) => formatCell(v, metas[i])))
-        : [[{ content: "Aucune donnée pour ces critères.", colSpan: p.columns.length, styles: { halign: "center", textColor: [130, 130, 130] } } as any]],
+      body,
       foot: foot ? [foot] : undefined,
       startY: cursorY,
-      ...commonTableOptions(p.columns, metas),
+      ...commonTableOptions(p.columns, metas, p.rows.length ? (body as string[][]) : [], foot),
     });
   }
+
 
   // ---------- Résumé & Total mis en valeur ----------
   if (p.pdfSummary && (p.pdfSummary.modes?.length || p.pdfSummary.grandTotal != null)) {
