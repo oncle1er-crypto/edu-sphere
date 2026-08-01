@@ -1,6 +1,6 @@
 import {
   Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText,
-  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw,
+  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw, Ban,
 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { fcfa } from "../useFinanceData";
+import { CancelPaymentDialog, type CancelPaymentTarget } from "../components/CancelPaymentDialog";
 import { PAIEMENT_MODE_META, modeMeta } from "../scolarite-data";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -449,6 +450,17 @@ export default function Receipts() {
   };
   const closePreview = () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); setPdfUrl(null); setPreviewTitle(""); };
 
+  const [cancelTarget, setCancelTarget] = useState<CancelPaymentTarget | null>(null);
+  const openCancel = (r: PaiementRecu) => setCancelTarget({
+    id: r.id,
+    date: r.date_paiement,
+    montant: r.montant,
+    modeLabel: modeMeta(r.mode).label,
+    reference: r.reference,
+    trancheNum: r.tranche_numero,
+    eleveLabel: `${r.eleve_nom} ${r.eleve_prenom}`,
+  });
+
   const openEdit = (r: PaiementRecu) => { setEditing(r); setEditMode(r.mode); };
   const saveEdit = async () => {
     if (!editing || !editMode || editMode === editing.mode) { setEditing(null); return; }
@@ -839,7 +851,11 @@ export default function Receipts() {
             </TableHeader>
             <TableBody>
               {view === "detail" && visible.map((r) => (
-                <TableRow key={r.id} className={selectedIds.has(r.id) ? "bg-primary/5" : ""}>
+                <TableRow
+                  key={r.id}
+                  className={r.annule_le ? "bg-muted/40 text-muted-foreground line-through" : (selectedIds.has(r.id) ? "bg-primary/5" : "")}
+                  title={r.annule_le ? `Annulé le ${new Date(r.annule_le).toLocaleDateString("fr-FR")}${r.motif_annulation ? ` — ${r.motif_annulation}` : ""}` : undefined}
+                >
                   <TableCell>
                     <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleOne(r.id)} aria-label="Sélectionner" />
                   </TableCell>
@@ -856,7 +872,12 @@ export default function Receipts() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{r.classe || "—"}</TableCell>
-                  <TableCell className="text-xs">{r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}
+                    {r.annule_le && (
+                      <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground border-border text-[9px] no-underline">ANNULÉ</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`${modeBadgeClass(r.mode)} text-[10px]`}>
                       {modeMeta(r.mode).label}
@@ -879,9 +900,16 @@ export default function Receipts() {
                           <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Plus d'actions"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(r)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Modifier le mode de paiement
-                          </DropdownMenuItem>
+                          {!r.annule_le && (
+                            <DropdownMenuItem onClick={() => openEdit(r)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Modifier le mode de paiement
+                            </DropdownMenuItem>
+                          )}
+                          {!r.annule_le && (
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openCancel(r)}>
+                              <Ban className="h-4 w-4 mr-2" /> Annuler cet encaissement
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => download(() => buildSinglePDF(r), `recu-${r.reference ?? r.id.slice(0, 8)}.pdf`)}>
                             <Download className="h-4 w-4 mr-2" /> Réimprimer le reçu
@@ -972,6 +1000,13 @@ export default function Receipts() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CancelPaymentDialog
+        paiement={cancelTarget}
+        open={!!cancelTarget}
+        onOpenChange={(o) => { if (!o) setCancelTarget(null); }}
+        onCancelled={fetchRecus}
+      />
 
       {/* Édition mode */}
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
