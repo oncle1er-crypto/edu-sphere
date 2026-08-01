@@ -1,0 +1,1 @@
+ALTER VIEW public.v_paiements_incoherents SET (security_invoker = on);
