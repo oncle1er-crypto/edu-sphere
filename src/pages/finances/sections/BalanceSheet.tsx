@@ -39,16 +39,34 @@ export default function BalanceSheet() {
   const exportPayload = useMemo(() => {
     if (!data) return null;
     const nb = data.mois.length;
+    const blank = (n: number) => Array(n).fill("");
     const columns = ["FICHE DE SUIVI DE TRÉSORERIE", ...data.mois.map((m) => m.label), "TOTAL"];
     const line = (l: BilanLigne) => [l.libelle, ...l.valeurs.map((v) => v), l.total];
     const rows: (string | number)[][] = [
-      ["ENTRÉES", ...Array(nb + 1).fill("")],
+      ["ENTRÉES", ...blank(nb + 1)],
       ...data.entrees.map(line),
       line(data.totalEntrees),
-      ["SORTIES", ...Array(nb + 1).fill("")],
+      ["SORTIES", ...blank(nb + 1)],
       ...data.sorties.map(line),
       line(data.totalSorties),
       line(data.solde),
+      line(data.soldeCumuleLigne),
+      ["", ...blank(nb + 1)],
+      ["BILAN DE LA PÉRIODE", ...blank(nb + 1)],
+      ["Total entrées", ...blank(nb), data.bilan.entrees],
+      ["Total sorties", ...blank(nb), data.bilan.sorties],
+      ["Résultat net (entrées - sorties)", ...blank(nb), data.bilan.net],
+      ["Solde d'ouverture", ...blank(nb), data.bilan.ouverture],
+      ["Solde de clôture", ...blank(nb), data.bilan.cloture],
+      ["", ...blank(nb + 1)],
+      ["RÉPARTITION PAR MODE DE PAIEMENT", ...blank(nb + 1)],
+      ...data.modes.map((m) => [`${m.label} (${m.count} opérations)`, ...blank(nb), m.total]),
+      ["", ...blank(nb + 1)],
+      [
+        `REMISES / BOURSES ACCORDÉES (${data.remises.nbEleves} élève(s)) — hors trésorerie`,
+        ...blank(nb),
+        data.remises.total,
+      ],
     ];
     return {
       title: "Bilan comptable — Fiche de suivi de trésorerie",
@@ -61,11 +79,12 @@ export default function BalanceSheet() {
       ecole,
       orientation: "landscape" as const,
       pdfSummary: {
-        grandTotal: data.solde.total,
-        grandTotalLabel: "SOLDE DE CAISSE",
+        grandTotal: data.bilan.cloture,
+        grandTotalLabel: "SOLDE DE CAISSE (CLÔTURE)",
       },
     };
   }, [data, activeAnnee, ecole, periodeLabel]);
+
 
   const run = async (kind: "csv" | "xlsx" | "pdf") => {
     if (!exportPayload) return;
