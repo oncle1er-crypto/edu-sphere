@@ -3534,6 +3534,7 @@ export type Database = {
           libelle: string
           montant_prevu: number
           montant_realise: number
+          source: string | null
           type: string
           updated_at: string
         }
@@ -3546,6 +3547,7 @@ export type Database = {
           libelle: string
           montant_prevu?: number
           montant_realise?: number
+          source?: string | null
           type?: string
           updated_at?: string
         }
@@ -3558,6 +3560,7 @@ export type Database = {
           libelle?: string
           montant_prevu?: number
           montant_realise?: number
+          source?: string | null
           type?: string
           updated_at?: string
         }
@@ -4271,6 +4274,13 @@ export type Database = {
             columns: ["tranche_id"]
             isOneToOne: false
             referencedRelation: "v_paiements_incoherents"
+            referencedColumns: ["tranche_id"]
+          },
+          {
+            foreignKeyName: "paiements_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "v_tranches_excedent"
             referencedColumns: ["tranche_id"]
           },
         ]
@@ -7110,6 +7120,16 @@ export type Database = {
       }
     }
     Views: {
+      v_budget_realise: {
+        Row: {
+          annee_id: string | null
+          ecole_id: string | null
+          montant: number | null
+          source: string | null
+          type: string | null
+        }
+        Relationships: []
+      }
       v_conformite_sigfne: {
         Row: {
           annee_id: string | null
@@ -7215,6 +7235,74 @@ export type Database = {
           },
         ]
       }
+      v_tranches_excedent: {
+        Row: {
+          ecole_id: string | null
+          eleve_id: string | null
+          excedent: number | null
+          frais_id: string | null
+          label: string | null
+          montant: number | null
+          numero: number | null
+          paye: number | null
+          tranche_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ecole_id?: string | null
+          eleve_id?: string | null
+          excedent?: never
+          frais_id?: string | null
+          label?: string | null
+          montant?: number | null
+          numero?: number | null
+          paye?: number | null
+          tranche_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ecole_id?: string | null
+          eleve_id?: string | null
+          excedent?: never
+          frais_id?: string | null
+          label?: string | null
+          montant?: number | null
+          numero?: number | null
+          paye?: number | null
+          tranche_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tranches_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tranches_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tranches_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "tranches_frais_id_fkey"
+            columns: ["frais_id"]
+            isOneToOne: false
+            referencedRelation: "frais_scolarite"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       activer_annee_scolaire: {
@@ -7224,6 +7312,10 @@ export type Database = {
       admin_reset_user_mfa: {
         Args: { _ecole_id: string; _motif: string; _target_user_id: string }
         Returns: undefined
+      }
+      annee_pour_date: {
+        Args: { _date: string; _ecole_id: string }
+        Returns: string
       }
       annuler_paiement_facture: {
         Args: { _motif: string; _paiement_id: string }
@@ -7379,6 +7471,10 @@ export type Database = {
         }
         Returns: Json
       }
+      generer_budget_previsionnel: {
+        Args: { _annee_id: string; _ecole_id: string; _remplacer?: boolean }
+        Returns: Json
+      }
       generer_echeances_service: {
         Args: { _eleve_id: string; _grille_id: string; _service_type: string }
         Returns: number
@@ -7467,6 +7563,10 @@ export type Database = {
           _mapping?: Json
           _mode?: string
         }
+        Returns: Json
+      }
+      rafraichir_budget_realise: {
+        Args: { _annee_id: string; _ecole_id: string }
         Returns: Json
       }
       recalc_vacances_eleve_statut: {
