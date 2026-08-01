@@ -6,6 +6,7 @@ import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ventilerScolarite, type VentilationParams } from "@/lib/ventilationScolarite";
 import { EXPENSE_CATEGORIES } from "@/lib/expenseCategories";
+import { modeMeta } from "@/pages/finances/scolarite-data";
 
 export interface BilanLigne {
   libelle: string;
@@ -23,6 +24,12 @@ export interface BilanMois {
   key: string;
 }
 
+export interface BilanModeLigne {
+  label: string;
+  count: number;
+  total: number;
+}
+
 export interface BilanComptable {
   mois: BilanMois[];
   entrees: BilanLigne[];
@@ -31,11 +38,20 @@ export interface BilanComptable {
   totalSorties: BilanLigne;
   solde: BilanLigne;
   soldeCumule: number[];
+  /** Ligne "SOLDE CUMULÉ" alignée sur la période affichée */
+  soldeCumuleLigne: BilanLigne;
+  /** Synthèse de la période affichée */
+  bilan: { entrees: number; sorties: number; net: number; ouverture: number; cloture: number };
+  /** Remises accordées sur la période (hors trésorerie) */
+  remises: { total: number; nbEleves: number };
+  /** Répartition des encaissements par mode de paiement */
+  modes: BilanModeLigne[];
   /** Tous les mois de l'exercice (avant filtrage période) */
   moisExercice: BilanMois[];
   /** Découpage en trimestres : indices de colonnes */
   trimestres: { label: string; from: number; to: number }[];
 }
+
 
 export type BilanPeriode =
   | { mode: "annee" }
@@ -135,10 +151,22 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         totalDuParEleve.set(t.eleve_id, (totalDuParEleve.get(t.eleve_id) ?? 0) + Number(t.montant || 0));
       }
 
+      // ── Répartition par mode de paiement (tous encaissements réels), par mois ──
+      const modesMap = new Map<string, { count: number[]; total: number[] }>();
+      const addMode = (mode: string | null | undefined, montant: number, i: number) => {
+        const meta = modeMeta(String(mode ?? ""));
+        if (meta.kind !== "encaissement") return;
+        const cur = modesMap.get(meta.label) ?? { count: zeros(), total: zeros() };
+        cur.count[i] += 1;
+        cur.total[i] += montant;
+        modesMap.set(meta.label, cur);
+      };
+
+
       // ── Encaissements scolarité + factures de services ──
       const { data: paiements } = await supabase
         .from("paiements")
-        .select("montant, date_paiement, eleve_id, tranche_id, facture_id, factures(categorie)")
+        .select("montant, mode, date_paiement, eleve_id, tranche_id, facture_id, factures(categorie)")
         .eq("ecole_id", ecoleId!)
         .is("annule_le", null)
         .gte("date_paiement", from)
@@ -149,12 +177,23 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         ENTREES_LIBELLES.map((l) => [l, zeros()]),
       ) as Record<EntreeKey, number[]>;
 
+      // Remises / bourses : appliquées à la couverture du dû, mais hors trésorerie
+      const remisesParMois = zeros();
+      const remisesElevesParMois: Set<string>[] = Array.from({ length: nbMois }, () => new Set<string>());
+
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
       for (const p of (paiements ?? []) as any[]) {
         if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
+        const isRemise = modeMeta(String(p.mode ?? "")).kind === "remise";
+        if (isRemise) {
+          remisesParMois[i] += Number(p.montant || 0);
+          if (p.eleve_id) remisesElevesParMois[i].add(p.eleve_id);
+        } else {
+          addMode(p.mode, Number(p.montant || 0), i);
+        }
 
         if (p.tranche_id && trancheIds.has(p.tranche_id)) {
           const list = parEleve.get(p.eleve_id) ?? [];
@@ -162,6 +201,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           parEleve.set(p.eleve_id, list);
           continue;
         }
+        if (isRemise) continue;
         const cat = p.factures?.categorie;
         if (cat === "cantine") entrees["Frais de cantine"][i] += Number(p.montant || 0);
         else if (cat === "transport") entrees["Frais de transport scolaire"][i] += Number(p.montant || 0);
@@ -173,9 +213,13 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         for (const p of list) {
           const i = colIndex(p.date_paiement)!;
           const m = Number(p.montant || 0);
+          const isRemise = modeMeta(String(p.mode ?? "")).kind === "remise";
           const avant = ventilerScolarite(totalDu, cumul, params);
           const apres = ventilerScolarite(totalDu, cumul + m, params);
           cumul += m;
+          // Une remise consomme du dû (elle décale la ventilation des versements
+          // suivants) mais n'entre jamais dans la trésorerie.
+          if (isRemise) continue;
 
           const diff = (cle: string) =>
             (apres.postes.find((x) => x.cle === cle)?.affecte ?? 0) -
@@ -194,10 +238,11 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         }
       }
 
+
       // ── Encaissements cantine / transport (échéancier services) ──
       const { data: paiementsServices } = await supabase
         .from("paiements_services")
-        .select("montant, service_type, created_at, eleve_id")
+        .select("montant, mode, service_type, created_at, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("created_at", from)
         .lte("created_at", `${to}T23:59:59`);
@@ -208,6 +253,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const key: EntreeKey =
           p.service_type === "transport" ? "Frais de transport scolaire" : "Frais de cantine";
         entrees[key][i] += Number(p.montant || 0);
+        addMode(p.mode, Number(p.montant || 0), i);
       }
 
       // ── Services ponctuels (tenues, tests d'entrée…) ──
@@ -215,7 +261,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
+          .select("montant_paye, mode_paiement, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -236,12 +282,13 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           ? "Frais d'uniformes ou de fournitures"
           : "Autres services ponctuels";
         entrees[key][i] += Number(p.montant_paye || 0);
+        addMode(p.mode_paiement, Number(p.montant_paye || 0), i);
       }
 
       // ── Cours de vacances ──
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, date_paiement, eleve_id")
+        .select("montant_paye, mode, date_paiement, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
@@ -250,7 +297,9 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
+        addMode(p.mode, Number(p.montant_paye || 0), i);
       }
+
 
       // ── Sorties : dépenses par catégorie ──
       const { data: depenses } = await supabase
@@ -325,17 +374,50 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         return { libelle: r.libelle, valeurs, total: valeurs.reduce((s, v) => s + v, 0) };
       };
 
+      const totalEntreesP = slice(mkLigne("TOTAL ENTRÉES", te));
+      const totalSortiesP = slice(mkLigne("TOTAL SORTIES", ts));
+      const soldeP = slice(mkLigne("SOLDE DE CAISSE", so));
+      const cumulP = soldeCumuleFull.slice(f, l + 1).map((v) => Math.round(v));
+      const ouverture = Math.round(f > 0 ? soldeCumuleFull[f - 1] : 0);
+
       return {
         mois: mois.slice(f, l + 1),
         moisExercice: mois,
         trimestres,
         entrees: lignesEntrees.map(slice),
         sorties: lignesSorties.map(slice).filter((r) => r.total !== 0),
-        totalEntrees: slice(mkLigne("TOTAL ENTRÉES", te)),
-        totalSorties: slice(mkLigne("TOTAL SORTIES", ts)),
-        solde: slice(mkLigne("SOLDE DE CAISSE", so)),
-        soldeCumule: soldeCumuleFull.slice(f, l + 1),
+        totalEntrees: totalEntreesP,
+        totalSorties: totalSortiesP,
+        solde: soldeP,
+        soldeCumule: cumulP,
+        soldeCumuleLigne: {
+          libelle: "SOLDE CUMULÉ",
+          valeurs: cumulP,
+          total: cumulP[cumulP.length - 1] ?? 0,
+        },
+        bilan: {
+          entrees: totalEntreesP.total,
+          sorties: totalSortiesP.total,
+          net: soldeP.total,
+          ouverture,
+          cloture: ouverture + soldeP.total,
+        },
+        remises: {
+          total: Math.round(remisesParMois.slice(f, l + 1).reduce((s2, v) => s2 + v, 0)),
+          nbEleves: new Set(
+            remisesElevesParMois.slice(f, l + 1).flatMap((set) => [...set]),
+          ).size,
+        },
+        modes: [...modesMap.entries()]
+          .map(([label, v]) => ({
+            label,
+            count: v.count.slice(f, l + 1).reduce((s2, x) => s2 + x, 0),
+            total: Math.round(v.total.slice(f, l + 1).reduce((s2, x) => s2 + x, 0)),
+          }))
+          .filter((m) => m.count > 0)
+          .sort((a, b) => b.total - a.total),
       };
+
 
     },
   });
