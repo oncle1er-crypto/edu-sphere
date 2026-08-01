@@ -373,17 +373,40 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         return { libelle: r.libelle, valeurs, total: valeurs.reduce((s, v) => s + v, 0) };
       };
 
+      const totalEntreesP = slice(mkLigne("TOTAL ENTRÉES", te));
+      const totalSortiesP = slice(mkLigne("TOTAL SORTIES", ts));
+      const soldeP = slice(mkLigne("SOLDE DE CAISSE", so));
+      const cumulP = soldeCumuleFull.slice(f, l + 1).map((v) => Math.round(v));
+      const ouverture = Math.round(f > 0 ? soldeCumuleFull[f - 1] : 0);
+
       return {
         mois: mois.slice(f, l + 1),
         moisExercice: mois,
         trimestres,
         entrees: lignesEntrees.map(slice),
         sorties: lignesSorties.map(slice).filter((r) => r.total !== 0),
-        totalEntrees: slice(mkLigne("TOTAL ENTRÉES", te)),
-        totalSorties: slice(mkLigne("TOTAL SORTIES", ts)),
-        solde: slice(mkLigne("SOLDE DE CAISSE", so)),
-        soldeCumule: soldeCumuleFull.slice(f, l + 1),
+        totalEntrees: totalEntreesP,
+        totalSorties: totalSortiesP,
+        solde: soldeP,
+        soldeCumule: cumulP,
+        soldeCumuleLigne: {
+          libelle: "SOLDE CUMULÉ",
+          valeurs: cumulP,
+          total: cumulP[cumulP.length - 1] ?? 0,
+        },
+        bilan: {
+          entrees: totalEntreesP.total,
+          sorties: totalSortiesP.total,
+          net: soldeP.total,
+          ouverture,
+          cloture: ouverture + soldeP.total,
+        },
+        remises: { total: Math.round(remisesTotal), nbEleves: remisesEleves.size },
+        modes: [...modesMap.entries()]
+          .map(([label, v]) => ({ label, count: v.count, total: Math.round(v.total) }))
+          .sort((a, b) => b.total - a.total),
       };
+
 
     },
   });
