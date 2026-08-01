@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useFinanceSettings } from "@/hooks/useFinanceSettings";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ventilerScolarite, type VentilationParams } from "@/lib/ventilationScolarite";
 import { EXPENSE_CATEGORIES } from "@/lib/expenseCategories";
 
@@ -87,6 +88,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
   const { ecoleId } = useEcoleId();
   const { activeAnnee } = useAcademicPeriod();
   const { settings } = useFinanceSettings();
+  const { niveau, isGlobal, keepEleve, keepClasse, matchesCycle } = useNiveauFilters();
 
   const params: VentilationParams = {
     fraisInscription: Number(settings.frais_inscription) || 0,
@@ -95,7 +97,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
   };
 
   return useQuery<BilanComptable>({
-    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params, periode],
+    queryKey: ["bilan_comptable", ecoleId, activeAnnee?.id, params, periode, niveau],
     enabled: !!ecoleId && !!activeAnnee,
     queryFn: async () => {
       const mois = buildMois(activeAnnee!.debut, activeAnnee!.fin);
