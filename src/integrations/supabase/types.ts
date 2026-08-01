@@ -7229,6 +7229,10 @@ export type Database = {
         Args: { _motif: string; _paiement_id: string }
         Returns: Json
       }
+      annuler_paiement_scolarite: {
+        Args: { _motif: string; _paiement_id: string }
+        Returns: Json
+      }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
       annuler_transfert: { Args: { _audit_log_id: string }; Returns: Json }
       appliquer_bon_service: {
@@ -7530,6 +7534,16 @@ export type Database = {
       set_user_permissions: {
         Args: { _ecole_id: string; _permissions: Json; _target_user: string }
         Returns: undefined
+      }
+      solder_scolarite: {
+        Args: {
+          _ecole_id: string
+          _eleve_id: string
+          _mode: string
+          _montant: number
+          _reference?: string
+        }
+        Returns: Json
       }
       sp_annuler_paiement: {
         Args: { _motif: string; _paiement_id: string }

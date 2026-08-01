@@ -140,7 +140,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     for (let i = 0; i < 20; i++) {
       const { data: page, error: pErr } = await supabase
         .from("paiements")
-        .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement")
+        .select("id, eleve_id, tranche_id, montant, mode, reference, motif, date_paiement, annule_le, motif_annulation")
         .eq("ecole_id", ecoleId)
         .order("date_paiement", { ascending: false })
         .range(offset, offset + PAGE - 1);
@@ -171,7 +171,10 @@ export function useFinanceData(scopedAnneeId?: string) {
         trancheNum: p.tranche_id ? trancheNumByTrancheId.get(p.tranche_id) : undefined,
         reference: p.reference ?? null,
         motif: p.motif ?? null,
+        annuleLe: p.annule_le ?? null,
+        motifAnnulation: p.motif_annulation ?? null,
       };
+
       const arr = paiementsByEleve.get(p.eleve_id) ?? [];
       arr.push(item);
       paiementsByEleve.set(p.eleve_id, arr);
@@ -213,8 +216,12 @@ export function useFinanceData(scopedAnneeId?: string) {
       const joursRetard = computeJoursRetard(entry.tranches);
       const parent = parentMap[eleveId];
       const paiements = paiementsByEleve.get(eleveId) ?? [];
-      const totalEncaisse = paiements.filter((p) => p.kind === "encaissement").reduce((s, p) => s + p.montant, 0);
-      const totalRemises  = paiements.filter((p) => p.kind === "remise").reduce((s, p) => s + p.montant, 0);
+      // Les paiements annulés restent visibles dans l'historique mais ne sont
+      // jamais comptés dans les totaux (encaissé, remises, reste dû).
+      const actifs = paiements.filter((p) => !p.annuleLe);
+      const totalEncaisse = actifs.filter((p) => p.kind === "encaissement").reduce((s, p) => s + p.montant, 0);
+      const totalRemises  = actifs.filter((p) => p.kind === "remise").reduce((s, p) => s + p.montant, 0);
+
       // `totalPaye` = trésorerie réellement encaissée (hors remises/bourses).
       // Le dû couvert (encaissé + remises) sert uniquement au calcul du reste à payer.
       const totalPaye = totalEncaisse;

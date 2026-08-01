@@ -2,6 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { supabase } from "@/integrations/supabase/client";
 import type { EleveScolarite } from "@/pages/finances/scolarite-data";
+import { stampCancelled } from "./pdfCancelStamp";
 
 const FCFA = (n: number) =>
   `${Math.round(n).toLocaleString("fr-FR").replace(/\u202f/g, " ").replace(/\u00a0/g, " ")} FCFA`;
@@ -108,7 +109,7 @@ export async function downloadGlobalReceipt({ ecoleId, eleve }: Params): Promise
     new Date(p.date).toLocaleDateString("fr-FR"),
     p.reference ?? "—",
     p.modeLabel,
-    p.kind === "remise" ? "Remise / Bourse" : "Encaissement",
+    p.annuleLe ? "ANNULÉ" : (p.kind === "remise" ? "Remise / Bourse" : "Encaissement"),
     p.trancheNum ? `T${p.trancheNum}` : "—",
     FCFA(p.montant),
   ]);
@@ -193,6 +194,13 @@ export async function downloadGlobalReceipt({ ecoleId, eleve }: Params): Promise
   doc.setTextColor(130);
   doc.text(`${ecole.nom} — Document confidentiel`, M, H - 7);
   doc.text("Page 1 / 1", W - M, H - 7, { align: "right" });
+
+  // Si tous les versements du dossier sont annulés, le récapitulatif porte
+  // le filigrane « ANNULÉ » (avec la date de la dernière annulation).
+  const annules = paiements.filter((p) => p.annuleLe);
+  if (paiements.length > 0 && annules.length === paiements.length) {
+    stampCancelled(doc, annules[annules.length - 1].annuleLe ?? null);
+  }
 
   doc.save(`recu-global-${(eleve.matricule || eleve.id).replace(/[^\w-]/g, "")}.pdf`);
 }

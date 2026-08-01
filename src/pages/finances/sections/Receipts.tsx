@@ -1,6 +1,6 @@
 import {
   Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText,
-  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw,
+  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw, Ban,
 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { fcfa } from "../useFinanceData";
+import { CancelPaymentDialog, type CancelPaymentTarget } from "../components/CancelPaymentDialog";
 import { PAIEMENT_MODE_META, modeMeta } from "../scolarite-data";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -40,6 +41,8 @@ interface PaiementRecu {
   mode: string;
   tranche_id: string | null;
   tranche_numero: number | null;
+  annule_le: string | null;
+  motif_annulation: string | null;
 }
 
 interface EcoleInfo {
@@ -174,7 +177,7 @@ export default function Receipts() {
     supabase
       .from("paiements")
       .select(
-        "id, reference, montant, date_paiement, mode, eleve_id, tranche_id, " +
+        "id, reference, montant, date_paiement, mode, eleve_id, tranche_id, annule_le, motif_annulation, " +
         "tranches!inner(numero, frais_scolarite!inner(annee_id)), " +
         "eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))"
       )
@@ -198,6 +201,8 @@ export default function Receipts() {
             mode: p.mode,
             tranche_id: p.tranche_id ?? null,
             tranche_numero: p.tranches?.numero ?? null,
+            annule_le: p.annule_le ?? null,
+            motif_annulation: p.motif_annulation ?? null,
           }))
         );
         setLoading(false);
@@ -268,27 +273,31 @@ export default function Receipts() {
 
   const visible = useMemo(() => sorted.slice(0, visibleCount), [sorted, visibleCount]);
 
+  // Les paiements annulés restent visibles dans la liste mais ne comptent
+  // jamais dans les totaux (KPI, point de caisse, ventilation par mode).
+  const filteredActifs = useMemo(() => filtered.filter((r) => !r.annule_le), [filtered]);
+
   // ── KPIs sur la sélection filtrée ──
   const kpis = useMemo(() => {
-    const total = filtered.reduce((s, r) => s + r.montant, 0);
-    const count = filtered.length;
-    const eleves = new Set(filtered.map((r) => r.eleve_id)).size;
-    const jours  = new Set(filtered.map((r) => jourKey(r.date_paiement))).size;
+    const total = filteredActifs.reduce((s, r) => s + r.montant, 0);
+    const count = filteredActifs.length;
+    const eleves = new Set(filteredActifs.map((r) => r.eleve_id)).size;
+    const jours  = new Set(filteredActifs.map((r) => jourKey(r.date_paiement))).size;
     const avg = count > 0 ? Math.round(total / count) : 0;
     return { total, count, eleves, jours, avg };
-  }, [filtered]);
+  }, [filteredActifs]);
 
   // ── KPI Paiements du jour (indépendant des filtres) ──
   const todayKpi = useMemo(() => {
     const t = todayIso();
-    const list = recus.filter((r) => jourKey(r.date_paiement) === t);
+    const list = recus.filter((r) => !r.annule_le && jourKey(r.date_paiement) === t);
     return { total: list.reduce((s, r) => s + r.montant, 0), count: list.length };
   }, [recus]);
 
   // ── Récapitulatif par mode (sur données filtrées) ──
   const modeSummary = useMemo(() => {
     const map = new Map<string, { label: string; total: number; count: number }>();
-    for (const r of filtered) {
+    for (const r of filteredActifs) {
       const meta = modeMeta(r.mode);
       const entry = map.get(r.mode) ?? { label: meta.label, total: 0, count: 0 };
       entry.total += r.montant;
@@ -298,7 +307,7 @@ export default function Receipts() {
     const rows = Array.from(map.entries()).map(([id, v]) => ({ id, ...v })).sort((a, b) => b.total - a.total);
     const totalGlobal = rows.reduce((s, r) => s + r.total, 0);
     return { rows, totalGlobal };
-  }, [filtered]);
+  }, [filteredActifs]);
 
   // ── Regroupements élève+jour (+tranche) sur données filtrées ──
   interface GroupedRow {
@@ -320,6 +329,7 @@ export default function Receipts() {
     if (view === "detail") return [];
     const map = new Map<string, GroupedRow>();
     for (const r of sorted) {
+      if (r.annule_le) continue;
       const k = view === "day"
         ? `${r.eleve_id}|${jourKey(r.date_paiement)}`
         : `${r.eleve_id}|${jourKey(r.date_paiement)}|${r.tranche_id ?? "none"}`;
@@ -366,7 +376,8 @@ export default function Receipts() {
       .from("paiements")
       .select(anneeId ? "montant, tranches!inner(frais_scolarite!inner(annee_id))" : "montant")
       .eq("ecole_id", ecoleId!)
-      .eq("eleve_id", r.eleve_id);
+      .eq("eleve_id", r.eleve_id)
+      .is("annule_le", null);
     if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
     const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
     const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
@@ -396,7 +407,8 @@ export default function Receipts() {
       .from("paiements")
       .select(anneeId ? "montant, tranches!inner(frais_scolarite!inner(annee_id))" : "montant")
       .eq("ecole_id", ecoleId!)
-      .eq("eleve_id", g.eleve_id);
+      .eq("eleve_id", g.eleve_id)
+      .is("annule_le", null);
     if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
     const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
     const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
@@ -437,6 +449,17 @@ export default function Receipts() {
     } finally { setBusy(false); }
   };
   const closePreview = () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); setPdfUrl(null); setPreviewTitle(""); };
+
+  const [cancelTarget, setCancelTarget] = useState<CancelPaymentTarget | null>(null);
+  const openCancel = (r: PaiementRecu) => setCancelTarget({
+    id: r.id,
+    date: r.date_paiement,
+    montant: r.montant,
+    modeLabel: modeMeta(r.mode).label,
+    reference: r.reference,
+    trancheNum: r.tranche_numero,
+    eleveLabel: `${r.eleve_nom} ${r.eleve_prenom}`,
+  });
 
   const openEdit = (r: PaiementRecu) => { setEditing(r); setEditMode(r.mode); };
   const saveEdit = async () => {
@@ -560,6 +583,7 @@ export default function Receipts() {
         )
         .eq("ecole_id", ecoleId)
         .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
+        .is("annule_le", null)
         .gte("date_paiement", start)
         .lte("date_paiement", end)
         .order("date_paiement", { ascending: true });
@@ -827,7 +851,11 @@ export default function Receipts() {
             </TableHeader>
             <TableBody>
               {view === "detail" && visible.map((r) => (
-                <TableRow key={r.id} className={selectedIds.has(r.id) ? "bg-primary/5" : ""}>
+                <TableRow
+                  key={r.id}
+                  className={r.annule_le ? "bg-muted/40 text-muted-foreground line-through" : (selectedIds.has(r.id) ? "bg-primary/5" : "")}
+                  title={r.annule_le ? `Annulé le ${new Date(r.annule_le).toLocaleDateString("fr-FR")}${r.motif_annulation ? ` — ${r.motif_annulation}` : ""}` : undefined}
+                >
                   <TableCell>
                     <Checkbox checked={selectedIds.has(r.id)} onCheckedChange={() => toggleOne(r.id)} aria-label="Sélectionner" />
                   </TableCell>
@@ -844,7 +872,12 @@ export default function Receipts() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground text-sm">{r.classe || "—"}</TableCell>
-                  <TableCell className="text-xs">{r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}</TableCell>
+                  <TableCell className="text-xs">
+                    {r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}
+                    {r.annule_le && (
+                      <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground border-border text-[9px] no-underline">ANNULÉ</Badge>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className={`${modeBadgeClass(r.mode)} text-[10px]`}>
                       {modeMeta(r.mode).label}
@@ -867,9 +900,16 @@ export default function Receipts() {
                           <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Plus d'actions"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(r)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Modifier le mode de paiement
-                          </DropdownMenuItem>
+                          {!r.annule_le && (
+                            <DropdownMenuItem onClick={() => openEdit(r)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Modifier le mode de paiement
+                            </DropdownMenuItem>
+                          )}
+                          {!r.annule_le && (
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openCancel(r)}>
+                              <Ban className="h-4 w-4 mr-2" /> Annuler cet encaissement
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => download(() => buildSinglePDF(r), `recu-${r.reference ?? r.id.slice(0, 8)}.pdf`)}>
                             <Download className="h-4 w-4 mr-2" /> Réimprimer le reçu
@@ -960,6 +1000,13 @@ export default function Receipts() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <CancelPaymentDialog
+        paiement={cancelTarget}
+        open={!!cancelTarget}
+        onOpenChange={(o) => { if (!o) setCancelTarget(null); }}
+        onCancelled={fetchRecus}
+      />
 
       {/* Édition mode */}
       <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>

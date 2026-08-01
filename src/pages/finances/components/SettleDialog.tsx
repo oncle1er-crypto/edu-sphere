@@ -9,7 +9,6 @@ import { Progress } from "@/components/ui/progress";
 import { CheckCircle2, Loader2, Wallet } from "lucide-react";
 import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
 interface Props {
@@ -35,8 +34,16 @@ const MOYENS = [
   { label: "Chèque", value: "cheque" },
 ];
 
+function friendlySolde(err: any): string {
+  const msg = String(err?.message ?? "");
+  if (msg.includes("not_authorized")) return "Non autorisé";
+  if (msg.includes("rien_a_encaisser")) return "Rien à encaisser";
+  if (msg.includes("montant_depasse_reste")) return "Montant supérieur au reste dû";
+  if (msg.includes("montant_invalide")) return "Montant invalide";
+  return friendlyRpcError(err);
+}
+
 export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, contexteLabel, onCompleted }: Props) {
-  const { user } = useAuth();
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
   const [saving, setSaving] = useState(false);
@@ -60,8 +67,8 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
     submittingRef.current = false;
     setMoyen("especes");
     setReference("");
-    setProgress({ done: 0, total: totalTranches, current: "" });
-  }, [open, totalTranches]);
+    setProgress({ done: 0, total: cibles.length, current: "" });
+  }, [open, cibles.length]);
 
   const handleSubmit = async () => {
     if (!ecoleId || cibles.length === 0) return;
@@ -70,47 +77,35 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
     setSaving(true);
 
     let okCount = 0;
+    let tranchesCount = 0;
     const errors: string[] = [];
     let processed = 0;
 
     try {
       for (const el of cibles) {
-        const tranchesAPayer = [...el.tranches]
-          .filter((t) => t.statut !== "payee")
-          .sort((a, b) => a.num - b.num);
+        setProgress({ done: processed, total: cibles.length, current: `${el.nom} ${el.prenom}` });
 
-        for (const t of tranchesAPayer) {
-          const trancheId = (t as any).id;
-          const restant = Math.max(0, t.montant - t.paye);
-          if (!trancheId || restant <= 0) {
-            processed++;
-            continue;
-          }
-          setProgress({ done: processed, total: totalTranches, current: `${el.nom} ${el.prenom} · T${t.num}` });
+        const { data, error } = await supabase.rpc("solder_scolarite", {
+          _ecole_id: ecoleId,
+          _eleve_id: el.id,
+          _montant: el.resteDu,
+          _mode: moyen,
+          _reference: reference || `SOLDE-${el.matricule}`,
+        });
+        processed++;
 
-          const { error } = await supabase.rpc("enregistrer_paiement", {
-            _ecole_id: ecoleId,
-            _eleve_id: el.id,
-            _tranche_id: trancheId,
-            _montant: restant,
-            _mode: moyen,
-            _reference: reference || `SOLDE-${el.matricule}-T${t.num}`,
-            _recu_par: user?.id ?? null,
-          });
-          processed++;
-          if (error) {
-            errors.push(`${el.nom} ${el.prenom} (T${t.num}) : ${friendlyRpcError(error)}`);
-            break; // tranches suivantes bloquées par séquentiel
-          } else {
-            okCount++;
-          }
+        if (error) {
+          errors.push(`${el.nom} ${el.prenom} : ${friendlySolde(error)}`);
+        } else {
+          okCount++;
+          tranchesCount += Number((data as any)?.nb_tranches ?? 0);
         }
       }
-      setProgress({ done: processed, total: totalTranches, current: "" });
+      setProgress({ done: processed, total: cibles.length, current: "" });
 
       if (errors.length === 0) {
         toast.success("Scolarité soldée", {
-          description: `${okCount} tranche(s) encaissée(s) · ${contexteLabel ?? `${cibles.length} élève(s)`}`,
+          description: `${okCount} élève(s) · ${tranchesCount} tranche(s) encaissée(s) · ${contexteLabel ?? ""}`.trim(),
         });
       } else {
         toast.warning(`Soldé partiellement (${okCount} OK / ${errors.length} erreur(s))`, {
@@ -121,7 +116,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
       onCompleted?.();
       if (errors.length === 0) onOpenChange(false);
     } catch (err: any) {
-      toast.error("Échec du solde", { description: friendlyRpcError(err) });
+      toast.error("Échec du solde", { description: friendlySolde(err) });
     } finally {
       submittingRef.current = false;
       setSaving(false);
@@ -191,7 +186,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
             <div className="space-y-2">
               <Progress value={pct} className="h-2" />
               <p className="text-[11px] text-muted-foreground text-center">
-                {progress.done}/{progress.total} tranche(s) · {progress.current || "…"}
+                {progress.done}/{progress.total} élève(s) · {progress.current || "…"}
               </p>
             </div>
           )}
