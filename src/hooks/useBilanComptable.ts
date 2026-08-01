@@ -178,8 +178,8 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       ) as Record<EntreeKey, number[]>;
 
       // Remises / bourses : appliquées à la couverture du dû, mais hors trésorerie
-      let remisesTotal = 0;
-      const remisesEleves = new Set<string>();
+      const remisesParMois = zeros();
+      const remisesElevesParMois: Set<string>[] = Array.from({ length: nbMois }, () => new Set<string>());
 
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
@@ -189,10 +189,10 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         if (i === undefined) continue;
         const isRemise = modeMeta(String(p.mode ?? "")).kind === "remise";
         if (isRemise) {
-          remisesTotal += Number(p.montant || 0);
-          if (p.eleve_id) remisesEleves.add(p.eleve_id);
+          remisesParMois[i] += Number(p.montant || 0);
+          if (p.eleve_id) remisesElevesParMois[i].add(p.eleve_id);
         } else {
-          addMode(p.mode, Number(p.montant || 0));
+          addMode(p.mode, Number(p.montant || 0), i);
         }
 
         if (p.tranche_id && trancheIds.has(p.tranche_id)) {
@@ -253,7 +253,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const key: EntreeKey =
           p.service_type === "transport" ? "Frais de transport scolaire" : "Frais de cantine";
         entrees[key][i] += Number(p.montant || 0);
-        addMode(p.mode, Number(p.montant || 0));
+        addMode(p.mode, Number(p.montant || 0), i);
       }
 
       // ── Services ponctuels (tenues, tests d'entrée…) ──
@@ -282,7 +282,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           ? "Frais d'uniformes ou de fournitures"
           : "Autres services ponctuels";
         entrees[key][i] += Number(p.montant_paye || 0);
-        addMode(p.mode_paiement, Number(p.montant_paye || 0));
+        addMode(p.mode_paiement, Number(p.montant_paye || 0), i);
       }
 
       // ── Cours de vacances ──
@@ -297,7 +297,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
-        addMode(p.mode, Number(p.montant_paye || 0));
+        addMode(p.mode, Number(p.montant_paye || 0), i);
       }
 
 
@@ -402,9 +402,19 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           ouverture,
           cloture: ouverture + soldeP.total,
         },
-        remises: { total: Math.round(remisesTotal), nbEleves: remisesEleves.size },
+        remises: {
+          total: Math.round(remisesParMois.slice(f, l + 1).reduce((s2, v) => s2 + v, 0)),
+          nbEleves: new Set(
+            remisesElevesParMois.slice(f, l + 1).flatMap((set) => [...set]),
+          ).size,
+        },
         modes: [...modesMap.entries()]
-          .map(([label, v]) => ({ label, count: v.count, total: Math.round(v.total) }))
+          .map(([label, v]) => ({
+            label,
+            count: v.count.slice(f, l + 1).reduce((s2, x) => s2 + x, 0),
+            total: Math.round(v.total.slice(f, l + 1).reduce((s2, x) => s2 + x, 0)),
+          }))
+          .filter((m) => m.count > 0)
           .sort((a, b) => b.total - a.total),
       };
 
