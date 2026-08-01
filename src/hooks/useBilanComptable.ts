@@ -151,16 +151,17 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         totalDuParEleve.set(t.eleve_id, (totalDuParEleve.get(t.eleve_id) ?? 0) + Number(t.montant || 0));
       }
 
-      // ── Répartition par mode de paiement (tous encaissements réels) ──
-      const modesMap = new Map<string, { count: number; total: number }>();
-      const addMode = (mode: string | null | undefined, montant: number) => {
+      // ── Répartition par mode de paiement (tous encaissements réels), par mois ──
+      const modesMap = new Map<string, { count: number[]; total: number[] }>();
+      const addMode = (mode: string | null | undefined, montant: number, i: number) => {
         const meta = modeMeta(String(mode ?? ""));
         if (meta.kind !== "encaissement") return;
-        const cur = modesMap.get(meta.label) ?? { count: 0, total: 0 };
-        cur.count += 1;
-        cur.total += montant;
+        const cur = modesMap.get(meta.label) ?? { count: zeros(), total: zeros() };
+        cur.count[i] += 1;
+        cur.total[i] += montant;
         modesMap.set(meta.label, cur);
       };
+
 
       // ── Encaissements scolarité + factures de services ──
       const { data: paiements } = await supabase
