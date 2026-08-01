@@ -23,6 +23,12 @@ export interface BilanMois {
   key: string;
 }
 
+export interface BilanModeLigne {
+  label: string;
+  count: number;
+  total: number;
+}
+
 export interface BilanComptable {
   mois: BilanMois[];
   entrees: BilanLigne[];
@@ -31,11 +37,20 @@ export interface BilanComptable {
   totalSorties: BilanLigne;
   solde: BilanLigne;
   soldeCumule: number[];
+  /** Ligne "SOLDE CUMULÉ" alignée sur la période affichée */
+  soldeCumuleLigne: BilanLigne;
+  /** Synthèse de la période affichée */
+  bilan: { entrees: number; sorties: number; net: number; ouverture: number; cloture: number };
+  /** Remises accordées sur la période (hors trésorerie) */
+  remises: { total: number; nbEleves: number };
+  /** Répartition des encaissements par mode de paiement */
+  modes: BilanModeLigne[];
   /** Tous les mois de l'exercice (avant filtrage période) */
   moisExercice: BilanMois[];
   /** Découpage en trimestres : indices de colonnes */
   trimestres: { label: string; from: number; to: number }[];
 }
+
 
 export type BilanPeriode =
   | { mode: "annee" }
