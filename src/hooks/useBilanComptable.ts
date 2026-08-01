@@ -150,10 +150,21 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         totalDuParEleve.set(t.eleve_id, (totalDuParEleve.get(t.eleve_id) ?? 0) + Number(t.montant || 0));
       }
 
+      // ── Répartition par mode de paiement (tous encaissements réels) ──
+      const modesMap = new Map<string, { count: number; total: number }>();
+      const addMode = (mode: string | null | undefined, montant: number) => {
+        const meta = modeMeta(String(mode ?? ""));
+        if (meta.kind !== "encaissement") return;
+        const cur = modesMap.get(meta.label) ?? { count: 0, total: 0 };
+        cur.count += 1;
+        cur.total += montant;
+        modesMap.set(meta.label, cur);
+      };
+
       // ── Encaissements scolarité + factures de services ──
       const { data: paiements } = await supabase
         .from("paiements")
-        .select("montant, date_paiement, eleve_id, tranche_id, facture_id, factures(categorie)")
+        .select("montant, mode, date_paiement, eleve_id, tranche_id, facture_id, factures(categorie)")
         .eq("ecole_id", ecoleId!)
         .is("annule_le", null)
         .gte("date_paiement", from)
@@ -164,12 +175,23 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         ENTREES_LIBELLES.map((l) => [l, zeros()]),
       ) as Record<EntreeKey, number[]>;
 
+      // Remises / bourses : appliquées à la couverture du dû, mais hors trésorerie
+      let remisesTotal = 0;
+      const remisesEleves = new Set<string>();
+
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
       for (const p of (paiements ?? []) as any[]) {
         if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
+        const isRemise = modeMeta(String(p.mode ?? "")).kind === "remise";
+        if (isRemise) {
+          remisesTotal += Number(p.montant || 0);
+          if (p.eleve_id) remisesEleves.add(p.eleve_id);
+        } else {
+          addMode(p.mode, Number(p.montant || 0));
+        }
 
         if (p.tranche_id && trancheIds.has(p.tranche_id)) {
           const list = parEleve.get(p.eleve_id) ?? [];
@@ -177,6 +199,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           parEleve.set(p.eleve_id, list);
           continue;
         }
+        if (isRemise) continue;
         const cat = p.factures?.categorie;
         if (cat === "cantine") entrees["Frais de cantine"][i] += Number(p.montant || 0);
         else if (cat === "transport") entrees["Frais de transport scolaire"][i] += Number(p.montant || 0);
@@ -188,9 +211,13 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         for (const p of list) {
           const i = colIndex(p.date_paiement)!;
           const m = Number(p.montant || 0);
+          const isRemise = modeMeta(String(p.mode ?? "")).kind === "remise";
           const avant = ventilerScolarite(totalDu, cumul, params);
           const apres = ventilerScolarite(totalDu, cumul + m, params);
           cumul += m;
+          // Une remise consomme du dû (elle décale la ventilation des versements
+          // suivants) mais n'entre jamais dans la trésorerie.
+          if (isRemise) continue;
 
           const diff = (cle: string) =>
             (apres.postes.find((x) => x.cle === cle)?.affecte ?? 0) -
@@ -208,6 +235,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           if (m - ventile > 0.5) entrees["Frais de scolarité"][i] += m - ventile;
         }
       }
+
 
       // ── Encaissements cantine / transport (échéancier services) ──
       const { data: paiementsServices } = await supabase
