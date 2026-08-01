@@ -6,6 +6,7 @@ import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ventilerScolarite, type VentilationParams } from "@/lib/ventilationScolarite";
 import { EXPENSE_CATEGORIES } from "@/lib/expenseCategories";
+import { modeMeta } from "@/pages/finances/scolarite-data";
 
 export interface BilanLigne {
   libelle: string;
