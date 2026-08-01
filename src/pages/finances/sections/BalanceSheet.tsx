@@ -108,14 +108,19 @@ export default function BalanceSheet() {
 
   const colSpan = data.mois.length + 2;
 
-  const Row = ({ l, variant }: { l: BilanLigne; variant?: "total" | "solde" }) => (
+  const Row = ({ l, variant }: { l: BilanLigne; variant?: "total" | "solde" | "cumul" }) => {
+    const showZero = variant === "solde" || variant === "cumul";
+    const v0 = (v: number) => (showZero ? Math.round(v).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") : fmt(v));
+    return (
     <tr
       className={
         variant === "total"
           ? "bg-muted/60 font-bold"
           : variant === "solde"
             ? "bg-primary/10 font-bold text-primary"
-            : "hover:bg-muted/30"
+            : variant === "cumul"
+              ? "bg-primary/20 font-bold text-primary border-t border-primary/30"
+              : "hover:bg-muted/30"
       }
     >
       <td className="sticky left-0 z-10 bg-inherit px-3 py-2 text-left whitespace-nowrap max-w-[320px] truncate" title={l.libelle}>
@@ -123,12 +128,13 @@ export default function BalanceSheet() {
       </td>
       {l.valeurs.map((v, i) => (
         <td key={i} className="px-2 py-2 text-right tabular-nums whitespace-nowrap">
-          {fmt(v)}
+          {v0(v)}
         </td>
       ))}
-      <td className="px-3 py-2 text-right tabular-nums font-bold bg-accent/20 whitespace-nowrap">{fmt(l.total)}</td>
+      <td className="px-3 py-2 text-right tabular-nums font-bold bg-accent/20 whitespace-nowrap">{v0(l.total)}</td>
     </tr>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -250,8 +256,72 @@ export default function BalanceSheet() {
               {data.sorties.map((l) => <Row key={l.libelle} l={l} />)}
               <Row l={data.totalSorties} variant="total" />
               <Row l={data.solde} variant="solde" />
+              <Row l={data.soldeCumuleLigne} variant="cumul" />
             </tbody>
           </table>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-primary text-primary-foreground px-3 py-2 text-xs font-bold uppercase tracking-widest">
+              Bilan de la période
+            </div>
+            <table className="w-full text-xs">
+              <tbody>
+                {[
+                  { l: "Solde d'ouverture", v: data.bilan.ouverture },
+                  { l: "Total entrées", v: data.bilan.entrees },
+                  { l: "Total sorties", v: data.bilan.sorties },
+                  { l: "Résultat net (entrées − sorties)", v: data.bilan.net, strong: true },
+                  { l: "Solde de clôture", v: data.bilan.cloture, strong: true },
+                ].map((r) => (
+                  <tr key={r.l} className={r.strong ? "bg-primary/10 font-bold text-primary" : "border-t"}>
+                    <td className="px-3 py-2">{r.l}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {Math.round(r.v).toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ")} FCFA
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-primary text-primary-foreground px-3 py-2 text-xs font-bold uppercase tracking-widest">
+              Répartition par mode de paiement
+            </div>
+            <table className="w-full text-xs">
+              <tbody>
+                {data.modes.length === 0 && (
+                  <tr><td className="px-3 py-4 text-center text-muted-foreground">Aucun encaissement sur la période.</td></tr>
+                )}
+                {data.modes.map((m) => (
+                  <tr key={m.label} className="border-t">
+                    <td className="px-3 py-2">{m.label}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{m.count} op.</td>
+                    <td className="px-3 py-2 text-right tabular-nums font-semibold">{fmt(m.total)} FCFA</td>
+                  </tr>
+                ))}
+                <tr className="bg-muted/60 font-bold border-t">
+                  <td className="px-3 py-2">TOTAL ENCAISSÉ</td>
+                  <td className="px-3 py-2 text-right">{data.modes.reduce((s, m) => s + m.count, 0)} op.</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {fmt(data.modes.reduce((s, m) => s + m.total, 0))} FCFA
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="border rounded-lg bg-accent/15 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest">Remises, bourses et prises en charge</p>
+            <p className="text-[11px] text-muted-foreground">
+              Appliquées sur la ventilation du dû ({data.remises.nbEleves} élève(s)) mais exclues de la trésorerie.
+            </p>
+          </div>
+          <p className="text-xl font-bold font-display text-rose-600">{fmt(data.remises.total)} FCFA</p>
         </div>
 
         <p className="text-[11px] text-muted-foreground">
