@@ -130,6 +130,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       const totalDuParEleve = new Map<string, number>();
       const trancheIds = new Set<string>();
       for (const t of (tranches ?? []) as any[]) {
+        if (!keepEleve(t.eleve_id)) continue;
         trancheIds.add(t.id);
         totalDuParEleve.set(t.eleve_id, (totalDuParEleve.get(t.eleve_id) ?? 0) + Number(t.montant || 0));
       }
@@ -151,6 +152,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // Ventilation des versements de scolarité par élève, en ordre chronologique
       const parEleve = new Map<string, any[]>();
       for (const p of (paiements ?? []) as any[]) {
+        if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
 
