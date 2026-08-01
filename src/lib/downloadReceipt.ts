@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecuPDF, type RecuData } from "./generateDocumentsPDF";
+import { stampCancelled } from "./pdfCancelStamp";
 
 interface Params {
   ecoleId: string;
@@ -40,7 +41,7 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
   const [{ data: paiement }, { data: ecole }, { data: eleve }, { data: tranches }] =
     await Promise.all([
       supabase.from("paiements")
-        .select("id, reference, montant, mode, motif, date_paiement")
+        .select("id, reference, montant, mode, motif, date_paiement, annule_le, motif_annulation")
         .eq("id", paiementId).maybeSingle(),
       supabase.from("ecoles")
         .select("nom, sigle, devise, adresse, telephone, email, logo_url")
@@ -107,6 +108,11 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
     souche,
     hideVersementLine,
   });
+
+  // Reçu d'un paiement annulé : on imprime un filigrane « ANNULÉ » rouge.
+  if ((paiement as any).annule_le) {
+    stampCancelled(pdf, (paiement as any).annule_le);
+  }
 
   return {
     pdf,
