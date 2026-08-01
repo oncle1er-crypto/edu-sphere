@@ -78,6 +78,7 @@ export default function BalanceSheet() {
       rows,
       ecole,
       orientation: "landscape" as const,
+      hideFootTotal: true,
       pdfSummary: {
         grandTotal: data.bilan.cloture,
         grandTotalLabel: "SOLDE DE CAISSE (CLÔTURE)",

@@ -51,6 +51,8 @@ export interface ExportPayload {
   pdfSummary?: PdfSummary;
   /** Groupement PDF : une section (+ page) par valeur distincte de la colonne. */
   pdfGroupBy?: PdfGroupBy;
+  /** Supprime la ligne de pied « TOTAL (n) » automatique (documents déjà totalisés). */
+  hideFootTotal?: boolean;
 }
 
 // ---------- CSV ----------
@@ -359,7 +361,7 @@ export async function exportRowsPDF(p: ExportPayload) {
       doc.setTextColor(0, 0, 0);
 
       const metas = analyseColumns(displayCols, rows);
-      const foot = buildFootRow(displayCols, metas, rows);
+      const foot = p.hideFootTotal ? null : buildFootRow(displayCols, metas, rows);
       autoTable(doc, {
         head: [displayCols],
         body: rows.map((r) => r.map((v, i) => formatCell(v, metas[i]))),
@@ -372,11 +374,9 @@ export async function exportRowsPDF(p: ExportPayload) {
 
     // Total général toutes classes confondues
     const allMetas = analyseColumns(displayCols, p.rows.map((r) => (hideCol ? r.filter((_, i) => i !== gi) : r)));
-    const totalRow = buildFootRow(
-      displayCols,
-      allMetas,
-      p.rows,
-    );
+    const totalRow = p.hideFootTotal
+      ? null
+      : buildFootRow(displayCols, allMetas, p.rows);
     if (totalRow) {
       if (cursorY > pageH - 40) { doc.addPage(); cursorY = 20; }
       doc.setFont("helvetica", "bold");
@@ -405,7 +405,7 @@ export async function exportRowsPDF(p: ExportPayload) {
     }
   } else {
     const metas = analyseColumns(p.columns, p.rows);
-    const foot = buildFootRow(p.columns, metas, p.rows);
+    const foot = p.hideFootTotal ? null : buildFootRow(p.columns, metas, p.rows);
     autoTable(doc, {
       head: [p.columns],
       body: p.rows.length
