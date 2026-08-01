@@ -241,7 +241,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // ── Encaissements cantine / transport (échéancier services) ──
       const { data: paiementsServices } = await supabase
         .from("paiements_services")
-        .select("montant, service_type, created_at, eleve_id")
+        .select("montant, mode, service_type, created_at, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("created_at", from)
         .lte("created_at", `${to}T23:59:59`);
@@ -252,6 +252,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const key: EntreeKey =
           p.service_type === "transport" ? "Frais de transport scolaire" : "Frais de cantine";
         entrees[key][i] += Number(p.montant || 0);
+        addMode(p.mode, Number(p.montant || 0));
       }
 
       // ── Services ponctuels (tenues, tests d'entrée…) ──
@@ -259,7 +260,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
+          .select("montant_paye, mode_paiement, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -280,12 +281,13 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           ? "Frais d'uniformes ou de fournitures"
           : "Autres services ponctuels";
         entrees[key][i] += Number(p.montant_paye || 0);
+        addMode(p.mode_paiement, Number(p.montant_paye || 0));
       }
 
       // ── Cours de vacances ──
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, date_paiement, eleve_id")
+        .select("montant_paye, mode, date_paiement, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
@@ -294,7 +296,9 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
+        addMode(p.mode, Number(p.montant_paye || 0));
       }
+
 
       // ── Sorties : dépenses par catégorie ──
       const { data: depenses } = await supabase
