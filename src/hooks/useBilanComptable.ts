@@ -215,7 +215,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_visee_id)")
+          .select("montant_paye, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -226,7 +226,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         if (!isGlobal) {
           const ok = p.eleve_id
             ? keepEleve(p.eleve_id)
-            : keepClasse(p.sp_candidats?.classe_visee_id);
+            : keepClasse(p.sp_candidats?.classe_demandee_id);
           if (!ok) continue;
         }
         const i = colIndex(p.date_paiement);
