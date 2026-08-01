@@ -197,11 +197,12 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // ── Encaissements cantine / transport (échéancier services) ──
       const { data: paiementsServices } = await supabase
         .from("paiements_services")
-        .select("montant, service_type, created_at")
+        .select("montant, service_type, created_at, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("created_at", from)
         .lte("created_at", `${to}T23:59:59`);
       for (const p of (paiementsServices ?? []) as any[]) {
+        if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.created_at);
         if (i === undefined) continue;
         const key: EntreeKey =
@@ -214,7 +215,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, date_paiement, service_id, annule_le")
+          .select("montant_paye, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_visee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -222,6 +223,12 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       ]);
       const slugById = new Map(((services ?? []) as any[]).map((s) => [s.id, `${s.slug} ${s.nom}`.toLowerCase()]));
       for (const p of (spPaiements ?? []) as any[]) {
+        if (!isGlobal) {
+          const ok = p.eleve_id
+            ? keepEleve(p.eleve_id)
+            : keepClasse(p.sp_candidats?.classe_visee_id);
+          if (!ok) continue;
+        }
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         const s = slugById.get(p.service_id) ?? "";
@@ -234,11 +241,12 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // ── Cours de vacances ──
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, date_paiement")
+        .select("montant_paye, date_paiement, eleve_id")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
       for (const p of (vac ?? []) as any[]) {
+        if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
@@ -247,13 +255,14 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // ── Sorties : dépenses par catégorie ──
       const { data: depenses } = await supabase
         .from("depenses")
-        .select("montant, categorie, date_depense, statut")
+        .select("montant, categorie, date_depense, statut, cycle_id")
         .eq("ecole_id", ecoleId!)
         .gte("date_depense", from)
         .lte("date_depense", to);
 
       const sortiesMap = new Map<string, number[]>();
       for (const d of (depenses ?? []) as any[]) {
+        if (!matchesCycle(d.cycle_id)) continue;
         if (["rejetee", "annulee"].includes(String(d.statut))) continue;
         const i = colIndex(d.date_depense);
         if (i === undefined) continue;
