@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2, Pencil } from "lucide-react";
+import { Phone, Mail, MessageSquare, Plus, Calendar, History, Bell, Tag, Receipt, Download, Printer, Loader2, Pencil, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { fcfa, type EleveScolarite, type Tranche, type PaiementHistorique } from "../scolarite-data";
 import VentilationScolariteCard from "./VentilationScolariteCard";
@@ -15,6 +15,7 @@ import { useRelances, formatRelanceDate } from "@/hooks/useRelances";
 import { PaymentDialog } from "./PaymentDialog";
 import { DiscountDialog } from "./DiscountDialog";
 import { EditPaymentDialog } from "./EditPaymentDialog";
+import { CancelPaymentDialog, type CancelPaymentTarget } from "./CancelPaymentDialog";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
@@ -61,6 +62,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
   const [discountTrancheNum, setDiscountTrancheNum] = useState<number | undefined>(undefined);
   const [discountOpen, setDiscountOpen] = useState(false);
   const [editPaiement, setEditPaiement] = useState<PaiementHistorique | null>(null);
+  const [cancelPaiement, setCancelPaiement] = useState<CancelPaymentTarget | null>(null);
 
   useEffect(() => {
     if (eleve) {
@@ -284,27 +286,46 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                       <Badge variant="secondary" className="ml-1">{eleve.paiements.length}</Badge>
                     </h4>
                     <div className="border rounded-lg divide-y">
-                      {eleve.paiements.map((p) => (
-                        <div key={p.id} className="p-3 flex items-start gap-3">
+                      {eleve.paiements.map((p) => {
+                        const isCancelled = !!p.annuleLe;
+                        return (
+                        <div
+                          key={p.id}
+                          className={cn("p-3 flex items-start gap-3", isCancelled && "bg-muted/40 opacity-70")}
+                          title={isCancelled ? `Annulé le ${new Date(p.annuleLe!).toLocaleDateString("fr-FR")}${p.motifAnnulation ? ` — ${p.motifAnnulation}` : ""}` : undefined}
+                        >
                           <div className={cn(
                             "h-9 w-9 sm:h-8 sm:w-8 rounded-full flex items-center justify-center shrink-0",
-                            p.kind === "remise" ? "bg-orange-500/15 text-orange-600" : "bg-green-500/15 text-green-700",
+                            isCancelled ? "bg-muted text-muted-foreground"
+                              : p.kind === "remise" ? "bg-orange-500/15 text-orange-600" : "bg-green-500/15 text-green-700",
                           )}>
                             {p.kind === "remise" ? <Tag className="h-4 w-4" /> : <Receipt className="h-4 w-4" />}
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="text-xs font-bold">
+                              <p className={cn("text-xs font-bold", isCancelled && "line-through text-muted-foreground")}>
                                 {p.modeLabel}
                                 {p.trancheNum && <span className="text-muted-foreground font-normal"> · T{p.trancheNum}</span>}
                               </p>
-                              <p className={cn("text-sm font-bold", p.kind === "remise" ? "text-orange-600" : "text-green-700")}>
-                                {fcfa(p.montant)} FCFA
-                              </p>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {isCancelled && (
+                                  <Badge variant="outline" className="bg-muted text-muted-foreground border-border text-[9px]">ANNULÉ</Badge>
+                                )}
+                                <p className={cn(
+                                  "text-sm font-bold",
+                                  isCancelled ? "line-through text-muted-foreground"
+                                    : p.kind === "remise" ? "text-orange-600" : "text-green-700",
+                                )}>
+                                  {fcfa(p.montant)} FCFA
+                                </p>
+                              </div>
                             </div>
                             <p className="text-[10px] text-muted-foreground">
                               {new Date(p.date).toLocaleDateString("fr-FR")} {p.reference && `· réf. ${p.reference}`}
                             </p>
+                            {isCancelled && p.motifAnnulation && (
+                              <p className="text-[11px] text-muted-foreground italic mt-1 line-clamp-2">Annulation : « {p.motifAnnulation} »</p>
+                            )}
                             {p.motif && (
                               <p className="text-[11px] text-foreground italic mt-1 line-clamp-2">« {p.motif} »</p>
                             )}
@@ -324,7 +345,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             >
                               <Download className="h-3.5 w-3.5" />
                             </Button>
-                            {isAdmin && (
+                            {isAdmin && !isCancelled && (
                               <Button
                                 size="icon"
                                 variant="ghost"
@@ -335,6 +356,26 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                                 <Pencil className="h-3.5 w-3.5" />
                               </Button>
                             )}
+                            {isAdmin && !isCancelled && p.kind === "encaissement" && p.trancheNum && (
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 sm:h-7 sm:w-7 text-destructive hover:bg-destructive/10"
+                                title="Annuler cet encaissement (admin)"
+                                onClick={() => setCancelPaiement({
+                                  id: p.id,
+                                  date: p.date,
+                                  montant: p.montant,
+                                  modeLabel: p.modeLabel,
+                                  reference: p.reference ?? null,
+                                  trancheNum: p.trancheNum ?? null,
+                                  eleveLabel: `${eleve.nom} ${eleve.prenom}`,
+                                })}
+                              >
+                                <Ban className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+
                             <Button
                               size="icon"
                               variant="ghost"
@@ -362,7 +403,9 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             </Button>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
+
                     </div>
                   </div>
                 )}
@@ -522,6 +565,13 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
         open={!!editPaiement}
         onOpenChange={(o) => { if (!o) setEditPaiement(null); }}
         onSaved={onPaymentRecorded}
+      />
+
+      <CancelPaymentDialog
+        paiement={cancelPaiement}
+        open={!!cancelPaiement}
+        onOpenChange={(o) => { if (!o) setCancelPaiement(null); }}
+        onCancelled={onPaymentRecorded}
       />
     </>
   );

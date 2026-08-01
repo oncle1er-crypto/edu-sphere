@@ -4,13 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Wallet, Loader2 } from "lucide-react";
-import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
+import { Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
+import { fcfa, friendlyRpcError, type EleveScolarite, type PaiementHistorique } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/context/AuthContext";
-import { downloadReceiptFor, shareReceiptWhatsApp } from "@/lib/downloadReceipt";
+import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
+import { shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
 import { toast } from "sonner";
 
@@ -33,20 +32,18 @@ const MOYENS: { label: string; value: string }[] = [
   { label: "Chèque", value: "cheque" },
 ];
 
-export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
-  const { user } = useAuth();
+interface LigneVentilation {
+  trancheId?: string;
+  num: number;
+  label: string;
+  montant: number;
+  resteApres: number;
+}
+
+export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
 
-  const tranchesPayables = useMemo(() => {
-    if (!eleve) return [];
-    // Seule la 1ère tranche non soldée est encaissable (séquentiel)
-    const sorted = [...eleve.tranches].sort((a, b) => a.num - b.num);
-    const next = sorted.find((t) => t.statut !== "payee");
-    return next ? [next] : [];
-  }, [eleve]);
-
-  const [trancheNum, setTrancheNum] = useState<string>("");
   const [montant, setMontant] = useState<string>("");
   const [moyen, setMoyen] = useState<string>("wave");
   const [reference, setReference] = useState<string>("");
@@ -54,56 +51,97 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
   useEffect(() => {
     if (!open || !eleve) return;
     submittingRef.current = false;
-    const target =
-      tranchesPayables.find((t) => t.num === defaultTrancheNum) ?? tranchesPayables[0];
-    if (target) {
-      setTrancheNum(String(target.num));
-      setMontant(String(Math.max(0, target.montant - target.paye)));
-    }
+    setMontant(String(Math.max(0, eleve.resteDu)));
     setMoyen("wave");
     setReference("");
-  }, [open, eleve, defaultTrancheNum, tranchesPayables]);
+  }, [open, eleve]);
+
+  const montantNum = Number(montant) || 0;
+  const resteDu = eleve?.resteDu ?? 0;
+
+  /** Aperçu de la ventilation : tranches non soldées, par numéro croissant. */
+  const ventilation = useMemo<LigneVentilation[]>(() => {
+    if (!eleve || montantNum <= 0) return [];
+    let restant = Math.min(montantNum, resteDu);
+    const lignes: LigneVentilation[] = [];
+    const tranches = [...eleve.tranches].sort((a, b) => a.num - b.num);
+    for (const t of tranches) {
+      if (restant <= 0) break;
+      const du = Math.max(0, t.montant - t.paye);
+      if (du <= 0) continue;
+      const affecte = Math.min(du, restant);
+      restant -= affecte;
+      lignes.push({
+        trancheId: (t as any).id,
+        num: t.num,
+        label: t.label,
+        montant: affecte,
+        resteApres: du - affecte,
+      });
+    }
+    return lignes;
+  }, [eleve, montantNum, resteDu]);
 
   if (!eleve) return null;
 
-  const tranche = eleve.tranches.find((t) => t.num === Number(trancheNum));
-  const restantTranche = tranche ? tranche.montant - tranche.paye : 0;
-  const montantNum = Number(montant) || 0;
-  const valid = !!tranche && montantNum > 0 && montantNum <= restantTranche;
+  const valid = montantNum > 0 && montantNum <= resteDu && !!ecoleId;
 
   const handleSubmit = async () => {
-    if (!valid || !tranche || !ecoleId) return;
+    if (!valid || !ecoleId) return;
     if (submittingRef.current) return; // anti double-clic infaillible
     submittingRef.current = true;
     setSaving(true);
 
     try {
-      const trancheId = (tranche as any).id;
-      if (!trancheId) throw new Error("Tranche sans identifiant en base");
-
-      const { data: paiementId, error } = await supabase.rpc("enregistrer_paiement", {
+      const { data, error } = await supabase.rpc("solder_scolarite", {
         _ecole_id: ecoleId,
         _eleve_id: eleve.id,
-        _tranche_id: trancheId,
         _montant: montantNum,
         _mode: moyen,
-        _reference: reference || null,
-        _recu_par: user?.id ?? null,
+        _reference: reference || undefined,
       });
-
       if (error) throw error;
 
+      const res = (data ?? {}) as {
+        reference?: string;
+        montant_total?: number;
+        nb_tranches?: number;
+        reste_du_apres?: number;
+        ventilation?: { paiement_id: string; tranche_id: string; tranche_numero: number; tranche_label: string; montant: number }[];
+      };
+      const ref = res.reference ?? reference ?? null;
+      const lignes = res.ventilation ?? [];
+      const resteApres = Number(res.reste_du_apres ?? Math.max(0, resteDu - montantNum));
+
       toast.success("Encaissement enregistré", {
-        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find(m => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom} (T${tranche.num})`,
+        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find((m) => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom}` +
+          (lignes.length > 1 ? ` (${lignes.length} tranches)` : ""),
       });
 
-      // Génère + télécharge automatiquement le reçu PDF (avec souche)
-      if (paiementId && typeof paiementId === "string") {
-        downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type: "encaissement" });
-      }
+      // Reçu global (l'encaissement peut couvrir plusieurs tranches)
+      const modeLabel = MOYENS.find((m) => m.value === moyen)?.label ?? moyen;
+      const nouveauxPaiements: PaiementHistorique[] = lignes.map((l) => ({
+        id: l.paiement_id,
+        date: new Date().toISOString(),
+        montant: Number(l.montant),
+        mode: moyen,
+        modeLabel,
+        kind: "encaissement",
+        trancheNum: l.tranche_numero,
+        reference: ref,
+        motif: null,
+        annuleLe: null,
+      }));
+      const eleveAJour: EleveScolarite = {
+        ...eleve,
+        paiements: [...nouveauxPaiements, ...(eleve.paiements ?? [])],
+        totalEncaisse: (eleve.totalEncaisse ?? 0) + montantNum,
+        totalPaye: (eleve.totalPaye ?? 0) + montantNum,
+        resteDu: resteApres,
+      };
+      downloadGlobalReceipt({ ecoleId, eleve: eleveAJour }).catch(() => { /* best-effort */ });
 
-      // 1) SMS de confirmation au parent (best-effort)
-      const nouveauReste = Math.max(0, eleve.resteDu - montantNum);
+      // SMS de confirmation au parent (best-effort)
       sendPaymentConfirmationSms({
         ecoleId,
         telephone: eleve.telephone,
@@ -113,14 +151,15 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
         classe: eleve.classe,
         module: "scolarite",
         montant: montantNum,
-        resteDu: nouveauReste,
-        reference: reference || null,
+        resteDu: resteApres,
+        reference: ref,
       }).then((ok) => {
         if (ok) toast.success("SMS de confirmation envoyé au parent");
       });
 
-      // 2) Proposer l'envoi WhatsApp du reçu (sans souche)
-      if (paiementId && typeof paiementId === "string") {
+      // Proposer l'envoi WhatsApp du reçu (sans souche)
+      const premierPaiementId = lignes[0]?.paiement_id;
+      if (premierPaiementId) {
         toast("Envoyer le reçu par WhatsApp ?", {
           description: `${eleve.parent} — ${eleve.telephone || "numéro non renseigné"}`,
           duration: 10000,
@@ -130,7 +169,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
               shareReceiptWhatsApp({
                 ecoleId,
                 eleveId: eleve.id,
-                paiementId,
+                paiementId: premierPaiementId,
                 type: "encaissement",
                 telephone: eleve.telephone,
               });
@@ -143,14 +182,19 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
       onPaymentRecorded?.();
     } catch (err: any) {
       console.error("Payment error:", err);
-      toast.error("Encaissement refusé", { description: friendlyRpcError(err) });
+      const msg = String(err?.message ?? "");
+      let friendly = friendlyRpcError(err);
+      if (msg.includes("not_authorized")) friendly = "Vous n'êtes pas autorisé à encaisser";
+      else if (msg.includes("rien_a_encaisser")) friendly = "Aucune tranche à encaisser pour cet élève";
+      else if (msg.includes("montant_depasse_reste")) friendly = "Le montant dépasse le reste dû annuel";
+      else if (msg.includes("montant_invalide")) friendly = "Montant invalide";
+      toast.error("Encaissement refusé", { description: friendly });
       onPaymentRecorded?.();
     } finally {
       submittingRef.current = false;
       setSaving(false);
     }
   };
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -160,46 +204,40 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
             <Wallet className="h-5 w-5" />Enregistrer un encaissement
           </DialogTitle>
           <DialogDescription>
-            {eleve.nom} {eleve.prenom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(eleve.resteDu)} FCFA</span>
+            {eleve.nom} {eleve.prenom} — {eleve.classe} · Reste annuel : <span className="font-bold text-destructive">{fcfa(resteDu)} FCFA</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <Label className="text-xs">Tranche concernée</Label>
-            <Select value={trancheNum} onValueChange={(v) => {
-              setTrancheNum(v);
-              const t = eleve.tranches.find((x) => x.num === Number(v));
-              if (t) setMontant(String(Math.max(0, t.montant - t.paye)));
-            }}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {tranchesPayables.map((t) => (
-                  <SelectItem key={t.num} value={String(t.num)}>
-                    T{t.num} · {t.label} — reste {fcfa(t.montant - t.paye)} FCFA
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label className="text-xs">Montant encaissé (FCFA)</Label>
+            <Input type="number" value={montant} onChange={(e) => setMontant(e.target.value)} />
+            {montantNum > resteDu && (
+              <p className="text-[11px] text-destructive">Le montant dépasse le reste dû annuel ({fcfa(resteDu)} FCFA).</p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              Le montant est ventilé automatiquement sur les tranches non soldées, par ordre croissant.
+            </p>
           </div>
 
-          {tranche && (
+          {ventilation.length > 0 && montantNum <= resteDu && (
             <Card className="border bg-muted/30">
-              <CardContent className="p-3 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-center">
-                <div><p className="text-[10px] text-muted-foreground uppercase">Tranche</p><p className="text-xs font-bold">{fcfa(tranche.montant)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground uppercase">Déjà versé</p><p className="text-xs font-bold text-primary">{fcfa(tranche.paye)}</p></div>
-                <div><p className="text-[10px] text-muted-foreground uppercase">Restant</p><p className="text-xs font-bold text-destructive">{fcfa(restantTranche)}</p></div>
+              <CardContent className="p-3 space-y-1.5">
+                <p className="text-[10px] uppercase text-muted-foreground font-semibold">Aperçu de la ventilation</p>
+                {ventilation.map((l) => (
+                  <div key={l.num} className="flex items-center gap-2 text-xs">
+                    <span className="font-mono font-semibold text-primary">T{l.num}</span>
+                    <span className="text-muted-foreground truncate">· {l.label}</span>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="font-semibold ml-auto shrink-0">{fcfa(l.montant)} FCFA</span>
+                    <span className={l.resteApres === 0 ? "text-green-700 shrink-0" : "text-orange-600 shrink-0"}>
+                      ({l.resteApres === 0 ? "soldée" : `reste ${fcfa(l.resteApres)}`})
+                    </span>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}
-
-          <div className="space-y-1.5">
-            <Label className="text-xs">Montant encaissé (FCFA)</Label>
-            <Input type="number" value={montant} onChange={(e) => setMontant(e.target.value)} />
-            {tranche && montantNum > restantTranche && (
-              <p className="text-[11px] text-destructive">Le montant dépasse le reste de la tranche.</p>
-            )}
-          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -216,12 +254,6 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
               <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
             </div>
           </div>
-
-          {tranche && montantNum > 0 && montantNum <= restantTranche && (
-            <Badge variant="outline" className="bg-accent/10 text-primary border-accent/30">
-              Statut après paiement : {montantNum >= restantTranche ? "✓ Payée" : "◐ Partielle"}
-            </Badge>
-          )}
         </div>
 
         <DialogFooter>

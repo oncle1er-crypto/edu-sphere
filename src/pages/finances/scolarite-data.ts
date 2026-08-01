@@ -80,7 +80,12 @@ export interface PaiementHistorique {
   trancheNum?: number;
   reference?: string | null;
   motif?: string | null;
+  /** Date d'annulation (null = paiement actif) */
+  annuleLe?: string | null;
+  /** Motif d'annulation renseigné par l'administrateur */
+  motifAnnulation?: string | null;
 }
+
 
 export const PAIEMENT_MODE_META: Record<string, { label: string; kind: PaiementKind }> = {
   especes:         { label: "Espèces",            kind: "encaissement" },
