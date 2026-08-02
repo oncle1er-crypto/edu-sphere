@@ -441,36 +441,33 @@ export default function StaffList() {
         </div>
       )}
 
-      {/* Fiche enseignant Dialog */}
-      <Dialog open={!!viewEnseignant} onOpenChange={(o) => !o && setViewEnseignant(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Fiche enseignant</DialogTitle></DialogHeader>
-          {viewEnseignant && (
-            <div className="flex flex-col items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarFallback className="text-2xl bg-primary/10 text-primary font-bold">{initials(viewEnseignant.nom, viewEnseignant.prenom)}</AvatarFallback>
-              </Avatar>
-              <h3 className="text-lg font-semibold">{viewEnseignant.nom} {viewEnseignant.prenom}</h3>
-              <div className="w-full space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Matricule</span><span className="font-mono">{viewEnseignant.matricule ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Sexe</span><span>{viewEnseignant.sexe === "F" ? "Féminin" : viewEnseignant.sexe === "M" ? "Masculin" : "—"}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><GraduationCap className="h-3 w-3" />Spécialité</span><span>{viewEnseignant.specialite ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Diplôme</span><span>{viewEnseignant.diplome ?? "—"}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Briefcase className="h-3 w-3" />Contrat</span><Badge className={contratColor[viewEnseignant.type_contrat ?? ""] ?? ""}>{viewEnseignant.type_contrat}</Badge></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Phone className="h-3 w-3" />Téléphone</span><span>{viewEnseignant.telephone ?? "—"}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground flex items-center gap-1"><Mail className="h-3 w-3" />Email</span><span className="truncate max-w-[180px]">{viewEnseignant.email ?? "—"}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Statut</span><Badge variant={viewEnseignant.statut === "actif" ? "default" : "secondary"}>{viewEnseignant.statut}</Badge></div>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Edit Dialog */}
       <Dialog open={!!editEnseignant} onOpenChange={(o) => !o && setEditEnseignant(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Modifier l'enseignant</DialogTitle></DialogHeader>
-          <div className="space-y-3 max-h-[65vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Modifier le membre du personnel</DialogTitle></DialogHeader>
+          <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+            <FieldRow label="Poste"><Input value={editForm.poste} onChange={(e) => setEditForm({ ...editForm, poste: e.target.value })} /></FieldRow>
+            <FieldRow label="Service"><Input value={editForm.service} onChange={(e) => setEditForm({ ...editForm, service: e.target.value })} /></FieldRow>
+            <FieldRow label="Fonction"><Input value={editForm.fonction} onChange={(e) => setEditForm({ ...editForm, fonction: e.target.value })} /></FieldRow>
+            <FieldRow label="Département">
+              <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {DEPARTEMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FieldRow>
+            <FieldRow label="Situation matrimoniale">
+              <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                <SelectContent>
+                  {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </FieldRow>
+            <FieldRow label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FieldRow>
+            <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FieldRow>
             <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
             <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
             <FieldRow label="Sexe">
