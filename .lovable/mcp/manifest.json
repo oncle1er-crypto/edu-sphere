@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://yvsnokvgxqtpqkuizsfo.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "la-providence",
+      "version": "0.1.0",
+      "title": "La Providence"
+    },
+    "tools": [
+      {
+        "name": "apercu_ecole",
+        "title": "Aperçu de l'école",
+        "description": "Chiffres clés de l'école de l'utilisateur : année active, effectifs élèves (dont nouveaux), nombre de classes et d'enseignants.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "lister_classes",
+        "title": "Lister les classes",
+        "description": "Liste les classes de l'année scolaire active avec leur effectif et leur capacité.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "recherche": {
+              "type": "string",
+              "description": "Filtre optionnel sur le nom de la classe."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "rechercher_eleves",
+        "title": "Rechercher des élèves",
+        "description": "Recherche les élèves de l'école de l'utilisateur par nom, prénom ou matricule. Retourne matricule, nom, classe et statut.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "recherche": {
+              "type": "string",
+              "description": "Nom, prénom ou matricule (partiel accepté)."
+            },
+            "limite": {
+              "type": "integer",
+              "description": "Nombre maximum de résultats (défaut 20, max 100)."
+            }
+          },
+          "required": [
+            "recherche"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "situation_scolarite_eleve",
+        "title": "Situation de scolarité d'un élève",
+        "description": "Retourne la situation financière de scolarité d'un élève (total dû, encaissé, reste à payer) et le détail de ses tranches.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "matricule": {
+              "type": "string",
+              "description": "Matricule exact de l'élève."
+            }
+          },
+          "required": [
+            "matricule"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "point_encaissements",
+        "title": "Point des encaissements",
+        "description": "Total des encaissements de scolarité (paiements non annulés) sur une période, avec la répartition par mode de paiement.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "date_debut": {
+              "type": "string",
+              "description": "Date de début incluse, format AAAA-MM-JJ."
+            },
+            "date_fin": {
+              "type": "string",
+              "description": "Date de fin incluse, format AAAA-MM-JJ."
+            }
+          },
+          "required": [
+            "date_debut",
+            "date_fin"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
