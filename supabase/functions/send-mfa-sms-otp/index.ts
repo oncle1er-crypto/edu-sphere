@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           destinataire: e164,
           message: "OTP MFA (contenu masqué)",
           sender_id: null,
-          statut: result.ok ? "envoye" : "echec",
+          statut: result.ok ? "envoye" : "echoue",
           provider: "zindua",
           canal: "whatsapp",
           template_slug: templateSlug,
