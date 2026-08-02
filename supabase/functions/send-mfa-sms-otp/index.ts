@@ -1,9 +1,17 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { normalizePhoneCI } from "../_shared/phone-ci.ts";
+import { zinduaSend, ZINDUA_CONFIG_ERRORS } from "../_shared/zindua-client.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 
 function generateOtp(): string {
   const buf = new Uint8Array(4);
@@ -22,16 +30,16 @@ function normalizeSms(m: string): string {
   return m.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E]/g, "").trim();
 }
 
+function maskPhone(p: string): string {
+  return p.slice(0, -4).replace(/./g, "*") + p.slice(-4);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!authHeader) return json({ error: "Non autorisé" }, 401);
 
     const url = Deno.env.get("SUPABASE_URL")!;
     const service = createClient(url, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -40,11 +48,7 @@ Deno.serve(async (req) => {
     });
 
     const { data: { user }, error: uErr } = await userClient.auth.getUser();
-    if (uErr || !user) {
-      return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (uErr || !user) return json({ error: "Non autorisé" }, 401);
 
     const body = await req.json();
     const purpose: "enroll" | "challenge" = body.purpose === "challenge" ? "challenge" : "enroll";
@@ -56,18 +60,14 @@ Deno.serve(async (req) => {
         .from("mfa_sms_factors").select("phone, ecole_id, verified")
         .eq("user_id", user.id).maybeSingle();
       if (!factor?.verified) {
-        return new Response(JSON.stringify({ error: "Aucun facteur SMS vérifié." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return json({ error: "Aucun facteur SMS vérifié." }, 400);
       }
       phone = factor.phone;
       ecole_id = factor.ecole_id;
     }
 
     if (!phone || !/^\+?\d{8,15}$/.test(phone.replace(/\s/g, ""))) {
-      return new Response(JSON.stringify({ error: "Numéro de téléphone invalide." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Numéro de téléphone invalide." }, 400);
     }
     phone = phone.replace(/\s/g, "");
 
@@ -77,9 +77,7 @@ Deno.serve(async (req) => {
       ecole_id = role?.ecole_id ?? null;
     }
     if (!ecole_id) {
-      return new Response(JSON.stringify({ error: "École introuvable pour l'utilisateur." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "École introuvable pour l'utilisateur." }, 400);
     }
 
     // Rate-limit: max 1 envoi / 60s
@@ -87,9 +85,7 @@ Deno.serve(async (req) => {
       .from("mfa_sms_otp_codes").select("created_at")
       .eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
     if (recent && Date.now() - new Date(recent.created_at).getTime() < 60_000) {
-      return new Response(JSON.stringify({ error: "Veuillez patienter avant de redemander un code." }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return json({ error: "Veuillez patienter avant de redemander un code." }, 429);
     }
 
     const code = generateOtp();
@@ -101,75 +97,147 @@ Deno.serve(async (req) => {
     });
     if (insErr) throw insErr;
 
-    // Charger config SMS de l'école
-    const { data: cfg, error: cfgErr } = await service
-      .from("sms_config").select("*").eq("ecole_id", ecole_id).single();
-    if (cfgErr || !cfg?.is_active || !cfg?.api_token) {
-      return new Response(JSON.stringify({ error: "Configuration SMS indisponible pour votre école." }), {
-        status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // --- Normalisation E.164 (Côte d'Ivoire) ---
+    const normalized = normalizePhoneCI(phone);
+    if (!normalized) {
+      return json({ error: "Numéro de téléphone invalide." }, 400);
     }
+    const e164 = normalized.e164;
 
-    const message = normalizeSms(
-      `GSP - Code de verification: ${code}. Valide 10 minutes. Ne le partagez avec personne.`
-    );
+    const idempotencyKey =
+      `mfa-${user.id}-${purpose}-${Math.floor(Date.now() / 1000)}`;
 
-    // SSRF protection: allowlist SMS provider hosts
-    const ALLOWED_SMS_HOSTS = new Set([
-      "panel.yellikasms.com",
-      "api.yellikasms.com",
-      "yellikasms.com",
-    ]);
-    let smsUrl: URL;
+    /** Insère un log SMS. Retourne "conflit" si la clé d'idempotence existe déjà. */
+    const logSms = async (row: Record<string, unknown>): Promise<"ok" | "conflit"> => {
+      const { error } = await service.from("sms_logs").insert(row);
+      if (error) {
+        if (error.code === "23505") return "conflit";
+        console.error("sms_logs insert error:", error.message);
+      }
+      return "ok";
+    };
+
+    // ---------- Tentative canal WhatsApp (Zindua) ----------
+    let zinduaSent = false;
+    let zinduaFallback = true;
+
     try {
-      smsUrl = new URL(cfg.base_url);
-    } catch {
-      return new Response(JSON.stringify({ error: "URL SMS invalide." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      const { data: verif, error: verifErr } = await service.rpc("zindua_verifier_envoi", {
+        _ecole_id: ecole_id,
+        _destinataire: e164,
       });
+      if (verifErr) throw verifErr;
+
+      const v = (verif ?? {}) as Record<string, unknown>;
+      if (v.autorise === true) {
+        const templateSlug = String(v.template_otp ?? "otp-verification");
+        const apiBaseUrl = String(v.api_base_url ?? "https://zindua.run/api/v1");
+
+        const result = await zinduaSend({
+          apiBaseUrl,
+          to: e164,
+          channel: "whatsapp",
+          template: templateSlug,
+          lang: "fr",
+          variables: { code, otp: code },
+        });
+
+        const conflict = await logSms({
+          ecole_id,
+          destinataire: e164,
+          message: "OTP MFA (contenu masqué)",
+          sender_id: null,
+          statut: result.ok ? "envoye" : "echec",
+          provider: "zindua",
+          canal: "whatsapp",
+          template_slug: templateSlug,
+          provider_log_id: result.ok ? (result.logId ?? null) : null,
+          idempotency_key: idempotencyKey,
+          error_code: result.ok ? null : result.code,
+          provider_response: result.ok
+            ? { log_id: result.logId ?? null }
+            : { error_code: result.code },
+          cout: 0,
+          envoye_par: user.id,
+        });
+
+        // Envoi déjà journalisé pour cette seconde : ne pas renvoyer de message.
+        if (conflict === "conflit") {
+          return json({ ok: true, expires_at }, 200);
+        }
+
+        if (result.ok) {
+          zinduaSent = true;
+          zinduaFallback = false;
+        } else if (!result.permanent && !ZINDUA_CONFIG_ERRORS.has(result.code)) {
+          // Erreur temporaire : on tente quand même le repli SMS.
+          zinduaFallback = true;
+        }
+      }
+    } catch (e) {
+      // Une panne du canal de notification ne doit jamais bloquer l'utilisateur.
+      console.error("Zindua channel error:", e instanceof Error ? e.message : String(e));
     }
-    if (smsUrl.protocol !== "https:" || !ALLOWED_SMS_HOSTS.has(smsUrl.hostname)) {
-      return new Response(JSON.stringify({ error: "Endpoint SMS non autorisé." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+    // ---------- Repli YellikaSMS (comportement historique) ----------
+    if (!zinduaSent && zinduaFallback) {
+      const { data: cfg, error: cfgErr } = await service
+        .from("sms_config").select("*").eq("ecole_id", ecole_id).single();
+      if (cfgErr || !cfg?.is_active || !cfg?.api_token) {
+        return json({ error: "Configuration SMS indisponible pour votre école." }, 503);
+      }
+
+      const message = normalizeSms(
+        `GSP - Code de verification: ${code}. Valide 10 minutes. Ne le partagez avec personne.`
+      );
+
+      // SSRF protection: allowlist SMS provider hosts
+      const ALLOWED_SMS_HOSTS = new Set([
+        "panel.yellikasms.com",
+        "api.yellikasms.com",
+        "yellikasms.com",
+      ]);
+      let smsUrl: URL;
+      try {
+        smsUrl = new URL(cfg.base_url);
+      } catch {
+        return json({ error: "URL SMS invalide." }, 400);
+      }
+      if (smsUrl.protocol !== "https:" || !ALLOWED_SMS_HOSTS.has(smsUrl.hostname)) {
+        return json({ error: "Endpoint SMS non autorisé." }, 400);
+      }
+
+      const resp = await fetch(smsUrl.toString(), {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${cfg.api_token}`,
+        },
+        body: JSON.stringify({ recipient: phone, sender_id: cfg.sender_id, message }),
       });
-    }
+      const provider = await resp.json().catch(() => ({}));
 
-    const resp = await fetch(smsUrl.toString(), {
-      method: "POST",
-      headers: {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${cfg.api_token}`,
-      },
-      body: JSON.stringify({ recipient: phone, sender_id: cfg.sender_id, message }),
-    });
-    const provider = await resp.json().catch(() => ({}));
-
-    await service.from("sms_logs").insert({
-      ecole_id, destinataire: phone, message: "[MFA OTP masqué]",
-      sender_id: cfg.sender_id, statut: resp.ok ? "envoye" : "echoue",
-      provider_response: provider, cout: cfg.cout_unitaire ?? 0, envoye_par: user.id,
-    });
-
-    if (!resp.ok) {
-      return new Response(JSON.stringify({ error: "Échec d'envoi du SMS." }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      await service.from("sms_logs").insert({
+        ecole_id, destinataire: phone, message: "[MFA OTP masqué]",
+        sender_id: cfg.sender_id, statut: resp.ok ? "envoye" : "echoue",
+        provider_response: provider, cout: cfg.cout_unitaire ?? 0, envoye_par: user.id,
       });
+
+      if (!resp.ok) {
+        return json({ error: "Échec d'envoi du SMS." }, 502);
+      }
     }
 
     await service.rpc("log_security_event", {
       _event_type: purpose === "enroll" ? "mfa_sms_otp_sent_enroll" : "mfa_sms_otp_sent_challenge",
       _severity: "info", _ecole_id: ecole_id, _ip: null,
       _user_agent: req.headers.get("user-agent"), _device_fp: null,
-      _metadata: { phone_masked: phone.slice(0, -4).replace(/./g, "*") + phone.slice(-4) },
+      _metadata: { phone_masked: maskPhone(e164), canal: zinduaSent ? "whatsapp" : "sms" },
     });
 
-    return new Response(JSON.stringify({ ok: true, expires_at }), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ ok: true, expires_at }, 200);
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return json({ error: String(err) }, 500);
   }
 });
