@@ -12,6 +12,8 @@ import { AppLoader, NavigationProgress } from "@/components/loading";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const AcceptInvitationPage = lazy(() => import("@/pages/auth/AcceptInvitationPage"));
 const FirstPasswordPage = lazy(() => import("@/pages/auth/FirstPasswordPage"));
+const OAuthConsentPage = lazy(() => import("@/pages/auth/OAuthConsent"));
+
 
 const Home = lazy(() => import("@/pages/Home"));
 const Dashboard = lazy(() => import("@/pages/Dashboard"));
