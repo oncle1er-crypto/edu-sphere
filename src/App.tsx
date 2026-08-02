@@ -558,6 +558,7 @@ const App = () => (
               <Route path="finances" element={<FinanceSettings />} />
               <Route path="documents" element={<DocumentTemplates />} />
               <Route path="notifications" element={<NotificationSettings />} />
+              <Route path="fournisseurs" element={<NotificationProviders />} />
               <Route path="sms" element={<SmsSettings />} />
               <Route path="apparence" element={<AppearanceSettings />} />
               <Route path="localisation" element={<LocalizationSettings />} />

@@ -32,7 +32,12 @@ export function useSmsMfa() {
       const { data, error } = await supabase.functions.invoke("send-mfa-sms-otp", { body: opts });
       if (error) throw error;
       if ((data as any)?.error) throw new Error((data as any).error);
-      return data as { ok: true; expires_at: string };
+      return data as {
+        ok: true;
+        expires_at: string;
+        canal?: "whatsapp" | "sms";
+        provider?: "zindua" | "yellikasms";
+      };
     },
     []
   );
