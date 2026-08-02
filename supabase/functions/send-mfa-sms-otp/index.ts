@@ -163,7 +163,7 @@ Deno.serve(async (req) => {
 
         // Envoi déjà journalisé pour cette seconde : ne pas renvoyer de message.
         if (conflict === "conflit") {
-          return json({ ok: true, expires_at }, 200);
+          return json({ ok: true, expires_at, canal: "whatsapp", provider: "zindua" }, 200);
         }
 
         if (result.ok) {
@@ -243,7 +243,12 @@ Deno.serve(async (req) => {
       _metadata: { phone_masked: maskPhone(e164), canal: zinduaSent ? "whatsapp" : "sms" },
     });
 
-    return json({ ok: true, expires_at }, 200);
+    return json({
+      ok: true,
+      expires_at,
+      canal: zinduaSent ? "whatsapp" : "sms",
+      provider: zinduaSent ? "zindua" : "yellikasms",
+    }, 200);
   } catch (err) {
     return json({ error: String(err) }, 500);
   }
