@@ -5701,7 +5701,7 @@ export type Database = {
           provider: string
           provider_log_id: string | null
           provider_response: Json | null
-          sender_id: string
+          sender_id: string | null
           statut: string
           template_slug: string | null
         }
@@ -5719,7 +5719,7 @@ export type Database = {
           provider?: string
           provider_log_id?: string | null
           provider_response?: Json | null
-          sender_id?: string
+          sender_id?: string | null
           statut?: string
           template_slug?: string | null
         }
@@ -5737,7 +5737,7 @@ export type Database = {
           provider?: string
           provider_log_id?: string | null
           provider_response?: Json | null
-          sender_id?: string
+          sender_id?: string | null
           statut?: string
           template_slug?: string | null
         }
