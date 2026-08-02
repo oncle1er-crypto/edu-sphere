@@ -17,6 +17,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
+
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
@@ -54,6 +56,9 @@ export default defineConfig(({ mode }) => ({
         // Ne pas servir le fallback pour OAuth, Supabase, API, edge functions, MFA, auth
         navigateFallbackDenylist: [
           /^\/~oauth/,
+          /^\/\.lovable\//,
+          /^\/\.well-known\//,
+
           /^\/api\//,
           /^\/auth\//,
           /^\/auth$/,
