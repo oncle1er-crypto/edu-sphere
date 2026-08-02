@@ -5694,11 +5694,16 @@ export type Database = {
           destinataire: string
           ecole_id: string
           envoye_par: string | null
+          error_code: string | null
           id: string
+          idempotency_key: string | null
           message: string
+          provider: string
+          provider_log_id: string | null
           provider_response: Json | null
           sender_id: string
           statut: string
+          template_slug: string | null
         }
         Insert: {
           canal?: string
@@ -5707,11 +5712,16 @@ export type Database = {
           destinataire: string
           ecole_id: string
           envoye_par?: string | null
+          error_code?: string | null
           id?: string
+          idempotency_key?: string | null
           message: string
+          provider?: string
+          provider_log_id?: string | null
           provider_response?: Json | null
           sender_id?: string
           statut?: string
+          template_slug?: string | null
         }
         Update: {
           canal?: string
@@ -5720,11 +5730,16 @@ export type Database = {
           destinataire?: string
           ecole_id?: string
           envoye_par?: string | null
+          error_code?: string | null
           id?: string
+          idempotency_key?: string | null
           message?: string
+          provider?: string
+          provider_log_id?: string | null
           provider_response?: Json | null
           sender_id?: string
           statut?: string
+          template_slug?: string | null
         }
         Relationships: [
           {
@@ -7118,6 +7133,65 @@ export type Database = {
         }
         Relationships: []
       }
+      zindua_config: {
+        Row: {
+          api_base_url: string
+          auto_send_enabled: boolean
+          created_at: string
+          ecole_id: string
+          email_enabled: boolean
+          enabled: boolean
+          id: string
+          intervalle_min_secondes: number
+          quota_mensuel: number
+          template_otp: string
+          test_destinataires: string[]
+          test_mode: boolean
+          updated_at: string
+          whatsapp_enabled: boolean
+        }
+        Insert: {
+          api_base_url?: string
+          auto_send_enabled?: boolean
+          created_at?: string
+          ecole_id: string
+          email_enabled?: boolean
+          enabled?: boolean
+          id?: string
+          intervalle_min_secondes?: number
+          quota_mensuel?: number
+          template_otp?: string
+          test_destinataires?: string[]
+          test_mode?: boolean
+          updated_at?: string
+          whatsapp_enabled?: boolean
+        }
+        Update: {
+          api_base_url?: string
+          auto_send_enabled?: boolean
+          created_at?: string
+          ecole_id?: string
+          email_enabled?: boolean
+          enabled?: boolean
+          id?: string
+          intervalle_min_secondes?: number
+          quota_mensuel?: number
+          template_otp?: string
+          test_destinataires?: string[]
+          test_mode?: boolean
+          updated_at?: string
+          whatsapp_enabled?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "zindua_config_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       v_budget_realise: {
@@ -7715,6 +7789,10 @@ export type Database = {
       verrouiller_bulletin: {
         Args: { _id: string; _pdf_hash: string; _pdf_path: string }
         Returns: undefined
+      }
+      zindua_verifier_envoi: {
+        Args: { _destinataire: string; _ecole_id: string }
+        Returns: Json
       }
     }
     Enums: {
