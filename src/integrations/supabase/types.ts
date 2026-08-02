@@ -768,48 +768,86 @@ export type Database = {
       }
       bulletins_paie: {
         Row: {
+          anciennete_annees: number
           annee: number
+          base_cnps: number
+          brut_imposable: number
+          cout_employeur: number
           created_at: string
           date_paiement: string | null
+          depense_id: string | null
           ecole_id: string
           enseignant_id: string
           id: string
           mois: number
           net_a_payer: number
+          notes: string | null
           retenues: number
           salaire_brut: number
           statut: string
+          total_charges_patronales: number
+          total_gains: number
           updated_at: string
+          valide_le: string | null
+          valide_par: string | null
         }
         Insert: {
+          anciennete_annees?: number
           annee: number
+          base_cnps?: number
+          brut_imposable?: number
+          cout_employeur?: number
           created_at?: string
           date_paiement?: string | null
+          depense_id?: string | null
           ecole_id: string
           enseignant_id: string
           id?: string
           mois: number
           net_a_payer?: number
+          notes?: string | null
           retenues?: number
           salaire_brut?: number
           statut?: string
+          total_charges_patronales?: number
+          total_gains?: number
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
         Update: {
+          anciennete_annees?: number
           annee?: number
+          base_cnps?: number
+          brut_imposable?: number
+          cout_employeur?: number
           created_at?: string
           date_paiement?: string | null
+          depense_id?: string | null
           ecole_id?: string
           enseignant_id?: string
           id?: string
           mois?: number
           net_a_payer?: number
+          notes?: string | null
           retenues?: number
           salaire_brut?: number
           statut?: string
+          total_charges_patronales?: number
+          total_gains?: number
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bulletins_paie_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cantine_incidents: {
         Row: {
@@ -2475,20 +2513,33 @@ export type Database = {
       }
       enseignants: {
         Row: {
+          banque: string | null
           created_at: string
           cycle_id: string | null
           date_embauche: string | null
+          departement: string
           diplome: string | null
           ecole_id: string
           email: string | null
+          fonction: string | null
           id: string
           invitation_accepted_at: string | null
           invitation_sent_at: string | null
           matricule: string | null
+          nationalite: string | null
           nom: string
+          numero_cmu: string | null
+          numero_cnps: string | null
+          parts_fiscales: number
+          personne_a_prevenir: string | null
           photo_url: string | null
+          poste: string | null
           prenom: string
+          rib: string | null
+          salaire_brut_base: number
+          service: string | null
           sexe: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale: string | null
           specialite: string | null
           statut: string
           telephone: string | null
@@ -2497,20 +2548,33 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          banque?: string | null
           created_at?: string
           cycle_id?: string | null
           date_embauche?: string | null
+          departement?: string
           diplome?: string | null
           ecole_id: string
           email?: string | null
+          fonction?: string | null
           id?: string
           invitation_accepted_at?: string | null
           invitation_sent_at?: string | null
           matricule?: string | null
+          nationalite?: string | null
           nom: string
+          numero_cmu?: string | null
+          numero_cnps?: string | null
+          parts_fiscales?: number
+          personne_a_prevenir?: string | null
           photo_url?: string | null
+          poste?: string | null
           prenom: string
+          rib?: string | null
+          salaire_brut_base?: number
+          service?: string | null
           sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale?: string | null
           specialite?: string | null
           statut?: string
           telephone?: string | null
@@ -2519,20 +2583,33 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          banque?: string | null
           created_at?: string
           cycle_id?: string | null
           date_embauche?: string | null
+          departement?: string
           diplome?: string | null
           ecole_id?: string
           email?: string | null
+          fonction?: string | null
           id?: string
           invitation_accepted_at?: string | null
           invitation_sent_at?: string | null
           matricule?: string | null
+          nationalite?: string | null
           nom?: string
+          numero_cmu?: string | null
+          numero_cnps?: string | null
+          parts_fiscales?: number
+          personne_a_prevenir?: string | null
           photo_url?: string | null
+          poste?: string | null
           prenom?: string
+          rib?: string | null
+          salaire_brut_base?: number
+          service?: string | null
           sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale?: string | null
           specialite?: string | null
           statut?: string
           telephone?: string | null
@@ -5351,6 +5428,221 @@ export type Database = {
         }
         Relationships: []
       }
+      rh_bareme_anciennete: {
+        Row: {
+          annees_max: number | null
+          annees_min: number
+          ecole_id: string
+          id: string
+          taux: number
+        }
+        Insert: {
+          annees_max?: number | null
+          annees_min: number
+          ecole_id: string
+          id?: string
+          taux: number
+        }
+        Update: {
+          annees_max?: number | null
+          annees_min?: number
+          ecole_id?: string
+          id?: string
+          taux?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bareme_anciennete_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_bareme_irpp: {
+        Row: {
+          ecole_id: string
+          id: string
+          ordre: number
+          taux: number
+          tranche_max: number | null
+          tranche_min: number
+        }
+        Insert: {
+          ecole_id: string
+          id?: string
+          ordre: number
+          taux: number
+          tranche_max?: number | null
+          tranche_min: number
+        }
+        Update: {
+          ecole_id?: string
+          id?: string
+          ordre?: number
+          taux?: number
+          tranche_max?: number | null
+          tranche_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bareme_irpp_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_bulletin_lignes: {
+        Row: {
+          base: number
+          bulletin_id: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant: number
+          ordre: number
+          rubrique_code: string
+          taux: number | null
+          type: string
+        }
+        Insert: {
+          base?: number
+          bulletin_id: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant?: number
+          ordre?: number
+          rubrique_code: string
+          taux?: number | null
+          type: string
+        }
+        Update: {
+          base?: number
+          bulletin_id?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          ordre?: number
+          rubrique_code?: string
+          taux?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bulletin_lignes_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "bulletins_paie"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_bulletin_lignes_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_parametres: {
+        Row: {
+          cle: string
+          ecole_id: string
+          groupe: string
+          id: string
+          libelle: string
+          ordre: number
+          unite: string
+          updated_at: string
+          valeur: number
+        }
+        Insert: {
+          cle: string
+          ecole_id: string
+          groupe: string
+          id?: string
+          libelle: string
+          ordre?: number
+          unite?: string
+          updated_at?: string
+          valeur?: number
+        }
+        Update: {
+          cle?: string
+          ecole_id?: string
+          groupe?: string
+          id?: string
+          libelle?: string
+          ordre?: number
+          unite?: string
+          updated_at?: string
+          valeur?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_parametres_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_rubriques: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          ecole_id: string
+          id: string
+          imposable: boolean
+          libelle: string
+          ordre: number
+          soumis_cnps: boolean
+          systeme: boolean
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          ecole_id: string
+          id?: string
+          imposable?: boolean
+          libelle: string
+          ordre?: number
+          soumis_cnps?: boolean
+          systeme?: boolean
+          type: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          imposable?: boolean
+          libelle?: string
+          ordre?: number
+          soumis_cnps?: boolean
+          systeme?: boolean
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_rubriques_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           can_create: boolean
@@ -7716,6 +8008,28 @@ export type Database = {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: undefined
       }
+      rh_apercu_paie: {
+        Args: { _annee: number; _ecole_id: string; _mois: number }
+        Returns: Json
+      }
+      rh_calculer_bulletin: {
+        Args: {
+          _annee: number
+          _ecole_id: string
+          _mois: number
+          _personnel_id: string
+        }
+        Returns: Json
+      }
+      rh_generer_brouillons: {
+        Args: { _annee: number; _ecole_id: string; _mois: number }
+        Returns: Json
+      }
+      rh_payer_bulletin: {
+        Args: { _bulletin_id: string; _date_paiement?: string }
+        Returns: Json
+      }
+      rh_valider_bulletin: { Args: { _bulletin_id: string }; Returns: Json }
       seed_role_permissions_for_ecole: {
         Args: { _ecole_id: string }
         Returns: undefined
