@@ -383,9 +383,9 @@ export default function StaffPayroll() {
                                 confirmTitle="Marquer ce bulletin comme payé ?"
                                 confirmDescription="Deux dépenses comptables seront automatiquement créées : le net versé et les charges patronales. Cette action est définitive."
                                 confirmLabel="Marquer payé"
-                                onConfirm={() =>
-                                  payerBulletin(b.id, new Date().toISOString().slice(0, 10))
-                                }
+                                onConfirm={async () => {
+                                  await payerBulletin(b.id, new Date().toISOString().slice(0, 10));
+                                }}
                               >
                                 <CheckCircle2 className="h-4 w-4" />Marquer payé
                               </ConfirmButton>
