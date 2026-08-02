@@ -228,7 +228,12 @@ export default function NotificationProviders() {
                   {used} / {quota} messages ce mois
                 </span>
               </div>
-              <Progress value={quotaPct} indicatorClassName={quotaColor} />
+              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${quotaColor}`}
+                  style={{ width: `${quotaPct}%` }}
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
