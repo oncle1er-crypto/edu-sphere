@@ -132,6 +132,7 @@ const ActivityLogs = lazy(() => import("@/pages/parametres/sections/ActivityLogs
 const SupportSettings = lazy(() => import("@/pages/parametres/sections/SupportSettings"));
 const AdvancedSettings = lazy(() => import("@/pages/parametres/sections/AdvancedSettings"));
 const SmsSettings = lazy(() => import("@/pages/parametres/sections/SmsSettings"));
+const NotificationProviders = lazy(() => import("@/pages/parametres/sections/NotificationProviders"));
 const ExamsLayout = lazy(() => import("@/pages/examens/ExamsLayout"));
 const ExamsDashboard = lazy(() => import("@/pages/examens/sections/ExamsDashboard"));
 const ExamsCalendar = lazy(() => import("@/pages/examens/sections/ExamsCalendar"));
