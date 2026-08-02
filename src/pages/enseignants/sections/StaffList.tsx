@@ -147,6 +147,14 @@ export default function StaffList() {
       specialite: form.specialite || null,
       type_contrat: form.type_contrat || "CDI",
       diplome: form.diplome || null,
+      poste: form.poste || null,
+      service: form.service || null,
+      fonction: form.fonction || null,
+      departement: form.departement || "enseignant",
+      nationalite: form.nationalite || null,
+      situation_matrimoniale: form.situation_matrimoniale || null,
+      personne_a_prevenir: form.personne_a_prevenir || null,
+      salaire_brut_base: form.salaire_brut_base ? Number(form.salaire_brut_base) : 0,
       ecole_id: "",
     });
     if (created && createAccount) {
@@ -160,7 +168,12 @@ export default function StaffList() {
         toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
       }
     }
-    setForm({ nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "" });
+    setForm({
+      nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "",
+      type_contrat: "CDI", diplome: "", poste: "", service: "", fonction: "",
+      departement: "enseignant", nationalite: "Ivoirienne", situation_matrimoniale: "",
+      personne_a_prevenir: "", salaire_brut_base: "",
+    });
     setOpen(false);
     setSaving(false);
   };
