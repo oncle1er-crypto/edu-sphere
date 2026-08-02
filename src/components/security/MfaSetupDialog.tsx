@@ -103,11 +103,13 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
     if (!/^\+?\d{8,15}$/.test(cleaned)) return toast.error("Numéro invalide (ex. +225 0707070707)");
     setLoading(true);
     try {
-      await sms.sendOtp({ phone: cleaned, ecole_id: ecoleId ?? undefined, purpose: "enroll" });
+      const res = await sms.sendOtp({ phone: cleaned, ecole_id: ecoleId ?? undefined, purpose: "enroll" });
       setOtpSent(true);
       setStep("verify");
       setResendIn(60);
-      toast.success("Code envoyé par SMS");
+      toast.success(
+        res?.canal === "whatsapp" ? "Code envoyé sur votre WhatsApp" : "Code envoyé par SMS"
+      );
     } catch (e: any) {
       toast.error(e.message ?? "Erreur envoi SMS");
     } finally { setLoading(false); }

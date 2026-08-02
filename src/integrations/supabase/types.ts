@@ -7275,6 +7275,29 @@ export type Database = {
           },
         ]
       }
+      v_notifications_fournisseurs: {
+        Row: {
+          canal: string | null
+          dernier_envoi: string | null
+          derniere_erreur: string | null
+          echecs: number | null
+          ecole_id: string | null
+          envoyes: number | null
+          mois_courant: number | null
+          mois_courant_decompte: number | null
+          provider: string | null
+          total: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_paiements_incoherents: {
         Row: {
           ecole_id: string | null
