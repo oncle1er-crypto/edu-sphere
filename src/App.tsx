@@ -133,6 +133,7 @@ const SupportSettings = lazy(() => import("@/pages/parametres/sections/SupportSe
 const AdvancedSettings = lazy(() => import("@/pages/parametres/sections/AdvancedSettings"));
 const SmsSettings = lazy(() => import("@/pages/parametres/sections/SmsSettings"));
 const NotificationProviders = lazy(() => import("@/pages/parametres/sections/NotificationProviders"));
+const RhPaieSettings = lazy(() => import("@/pages/parametres/sections/RhPaieSettings"));
 const ExamsLayout = lazy(() => import("@/pages/examens/ExamsLayout"));
 const ExamsDashboard = lazy(() => import("@/pages/examens/sections/ExamsDashboard"));
 const ExamsCalendar = lazy(() => import("@/pages/examens/sections/ExamsCalendar"));
@@ -559,6 +560,7 @@ const App = () => (
               <Route path="documents" element={<DocumentTemplates />} />
               <Route path="notifications" element={<NotificationSettings />} />
               <Route path="fournisseurs" element={<NotificationProviders />} />
+              <Route path="rh-paie" element={<RhPaieSettings />} />
               <Route path="sms" element={<SmsSettings />} />
               <Route path="apparence" element={<AppearanceSettings />} />
               <Route path="localisation" element={<LocalizationSettings />} />
