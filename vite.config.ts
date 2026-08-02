@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+import { mcpPlugin } from "@lovable.dev/mcp-js/stacks/supabase/vite";
+
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -15,6 +17,8 @@ export default defineConfig(({ mode }) => ({
   },
   plugins: [
     react(),
+    mcpPlugin(),
+
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
@@ -52,6 +56,9 @@ export default defineConfig(({ mode }) => ({
         // Ne pas servir le fallback pour OAuth, Supabase, API, edge functions, MFA, auth
         navigateFallbackDenylist: [
           /^\/~oauth/,
+          /^\/\.lovable\//,
+          /^\/\.well-known\//,
+
           /^\/api\//,
           /^\/auth\//,
           /^\/auth$/,

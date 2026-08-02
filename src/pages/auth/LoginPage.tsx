@@ -46,7 +46,10 @@ export default function LoginPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email: resolved.email, password });
       if (error) throw error;
-      navigate("/");
+      const raw = new URLSearchParams(window.location.search).get("next");
+      const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+      navigate(next);
+
     } catch (err: any) {
       const msg = String(err?.message || "");
       const isRateLimit = /rate limit|too many/i.test(msg);
