@@ -147,7 +147,7 @@ Deno.serve(async (req) => {
           destinataire: e164,
           message: "OTP MFA (contenu masqué)",
           sender_id: null,
-          statut: result.ok ? "envoye" : "echec",
+          statut: result.ok ? "envoye" : "echoue",
           provider: "zindua",
           canal: "whatsapp",
           template_slug: templateSlug,
@@ -228,10 +228,13 @@ Deno.serve(async (req) => {
 
       if (providerFailed) {
         console.error("YellikaSMS failure:", providerMsg ?? resp.status);
+        const senderIssue = /exp.diteur/i.test(providerMsg ?? "");
         return json({
-          error: providerMsg
-            ? `Échec d'envoi du SMS : ${providerMsg}`
-            : "Échec d'envoi du SMS.",
+          error: senderIssue
+            ? `Échec d'envoi du SMS : l'ID expéditeur « ${cfg.sender_id} » n'est pas autorisé par YellikaSMS. Corrigez-le dans Paramètres → Configuration SMS avec un expéditeur validé par le fournisseur.`
+            : providerMsg
+              ? `Échec d'envoi du SMS : ${providerMsg}`
+              : "Échec d'envoi du SMS.",
         }, 502);
       }
     }
