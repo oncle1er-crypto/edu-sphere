@@ -282,8 +282,30 @@ export default function StaffList() {
               <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nouvel enseignant</DialogTitle></DialogHeader>
-              <div className="space-y-3">
+              <DialogHeader><DialogTitle>Nouveau membre du personnel</DialogTitle></DialogHeader>
+              <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
+                <FieldRow label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire" /></FieldRow>
+                <FieldRow label="Service"><Input value={form.service} onChange={(e) => set("service", e.target.value)} /></FieldRow>
+                <FieldRow label="Fonction"><Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} /></FieldRow>
+                <FieldRow label="Département">
+                  <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {DEPARTEMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FieldRow>
+                <FieldRow label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FieldRow>
+                <FieldRow label="Situation matrimoniale">
+                  <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FieldRow>
+                <FieldRow label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FieldRow>
+                <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FieldRow>
                 <FieldRow label="Nom *"><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} /></FieldRow>
                 <FieldRow label="Prénom *"><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FieldRow>
                 <FieldRow label="Sexe">
