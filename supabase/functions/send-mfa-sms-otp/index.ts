@@ -216,16 +216,23 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ recipient: phone, sender_id: cfg.sender_id, message }),
       });
-      const provider = await resp.json().catch(() => ({}));
+      const provider = await resp.json().catch(() => ({})) as Record<string, unknown>;
+      const providerFailed = !resp.ok || provider?.status === "error";
+      const providerMsg = typeof provider?.message === "string" ? provider.message : null;
 
       await service.from("sms_logs").insert({
         ecole_id, destinataire: phone, message: "[MFA OTP masqué]",
-        sender_id: cfg.sender_id, statut: resp.ok ? "envoye" : "echoue",
+        sender_id: cfg.sender_id, statut: providerFailed ? "echoue" : "envoye",
         provider_response: provider, cout: cfg.cout_unitaire ?? 0, envoye_par: user.id,
       });
 
-      if (!resp.ok) {
-        return json({ error: "Échec d'envoi du SMS." }, 502);
+      if (providerFailed) {
+        console.error("YellikaSMS failure:", providerMsg ?? resp.status);
+        return json({
+          error: providerMsg
+            ? `Échec d'envoi du SMS : ${providerMsg}`
+            : "Échec d'envoi du SMS.",
+        }, 502);
       }
     }
 
