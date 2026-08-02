@@ -298,6 +298,8 @@ const App = () => (
           <Routes>
             <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
             <Route path="/connexion" element={<LoginPage />} />
+            <Route path="/.lovable/oauth/consent" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OAuthConsentPage /></Suspense>} />
+
             <Route path="/premier-mot-de-passe" element={<Suspense fallback={<AppLoader label="Chargement…" />}><FirstPasswordPage /></Suspense>} />
 
             <Route path="/invitation" element={<AcceptInvitationPage />} />
