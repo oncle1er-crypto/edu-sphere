@@ -18,6 +18,10 @@ import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/component
 import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import PersonnelDetail from "@/pages/enseignants/components/PersonnelDetail";
+
+const DEPARTEMENTS = ["administration", "enseignant", "technique", "entretien", "direction"];
+const SITUATIONS = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"];
 
 const IMPORT_COLUMNS: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -57,6 +61,9 @@ export default function StaffList() {
   const [form, setForm] = useState({
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
+    poste: "", service: "", fonction: "", departement: "enseignant",
+    nationalite: "Ivoirienne", situation_matrimoniale: "", personne_a_prevenir: "",
+    salaire_brut_base: "",
   });
   const [createAccount, setCreateAccount] = useState(true);
   const [invitingId, setInvitingId] = useState<string | null>(null);
@@ -64,6 +71,9 @@ export default function StaffList() {
   const [editForm, setEditForm] = useState({
     nom: "", prenom: "", sexe: "" as "" | "F" | "M",
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "", statut: "actif",
+    poste: "", service: "", fonction: "", departement: "enseignant",
+    nationalite: "", situation_matrimoniale: "", personne_a_prevenir: "",
+    salaire_brut_base: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -75,6 +85,11 @@ export default function StaffList() {
       email: s.email ?? "", telephone: s.telephone ?? "",
       specialite: s.specialite ?? "", type_contrat: s.type_contrat ?? "CDI",
       diplome: s.diplome ?? "", statut: s.statut ?? "actif",
+      poste: s.poste ?? "", service: s.service ?? "", fonction: s.fonction ?? "",
+      departement: s.departement ?? "enseignant",
+      nationalite: s.nationalite ?? "", situation_matrimoniale: s.situation_matrimoniale ?? "",
+      personne_a_prevenir: s.personne_a_prevenir ?? "",
+      salaire_brut_base: s.salaire_brut_base ? String(s.salaire_brut_base) : "",
     });
   };
 
@@ -92,6 +107,14 @@ export default function StaffList() {
       type_contrat: editForm.type_contrat || "CDI",
       diplome: editForm.diplome || null,
       statut: editForm.statut as any,
+      poste: editForm.poste || null,
+      service: editForm.service || null,
+      fonction: editForm.fonction || null,
+      departement: editForm.departement || "enseignant",
+      nationalite: editForm.nationalite || null,
+      situation_matrimoniale: editForm.situation_matrimoniale || null,
+      personne_a_prevenir: editForm.personne_a_prevenir || null,
+      salaire_brut_base: editForm.salaire_brut_base ? Number(editForm.salaire_brut_base) : 0,
     });
     setSavingEdit(false);
     if (ok) setEditEnseignant(null);
