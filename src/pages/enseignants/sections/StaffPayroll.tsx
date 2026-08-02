@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -345,9 +345,8 @@ export default function StaffPayroll() {
                   const badge = STATUT_BADGE[st];
                   const isOpen = expanded === b.id;
                   return (
-                    <>
+                    <Fragment key={b.id}>
                       <TableRow
-                        key={b.id}
                         className="cursor-pointer"
                         onClick={() => toggleRow(b.id)}
                       >
@@ -407,11 +406,11 @@ export default function StaffPayroll() {
                         </TableCell>
                       </TableRow>
                       {isOpen && (
-                        <TableRow key={`${b.id}-detail`}>
+                        <TableRow>
                           <TableCell colSpan={9} className="p-2">{renderDetail(b.id)}</TableCell>
                         </TableRow>
                       )}
-                    </>
+                    </Fragment>
                   );
                 })}
                 {bulletins.length === 0 && (
