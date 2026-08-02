@@ -231,6 +231,16 @@ export default function StaffList() {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
+  if (viewEnseignant) {
+    return (
+      <PersonnelDetail
+        personnel={viewEnseignant as any}
+        onBack={() => setViewEnseignant(null)}
+        onUpdated={fetchEnseignants}
+      />
+    );
+  }
+
   return (
     <SettingsSection
       icon={<Users className="h-5 w-5" />}
