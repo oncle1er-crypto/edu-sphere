@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { CardData, CardType } from "@/pages/cartes/components/SchoolCard";
+import { sortByEleve } from "@/lib/sortEleves";
 
 export type CardStatut = "active" | "perdue" | "revoquee" | "expiree";
 
@@ -126,7 +127,12 @@ export function CardsProvider({ children }: { children: ReactNode }) {
       toast.error("Erreur chargement cartes");
       setCards([]);
     } else {
-      setCards((data ?? []).map((r: any) => rowToCard(r, info.nom, info.ville)));
+      setCards(
+        sortByEleve((data ?? []) as any[], (r: any) => ({
+          nom: r.eleves?.nom ?? r.enseignants?.nom,
+          prenom: r.eleves?.prenom ?? r.enseignants?.prenom,
+        })).map((r: any) => rowToCard(r, info.nom, info.ville))
+      );
     }
     setLoading(false);
   }, [ecoleId]);

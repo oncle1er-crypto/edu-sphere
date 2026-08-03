@@ -7,6 +7,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel } from "@/components/reports/ReportFilters";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import { compareEleves } from "@/lib/sortEleves";
 
 export default function AttendanceReports() {
   const { ecoleId } = useEcoleId();
@@ -49,7 +50,13 @@ export default function AttendanceReports() {
       columns: ["Date", "Élève", "Matricule", "Classe", "Statut"],
       getRows: async () => {
         const rows = await fetchPresences();
-        return rows.filter((r) => r.statut !== "present").map((r: any) => [
+        return rows
+          .filter((r) => r.statut !== "present")
+          .sort((a: any, b: any) =>
+            String(a.date_presence).localeCompare(String(b.date_presence)) ||
+            compareEleves({ nom: a.eleves?.nom, prenom: a.eleves?.prenom }, { nom: b.eleves?.nom, prenom: b.eleves?.prenom })
+          )
+          .map((r: any) => [
           r.date_presence,
           `${r.eleves?.nom ?? ""} ${r.eleves?.prenom ?? ""}`.trim(),
           r.eleves?.matricule ?? "",
