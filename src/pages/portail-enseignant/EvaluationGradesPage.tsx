@@ -12,6 +12,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { ArrowLeft, Loader2, Save, ClipboardList } from "lucide-react";
+import { sortEleves } from "@/lib/sortEleves";
+
 
 interface EvalInfo {
   id: string;

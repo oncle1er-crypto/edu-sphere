@@ -14,6 +14,8 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueReport } from "@/lib/reportQueue";
 import type { ReportType } from "@/lib/reports/registry";
+import { sortEleves } from "@/lib/sortEleves";
+
 
 type ReportKey = ReportType;
 
