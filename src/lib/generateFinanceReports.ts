@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { compareEleves } from "@/lib/sortEleves";
 
 // IMPORTANT: jsPDF's built-in helvetica renders U+202F (narrow no-break space)
 // — emitted by Intl fr-FR locale — as "/". We replace it with a regular space.
@@ -525,7 +526,7 @@ export async function generateRemisesAccordees(
   });
 
   const sorted = [...data.lignes].sort(
-    (a, b) => a.classe.localeCompare(b.classe) || a.nom.localeCompare(b.nom),
+    (a, b) => a.classe.localeCompare(b.classe) || compareEleves(a, b),
   );
   const total = sorted.reduce((s, l) => s + l.montant, 0);
 

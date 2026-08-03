@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
+import { sortEleves } from "@/lib/sortEleves";
 
 interface QuickEval {
   id: string;
@@ -91,9 +92,7 @@ export default function QuickGradeEntry() {
     }
   }, [selectedEval, fetchNotesByEvaluation]);
 
-  const classeEleves = eleves
-    .filter((e) => e.classe_id === selectedClasse)
-    .sort((a, b) => a.nom.localeCompare(b.nom));
+  const classeEleves = sortEleves(eleves.filter((e) => e.classe_id === selectedClasse));
 
   const currentEleve = classeEleves[currentIndex];
   const evalInfo = classEvals.find(e => e.id === selectedEval);

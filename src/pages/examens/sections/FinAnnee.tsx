@@ -115,7 +115,7 @@ export default function FinAnnee() {
       const merged = new Map<string, Eleve>();
       ((currentRes.data ?? []) as Eleve[]).forEach((e) => merged.set(e.id, e));
       decidedEleves.forEach((e) => merged.set(e.id, e));
-      const list = Array.from(merged.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+      const list = sortEleves(Array.from(merged.values()));
       setEleves(list);
       setLoadingData(false);
     })();

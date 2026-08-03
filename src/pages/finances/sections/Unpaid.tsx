@@ -22,6 +22,7 @@ import { StatusDialog } from "../components/StatusDialog";
 import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-store";
 import { toast } from "sonner";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { compareEleves } from "@/lib/sortEleves";
 
 const CYCLES: (Cycle | "all")[] = ["all", "Maternelle", "Primaire", "Collège"];
 
@@ -111,7 +112,7 @@ export default function Unpaid() {
         case "retard": return (a.joursRetard - b.joursRetard) * dir;
         case "resteDu": return (a.resteDu - b.resteDu) * dir;
         case "derniereTranchePayee": return (derniereTranchePayee(a) - derniereTranchePayee(b)) * dir;
-        case "nom": return a.nom.localeCompare(b.nom) * dir;
+        case "nom": return compareEleves(a, b) * dir;
       }
     });
     return list;
