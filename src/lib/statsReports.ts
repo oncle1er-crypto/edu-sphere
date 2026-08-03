@@ -3,6 +3,7 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { sortByEleve } from "@/lib/sortEleves";
 
 const fcfa = (n: number) => Math.round(n).toLocaleString("fr-FR");
 const today = () => new Date().toLocaleDateString("fr-FR");
@@ -171,7 +172,7 @@ export async function generateRapportFinancierXlsx(ecoleId: string) {
     .select("montant, paye, statut, eleves(nom, prenoms, matricule, classes(nom))")
     .eq("ecole_id", ecoleId);
 
-  const rows = (tranches ?? []).map((t: any) => ({
+  const rows = sortByEleve((tranches ?? []) as any[], (t: any) => ({ nom: t.eleves?.nom, prenom: t.eleves?.prenoms })).map((t: any) => ({
     Matricule: t.eleves?.matricule ?? "",
     Élève: `${t.eleves?.nom ?? ""} ${t.eleves?.prenoms ?? ""}`.trim(),
     Classe: t.eleves?.classes?.nom ?? "",
