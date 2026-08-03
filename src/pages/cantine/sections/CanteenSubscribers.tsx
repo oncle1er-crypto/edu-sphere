@@ -21,6 +21,7 @@ import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/Invoic
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
+import { sortByEleve } from "@/lib/sortEleves";
 
 interface Abonnement {
   id: string;
@@ -72,7 +73,7 @@ export default function CanteenSubscribers() {
       .eq("ecole_id", ecoleId)
       .order("created_at", { ascending: false });
 
-    const list: Abonnement[] = ((data ?? []) as any[]).map((a) => ({
+    const list: Abonnement[] = sortByEleve((data ?? []) as any[], (a) => ({ nom: a.eleves?.nom, prenom: a.eleves?.prenom })).map((a) => ({
       id: a.id,
       eleve_id: a.eleve_id,
       eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",

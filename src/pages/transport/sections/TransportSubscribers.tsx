@@ -21,6 +21,7 @@ import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/Invoic
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
+import { sortByEleve } from "@/lib/sortEleves";
 
 interface Row {
   id: string;
@@ -74,7 +75,7 @@ export default function TransportSubscribers() {
         .eq("ecole_id", ecoleId).order("created_at", { ascending: false }),
       supabase.from("lignes_transport").select("id, nom").eq("ecole_id", ecoleId).order("nom"),
     ]);
-    const list: Row[] = ((ab ?? []) as any[]).map((a) => ({
+    const list: Row[] = sortByEleve((ab ?? []) as any[], (a) => ({ nom: a.eleves?.nom, prenom: a.eleves?.prenom })).map((a) => ({
       id: a.id, eleve_id: a.eleve_id, statut: a.statut,
       eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
       classe_nom: a.eleves?.classes?.nom ?? "—",

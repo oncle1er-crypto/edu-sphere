@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
+import { sortEleves } from "@/lib/sortEleves";
 
 export type VacClasse = {
   id: string; ecole_id: string; annee_id: string | null;
@@ -53,7 +54,7 @@ export function useVacancesData() {
       supabase.from("vacances_honoraires" as any).select("*").eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }),
     ]);
     setClasses((c.data ?? []) as any);
-    setEleves((e.data ?? []) as any);
+    setEleves(sortEleves((e.data ?? []) as any[]) as any);
     setPaiements((p.data ?? []) as any);
     setEnseignants((en.data ?? []) as any);
     setHonoraires((h.data ?? []) as any);
