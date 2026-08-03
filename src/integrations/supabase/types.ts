@@ -8025,6 +8025,10 @@ export type Database = {
         Args: { _annee: number; _ecole_id: string; _mois: number }
         Returns: Json
       }
+      rh_masse_salariale_prevue: {
+        Args: { _annee_id: string; _ecole_id: string }
+        Returns: Json
+      }
       rh_payer_bulletin: {
         Args: { _bulletin_id: string; _date_paiement?: string }
         Returns: Json
