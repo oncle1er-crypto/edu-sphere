@@ -28,6 +28,7 @@ import {
   appreciationMatiere, appreciationGenerale, mentionPrincipale, decisionAuto, categorieBulletin,
 } from "@/lib/bulletinHelpers";
 import { useBulletinScolariteStatus } from "@/hooks/useBulletinScolariteStatus";
+import { compareEleves, sortEleves } from "@/lib/sortEleves";
 import { BulletinSendDialog } from "@/components/bulletins/BulletinSendDialog";
 import { BulletinOverrideDialog } from "@/components/bulletins/BulletinOverrideDialog";
 
@@ -199,7 +200,7 @@ export default function Bulletins() {
       }
     }
 
-    const list: BulletinRow[] = (elevesClasse ?? []).map((e: any) => {
+    const list: BulletinRow[] = sortEleves(elevesClasse ?? []).map((e: any) => {
       const a = map.get(e.id);
       const moy = a && a.coefSum > 0 ? a.sum / a.coefSum : 0;
       const w: string[] = [];
@@ -215,7 +216,7 @@ export default function Bulletins() {
       };
     });
 
-    list.sort((a, b) => b.moyenne - a.moyenne);
+    list.sort((a, b) => b.moyenne - a.moyenne || compareEleves(a, b));
     list.forEach((r, i) => { r.rang = i + 1; });
     setRows(list);
     setLoading(false);

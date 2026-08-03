@@ -17,6 +17,8 @@ import {
 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HelpBanner, StatusLegend, STATUTS_DECISION_FIN_ANNEE } from "@/components/help";
+import { sortEleves } from "@/lib/sortEleves";
+
 
 interface Eleve { id: string; nom: string; prenom: string; matricule: string; classe_id: string; }
 interface Classe { id: string; nom: string; annee_id: string; }
@@ -113,7 +115,7 @@ export default function FinAnnee() {
       const merged = new Map<string, Eleve>();
       ((currentRes.data ?? []) as Eleve[]).forEach((e) => merged.set(e.id, e));
       decidedEleves.forEach((e) => merged.set(e.id, e));
-      const list = Array.from(merged.values()).sort((a, b) => a.nom.localeCompare(b.nom));
+      const list = sortEleves(Array.from(merged.values()));
       setEleves(list);
       setLoadingData(false);
     })();

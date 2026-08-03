@@ -36,6 +36,7 @@ import {
   type RemisesData,
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
+import { compareEleves } from "@/lib/sortEleves";
 
 const ECOLE_NOM = "Complexe Scolaire La Providence de Don Orione";
 
@@ -421,7 +422,7 @@ export default function Reports() {
               <Table>
                 <TableHeader><TableRow><TableHead>Élève</TableHead><TableHead>Classe</TableHead><TableHead>Parent</TableHead><TableHead>Téléphone</TableHead><TableHead className="text-right">Remise</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {d.lignes.sort((a, b) => a.classe.localeCompare(b.classe)).map((l, i) => (
+                  {d.lignes.slice().sort((a, b) => a.classe.localeCompare(b.classe) || compareEleves(a, b)).map((l, i) => (
                     <TableRow key={i}>
                       <TableCell>{l.nom} {l.prenom}</TableCell>
                       <TableCell>{l.classe}</TableCell>
@@ -543,7 +544,7 @@ export default function Reports() {
                   const suffix = filters.classe && filters.classe !== ALL_CLASSES ? ` — ${filters.classe}` : "";
                   const sousTitre = `Période : ${periode}${suffix ? ` · Classe : ${filters.classe}` : ""}`;
                   const groupByClasse = <T extends { classe: string }>(arr: T[]) =>
-                    arr.slice().sort((a, b) => a.classe.localeCompare(b.classe) || 0);
+                    arr.slice().sort((a, b) => a.classe.localeCompare(b.classe) || compareEleves(a as any, b as any));
 
                   const listes: Array<{
                     key: string;

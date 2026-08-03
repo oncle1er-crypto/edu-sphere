@@ -12,6 +12,7 @@ import type {
   EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique,
 } from "./scolarite-data";
 import { ELEVES_SCOLARITE, fcfa, modeMeta } from "./scolarite-data";
+import { sortEleves } from "@/lib/sortEleves";
 
 export { fcfa };
 
@@ -250,7 +251,7 @@ export function useFinanceData(scopedAnneeId?: string) {
     }
 
 
-    setData(result);
+    setData(sortEleves(result));
     setUsingMock(false);
     hasLoadedRef.current = true;
     setLoading(false);

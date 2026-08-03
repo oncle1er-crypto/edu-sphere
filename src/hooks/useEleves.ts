@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
+import { sortEleves } from "@/lib/sortEleves";
+
 
 import type { Database } from "@/integrations/supabase/types";
 
@@ -43,12 +45,15 @@ export function useEleves(anneeId?: string) {
       toast.error("Erreur chargement élèves");
     } else {
       setEleves(
-        (data ?? []).map((e: any) => ({
-          ...e,
-          classe_nom: e.classes?.nom ?? null,
-          cycle_nom: e.classes?.cycles?.nom ?? null,
-        }))
+        sortEleves(
+          (data ?? []).map((e: any) => ({
+            ...e,
+            classe_nom: e.classes?.nom ?? null,
+            cycle_nom: e.classes?.cycles?.nom ?? null,
+          }))
+        )
       );
+
     }
     setLoading(false);
   }, [ecoleId, anneeId]);

@@ -14,6 +14,8 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { supabase } from "@/integrations/supabase/client";
 import { enqueueReport } from "@/lib/reportQueue";
 import type { ReportType } from "@/lib/reports/registry";
+import { sortEleves } from "@/lib/sortEleves";
+
 
 type ReportKey = ReportType;
 
@@ -49,7 +51,8 @@ export default function Reports() {
         .eq("ecole_id", ecoleId)
         .eq("annee_id", anneeId)
         .order("nom");
-      setEleves(data ?? []);
+      setEleves(sortEleves(data ?? []));
+
     }
   };
 
