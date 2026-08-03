@@ -8,6 +8,7 @@ import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel } from "@/components/reports/ReportFilters";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import { sortByEleve } from "@/lib/sortEleves";
 
 export default function CanteenReports() {
   const { ecoleId } = useEcoleId();
@@ -37,7 +38,7 @@ export default function CanteenReports() {
       .gte("date_emission", dateFrom);
     if (dateTo) q = q.lte("date_emission", dateTo);
     const { data } = await q;
-    let rows = ((data ?? []) as any[]).filter((f) => keepClasse(f.eleves?.classe_id));
+    let rows = sortByEleve(((data ?? []) as any[]).filter((f) => keepClasse(f.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom }));
     if (classeFilter) rows = rows.filter((f) => f.eleves?.classes?.nom === classeFilter);
     return rows;
   };
@@ -50,7 +51,7 @@ export default function CanteenReports() {
         const { data } = await supabase.from("abonnements_cantine")
           .select("regime, statut, montant_mensuel, eleves(nom, prenom, classe_id, classes(nom))")
           .eq("ecole_id", ecoleId!);
-        let rows = ((data ?? []) as any[]).filter((r) => keepClasse(r.eleves?.classe_id)).map((r) => ({
+        let rows = sortByEleve(((data ?? []) as any[]).filter((r) => keepClasse(r.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom })).map((r) => ({
           eleve: `${r.eleves?.nom ?? ""} ${r.eleves?.prenom ?? ""}`.trim(),
           classe: r.eleves?.classes?.nom ?? "",
           regime: r.regime, statut: r.statut, montant: r.montant_mensuel,
