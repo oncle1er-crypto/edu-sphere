@@ -49,7 +49,8 @@ export default function Reports() {
         .eq("ecole_id", ecoleId)
         .eq("annee_id", anneeId)
         .order("nom");
-      setEleves(data ?? []);
+      setEleves(sortEleves(data ?? []));
+
     }
   };
 
