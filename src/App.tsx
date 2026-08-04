@@ -257,7 +257,7 @@ const VieScolaireCertificats = lazy(() => import("@/pages/vie-scolaire/sections/
 const VieScolairePresences = lazy(() => import("@/pages/vie-scolaire/sections/VieScolairePresences"));
 const VieScolaireDiscipline = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireDiscipline"));
 const VieScolaireInfirmerie = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireInfirmerie"));
-const OfflinePage = lazy(() => import("@/pages/Offline"));
+
 const VacancesLayout = lazy(() => import("@/pages/cours-vacances/VacancesLayout"));
 const VacancesDashboard = lazy(() => import("@/pages/cours-vacances/sections/VacancesDashboard"));
 const VacancesInscriptions = lazy(() => import("@/pages/cours-vacances/sections/VacancesInscriptions"));
