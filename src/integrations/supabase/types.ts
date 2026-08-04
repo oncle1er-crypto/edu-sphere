@@ -5549,6 +5549,85 @@ export type Database = {
           },
         ]
       }
+      rh_criteres_evaluation: {
+        Row: {
+          active: boolean
+          code: string
+          ecole_id: string
+          id: string
+          libelle: string
+          note_defaut: number
+          note_max: number
+          ordre: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          note_defaut?: number
+          note_max?: number
+          ordre?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          note_defaut?: number
+          note_max?: number
+          ordre?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_criteres_evaluation_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_departements: {
+        Row: {
+          active: boolean
+          code: string
+          ecole_id: string
+          id: string
+          libelle: string
+          ordre: number
+          prefixe_matricule: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          ordre?: number
+          prefixe_matricule?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          ordre?: number
+          prefixe_matricule?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_departements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rh_parametres: {
         Row: {
           cle: string
@@ -5560,6 +5639,7 @@ export type Database = {
           unite: string
           updated_at: string
           valeur: number
+          valeur_texte: string | null
         }
         Insert: {
           cle: string
@@ -5571,6 +5651,7 @@ export type Database = {
           unite?: string
           updated_at?: string
           valeur?: number
+          valeur_texte?: string | null
         }
         Update: {
           cle?: string
@@ -5582,6 +5663,7 @@ export type Database = {
           unite?: string
           updated_at?: string
           valeur?: number
+          valeur_texte?: string | null
         }
         Relationships: [
           {
@@ -7535,6 +7617,18 @@ export type Database = {
           },
         ]
       }
+      v_controle_financier: {
+        Row: {
+          anomalie: string | null
+          cible_id: string | null
+          circuit: string | null
+          detail: string | null
+          ecole_id: string | null
+          eleve_id: string | null
+          gravite: string | null
+        }
+        Relationships: []
+      }
       v_export_sigfne_eleves: {
         Row: {
           annee_id: string | null
@@ -7794,6 +7888,7 @@ export type Database = {
         Args: { _token_hash: string }
         Returns: Json
       }
+      controle_financier: { Args: { _ecole_id?: string }; Returns: Json }
       decrypt_sms_api_token: {
         Args: { _config_id: string; _passphrase: string }
         Returns: string
