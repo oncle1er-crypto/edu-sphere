@@ -19,8 +19,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import PersonnelDetail from "@/pages/enseignants/components/PersonnelDetail";
+import { useRhReferentiels } from "@/hooks/useRhReferentiels";
 
-const DEPARTEMENTS = ["administration", "enseignant", "technique", "entretien", "direction"];
 const SITUATIONS = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"];
 
 const IMPORT_COLUMNS: ImportColumn[] = [
@@ -50,6 +50,7 @@ const contratColor: Record<string, string> = {
 type ViewMode = "list" | "grid";
 
 export default function StaffList() {
+  const { departements } = useRhReferentiels();
   const { enseignants, loading, addEnseignant, updateEnseignant, deleteEnseignant, fetchEnseignants } = useEnseignants();
   const [search, setSearch] = useState("");
   const [contrat, setContrat] = useState("all");
@@ -291,7 +292,7 @@ export default function StaffList() {
                   <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {DEPARTEMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                      {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FieldRow>
@@ -453,7 +454,7 @@ export default function StaffList() {
               <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {DEPARTEMENTS.map((d) => <SelectItem key={d} value={d}>{d}</SelectItem>)}
+                  {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
                 </SelectContent>
               </Select>
             </FieldRow>
