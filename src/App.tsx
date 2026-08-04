@@ -300,7 +300,7 @@ const App = () => (
         <AcademicPeriodProvider>
         <NiveauProvider>
           <Routes>
-            <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
+            <Route path="/offline" element={<OfflinePage />} />
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/.lovable/oauth/consent" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OAuthConsentPage /></Suspense>} />
 
