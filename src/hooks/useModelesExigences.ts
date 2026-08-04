@@ -70,7 +70,7 @@ export function useModelesExigences() {
         .select()
         .single();
     }
-    if (res.error) { toast.error(res.messageErreurBase(error)); return null; }
+    if (res.error) { toast.error(messageErreurBase(res.error)); return null; }
     toast.success("Modèle enregistré");
     await fetch();
     return res.data as any;
