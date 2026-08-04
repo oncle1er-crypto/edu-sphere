@@ -72,7 +72,9 @@ async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = tr
   let totalEncaisse = 0;
   let totalRemises = 0;
   (paiementsRaw ?? []).forEach((p: any) => {
-    if (anneeId && trancheIds.size > 0 && p.tranche_id && !trancheIds.has(p.tranche_id)) return;
+    // Les règlements de factures de services (cantine, transport, tenues…) ont un
+    // `tranche_id` null : ils sont volontairement exclus des cumuls de scolarité.
+    if (anneeId && trancheIds.size > 0 && (!p.tranche_id || !trancheIds.has(p.tranche_id))) return;
     const m = Number(p.montant || 0);
     if (REMISE_MODES.has(p.mode)) totalRemises += m;
     else totalEncaisse += m;
