@@ -9,6 +9,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { RequirePerm } from "@/components/auth/RequirePerm";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
+// Import statique : la page hors-ligne ne doit jamais dépendre du réseau.
+import OfflinePage from "@/pages/Offline";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const AcceptInvitationPage = lazy(() => import("@/pages/auth/AcceptInvitationPage"));
 const FirstPasswordPage = lazy(() => import("@/pages/auth/FirstPasswordPage"));
@@ -255,7 +257,7 @@ const VieScolaireCertificats = lazy(() => import("@/pages/vie-scolaire/sections/
 const VieScolairePresences = lazy(() => import("@/pages/vie-scolaire/sections/VieScolairePresences"));
 const VieScolaireDiscipline = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireDiscipline"));
 const VieScolaireInfirmerie = lazy(() => import("@/pages/vie-scolaire/sections/VieScolaireInfirmerie"));
-const OfflinePage = lazy(() => import("@/pages/Offline"));
+
 const VacancesLayout = lazy(() => import("@/pages/cours-vacances/VacancesLayout"));
 const VacancesDashboard = lazy(() => import("@/pages/cours-vacances/sections/VacancesDashboard"));
 const VacancesInscriptions = lazy(() => import("@/pages/cours-vacances/sections/VacancesInscriptions"));
@@ -298,7 +300,7 @@ const App = () => (
         <AcademicPeriodProvider>
         <NiveauProvider>
           <Routes>
-            <Route path="/offline" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OfflinePage /></Suspense>} />
+            <Route path="/offline" element={<OfflinePage />} />
             <Route path="/connexion" element={<LoginPage />} />
             <Route path="/.lovable/oauth/consent" element={<Suspense fallback={<AppLoader label="Chargement…" />}><OAuthConsentPage /></Suspense>} />
 
