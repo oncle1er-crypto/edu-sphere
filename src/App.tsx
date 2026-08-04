@@ -9,6 +9,8 @@ import { AppLayout } from "@/components/AppLayout";
 import { RequirePerm } from "@/components/auth/RequirePerm";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
+// Import statique : la page hors-ligne ne doit jamais dépendre du réseau.
+import OfflinePage from "@/pages/Offline";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
 const AcceptInvitationPage = lazy(() => import("@/pages/auth/AcceptInvitationPage"));
 const FirstPasswordPage = lazy(() => import("@/pages/auth/FirstPasswordPage"));
