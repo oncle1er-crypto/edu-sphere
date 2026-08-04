@@ -54,7 +54,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const [erreur, setErreur] = useState<string | null>(null);
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
-  const totalRemises = Number(detail?.total_remises ?? data.encaisseRemisesJour ?? 0);
+  const totalRemises = Number(detail?.total_remises ?? 0);
 
   const ouvrirDetail = async () => {
     setOpen(true);
