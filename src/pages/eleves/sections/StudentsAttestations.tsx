@@ -14,6 +14,7 @@ import { useEleves } from "@/hooks/useEleves";
 import { useEcoles } from "@/context/EcoleContext";
 import { generateCertificatPDF, type CertificatData } from "@/lib/generateDocumentsPDF";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type DocType = CertificatData["type"];
 
@@ -115,7 +116,7 @@ export default function StudentsAttestations() {
         toast.success("Impression lancée");
       }
     } catch (e: any) {
-      toast.error(e?.message ?? "Erreur de génération");
+      toast.error(messageErreurBase(e) ?? "Erreur de génération");
     } finally {
       setBusy(null);
     }
@@ -133,7 +134,7 @@ export default function StudentsAttestations() {
       const fileName = `${type}_${eleve!.matricule}_${eleve!.nom}.pdf`.replace(/\s+/g, "_");
       doc.save(fileName);
     } catch (e: any) {
-      toast.error(e?.message ?? "Erreur de génération");
+      toast.error(messageErreurBase(e) ?? "Erreur de génération");
     } finally {
       setBusy(null);
     }

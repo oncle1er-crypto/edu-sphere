@@ -8,6 +8,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const JOURS = ["", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
@@ -44,7 +45,7 @@ export default function Conflicts() {
       _annee_id: anneeId,
     });
     if (error) {
-      toast.error("Erreur scan : " + error.message);
+      toast.error("Erreur scan : " + messageErreurBase(error));
       console.error(error);
     } else {
       setConflicts((data as any[]) ?? []);

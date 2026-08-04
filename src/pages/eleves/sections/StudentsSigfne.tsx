@@ -13,6 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { Download, ShieldCheck, AlertTriangle, XCircle, Copy, Loader2, Settings2, Save, Upload } from "lucide-react";
 import { SigfneImportDialog } from "./SigfneImportDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type ConfRow = {
   ecole_id: string;
@@ -83,7 +84,7 @@ export default function StudentsSigfne() {
       (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id).order("classe").order("nom"),
       supabase.from("eleves").select("id,lieu_naissance,date_naissance").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id),
     ]);
-    if (vRes.error) toast.error("Erreur chargement conformité: " + vRes.error.message);
+    if (vRes.error) toast.error("Erreur chargement conformité: " + vRes.messageErreurBase(error));
     const extra = new Map<string, { lieu_naissance: string | null; date_naissance: string | null }>();
     (eRes.data ?? []).forEach((e: any) => extra.set(e.id, { lieu_naissance: e.lieu_naissance, date_naissance: e.date_naissance }));
     const merged: ConfRow[] = (vRes.data ?? []).map((r: any) => ({ ...r, ...(extra.get(r.eleve_id) ?? {}) }));
@@ -115,7 +116,7 @@ export default function StudentsSigfne() {
     setSavingId(eleveId + field);
     const { error } = await supabase.from("eleves").update({ [field]: value || null } as any).eq("id", eleveId);
     setSavingId(null);
-    if (error) { toast.error("Erreur: " + error.message); return; }
+    if (error) { toast.error("Erreur: " + messageErreurBase(error)); return; }
     // Re-fetch just this row
     const vRes = await (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id).eq("eleve_id", eleveId).maybeSingle();
     setRows((prev) => {
@@ -140,7 +141,7 @@ export default function StudentsSigfne() {
     const nonConformes = (stats?.total ?? 0) - (stats?.conformes ?? 0);
     if (nonConformes > 0) toast.warning(`${nonConformes} élève(s) non conforme(s) seront exclus de l'export.`);
     const { data, error } = await (supabase as any).from("v_export_sigfne_eleves").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     const cols = ["MATRICULE","NOM","PRENOMS","DATE_NAISSANCE","LIEU_NAISSANCE","SEXE","NATIONALITE","CLASSE"];
     const escape = (v: any) => {
       const s = v == null ? "" : String(v);
@@ -347,7 +348,7 @@ function SigfneParamsPanel({ ecoleId }: { ecoleId: string | null }) {
       ecole_id: ecoleId, code_etablissement: codeEtab, drena, regex_matricule: regex,
     }, { onConflict: "ecole_id" });
     setSaving(false);
-    if (error) toast.error(error.message); else toast.success("Paramètres enregistrés");
+    if (error) toast.error(messageErreurBase(error)); else toast.success("Paramètres enregistrés");
   };
 
   return (

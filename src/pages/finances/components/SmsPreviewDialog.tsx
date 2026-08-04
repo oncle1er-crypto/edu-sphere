@@ -14,6 +14,7 @@ import {
   TEMPLATE_VARIABLES, type TrancheKey,
 } from "../sms-templates-store";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   eleve: EleveScolarite | null;
@@ -72,7 +73,7 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
         onOpenChange(false);
       }
     } catch (err: any) {
-      toast.error("Erreur d'envoi SMS", { description: err.message ?? String(err) });
+      toast.error("Erreur d'envoi SMS", { description: messageErreurBase(err) ?? String(err) });
     } finally {
       setSending(false);
     }

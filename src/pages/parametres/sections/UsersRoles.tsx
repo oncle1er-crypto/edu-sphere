@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { CredentialsPreviewDialog } from "./CredentialsPreviewDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 
 
@@ -108,7 +109,7 @@ export default function UsersRoles() {
       setResetMfaUser(null);
       setResetMotif("");
     } catch (e: any) {
-      toast.error(e.message ?? "Échec de la réinitialisation");
+      toast.error(messageErreurBase(e) ?? "Échec de la réinitialisation");
     } finally {
       setResettingMfa(false);
     }

@@ -16,6 +16,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { toast } from "sonner";
 import { sortEleves } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface QuickEval {
   id: string;
@@ -164,7 +165,7 @@ export default function QuickGradeEntry() {
       ecole_id: ecoleId,
     }).select("id").single();
 
-    if (error) { toast.error(error.message); }
+    if (error) { toast.error(messageErreurBase(error)); }
     else if (data) {
       toast.success("Évaluation créée");
       // Refresh evals list and auto-select

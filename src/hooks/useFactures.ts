@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface Facture {
   id: string;
@@ -108,7 +109,7 @@ export function useFactures(scopedAnneeId?: string) {
       notes: f.notes || null,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return;
     }
     toast.success("Facture créée");
@@ -118,7 +119,7 @@ export function useFactures(scopedAnneeId?: string) {
   const updateStatut = async (id: string, statut: string) => {
     const { error } = await supabase.from("factures").update({ statut }).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return;
     }
     toast.success("Statut mis à jour");
@@ -128,7 +129,7 @@ export function useFactures(scopedAnneeId?: string) {
   const deleteFacture = async (id: string) => {
     const { error } = await supabase.from("factures").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return;
     }
     toast.success("Facture supprimée");

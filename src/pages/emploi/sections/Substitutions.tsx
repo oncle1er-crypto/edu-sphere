@@ -20,6 +20,7 @@ import { useEnseignants } from "@/hooks/useEnseignants";
 import { useTimetableSettings } from "@/hooks/useTimetableSettings";
 import { renderTemplate, normalizeSmsText } from "@/lib/smsText";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 
 type Statut = "a_pourvoir" | "en_attente" | "confirme" | "annule";
@@ -141,7 +142,7 @@ export default function Substitutions() {
     };
     const { error } = await supabase.from("remplacements" as any).insert(payload);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Remplacement enregistré");
     setOpen(false);
     resetForm();
@@ -188,7 +189,7 @@ export default function Substitutions() {
 
   const updateStatut = async (id: string, statut: Statut) => {
     const { error } = await supabase.from("remplacements" as any).update({ statut }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Statut mis à jour");
     const r = rows.find((x) => x.id === id);
     if (r && (statut === "confirme" || statut === "annule")) {
@@ -202,7 +203,7 @@ export default function Substitutions() {
   const remove = async (id: string) => {
     if (!confirm("Supprimer ce remplacement ?")) return;
     const { error } = await supabase.from("remplacements" as any).delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Remplacement supprimé");
     fetch();
   };

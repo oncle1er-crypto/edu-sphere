@@ -18,6 +18,7 @@ import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -106,7 +107,7 @@ export default function ClassesList() {
       })
       .eq("id", editClass.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
     } else {
       toast.success("Classe modifiée");
       await fetchClasses();
@@ -128,7 +129,7 @@ export default function ClassesList() {
     if (!confirm(`Archiver la classe "${c.nom}" ?`)) return;
     const { error } = await supabase.from("classes").delete().eq("id", c.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
     } else {
       toast.success("Classe archivée");
       await fetchClasses();

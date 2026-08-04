@@ -31,6 +31,7 @@ import { useBulletinScolariteStatus } from "@/hooks/useBulletinScolariteStatus";
 import { compareEleves, sortEleves } from "@/lib/sortEleves";
 import { BulletinSendDialog } from "@/components/bulletins/BulletinSendDialog";
 import { BulletinOverrideDialog } from "@/components/bulletins/BulletinOverrideDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface BulletinRow {
   eleve_id: string;
@@ -497,7 +498,7 @@ export default function Bulletins() {
       _decision_detail: row.moyenne >= 10 ? "Passe en classe superieure" : "À reconsiderer en fin d'annee",
       _override_motif: null,
     });
-    if (error) { toast.error("Audit: " + error.message); return null; }
+    if (error) { toast.error("Audit: " + messageErreurBase(error)); return null; }
     await refreshAudit();
     return data as unknown as string;
   };
@@ -539,11 +540,11 @@ export default function Bulletins() {
       const { error: upErr } = await supabase.storage.from("bulletins").upload(path, blob, {
         contentType: "application/pdf", upsert: false,
       });
-      if (upErr) { toast.error("Archive: " + upErr.message); return; }
+      if (upErr) { toast.error("Archive: " + messageErreurBase(upErr)); return; }
       const { error } = await supabase.rpc("verrouiller_bulletin", {
         _id: auditId, _pdf_hash: hash, _pdf_path: path,
       });
-      if (error) { toast.error("Verrouillage: " + error.message); return; }
+      if (error) { toast.error("Verrouillage: " + messageErreurBase(error)); return; }
       toast.success("Bulletin verrouillé et archivé.");
       await refreshAudit();
     } finally { setLockingId(null); }

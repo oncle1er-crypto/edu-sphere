@@ -17,6 +17,7 @@ import { useEnseignants } from "@/hooks/useEnseignants";
 import { useEleves } from "@/hooks/useEleves";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Groupe {
   id: string;
@@ -74,7 +75,7 @@ export default function ClassesGroups() {
       enseignant_id: profId === "none" ? null : profId,
     });
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Groupe créé");
     setOpen(false); setNom(""); setType("option"); setDesc(""); setProfId("none");
     await load();
@@ -83,7 +84,7 @@ export default function ClassesGroups() {
   const handleDelete = async (g: Groupe) => {
     if (!confirm(`Supprimer le groupe "${g.nom}" ?`)) return;
     const { error } = await supabase.from("groupes_pedagogiques").delete().eq("id", g.id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Groupe supprimé");
     await load();
   };
@@ -99,13 +100,13 @@ export default function ClassesGroups() {
     if (membreIds.has(eleveId)) {
       const { error } = await supabase.from("groupe_membres").delete()
         .eq("groupe_id", manage.id).eq("eleve_id", eleveId);
-      if (error) return toast.error(error.message);
+      if (error) return toast.error(messageErreurBase(error));
       const n = new Set(membreIds); n.delete(eleveId); setMembreIds(n);
     } else {
       const { error } = await supabase.from("groupe_membres").insert({
         groupe_id: manage.id, eleve_id: eleveId, ecole_id: ecoleId,
       });
-      if (error) return toast.error(error.message);
+      if (error) return toast.error(messageErreurBase(error));
       const n = new Set(membreIds); n.add(eleveId); setMembreIds(n);
     }
   };

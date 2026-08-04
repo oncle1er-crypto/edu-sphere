@@ -14,6 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Transfert {
   id: string;
@@ -65,7 +66,7 @@ export default function ClassesTransfers() {
       _eleve_id: eleveId, _classe_dest_id: destId, _motif: motif || null, _force: false,
     });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Transfert enregistré");
     setOpenSingle(false);
     setEleveId(""); setDestId(""); setMotif("");
@@ -79,7 +80,7 @@ export default function ClassesTransfers() {
       _eleve_ids: selected, _classe_dest_id: destId, _motif: motif || null, _force: false,
     });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     const res = data as any;
     toast.success(`Transferts : ${res.ok} réussis, ${res.erreurs} erreurs`);
     setOpenMass(false);
@@ -90,7 +91,7 @@ export default function ClassesTransfers() {
   const handleCancel = async (id: string) => {
     if (!confirm("Annuler ce transfert et repositionner l'élève dans sa classe d'origine ?")) return;
     const { error } = await supabase.rpc("annuler_transfert" as any, { _audit_log_id: id });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Transfert annulé");
     await load();
   };

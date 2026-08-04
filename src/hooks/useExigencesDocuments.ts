@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface ExigenceDoc {
   id: string;
@@ -49,7 +50,7 @@ export function useExigencesDocuments(eleveId?: string) {
         .from("exigences_documents_eleves" as any)
         .update({ obligatoire: value } as any)
         .eq("id", existing.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(messageErreurBase(error)); return; }
     } else {
       const { error } = await supabase
         .from("exigences_documents_eleves" as any)
@@ -59,7 +60,7 @@ export function useExigencesDocuments(eleveId?: string) {
           type_document: type,
           obligatoire: value,
         } as any);
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(messageErreurBase(error)); return; }
     }
     toast.success(value ? "Document marqué obligatoire" : "Document marqué optionnel");
     await fetch();

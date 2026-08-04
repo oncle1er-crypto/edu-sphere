@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type SpModePaiement =
   | "especes" | "wave" | "orange_money" | "mtn_money" | "moov_money" | "virement" | "cheque";
@@ -41,7 +42,7 @@ export function useSpVentes() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setVentes((data ?? []) as SpVenteTenue[]);
     setLoading(false);
   }, [ecoleId]);
@@ -66,7 +67,7 @@ export function useSpVentes() {
     const { data, error } = patch.id
       ? await (supabase as any).from("sp_ventes_tenues").update(payload).eq("id", patch.id).select().single()
       : await (supabase as any).from("sp_ventes_tenues").insert(payload).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Vente enregistrée");
     await load();
     return data as SpVenteTenue;
@@ -74,7 +75,7 @@ export function useSpVentes() {
 
   const annuler = async (id: string, motif: string) => {
     const { error } = await (supabase as any).rpc("sp_annuler_vente", { _vente_id: id, _motif: motif });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Vente et paiement associés annulés");
     await load();
   };

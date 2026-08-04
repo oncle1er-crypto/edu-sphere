@@ -14,6 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const CYCLES_FILTER = ["Maternelle", "Primaire", "Collège", "Lycée"] as const;
 
@@ -62,12 +63,12 @@ export default function SubjectsClassesAssignment() {
       const { error } = await supabase.from("classe_matieres").insert({
         ecole_id: ecoleId, classe_id, matiere_id, coefficient: coef, volume_horaire_hebdo: 2,
       });
-      if (error) return toast.error(error.message);
+      if (error) return toast.error(messageErreurBase(error));
       setCells((s) => ({ ...s, [key]: { coefficient: coef, volume_horaire_hebdo: 2 } }));
     } else {
       const { error } = await supabase.from("classe_matieres").delete()
         .eq("ecole_id", ecoleId).eq("classe_id", classe_id).eq("matiere_id", matiere_id);
-      if (error) return toast.error(error.message);
+      if (error) return toast.error(messageErreurBase(error));
       setCells((s) => { const n = { ...s }; delete n[key]; return n; });
     }
   };
@@ -79,7 +80,7 @@ export default function SubjectsClassesAssignment() {
     setCells((s) => ({ ...s, [key]: next }));
     const { error } = await supabase.from("classe_matieres").update(patch)
       .eq("ecole_id", ecoleId).eq("classe_id", classe_id).eq("matiere_id", matiere_id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
   };
 
   const applyPackMena = async () => {
@@ -103,7 +104,7 @@ export default function SubjectsClassesAssignment() {
     });
     if (rows.length === 0) { toast.info("Toutes les affectations existent déjà"); setPackOpen(false); return; }
     const { error } = await supabase.from("classe_matieres").insert(rows);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success(`${rows.length} affectation(s) créée(s) (Pack MENA — ${packCycle})`);
     setPackOpen(false);
     load();
@@ -125,7 +126,7 @@ export default function SubjectsClassesAssignment() {
     });
     if (rows.length === 0) { toast.info("Rien à copier"); setCopyOpen(false); return; }
     const { error } = await supabase.from("classe_matieres").insert(rows);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success(`${rows.length} matière(s) copiée(s)`);
     setCopyOpen(false);
     setCopySource(""); setCopyTarget("");

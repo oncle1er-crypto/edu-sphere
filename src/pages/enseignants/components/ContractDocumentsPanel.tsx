@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Download, Trash2, Upload, FileText } from "lucide-react";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface DocFile {
   name: string;
@@ -55,7 +56,7 @@ export function ContractDocumentsPanel() {
       const safe = file.name.replace(/[^\w.\-]+/g, "_");
       const path = `${ecoleId}/${selected}/${Date.now()}_${safe}`;
       const { error } = await supabase.storage.from(BUCKET).upload(path, file);
-      if (error) { toast.error(error.message); continue; }
+      if (error) { toast.error(messageErreurBase(error)); continue; }
     }
     toast.success("Documents téléversés");
     setUploading(false);
@@ -64,13 +65,13 @@ export function ContractDocumentsPanel() {
 
   const handleDownload = async (path: string) => {
     const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60);
-    if (error || !data) return toast.error(error?.message ?? "Erreur");
+    if (error || !data) return toast.error(messageErreurBase(error) ?? "Erreur");
     window.open(data.signedUrl, "_blank");
   };
 
   const handleDelete = async (path: string) => {
     const { error } = await supabase.storage.from(BUCKET).remove([path]);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Document supprimé");
     load();
   };

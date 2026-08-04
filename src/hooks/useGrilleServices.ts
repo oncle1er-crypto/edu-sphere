@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type ServiceType = "cantine" | "transport";
 export type Periodicite = "mensuel" | "trimestriel";
@@ -72,7 +73,7 @@ export function useGrilleServices(serviceType: ServiceType) {
       qc.invalidateQueries({ queryKey: key });
       toast.success("Tarif enregistré");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const remove = useMutation({
@@ -84,7 +85,7 @@ export function useGrilleServices(serviceType: ServiceType) {
       qc.invalidateQueries({ queryKey: key });
       toast.success("Tarif supprimé");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   return {

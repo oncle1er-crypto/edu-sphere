@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { SubjectEditDialog, type SubjectFormValues } from "../components/SubjectEditDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type MatiereRow = Database["public"]["Tables"]["matieres"]["Row"];
 
@@ -117,7 +118,7 @@ export default function SubjectsList() {
     if (toInsert.length === 0) { setSeeding(false); return toast.info("Toutes les matières du référentiel sont déjà présentes"); }
     const { error } = await supabase.from("matieres").insert(toInsert as any);
     setSeeding(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success(`${toInsert.length} matière(s) du référentiel MENA ajoutée(s)`); fetchMatieres(); }
   };
 

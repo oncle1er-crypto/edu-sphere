@@ -15,6 +15,7 @@ import MfaSetupDialog from "@/components/security/MfaSetupDialog";
 import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function MfaSettings() {
   const { user } = useAuth();
@@ -38,7 +39,7 @@ export default function MfaSettings() {
       await logSecurityEvent("mfa_sms_enabled", "info");
       toast.success("MFA SMS activé");
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     } finally { setActivatingSms(false); }
   };
 
@@ -48,7 +49,7 @@ export default function MfaSettings() {
       await logSecurityEvent("mfa_sms_disabled", "warning");
       toast.success("MFA SMS désactivé (le numéro reste vérifié)");
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     }
   };
 
@@ -59,7 +60,7 @@ export default function MfaSettings() {
       await logSecurityEvent("mfa_sms_removed", "critical");
       toast.success("Numéro et facteur SMS supprimés");
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     } finally { setRemovingSms(false); }
   };
 
@@ -76,7 +77,7 @@ export default function MfaSettings() {
       toast.success("MFA désactivé");
       await refresh();
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     } finally {
       setUnenrolling(false);
     }
@@ -91,7 +92,7 @@ export default function MfaSettings() {
       await logSecurityEvent("mfa_backup_regenerated", "warning");
       toast.success("Nouveaux codes générés");
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     } finally {
       setRegenerating(false);
     }

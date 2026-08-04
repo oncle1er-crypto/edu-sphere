@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type EvalRow = Database["public"]["Tables"]["evaluations"]["Row"];
 
@@ -75,7 +76,7 @@ export function useEvaluations(periodeIds?: string[]) {
       .insert({ ...eval_data, ecole_id: ecoleId })
       .select()
       .single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Évaluation créée");
     await fetchEvaluations();
     return data;
@@ -86,7 +87,7 @@ export function useEvaluations(periodeIds?: string[]) {
     updates: Database["public"]["Tables"]["evaluations"]["Update"]
   ) => {
     const { error } = await supabase.from("evaluations").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Évaluation mise à jour");
     await fetchEvaluations();
     return true;
@@ -96,7 +97,7 @@ export function useEvaluations(periodeIds?: string[]) {
     // Delete associated notes first
     await supabase.from("notes").delete().eq("evaluation_id", id);
     const { error } = await supabase.from("evaluations").delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Évaluation supprimée");
     await fetchEvaluations();
     return true;

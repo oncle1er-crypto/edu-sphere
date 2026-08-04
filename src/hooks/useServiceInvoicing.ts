@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type ServiceType = "cantine" | "transport";
 
@@ -24,7 +25,7 @@ export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => voi
       await onDone?.();
       toast.success(n > 0 ? `${n} facture(s) générée(s)` : "Aucune nouvelle facture (déjà à jour)");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const generateBulk = useMutation({
@@ -46,7 +47,7 @@ export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => voi
       await onDone?.();
       toast.success(`${n} facture(s) générée(s) au total`);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   return {

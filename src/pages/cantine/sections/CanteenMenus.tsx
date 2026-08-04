@@ -11,6 +11,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Menu { id: string; date_menu: string; repas: string; description: string | null; }
 
@@ -33,7 +34,7 @@ export default function CanteenMenus() {
   const handleSubmit = async () => {
     if (!ecoleId || !form.description) return;
     const { error } = await supabase.from("menus_cantine").insert({ ecole_id: ecoleId, date_menu: form.date_menu, repas: form.repas, description: form.description });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Menu ajouté");
     setForm({ date_menu: new Date().toISOString().slice(0, 10), repas: "dejeuner", description: "" });
     setOpen(false);

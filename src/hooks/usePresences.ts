@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type PresenceRow = Database["public"]["Tables"]["presences"]["Row"];
 
@@ -53,7 +54,7 @@ export function usePresences() {
       .upsert({ ...presence, ecole_id: ecoleId }, { onConflict: "ecole_id,eleve_id,classe_id,date_presence" })
       .select()
       .single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     return data;
   };
 
@@ -61,7 +62,7 @@ export function usePresences() {
     if (!ecoleId || items.length === 0) return;
     const rows = items.map((i) => ({ ...i, ecole_id: ecoleId }));
     const { error } = await supabase.from("presences").upsert(rows);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Présences enregistrées");
     return true;
   };

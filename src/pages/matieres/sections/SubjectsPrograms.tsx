@@ -14,6 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Prog = { id: string; matiere_id: string; classe_id: string | null; periode: string; chapitres_total: number; chapitres_faits: number; notes: string | null };
 
@@ -41,19 +42,19 @@ export default function SubjectsPrograms() {
       ecole_id: ecoleId, matiere_id: form.matiere_id, classe_id: form.classe_id || null,
       periode: form.periode, chapitres_total: form.chapitres_total, chapitres_faits: form.chapitres_faits,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Progression créée"); setOpen(false); load();
   };
 
   const updateFaits = async (id: string, faits: number) => {
     const { error } = await supabase.from("progressions_matiere").update({ chapitres_faits: faits }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     setProgs((p) => p.map((x) => x.id === id ? { ...x, chapitres_faits: faits } : x));
   };
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("progressions_matiere").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Supprimé"); load();
   };
 

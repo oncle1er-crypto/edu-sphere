@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface ModeleExigences {
   id: string;
@@ -69,7 +70,7 @@ export function useModelesExigences() {
         .select()
         .single();
     }
-    if (res.error) { toast.error(res.error.message); return null; }
+    if (res.error) { toast.error(res.messageErreurBase(error)); return null; }
     toast.success("Modèle enregistré");
     await fetch();
     return res.data as any;
@@ -80,7 +81,7 @@ export function useModelesExigences() {
       .from("modeles_exigences_documents" as any)
       .delete()
       .eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Modèle supprimé");
     await fetch();
     return true;
@@ -104,7 +105,7 @@ export function useModelesExigences() {
     const { error } = await supabase
       .from("exigences_documents_eleves" as any)
       .upsert(rows, { onConflict: "eleve_id,type_document" } as any);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success(`Modèle appliqué à ${eleveIds.length} élève(s)`);
     return true;
   };

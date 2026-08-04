@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoles } from "@/context/EcoleContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type PeriodeStatut = "a_venir" | "en_cours" | "verrouillee";
 export type AnneeStatut = "active" | "preparation" | "verrouillee" | "archivee";
@@ -261,7 +262,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
       }
       await fetchAll();
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur enregistrement année");
+      toast.error(messageErreurBase(e) ?? "Erreur enregistrement année");
     }
   };
 
@@ -286,7 +287,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
       await fetchAll();
       toast.success(`${periodes.length} période(s) créée(s)`);
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur génération périodes");
+      toast.error(messageErreurBase(e) ?? "Erreur génération périodes");
     }
   };
 
@@ -322,7 +323,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
       }
       await fetchAll();
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur mise à jour statut année");
+      toast.error(messageErreurBase(e) ?? "Erreur mise à jour statut année");
     }
   };
 
@@ -335,7 +336,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
       await fetchAll();
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur mise à jour statut période");
+      toast.error(messageErreurBase(e) ?? "Erreur mise à jour statut période");
     }
   };
 

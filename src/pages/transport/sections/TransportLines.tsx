@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type LigneRow = Database["public"]["Tables"]["lignes_transport"]["Row"];
 
@@ -40,7 +41,7 @@ export default function TransportLines() {
       heure_depart: form.heure_depart || null, heure_arrivee: form.heure_arrivee || null,
       tarif_mensuel: parseFloat(form.tarif) || 25000,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Ligne créée"); await fetchData(); }
     setOpen(false); setSaving(false);
   };

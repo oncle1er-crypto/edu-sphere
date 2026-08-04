@@ -7,6 +7,7 @@ import { Settings2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Config {
   format_matricule: string;
@@ -76,7 +77,7 @@ export default function StudentsConfig() {
       .upsert(payload, { onConflict: "ecole_id" });
 
     if (error) {
-      toast.error("Erreur lors de la sauvegarde : " + error.message);
+      toast.error("Erreur lors de la sauvegarde : " + messageErreurBase(error));
     } else {
       toast.success("Configuration enregistrée avec succès");
     }

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Tables = Database["public"]["Tables"];
 export type RhDepartement = Tables["rh_departements"]["Row"];
@@ -32,7 +33,7 @@ export function useRhReferentiels() {
       supabase.from("rh_parametres").select("*").eq("ecole_id", ecoleId).order("ordre"),
     ]);
     const err = dep.error ?? crit.error ?? par.error;
-    if (err) toast.error(`Erreur chargement référentiels RH : ${err.message}`);
+    if (err) toast.error(`Erreur chargement référentiels RH : ${messageErreurBase(err)}`);
     setDepartements(dep.data ?? []);
     setCriteres(crit.data ?? []);
     setParametres(par.data ?? []);
@@ -70,7 +71,7 @@ export function useRhReferentiels() {
     }
     const { error } = await supabase.from("rh_parametres").update({ valeur }).eq("id", row.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setParametres((prev) => prev.map((p) => (p.id === row.id ? { ...p, valeur } : p)));
@@ -85,7 +86,7 @@ export function useRhReferentiels() {
     }
     const { error } = await supabase.from("rh_parametres").update({ valeur_texte }).eq("id", row.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setParametres((prev) => prev.map((p) => (p.id === row.id ? { ...p, valeur_texte } : p)));

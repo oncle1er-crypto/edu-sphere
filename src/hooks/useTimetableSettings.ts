@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface TimetableSettings {
   id?: string;
@@ -123,7 +124,7 @@ export function useTimetableSettings() {
         .upsert(payload as any, { onConflict: "ecole_id" });
       setSaving(false);
       if (error) {
-        toast.error("Erreur enregistrement : " + error.message);
+        toast.error("Erreur enregistrement : " + messageErreurBase(error));
         return false;
       }
       toast.success("Paramètres enregistrés");

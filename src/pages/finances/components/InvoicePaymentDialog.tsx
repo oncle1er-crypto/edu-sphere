@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const MOYENS = [
   { label: "Espèces", value: "especes" },
@@ -97,7 +98,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
       onPaymentRecorded?.();
     } catch (err: any) {
       console.error(err);
-      toast.error("Encaissement refusé", { description: err?.message ?? "Erreur inconnue" });
+      toast.error("Encaissement refusé", { description: messageErreurBase(err) ?? "Erreur inconnue" });
     } finally {
       submittingRef.current = false;
       setSaving(false);

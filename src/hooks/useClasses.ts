@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type ClasseRow = Database["public"]["Tables"]["classes"]["Row"];
 
@@ -68,7 +69,7 @@ export function useClasses(anneeId?: string) {
       .insert({ ...classe, ecole_id: ecoleId })
       .select()
       .single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Classe créée");
     await fetchClasses();
     return data;

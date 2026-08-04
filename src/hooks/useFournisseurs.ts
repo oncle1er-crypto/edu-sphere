@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface Fournisseur {
   id: string;
@@ -31,7 +32,7 @@ export function useFournisseurs() {
   const addFournisseur = async (f: Pick<Fournisseur, "nom" | "categorie" | "contact" | "email">) => {
     if (!ecoleId) return;
     const { error } = await supabase.from("fournisseurs").insert({ ...f, ecole_id: ecoleId });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Fournisseur ajouté");
     fetch();
   };

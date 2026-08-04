@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { AppModule, PermRow } from "./useUserPermissions";
 import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 /** Permissions par défaut pour un rôle donné, à l'échelle d'une école. */
 export function useRolePermissions(role: string | null) {
@@ -102,7 +103,7 @@ export function useRolePermissions(role: string | null) {
       toast.success(`Permissions du rôle « ${role} » enregistrées`);
       return true;
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur");
+      toast.error(messageErreurBase(e) ?? "Erreur");
       return false;
     } finally { setSaving(false); }
   };

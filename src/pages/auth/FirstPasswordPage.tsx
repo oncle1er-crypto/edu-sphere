@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { KeyRound, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function FirstPasswordPage() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function FirstPasswordPage() {
       await refreshMustChangePassword?.();
       navigate("/", { replace: true });
     } catch (err: any) {
-      toast.error(err.message ?? "Erreur");
+      toast.error(messageErreurBase(err) ?? "Erreur");
     } finally {
       setSaving(false);
     }

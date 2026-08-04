@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface Depense {
   id: string;
@@ -64,14 +65,14 @@ export function useDepenses(range?: { from?: string; to?: string }) {
   const addDepense = async (d: Omit<Depense, "id" | "created_at" | "fournisseur_nom">) => {
     if (!ecoleId) return;
     const { error } = await supabase.from("depenses").insert({ ...d, ecole_id: ecoleId });
-    if (error) { toast.error("Erreur : " + error.message); return; }
+    if (error) { toast.error("Erreur : " + messageErreurBase(error)); return; }
     toast.success("Dépense enregistrée");
     fetch();
   };
 
   const updateStatut = async (id: string, statut: string) => {
     const { error } = await supabase.from("depenses").update({ statut }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Statut mis à jour");
     fetch();
   };

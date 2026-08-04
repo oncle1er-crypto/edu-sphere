@@ -12,6 +12,7 @@ import { Loader2, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   classeId: string;
@@ -53,7 +54,7 @@ export default function ApplyScolariteButton({ classeId, classeNom, onDone }: Pr
 
     if (error) {
       setRunning(false);
-      toast.error("Impossible de récupérer les élèves", { description: error.message });
+      toast.error("Impossible de récupérer les élèves", { description: messageErreurBase(error) });
       return;
     }
 

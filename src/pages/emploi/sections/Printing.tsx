@@ -7,6 +7,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
 import {
+import { messageErreurBase } from "@/lib/dbErrorMessages";
   exportEDTParClassePDF,
   exportEDTParEnseignantPDF,
   exportOccupationSallesXLSX,
@@ -29,7 +30,7 @@ export default function Printing() {
       toast.success("Export généré");
     } catch (e: any) {
       console.error(e);
-      toast.error("Erreur export : " + (e?.message ?? "inconnue"));
+      toast.error("Erreur export : " + (messageErreurBase(e) ?? "inconnue"));
     } finally {
       setBusy(null);
     }

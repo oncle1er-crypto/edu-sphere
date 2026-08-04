@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import type { Eleve } from "@/hooks/useEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   open: boolean;
@@ -73,7 +74,7 @@ export default function DuplicatesDialog({ open, onClose, eleves, onView, onDele
     }
     const { error } = await supabase.from("eleves").delete().eq("id", e.id);
     setDeletingId(null);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Élève supprimé définitivement");
     onDeleted();
   };

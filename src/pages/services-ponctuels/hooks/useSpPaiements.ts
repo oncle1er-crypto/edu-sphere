@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { SpModePaiement } from "./useSpVentes";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface SpPaiement {
   id: string;
@@ -37,7 +38,7 @@ export function useSpPaiements() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("date_paiement", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setPaiements((data ?? []) as SpPaiement[]);
     setLoading(false);
   }, [ecoleId]);
@@ -60,7 +61,7 @@ export function useSpPaiements() {
     const { data, error } = patch.id
       ? await (supabase as any).from("sp_paiements").update(payload).eq("id", patch.id).select().single()
       : await (supabase as any).from("sp_paiements").insert(payload).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Paiement enregistré");
     await load();
     return data as SpPaiement;
@@ -70,14 +71,14 @@ export function useSpPaiements() {
     const { error } = await (supabase as any).rpc("sp_annuler_paiement", {
       _paiement_id: id, _motif: motif,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Paiement annulé");
     await load();
   };
 
   const supprimer = async (id: string) => {
     const { error } = await (supabase as any).rpc("sp_supprimer_paiement", { _paiement_id: id });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Paiement supprimé définitivement");
     await load();
   };

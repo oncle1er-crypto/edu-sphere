@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type NoteRow = Database["public"]["Tables"]["notes"]["Row"];
 
@@ -80,7 +81,7 @@ export function useNotes() {
     }
 
     const { error } = await supabase.from("notes").insert(rows);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success(`${rows.length} note(s) enregistrée(s) avec succès`);
     return true;
   };
@@ -110,7 +111,7 @@ export function useNotes() {
           commentaire: data.commentaire?.trim() || null,
         })
         .eq("id", existing.id);
-      if (error) { toast.error(error.message); return false; }
+      if (error) { toast.error(messageErreurBase(error)); return false; }
     } else {
       if (data.note === null && !data.absent) return true; // nothing to save
       const { error } = await supabase.from("notes").insert({
@@ -121,7 +122,7 @@ export function useNotes() {
         absent: data.absent,
         commentaire: data.commentaire?.trim() || null,
       });
-      if (error) { toast.error(error.message); return false; }
+      if (error) { toast.error(messageErreurBase(error)); return false; }
     }
     return true;
   };

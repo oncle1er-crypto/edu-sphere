@@ -18,6 +18,7 @@ import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/Invoic
 import { InvoiceEditDialog, type EditableInvoice } from "@/pages/finances/components/InvoiceEditDialog";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Row {
   id: string;
@@ -107,7 +108,7 @@ export default function CanteenBilling() {
       numero, libelle: form.libelle, montant: parseFloat(form.montant) || 0,
       date_echeance: form.date_echeance, statut: "emise", categorie: "cantine",
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Facture créée"); await fetchData(); }
     setOpen(false); setSaving(false);
   };

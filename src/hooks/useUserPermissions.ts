@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface AppModule {
   key: string;
@@ -164,7 +165,7 @@ export function useUserPermissions(targetUserId: string | null) {
       toast.success("Permissions enregistrées");
       return true;
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur");
+      toast.error(messageErreurBase(e) ?? "Erreur");
       return false;
     } finally { setSaving(false); }
   };

@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const DEFAULTS = {
   langue: "fr", fuseau: "africa-abidjan", format_date: "dd-mm-yyyy",
@@ -36,7 +37,7 @@ export default function LocalizationSettings() {
     if (!ecoleId) return;
     const { error } = await supabase.from("parametres_localisation")
       .upsert({ ecole_id: ecoleId, ...data }, { onConflict: "ecole_id" });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else toast.success("Paramètres de localisation enregistrés");
   };
 

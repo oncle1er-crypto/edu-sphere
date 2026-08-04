@@ -22,6 +22,7 @@ import { pickTrancheCible, renderTemplate, getTemplate } from "../sms-templates-
 import { CustomFeeOverride } from "./CustomFeeOverride";
 import { HelpTooltip } from "@/components/help";
 import { usePermissions } from "@/hooks/usePermissions";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 
 interface Props {
@@ -168,7 +169,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                             toast.success("Reçu d'inscription généré");
                           } catch (err: any) {
                             console.error(err);
-                            toast.error("Impossible de générer le reçu", { description: err?.message });
+                            toast.error("Impossible de générer le reçu", { description: messageErreurBase(err) });
                           }
                         }}
                       >

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type EmpruntRow = Database["public"]["Tables"]["emprunts"]["Row"];
 
@@ -46,7 +47,7 @@ export function useEmprunts() {
   const addEmprunt = async (emprunt: Database["public"]["Tables"]["emprunts"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("emprunts").insert({ ...emprunt, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Emprunt enregistré");
     await fetchEmprunts();
     return data;
@@ -54,7 +55,7 @@ export function useEmprunts() {
 
   const returnEmprunt = async (id: string) => {
     const { error } = await supabase.from("emprunts").update({ statut: "rendu", date_retour_effective: new Date().toISOString().slice(0, 10) }).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Retour enregistré");
     await fetchEmprunts();
     return true;

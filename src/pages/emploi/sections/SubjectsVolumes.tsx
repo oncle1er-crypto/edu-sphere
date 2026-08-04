@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Row {
   id: string;
@@ -62,7 +63,7 @@ export default function SubjectsVolumes() {
     if (e.heures !== undefined) payload.volume_horaire_hebdo = e.heures;
     if (e.coef !== undefined) payload.coefficient = e.coef;
     const { error } = await supabase.from("classe_matieres").update(payload).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Mis à jour");
     setRows((prev) => prev.map((r) => r.id === id ? { ...r, heures: e.heures ?? r.heures, coef: e.coef ?? r.coef } : r));
     setEdits((prev) => { const n = { ...prev }; delete n[id]; return n; });

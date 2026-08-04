@@ -4,6 +4,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { CardData, CardType } from "@/pages/cartes/components/SchoolCard";
 import { sortByEleve } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type CardStatut = "active" | "perdue" | "revoquee" | "expiree";
 
@@ -145,7 +146,7 @@ export function CardsProvider({ children }: { children: ReactNode }) {
     if (!ecoleId) { toast.error("École non sélectionnée"); return; }
     const rows = newCards.map((c) => cardToRow({ ...c, ecoleId }, ecoleId));
     const { error } = await supabase.from("cartes").insert(rows as any);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     await refresh();
   }, [ecoleId, refresh]);
 
@@ -163,13 +164,13 @@ export function CardsProvider({ children }: { children: ReactNode }) {
         metadata: row.metadata,
       })
       .eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setCards((s) => s.map((c) => (c.id === id ? merged : c)));
   }, [cards, ecoleId]);
 
   const removeCard = useCallback(async (id: string) => {
     const { error } = await supabase.from("cartes").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setCards((s) => s.filter((c) => c.id !== id));
   }, []);
 
@@ -178,7 +179,7 @@ export function CardsProvider({ children }: { children: ReactNode }) {
       .from("cartes")
       .update({ statut: statut as any, motif_revocation: motif ?? null })
       .eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setCards((s) => s.map((c) => (c.id === id ? { ...c, statut, motifRevocation: motif } : c)));
   }, []);
 
@@ -191,7 +192,7 @@ export function CardsProvider({ children }: { children: ReactNode }) {
       .from("cartes")
       .update({ statut: "expiree" as any })
       .in("id", ids);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setCards((s) => s.map((c) => (ids.includes(c.id) ? { ...c, statut: "expiree" as CardStatut } : c)));
   }, [cards]);
 

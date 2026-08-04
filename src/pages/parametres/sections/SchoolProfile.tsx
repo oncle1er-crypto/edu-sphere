@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Ecole = {
   nom: string; sigle: string | null; devise: string | null; type: string;
@@ -59,7 +60,7 @@ export default function SchoolProfile() {
     setSaving(false);
     if (error) {
       console.error("[SchoolProfile] update failed:", error);
-      toast.error("Erreur : " + error.message);
+      toast.error("Erreur : " + messageErreurBase(error));
       throw error;
     }
     toast.success("Profil de l'école enregistré");
@@ -72,11 +73,11 @@ export default function SchoolProfile() {
     const ext = file.name.split(".").pop();
     const path = `${ecoleId}/logo-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
-    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
+    if (upErr) { toast.error(messageErreurBase(upErr)); setUploading(false); return; }
     const { data: pub } = supabase.storage.from("logos").getPublicUrl(path);
     const { error } = await supabase.from("ecoles").update({ logo_url: pub.publicUrl }).eq("id", ecoleId);
     setUploading(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { update("logo_url", pub.publicUrl); toast.success("Logo mis à jour"); }
   };
 

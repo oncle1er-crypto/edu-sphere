@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type ConseilUpdate = Database["public"]["Tables"]["conseils_classe"]["Update"];
 type SessionUpdate = Database["public"]["Tables"]["sessions_compositions"]["Update"];
@@ -89,7 +90,7 @@ export function useConseilsClasse() {
       ...input,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Conseil planifié");
@@ -100,7 +101,7 @@ export function useConseilsClasse() {
   const update = async (id: string, patch: ConseilUpdate) => {
     const { error } = await supabase.from("conseils_classe").update(patch).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Conseil mis à jour");
@@ -111,7 +112,7 @@ export function useConseilsClasse() {
   const remove = async (id: string) => {
     const { error } = await supabase.from("conseils_classe").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Conseil supprimé");
@@ -176,7 +177,7 @@ export function useSessionsCompositions() {
       ...input,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Session créée");
@@ -187,7 +188,7 @@ export function useSessionsCompositions() {
   const update = async (id: string, patch: SessionUpdate) => {
     const { error } = await supabase.from("sessions_compositions").update(patch).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Session mise à jour");
@@ -198,7 +199,7 @@ export function useSessionsCompositions() {
   const remove = async (id: string) => {
     const { error } = await supabase.from("sessions_compositions").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Session supprimée");

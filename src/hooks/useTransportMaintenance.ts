@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface MaintenanceRow {
   id: string;
@@ -42,7 +43,7 @@ export function useTransportMaintenance() {
   const add = async (payload: Partial<MaintenanceRow>) => {
     if (!ecoleId) return false;
     const { error } = await supabase.from("transport_maintenance" as any).insert({ ...payload, ecole_id: ecoleId } as any);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Opération enregistrée");
     await refresh();
     return true;
@@ -50,7 +51,7 @@ export function useTransportMaintenance() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("transport_maintenance" as any).delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Supprimé");
     await refresh();
     return true;

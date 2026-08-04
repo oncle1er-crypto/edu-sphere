@@ -33,6 +33,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { StudentCardPreview } from "@/pages/cartes/components/StudentCardPreview";
 import { buildStudentCardData } from "@/pages/cartes/lib/buildStudentCardData";
 import { useEcoles } from "@/context/EcoleContext";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   eleve: any | null;
@@ -71,7 +72,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
 
   const handleDetachParent = async (linkId: string): Promise<void> => {
     const { error } = await supabase.from("eleve_parents").delete().eq("id", linkId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Parent détaché de l'élève");
     reloadParents();
   };
@@ -110,7 +111,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     const path = `${eleve.ecole_id}/${eleve.id}/${doc.type_document}_${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("documents-eleves").upload(path, file, { upsert: false });
-    if (upErr) { toast.error(upErr.message); return; }
+    if (upErr) { toast.error(messageErreurBase(upErr)); return; }
     // remove old file (best-effort)
     await supabase.storage.from("documents-eleves").remove([doc.chemin_stockage]);
     const { error: uErr } = await supabase.from("documents_eleves").update({
@@ -140,7 +141,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     const path = `${eleve.ecole_id}/${eleve.id}/${uploadType}_${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage
       .from("documents-eleves").upload(path, file, { upsert: false });
-    if (upErr) { toast.error(upErr.message); setUploadingDoc(false); return; }
+    if (upErr) { toast.error(messageErreurBase(upErr)); setUploadingDoc(false); return; }
     const { data: userData } = await supabase.auth.getUser();
     const { error: insErr } = await supabase.from("documents_eleves").insert({
       ecole_id: eleve.ecole_id,
@@ -153,7 +154,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
       uploade_par: userData.user?.id ?? null,
     } as any);
     setUploadingDoc(false);
-    if (insErr) { toast.error(insErr.message); return; }
+    if (insErr) { toast.error(messageErreurBase(insErr)); return; }
     toast.success("Document ajouté");
     reloadDocuments();
   };
@@ -261,7 +262,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
     }).eq("id", eleve.id);
     setSaving(false);
     if (error) {
-      toast.error("Erreur lors de la sauvegarde : " + error.message);
+      toast.error("Erreur lors de la sauvegarde : " + messageErreurBase(error));
     } else {
       toast.success("Élève mis à jour avec succès");
       // Update initial form ref so dirty check resets
@@ -324,7 +325,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
       toast.success("Photo mise à jour");
       onUpdated?.();
     } catch (err: any) {
-      toast.error("Erreur upload : " + err.message);
+      toast.error("Erreur upload : " + messageErreurBase(err));
     } finally {
       setUploadingPhoto(false);
       if (photoInputRef.current) photoInputRef.current.value = "";

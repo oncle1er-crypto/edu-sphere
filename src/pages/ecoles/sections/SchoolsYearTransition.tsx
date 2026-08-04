@@ -14,6 +14,7 @@ import { usePassagesClasse, type PlanClasseGroup } from "@/hooks/usePassagesClas
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Annee = { id: string; libelle: string; debut: string; fin: string; decoupage: string; statut: string };
 type Classe = { id: string; nom: string; annee_id: string; niveau?: string | null };
@@ -101,7 +102,7 @@ export default function SchoolsYearTransition() {
       .insert({ ecole_id: ecoleId, libelle: newLibelle, debut: newDebut, fin: newFin, decoupage: "trimestre", statut: "preparation" })
       .select().single();
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setCibleId(data.id);
     await reload();
   };
@@ -173,7 +174,7 @@ export default function SchoolsYearTransition() {
     }
     const { error } = await supabase.from("classes").insert(toInsert);
     setBusy(null);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success(`${toInsert.length} classe(s) dupliquée(s) vers l'année cible.`);
     await reload();
   };

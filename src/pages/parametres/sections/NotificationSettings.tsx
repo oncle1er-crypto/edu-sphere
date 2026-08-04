@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const CHANNELS = [
   { id: "email", icon: Mail, label: "Email", desc: "Via SMTP intégré", badge: "Recommandé" },
@@ -71,7 +72,7 @@ export default function NotificationSettings() {
     if (!ecoleId) return;
     const { error } = await supabase.from("parametres_notifications")
       .upsert({ ecole_id: ecoleId, ...data }, { onConflict: "ecole_id" });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else toast.success("Préférences de notifications enregistrées");
   };
 

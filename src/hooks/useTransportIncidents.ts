@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface IncidentRow {
   id: string;
@@ -40,7 +41,7 @@ export function useTransportIncidents() {
   const add = async (payload: Partial<IncidentRow>) => {
     if (!ecoleId) return false;
     const { error } = await supabase.from("transport_incidents" as any).insert({ ...payload, ecole_id: ecoleId } as any);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Incident enregistré");
     await refresh();
     return true;
@@ -48,7 +49,7 @@ export function useTransportIncidents() {
 
   const update = async (id: string, patch: Partial<IncidentRow>) => {
     const { error } = await supabase.from("transport_incidents" as any).update(patch as any).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Mis à jour");
     await refresh();
     return true;
@@ -56,7 +57,7 @@ export function useTransportIncidents() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("transport_incidents" as any).delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Supprimé");
     await refresh();
     return true;

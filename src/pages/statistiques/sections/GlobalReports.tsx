@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import {
+import { messageErreurBase } from "@/lib/dbErrorMessages";
   generateRapportMensuelConsolide,
   generateKpisReseauXlsx,
   generateRapportAcademique,
@@ -42,7 +43,7 @@ export default function GlobalReports() {
       toast.success(`${r.title} généré`);
     } catch (err: any) {
       console.error(err);
-      toast.error(`Erreur : ${err?.message ?? "génération impossible"}`);
+      toast.error(`Erreur : ${messageErreurBase(err) ?? "génération impossible"}`);
     } finally {
       setRunning(null);
     }
