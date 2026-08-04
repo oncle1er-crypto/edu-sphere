@@ -84,7 +84,7 @@ export default function StudentsSigfne() {
       (supabase as any).from("v_conformite_sigfne").select("*").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id).order("classe").order("nom"),
       supabase.from("eleves").select("id,lieu_naissance,date_naissance").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id),
     ]);
-    if (vRes.error) toast.error("Erreur chargement conformité: " + vRes.messageErreurBase(error));
+    if (vRes.error) toast.error("Erreur chargement conformité: " + messageErreurBase(vRes.error));
     const extra = new Map<string, { lieu_naissance: string | null; date_naissance: string | null }>();
     (eRes.data ?? []).forEach((e: any) => extra.set(e.id, { lieu_naissance: e.lieu_naissance, date_naissance: e.date_naissance }));
     const merged: ConfRow[] = (vRes.data ?? []).map((r: any) => ({ ...r, ...(extra.get(r.eleve_id) ?? {}) }));

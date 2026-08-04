@@ -1,3 +1,4 @@
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,6 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import {
-import { messageErreurBase } from "@/lib/dbErrorMessages";
   generateRapportMensuelConsolide,
   generateKpisReseauXlsx,
   generateRapportAcademique,

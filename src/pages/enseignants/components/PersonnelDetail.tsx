@@ -81,8 +81,8 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
           .order("date_debut", { ascending: false }),
       ]);
       if (cancelled) return;
-      if (b.error) toast.error(`Erreur chargement paies : ${b.messageErreurBase(error)}`);
-      if (c.error) toast.error(`Erreur chargement contrats : ${c.messageErreurBase(error)}`);
+      if (b.error) toast.error(`Erreur chargement paies : ${messageErreurBase(b.error)}`);
+      if (c.error) toast.error(`Erreur chargement contrats : ${messageErreurBase(c.error)}`);
       setBulletins(b.data ?? []);
       setContrats(c.data ?? []);
       setLoading(false);

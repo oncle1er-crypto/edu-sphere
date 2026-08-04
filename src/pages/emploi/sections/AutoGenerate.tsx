@@ -1,3 +1,4 @@
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { useState } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Wand2, Play, Loader2, AlertTriangle, CheckCircle2 } from "lucide-react";
@@ -9,7 +10,6 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useTimetableSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
 import {
-import { messageErreurBase } from "@/lib/dbErrorMessages";
   generateEmploiDuTemps,
   type GenerateOptions,
   type GenerateReport,

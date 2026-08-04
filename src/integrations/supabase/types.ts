@@ -7629,6 +7629,21 @@ export type Database = {
         }
         Relationships: []
       }
+      v_encaissements_detail: {
+        Row: {
+          date_operation: string | null
+          ecole_id: string | null
+          eleve: string | null
+          est_remise: boolean | null
+          libelle: string | null
+          matricule: string | null
+          mode_paiement: string | null
+          montant: number | null
+          reference: string | null
+          source: string | null
+        }
+        Relationships: []
+      }
       v_export_sigfne_eleves: {
         Row: {
           annee_id: string | null
@@ -7654,6 +7669,34 @@ export type Database = {
           },
           {
             foreignKeyName: "eleves_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_grilles_desynchronisees: {
+        Row: {
+          annee_id: string | null
+          ecart_total: number | null
+          ecole_id: string | null
+          eleves_concernes: number | null
+          grille: string | null
+          montant_applique: number | null
+          montant_officiel: number | null
+          numero: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frais_scolarite_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tranches_ecole_id_fkey"
             columns: ["ecole_id"]
             isOneToOne: false
             referencedRelation: "ecoles"
@@ -7908,6 +7951,10 @@ export type Database = {
       dupliquer_grille_annee: {
         Args: { _annee_cible: string; _annee_source: string; _ecole_id: string }
         Returns: number
+      }
+      encaissements_du_jour: {
+        Args: { _date?: string; _ecole_id: string }
+        Returns: Json
       }
       enregistrer_paiement: {
         Args: {
