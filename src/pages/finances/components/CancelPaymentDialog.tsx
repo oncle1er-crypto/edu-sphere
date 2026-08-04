@@ -32,6 +32,7 @@ function friendlyError(msg: string): string {
   if (msg.includes("not_authenticated")) return "Session expirée, reconnectez-vous";
   if (msg.includes("not_authorized")) return "Réservé aux administrateurs et directeurs";
   if (msg.includes("deja_annule")) return "Ce paiement a déjà été annulé";
+  if (msg.includes("paiement_facture")) return "Utilisez l'écran Factures pour ce paiement";
   if (msg.includes("paiement_hors_tranche")) return "Ce paiement n'est rattaché à aucune tranche";
   if (msg.includes("paiement_introuvable")) return "Paiement introuvable";
   if (msg.includes("tranche_introuvable")) return "Tranche introuvable";
