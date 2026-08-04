@@ -1,3 +1,4 @@
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Printer, FileText, FileSpreadsheet, Download, Loader2 } from "lucide-react";
@@ -7,7 +8,6 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
 import {
-import { messageErreurBase } from "@/lib/dbErrorMessages";
   exportEDTParClassePDF,
   exportEDTParEnseignantPDF,
   exportOccupationSallesXLSX,
