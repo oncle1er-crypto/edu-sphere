@@ -12,11 +12,15 @@ export default function StaffDashboard() {
     return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
   }
 
+  const norm = (v: unknown) => String(v ?? "").trim().toLowerCase();
+
   const total = enseignants.length;
-  const actifs = enseignants.filter((e) => e.statut === "actif").length;
-  const cdi = enseignants.filter((e) => e.type_contrat === "CDI").length;
-  const cdd = enseignants.filter((e) => e.type_contrat === "CDD").length;
-  const vacataires = enseignants.filter((e) => e.type_contrat === "Vacataire").length;
+  const actifs = enseignants.filter((e) => norm(e.statut) === "actif").length;
+  const cdi = enseignants.filter((e) => norm(e.type_contrat) === "cdi").length;
+  const cdd = enseignants.filter((e) => norm(e.type_contrat) === "cdd").length;
+  const vacataires = enseignants.filter((e) => norm(e.type_contrat) === "vacataire").length;
+  // Aucun membre ne doit disparaître des statistiques : tout type non reconnu tombe dans « Autres ».
+  const autres = total - cdi - cdd - vacataires;
 
   const kpis = [
     { label: "Total personnel", value: total.toString(), icon: Users, variant: "stat-card--primary", iconColor: "text-primary" },
@@ -28,6 +32,7 @@ export default function StaffDashboard() {
     { type: "CDI", count: cdi, total, color: "bg-emerald-500" },
     { type: "CDD", count: cdd, total, color: "bg-amber-500" },
     { type: "Vacataire", count: vacataires, total, color: "bg-blue-500" },
+    { type: "Autres", count: autres, total, color: "bg-slate-400" },
   ].filter((r) => r.count > 0);
 
   return (
