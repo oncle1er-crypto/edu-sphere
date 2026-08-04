@@ -10,6 +10,7 @@ import { useMfa } from "@/hooks/useMfa";
 import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function SecuritySettings() {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function SecuritySettings() {
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pwd.next });
     setSaving(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else {
       toast.success("Mot de passe modifié");
       setPwd({ next: "", confirm: "" });
@@ -38,7 +39,7 @@ export default function SecuritySettings() {
     await logSecurityEvent("global_signout", "critical");
     const { error } = await supabase.auth.signOut({ scope: "global" });
     setSigningOut(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Toutes les sessions ont été fermées"); navigate("/auth", { replace: true }); }
   };
 

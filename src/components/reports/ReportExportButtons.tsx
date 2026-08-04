@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FileText, FileSpreadsheet, FileCode2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
+import { messageErreurBase } from "@/lib/dbErrorMessages";
   exportRowsCSV,
   exportRowsXLSX,
   exportRowsPDF,
@@ -63,7 +64,7 @@ export function ReportExportButtons({
       toast.success(`Export ${fmt.toUpperCase()} téléchargé`);
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || "Erreur lors de l'export");
+      toast.error(messageErreurBase(e) || "Erreur lors de l'export");
     } finally {
       setBusy(null);
     }

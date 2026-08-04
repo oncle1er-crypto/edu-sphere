@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type VehiculeRow = Database["public"]["Tables"]["vehicules"]["Row"];
 
@@ -41,7 +42,7 @@ export default function TransportVehicles() {
       capacite: parseInt(form.capacite) || 30,
       chauffeur: form.chauffeur || null, telephone_chauffeur: form.telephone_chauffeur || null,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Véhicule ajouté"); await fetchData(); }
     setOpen(false); setSaving(false);
   };

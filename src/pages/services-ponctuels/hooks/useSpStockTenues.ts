@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type SpGenre = "F" | "G";
 
@@ -29,7 +30,7 @@ export function useSpStockTenues() {
       .from("sp_stock_tenues")
       .select("*")
       .eq("ecole_id", ecoleId);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setRows((data ?? []) as SpStockTenue[]);
     setLoading(false);
   }, [ecoleId]);
@@ -56,7 +57,7 @@ export function useSpStockTenues() {
     const { error } = await (supabase as any)
       .from("sp_stock_tenues")
       .upsert(payload, { onConflict: "ecole_id,classe_id,genre" });
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Stock mis à jour");
     await load();
     return payload;
@@ -64,7 +65,7 @@ export function useSpStockTenues() {
 
   const remove = async (id: string) => {
     const { error } = await (supabase as any).from("sp_stock_tenues").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     await load();
   };
 

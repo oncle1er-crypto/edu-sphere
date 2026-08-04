@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Row = Database["public"]["Tables"]["visites_infirmerie"]["Row"];
 
@@ -44,7 +45,7 @@ export function useVisitesInfirmerie() {
   const addVisite = async (visite: Database["public"]["Tables"]["visites_infirmerie"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("visites_infirmerie").insert({ ...visite, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Visite enregistrée");
     await fetchVisites();
     return data;

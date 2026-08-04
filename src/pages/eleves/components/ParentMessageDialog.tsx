@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, Send } from "lucide-react";
 import { useSmsConfig } from "@/hooks/useSmsConfig";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   open: boolean;
@@ -43,7 +44,7 @@ export function ParentSmsDialog({ open, onOpenChange, recipients, eleveLabel }: 
       toast.success(`SMS envoyés : ${res.sent}/${res.total}`);
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur d'envoi");
+      toast.error(messageErreurBase(e) ?? "Erreur d'envoi");
     } finally {
       setSending(false);
     }

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Row = Database["public"]["Tables"]["incidents_discipline"]["Row"];
 
@@ -44,7 +45,7 @@ export function useIncidentsDiscipline() {
   const addIncident = async (incident: Database["public"]["Tables"]["incidents_discipline"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("incidents_discipline").insert({ ...incident, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Incident enregistré");
     await fetchIncidents();
     return data;

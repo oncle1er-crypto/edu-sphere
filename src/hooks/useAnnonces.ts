@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Row = Database["public"]["Tables"]["annonces"]["Row"];
 
@@ -32,7 +33,7 @@ export function useAnnonces() {
   const addAnnonce = async (annonce: Database["public"]["Tables"]["annonces"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("annonces").insert({ ...annonce, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Annonce créée");
     await fetchAnnonces();
     return data;
@@ -40,14 +41,14 @@ export function useAnnonces() {
 
   const updateAnnonce = async (id: string, updates: Database["public"]["Tables"]["annonces"]["Update"]) => {
     const { error } = await supabase.from("annonces").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     await fetchAnnonces();
     return true;
   };
 
   const deleteAnnonce = async (id: string) => {
     const { error } = await supabase.from("annonces").delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Annonce supprimée");
     await fetchAnnonces();
     return true;

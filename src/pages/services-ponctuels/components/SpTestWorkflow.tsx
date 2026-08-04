@@ -17,6 +17,7 @@ import { useSpCandidats } from "../hooks/useSpCandidats";
 import { useSpServices } from "../hooks/useSpServices";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Step = 1 | 2 | 3;
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
@@ -98,7 +99,7 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
     if (!ecoleId) { setBusy(false); return; }
     const { data, error } = await (supabase as any).from("sp_candidats").insert({ ...payload, ecole_id: ecoleId }).select().single();
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     setCreatedCandidat(data);
     toast.success("Candidat enregistré");
     setStep(2);

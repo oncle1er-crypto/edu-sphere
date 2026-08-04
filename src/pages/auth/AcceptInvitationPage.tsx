@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Loader2, ShieldCheck, AlertTriangle, KeyRound, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function AcceptInvitationPage() {
   const [params] = useSearchParams();
@@ -61,7 +62,7 @@ export default function AcceptInvitationPage() {
         navigate("/connexion");
       }
     } catch (e: any) {
-      toast.error(e.message);
+      toast.error(messageErreurBase(e));
     } finally { setSaving(false); }
   };
 

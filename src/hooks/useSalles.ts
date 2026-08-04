@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface Salle {
   id: string;
@@ -51,7 +52,7 @@ export function useSalles() {
         .insert({ ...s, ecole_id: ecoleId } as any)
         .select()
         .single();
-      if (error) { toast.error("Erreur ajout : " + error.message); return null; }
+      if (error) { toast.error("Erreur ajout : " + messageErreurBase(error)); return null; }
       toast.success("Salle ajoutée");
       await fetchSalles();
       return data;

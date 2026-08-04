@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, R
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type EcoleStatus = "active" | "suspendue" | "archivee";
 
@@ -164,7 +165,7 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
       })
       .select()
       .single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     const ecole = rowToEcole(row);
     setEcoles((prev) => [ecole, ...prev]);
     return ecole;
@@ -183,7 +184,7 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
     if (patch.type !== undefined) dbPatch.type = patch.type;
     if (patch.status !== undefined) dbPatch.status = patch.status;
     const { error } = await supabase.from("ecoles").update(dbPatch as any).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setEcoles((prev) => prev.map((e) => (e.ecole_id === id ? { ...e, ...patch } : e)));
   };
 
@@ -191,7 +192,7 @@ export function EcoleProvider({ children }: { children: ReactNode }) {
 
   const removeEcole: EcoleContextValue["removeEcole"] = async (id) => {
     const { error } = await supabase.from("ecoles").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setEcoles((prev) => prev.filter((e) => e.ecole_id !== id));
   };
 

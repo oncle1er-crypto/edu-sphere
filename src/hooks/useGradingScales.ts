@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type ParamRow = Database["public"]["Tables"]["parametres_matieres"]["Row"];
 type ParamUpdate = Database["public"]["Tables"]["parametres_matieres"]["Update"];
@@ -60,7 +61,7 @@ export function useParametresMatieres() {
       .update(patch)
       .eq("id", params.id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Barème enregistré");
@@ -121,7 +122,7 @@ export function useClasseMatieres(classeId: string | null) {
       .update({ coefficient })
       .eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     await fetchRows();
@@ -134,7 +135,7 @@ export function useClasseMatieres(classeId: string | null) {
       .update({ volume_horaire_hebdo })
       .eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     await fetchRows();
@@ -150,7 +151,7 @@ export function useClasseMatieres(classeId: string | null) {
       coefficient,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Matière ajoutée à la classe");
@@ -161,7 +162,7 @@ export function useClasseMatieres(classeId: string | null) {
   const detachMatiere = async (id: string) => {
     const { error } = await supabase.from("classe_matieres").delete().eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Matière retirée");

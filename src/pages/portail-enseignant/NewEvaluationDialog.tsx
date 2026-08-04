@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import type { MyEnseignant } from "@/hooks/useMyEnseignant";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Assignment { classe_id: string; classe: string; matiere_id: string; matiere: string; key: string; }
 
@@ -124,7 +125,7 @@ export function NewEvaluationDialog({
       .select("id")
       .single();
     setSaving(false);
-    if (error || !ev) { toast.error(error?.message ?? "Erreur"); return; }
+    if (error || !ev) { toast.error(messageErreurBase(error) ?? "Erreur"); return; }
     toast.success("Évaluation créée");
     onOpenChange(false);
     navigate(`/portail-enseignant/evaluations/${ev.id}`);

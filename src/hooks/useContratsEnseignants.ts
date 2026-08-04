@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type ContratType = "CDD" | "CDI" | "vacation" | "stage";
 export type ContratStatut = "brouillon" | "actif" | "suspendu" | "rompu" | "termine";
@@ -68,7 +69,7 @@ export function useContratsEnseignants() {
       .select()
       .single();
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return null;
     }
     toast.success("Contrat créé");
@@ -82,7 +83,7 @@ export function useContratsEnseignants() {
       .update(updates)
       .eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Contrat mis à jour");
@@ -96,7 +97,7 @@ export function useContratsEnseignants() {
       .delete()
       .eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Contrat supprimé");
@@ -111,7 +112,7 @@ export function useContratsEnseignants() {
       _date_rupture: dateRupture,
     });
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success("Contrat résilié");

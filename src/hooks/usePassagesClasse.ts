@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface PassageClasse {
   id: string;
@@ -41,7 +42,7 @@ export function usePassagesClasse() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("execute_le", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setPassages((data as any) ?? []);
     setLoading(false);
   }, [ecoleId]);
@@ -57,7 +58,7 @@ export function usePassagesClasse() {
         _annee_cible: anneeCible,
         _plan: plan as any,
       });
-      if (error) { toast.error(error.message); return null; }
+      if (error) { toast.error(messageErreurBase(error)); return null; }
       toast.success(
         `Passage effectué : ${(data as any)?.promus ?? 0} promu(s), ${(data as any)?.redoubles ?? 0} redoublant(s), ${(data as any)?.exclus ?? 0} exclu(s), ${(data as any)?.sortants ?? 0} sortant(s).`,
       );
@@ -72,7 +73,7 @@ export function usePassagesClasse() {
       const { data, error } = await supabase.rpc("annuler_passage_classe" as any, {
         _passage_id: passageId,
       });
-      if (error) { toast.error(error.message); return false; }
+      if (error) { toast.error(messageErreurBase(error)); return false; }
       toast.success(`Passage annulé (${(data as any)?.inscriptions_supprimees ?? 0} inscription(s) supprimée(s))`);
       await fetchPassages();
       return true;
@@ -85,7 +86,7 @@ export function usePassagesClasse() {
     const { error } = await supabase.rpc("cloturer_annee" as any, {
       _ecole_id: ecoleId, _annee_id: anneeId,
     });
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Année clôturée définitivement (lecture seule)");
     return true;
   }, [ecoleId]);
@@ -95,7 +96,7 @@ export function usePassagesClasse() {
     const { error } = await supabase.rpc("restaurer_annee" as any, {
       _ecole_id: ecoleId, _annee_id: anneeId,
     });
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Année restaurée (verrouillée, modifiable par un admin)");
     return true;
   }, [ecoleId]);
@@ -105,7 +106,7 @@ export function usePassagesClasse() {
     const { error } = await supabase.rpc("activer_annee_scolaire" as any, {
       _ecole_id: ecoleId, _annee_id: anneeId,
     });
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Année activée");
     return true;
   }, [ecoleId]);

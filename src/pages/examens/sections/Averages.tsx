@@ -15,6 +15,7 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { getHonorRollThreshold, DEFAULT_HONOR_ROLL_THRESHOLD } from "@/lib/honorRoll";
 import { generateTableauHonneurPDF } from "@/lib/generateDocumentsPDF";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface EleveAvg {
   eleve_id: string;
@@ -104,7 +105,7 @@ export default function Averages() {
       if (!w) toast.error("Pop-up bloquée — autorisez les fenêtres.");
       else toast.success("Tableau d'honneur prêt à imprimer");
     } catch (e: any) {
-      toast.error(e?.message ?? "Erreur de génération");
+      toast.error(messageErreurBase(e) ?? "Erreur de génération");
     } finally {
       setPrintingId(null);
     }

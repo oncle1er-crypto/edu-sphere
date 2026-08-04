@@ -16,6 +16,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Row = { id: string; matiere_id: string; enseignant_id: string; classe_id: string | null };
 
@@ -58,7 +59,7 @@ export default function SubjectsTeachersAssignment() {
       .map((cid) => ({ ecole_id: ecoleId, matiere_id: form.matiere_id, enseignant_id: form.enseignant_id, classe_id: cid }));
     if (inserts.length === 0) return toast.info("Toutes ces affectations existent déjà");
     const { error } = await supabase.from("enseignant_matieres").insert(inserts);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success(`${inserts.length} affectation(s) créée(s)`);
     setOpen(false);
     setForm({ matiere_id: "", enseignant_id: "", classes_ids: [] });
@@ -67,7 +68,7 @@ export default function SubjectsTeachersAssignment() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("enseignant_matieres").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Affectation supprimée");
     load();
   };

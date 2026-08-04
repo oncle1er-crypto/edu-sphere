@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Tables = Database["public"]["Tables"];
 export type RhParametre = Tables["rh_parametres"]["Row"];
@@ -39,7 +40,7 @@ export function useRhParametres() {
       supabase.from("rh_bareme_anciennete").select("*").eq("ecole_id", ecoleId).order("annees_min"),
     ]);
     const err = p.error ?? r.error ?? irpp.error ?? anc.error;
-    if (err) toast.error(`Erreur chargement paramètres RH : ${err.message}`);
+    if (err) toast.error(`Erreur chargement paramètres RH : ${messageErreurBase(err)}`);
     setParametresList(p.data ?? []);
     setRubriquesList(r.data ?? []);
     setBaremeIrpp(irpp.data ?? []);
@@ -70,7 +71,7 @@ export function useRhParametres() {
   const updateParametre = async (id: string, valeur: number) => {
     const { error } = await supabase.from("rh_parametres").update({ valeur }).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setParametresList((prev) => prev.map((p) => (p.id === id ? { ...p, valeur } : p)));
@@ -81,7 +82,7 @@ export function useRhParametres() {
   const updateRubrique = async (id: string, patch: Tables["rh_rubriques"]["Update"]) => {
     const { error } = await supabase.from("rh_rubriques").update(patch).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setRubriquesList((prev) => prev.map((r) => (r.id === id ? { ...r, ...patch } as RhRubrique : r)));
@@ -92,7 +93,7 @@ export function useRhParametres() {
   const updateTrancheIrpp = async (id: string, patch: Tables["rh_bareme_irpp"]["Update"]) => {
     const { error } = await supabase.from("rh_bareme_irpp").update(patch).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setBaremeIrpp((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } as RhTrancheIrpp : t)));
@@ -103,7 +104,7 @@ export function useRhParametres() {
   const updatePalierAnciennete = async (id: string, taux: number) => {
     const { error } = await supabase.from("rh_bareme_anciennete").update({ taux }).eq("id", id);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     setBaremeAnciennete((prev) => prev.map((p) => (p.id === id ? { ...p, taux } : p)));

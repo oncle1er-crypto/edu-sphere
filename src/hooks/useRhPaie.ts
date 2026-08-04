@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type LigneType = "gain" | "retenue" | "charge_patronale";
 
@@ -122,7 +123,7 @@ export function useRhPaie(mois: number, annee: number) {
       .order("created_at");
 
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       setLoading(false);
       return;
     }
@@ -181,7 +182,7 @@ export function useRhPaie(mois: number, annee: number) {
         _annee: a,
       });
       if (error) {
-        toast.error(error.message);
+        toast.error(messageErreurBase(error));
         return null;
       }
       const res = data as unknown as ApercuPaie & { erreur?: string };
@@ -203,7 +204,7 @@ export function useRhPaie(mois: number, annee: number) {
         _annee: a,
       });
       if (error) {
-        toast.error(error.message);
+        toast.error(messageErreurBase(error));
         return null;
       }
       const res = data as unknown as { ok: boolean; crees?: number; erreur?: string };
@@ -222,7 +223,7 @@ export function useRhPaie(mois: number, annee: number) {
     async (id: string) => {
       const { data, error } = await supabase.rpc("rh_valider_bulletin", { _bulletin_id: id });
       if (error) {
-        toast.error(error.message);
+        toast.error(messageErreurBase(error));
         return false;
       }
       const res = data as unknown as { ok: boolean; erreur?: string };
@@ -244,7 +245,7 @@ export function useRhPaie(mois: number, annee: number) {
         _date_paiement: date,
       });
       if (error) {
-        toast.error(error.message);
+        toast.error(messageErreurBase(error));
         return false;
       }
       const res = data as unknown as { ok: boolean; erreur?: string };
@@ -267,7 +268,7 @@ export function useRhPaie(mois: number, annee: number) {
       .order("type")
       .order("ordre");
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return [];
     }
     return (data ?? []).map((l) => ({

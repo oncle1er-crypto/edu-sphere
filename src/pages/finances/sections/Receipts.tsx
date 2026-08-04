@@ -26,6 +26,7 @@ import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 import { generateRecapPaiementsJournalier } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface PaiementRecu {
   id: string;
@@ -467,7 +468,7 @@ export default function Receipts() {
     setSaving(true);
     const { error } = await supabase.from("paiements").update({ mode: editMode as any }).eq("id", editing.id);
     setSaving(false);
-    if (error) { toast.error("Impossible de modifier : " + error.message); return; }
+    if (error) { toast.error("Impossible de modifier : " + messageErreurBase(error)); return; }
     toast.success("Mode de paiement mis à jour");
     setEditing(null);
     fetchRecus();
@@ -626,7 +627,7 @@ export default function Receipts() {
         toast.success("Récapitulatif journalier téléchargé");
       }
     } catch (e: any) {
-      toast.error("Erreur : " + (e?.message ?? e));
+      toast.error("Erreur : " + (messageErreurBase(e) ?? e));
     } finally {
       setRecapBusy(false);
     }

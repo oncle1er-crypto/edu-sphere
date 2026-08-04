@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Message { id: string; sujet: string; contenu: string | null; expediteur_id: string; destinataire_id: string | null; created_at: string; lu: boolean; }
 
@@ -29,7 +30,7 @@ export default function DirectMessages() {
   const handleSend = async () => {
     if (!ecoleId || !user || !newMsg.sujet) return;
     const { error } = await supabase.from("messages").insert({ ecole_id: ecoleId, sujet: newMsg.sujet, contenu: newMsg.contenu, expediteur_id: user.id });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Message envoyé");
     setNewMsg({ sujet: "", contenu: "" });
     fetch();

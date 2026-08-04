@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const TEMPLATE_LIST = [
   { id: "bulletin", icon: FileText, title: "Bulletin de notes", desc: "Modèle PDF imprimé chaque trimestre" },
@@ -61,7 +62,7 @@ export default function DocumentTemplates() {
     if (!ecoleId) return;
     const { error } = await supabase.from("parametres_documents")
       .upsert({ ecole_id: ecoleId, ...data }, { onConflict: "ecole_id" });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else toast.success("Modèles de documents enregistrés");
   };
 
@@ -72,7 +73,7 @@ export default function DocumentTemplates() {
     const ext = file.name.split(".").pop();
     const path = `${ecoleId}/signature-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
-    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
+    if (upErr) { toast.error(messageErreurBase(upErr)); setUploading(false); return; }
     const { data: pub } = supabase.storage.from("logos").getPublicUrl(path);
     update({ signature_url: pub.publicUrl });
     setUploading(false);

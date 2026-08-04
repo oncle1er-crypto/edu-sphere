@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Upload, Download, Loader2, ArrowLeft, ArrowRight, CheckCircle2, FileSpreadsheet } from "lucide-react";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Field = "matricule" | "matricule_national" | "nom" | "prenom" | "date_naissance" | "lieu_naissance";
 
@@ -191,7 +192,7 @@ export function SigfneImportDialog({
       p_ecole_id: ecoleId, p_rows: rows, p_dry_run: true,
     });
     setRunning(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setDryReport((data ?? []) as ReportRow[]);
     setStep(3);
   };
@@ -204,7 +205,7 @@ export function SigfneImportDialog({
       p_ecole_id: ecoleId, p_rows: rows, p_dry_run: false,
     });
     setRunning(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setFinalReport((data ?? []) as ReportRow[]);
     toast.success("Import appliqué");
     onImported();

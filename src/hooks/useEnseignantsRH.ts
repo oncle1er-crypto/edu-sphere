@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 function useEntity<T = any>(table: string, orderBy = "created_at", ascending = false) {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
@@ -33,21 +34,21 @@ function useEntity<T = any>(table: string, orderBy = "created_at", ascending = f
   const add = async (payload: any) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from(table as any).insert({ ...payload, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Ajouté");
     await refresh();
     return data;
   };
   const update = async (id: string, patch: any) => {
     const { error } = await supabase.from(table as any).update(patch).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Mis à jour");
     await refresh();
     return true;
   };
   const remove = async (id: string) => {
     const { error } = await supabase.from(table as any).delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Supprimé");
     await refresh();
     return true;

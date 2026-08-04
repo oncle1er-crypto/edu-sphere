@@ -22,6 +22,7 @@ import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import PreparePaieDialog from "../components/PreparePaieDialog";
 import { downloadBulletinPaiePDF } from "@/lib/generateBulletinPaiePDF";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const MOIS_LABELS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -134,7 +135,7 @@ export default function StaffPayroll() {
         .select("nom, prenom, matricule, poste, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales")
         .eq("id", enseignantId)
         .maybeSingle();
-      if (error) { toast.error(error.message); return; }
+      if (error) { toast.error(messageErreurBase(error)); return; }
       await downloadBulletinPaiePDF({
         ecole: {
           nom: ecole?.nom ?? "École",

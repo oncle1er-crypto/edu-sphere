@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type SpCandidatStatut =
   | "en_attente" | "programme" | "absent" | "present" | "admis" | "refuse";
@@ -45,7 +46,7 @@ export function useSpCandidats() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("created_at", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setCandidats((data ?? []) as SpCandidat[]);
     setLoading(false);
   }, [ecoleId]);
@@ -67,14 +68,14 @@ export function useSpCandidats() {
     const { error } = patch.id
       ? await (supabase as any).from("sp_candidats").update(payload).eq("id", patch.id)
       : await (supabase as any).from("sp_candidats").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Candidat enregistré");
     await load();
   };
 
   const remove = async (id: string) => {
     const { error } = await (supabase as any).from("sp_candidats").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Candidat supprimé");
     await load();
   };
@@ -84,7 +85,7 @@ export function useSpCandidats() {
     const { data, error } = await (supabase as any).rpc("sp_convertir_candidat", {
       _candidat_id: candidatId, _annee_id: anneeId, _classe_id: classeId ?? null,
     });
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Candidat converti en élève");
     await load();
     return data as string;

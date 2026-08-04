@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type LivreRow = Database["public"]["Tables"]["livres"]["Row"];
 
@@ -32,7 +33,7 @@ export function useLivres() {
   const addLivre = async (livre: Database["public"]["Tables"]["livres"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("livres").insert({ ...livre, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Livre ajouté");
     await fetchLivres();
     return data;
@@ -40,7 +41,7 @@ export function useLivres() {
 
   const updateLivre = async (id: string, updates: Database["public"]["Tables"]["livres"]["Update"]) => {
     const { error } = await supabase.from("livres").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Livre mis à jour");
     await fetchLivres();
     return true;
@@ -48,7 +49,7 @@ export function useLivres() {
 
   const deleteLivre = async (id: string) => {
     const { error } = await supabase.from("livres").delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Livre supprimé");
     await fetchLivres();
     return true;

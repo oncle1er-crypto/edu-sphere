@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface BilletSortie {
   id: string;
@@ -57,7 +58,7 @@ export function useBilletsSortie() {
       .eq("ecole_id", ecoleId)
       .order("date_sortie", { ascending: false })
       .order("heure_sortie", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setItems((data ?? []) as BilletSortie[]);
     setLoading(false);
   }, [ecoleId]);
@@ -71,7 +72,7 @@ export function useBilletsSortie() {
       delivre_par: user?.id ?? null,
       ...payload,
     } as any).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success(`Billet ${data.numero} émis`);
     await fetchAll();
     return data as BilletSortie;
@@ -81,7 +82,7 @@ export function useBilletsSortie() {
     const { error } = await supabase.from("billets_sortie")
       .update({ heure_retour_effective: heure, statut: "retourne" })
       .eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Retour enregistré");
     await fetchAll();
   };
@@ -89,7 +90,7 @@ export function useBilletsSortie() {
   const cancel = async (id: string) => {
     const { error } = await supabase.from("billets_sortie")
       .update({ statut: "annule" }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Billet annulé");
     await fetchAll();
   };
@@ -111,7 +112,7 @@ export function useCertificatsAbsence() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("date_debut", { ascending: false });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setItems((data ?? []) as CertificatAbsence[]);
     setLoading(false);
   }, [ecoleId]);
@@ -125,7 +126,7 @@ export function useCertificatsAbsence() {
       delivre_par: user?.id ?? null,
       ...payload,
     } as any).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success(`Certificat ${data.numero} délivré`);
     await fetchAll();
     return data as CertificatAbsence;
@@ -133,7 +134,7 @@ export function useCertificatsAbsence() {
 
   const remove = async (id: string) => {
     const { error } = await supabase.from("certificats_absence").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Certificat supprimé");
     await fetchAll();
   };

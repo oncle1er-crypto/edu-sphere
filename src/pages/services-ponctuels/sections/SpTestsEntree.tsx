@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { exportRowsCSV, exportRowsPDF, exportRowsXLSX } from "@/lib/reports/exporters";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const STATUT_COLOR: Record<string, string> = {
   en_attente: "bg-muted text-foreground",
@@ -92,7 +93,7 @@ export default function SpTestsEntree() {
     notes: { note_francais: number | null; note_maths: number | null; note_anglais: number | null }
   ) => {
     const { error } = await (supabase as any).from("sp_candidats").update(notes).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Notes enregistrées");
     await reload();
   };
@@ -154,7 +155,7 @@ export default function SpTestsEntree() {
       else await exportRowsPDF(payload);
       toast.success(`Export ${fmt.toUpperCase()} téléchargé`);
     } catch (e: any) {
-      toast.error(e?.message || "Erreur export");
+      toast.error(messageErreurBase(e) || "Erreur export");
     }
   };
 

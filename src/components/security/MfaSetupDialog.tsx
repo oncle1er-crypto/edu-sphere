@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { logSecurityEvent } from "@/hooks/useSecurityAudit";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Method = "choose" | "totp" | "sms";
 type Step = "enroll" | "verify" | "activate" | "backup" | "done";
@@ -78,7 +79,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       setQrDataUrl(png);
       setStep("verify");
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur lors de l'activation");
+      toast.error(messageErreurBase(e) ?? "Erreur lors de l'activation");
     } finally { setLoading(false); }
   };
 
@@ -92,7 +93,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       setStep("backup");
       await refresh();
     } catch (e: any) {
-      toast.error(e.message ?? "Code invalide");
+      toast.error(messageErreurBase(e) ?? "Code invalide");
       await logSecurityEvent("mfa_enrollment_failed", "warning");
     } finally { setLoading(false); }
   };
@@ -111,7 +112,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
         res?.canal === "whatsapp" ? "Code envoyé sur votre WhatsApp" : "Code envoyé par SMS"
       );
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur envoi SMS");
+      toast.error(messageErreurBase(e) ?? "Erreur envoi SMS");
     } finally { setLoading(false); }
   };
 
@@ -124,7 +125,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       toast.success("Numéro vérifié");
       setStep("activate");
     } catch (e: any) {
-      toast.error(e.message ?? "Code invalide");
+      toast.error(messageErreurBase(e) ?? "Code invalide");
     } finally { setLoading(false); }
   };
 
@@ -136,7 +137,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
       setStep("backup");
     } catch (e: any) {
-      toast.error(e.message ?? "Activation impossible");
+      toast.error(messageErreurBase(e) ?? "Activation impossible");
     } finally { setLoading(false); }
   };
 

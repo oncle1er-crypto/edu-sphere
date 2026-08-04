@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { enqueueReport } from "@/lib/reportQueue";
 import type { ReportType } from "@/lib/reports/registry";
 import { sortEleves } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 
 type ReportKey = ReportType;
@@ -88,7 +89,7 @@ export default function Reports() {
       toast.success("Rapport ajouté à la file d'attente");
       setActive(null);
     } catch (e: any) {
-      toast.error(e?.message ?? "Erreur");
+      toast.error(messageErreurBase(e) ?? "Erreur");
     } finally {
       setBusy(false);
     }

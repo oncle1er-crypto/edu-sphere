@@ -9,6 +9,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useTimetableSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
 import {
+import { messageErreurBase } from "@/lib/dbErrorMessages";
   generateEmploiDuTemps,
   type GenerateOptions,
   type GenerateReport,
@@ -68,7 +69,7 @@ export default function AutoGenerate() {
       }
     } catch (e: any) {
       console.error(e);
-      toast.error("Erreur : " + (e?.message ?? "génération échouée"));
+      toast.error("Erreur : " + (messageErreurBase(e) ?? "génération échouée"));
     } finally {
       setBusy(false);
     }

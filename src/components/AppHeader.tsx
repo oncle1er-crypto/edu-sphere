@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
 import { NiveauSwitcher } from "@/components/NiveauSwitcher";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const statutLabels: Record<string, string> = {
   active: "Active",
@@ -208,7 +209,7 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
                     toast.success("Déconnexion réussie");
                     navigate("/auth", { replace: true });
                   } catch (err: any) {
-                    toast.error("Erreur", { description: err.message });
+                    toast.error("Erreur", { description: messageErreurBase(err) });
                   }
                 }}
               >

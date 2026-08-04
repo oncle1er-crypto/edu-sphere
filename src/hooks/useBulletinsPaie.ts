@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface BulletinPaie {
   id: string;
@@ -54,14 +55,14 @@ export function useBulletinsPaie(mois?: number, annee?: number) {
   const addBulletin = async (b: Pick<BulletinPaie, "enseignant_id" | "salaire_brut" | "retenues" | "net_a_payer">) => {
     if (!ecoleId) return;
     const { error } = await supabase.from("bulletins_paie").insert({ ...b, ecole_id: ecoleId, mois: m, annee: a });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Bulletin créé");
     fetch();
   };
 
   const payBulletin = async (id: string) => {
     const { error } = await supabase.from("bulletins_paie").update({ statut: "paye", date_paiement: new Date().toISOString().slice(0, 10) }).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Paiement enregistré");
     fetch();
   };

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 async function checkOverlap(
   ecoleId: string,
@@ -161,7 +162,7 @@ export function useEmploiDuTemps() {
         .select()
         .single();
       if (error) {
-        toast.error("Erreur ajout créneau : " + error.message);
+        toast.error("Erreur ajout créneau : " + messageErreurBase(error));
         console.error(error);
         return null;
       }

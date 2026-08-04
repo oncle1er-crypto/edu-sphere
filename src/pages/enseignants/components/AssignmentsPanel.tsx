@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Plus, GraduationCap } from "lucide-react";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Affectation {
   id: string;
@@ -64,7 +65,7 @@ export function AssignmentsPanel() {
       classe_id: addClasse,
       volume_horaire_hebdo: addVolume,
     });
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Affectation ajoutée");
     setAddMatiere(""); setAddClasse(""); setAddVolume(2);
     load(selected);
@@ -72,14 +73,14 @@ export function AssignmentsPanel() {
 
   const handleRemove = async (id: string) => {
     const { error } = await (supabase as any).from("enseignant_matieres").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Affectation supprimée");
     load(selected);
   };
 
   const handleVolume = async (id: string, v: number) => {
     const { error } = await (supabase as any).from("enseignant_matieres").update({ volume_horaire_hebdo: v }).eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     load(selected);
   };
 

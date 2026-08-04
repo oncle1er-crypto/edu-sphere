@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Stock { id: string; produit: string; quantite: number; unite: string | null; seuil_alerte: number; }
 
@@ -32,7 +33,7 @@ export default function CanteenStock() {
   const handleSubmit = async () => {
     if (!ecoleId || !form.produit) return;
     const { error } = await supabase.from("stocks_cantine").insert({ ecole_id: ecoleId, produit: form.produit, quantite: Number(form.quantite) || 0, unite: form.unite, seuil_alerte: Number(form.seuil_alerte) || 10 });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Stock ajouté");
     setForm({ produit: "", quantite: "", unite: "kg", seuil_alerte: "10" });
     setOpen(false);

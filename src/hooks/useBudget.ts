@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface LigneBudget {
   id: string;
@@ -97,7 +98,7 @@ export function useBudget(anneeIdParam?: string | null) {
     const { error } = await supabase
       .from("lignes_budget")
       .insert({ ...l, ecole_id: ecoleId, annee_id: anneeId, source: null });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Ligne budgétaire ajoutée");
     fetch();
   };
@@ -107,7 +108,7 @@ export function useBudget(anneeIdParam?: string | null) {
     updates: Partial<Pick<LigneBudget, "montant_prevu" | "montant_realise">>,
   ) => {
     const { error } = await supabase.from("lignes_budget").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     fetch();
   };
 

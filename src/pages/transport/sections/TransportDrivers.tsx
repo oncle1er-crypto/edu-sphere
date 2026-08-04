@@ -10,6 +10,7 @@ import { UserCog, Plus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Chauffeur {
   id: string; nom: string; prenom: string; telephone: string | null;
@@ -50,7 +51,7 @@ export default function TransportDrivers() {
       date_expiration_permis: form.date_expiration_permis || null,
       vehicule_id: form.vehicule_id || null, statut: form.statut,
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Chauffeur ajouté"); await fetchData(); setForm({ nom: "", prenom: "", telephone: "", numero_permis: "", date_expiration_permis: "", vehicule_id: "", statut: "actif" }); }
     setOpen(false); setSaving(false);
   };

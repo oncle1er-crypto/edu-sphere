@@ -13,6 +13,7 @@ import { Plus, Trash2, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString("fr-FR")} FCFA`;
 
@@ -44,7 +45,7 @@ export default function VacancesPaiements() {
       });
       pdf.autoPrint();
       window.open(pdf.output("bloburl"), "_blank");
-    } catch (e: any) { toast.error(e.message ?? "Erreur d'impression"); }
+    } catch (e: any) { toast.error(messageErreurBase(e) ?? "Erreur d'impression"); }
     finally { setPrinting(null); }
   };
 

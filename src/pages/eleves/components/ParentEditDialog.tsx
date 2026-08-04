@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Search, UserPlus, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   open: boolean;
@@ -67,7 +68,7 @@ export function ParentEditDialog({ open, onOpenChange, link, eleveId, ecoleId, o
       .or(`telephone.ilike.%${q}%,email.ilike.%${q}%`)
       .limit(10);
     setSearching(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     setResults(data ?? []);
     if (!data || data.length === 0) toast.info("Aucun parent trouvé");
   };
@@ -143,7 +144,7 @@ export function ParentEditDialog({ open, onOpenChange, link, eleveId, ecoleId, o
       onSaved?.();
       onOpenChange(false);
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur lors de l'enregistrement");
+      toast.error(messageErreurBase(e) ?? "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }

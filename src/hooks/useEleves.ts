@@ -7,6 +7,7 @@ import { sortEleves } from "@/lib/sortEleves";
 
 
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type EleveRow = Database["public"]["Tables"]["eleves"]["Row"];
 
@@ -75,7 +76,7 @@ export function useEleves(anneeId?: string) {
       .insert({ ...eleve, ecole_id: ecoleId })
       .select()
       .single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Élève inscrit avec succès");
     await fetchEleves();
     return data;
@@ -83,7 +84,7 @@ export function useEleves(anneeId?: string) {
 
   const updateEleve = async (id: string, updates: Database["public"]["Tables"]["eleves"]["Update"]) => {
     const { error } = await supabase.from("eleves").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Élève mis à jour");
     await fetchEleves();
     return true;
@@ -91,7 +92,7 @@ export function useEleves(anneeId?: string) {
 
   const deleteEleve = async (id: string) => {
     const { error } = await supabase.from("eleves").delete().eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Élève supprimé");
     await fetchEleves();
     return true;

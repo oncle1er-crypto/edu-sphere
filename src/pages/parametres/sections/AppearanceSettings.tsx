@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type PaletteKey =
   | "bordeaux-or"
@@ -171,7 +172,7 @@ export default function AppearanceSettings() {
     const { data: current } = await supabase.from("profiles").select("preferences").eq("id", user.id).single();
     const merged = { ...(current?.preferences as object ?? {}), appearance: prefs };
     const { error } = await supabase.from("profiles").update({ preferences: merged }).eq("id", user.id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else toast.success("Préférences d'apparence enregistrées");
   };
 

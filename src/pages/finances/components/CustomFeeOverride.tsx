@@ -7,6 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Wrench, RefreshCw, X, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   eleveId: string;
@@ -89,7 +90,7 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
       .from("eleves")
       .update({ frais_id_override: newId } as any)
       .eq("id", eleveId);
-    if (error) { setSaving(false); toast.error(error.message); return; }
+    if (error) { setSaving(false); toast.error(messageErreurBase(error)); return; }
     setCurrent(newId);
     setRegen(true);
     const { error: rpcErr } = await supabase.rpc(

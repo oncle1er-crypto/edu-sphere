@@ -1,3 +1,4 @@
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 // Données réelles scolarité CSP — Complexe Scolaire La Providence de Don Orione (FCFA)
 // Paiements en 3 échéances : Octobre, Novembre, Janvier
 
@@ -122,7 +123,8 @@ export function friendlyRpcError(err: any): string {
     return "Accès refusé : votre rôle ne permet pas d'effectuer cette opération.";
   if (/Tranche introuvable/i.test(raw))
     return "Tranche introuvable : rafraîchissez la page puis réessayez.";
-  return raw;
+  // Tout le reste passe par la traduction partagée des erreurs de base.
+  return messageErreurBase(err, raw);
 }
 
 export interface EleveScolarite {

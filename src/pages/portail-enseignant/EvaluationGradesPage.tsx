@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table";
 import { ArrowLeft, Loader2, Save, ClipboardList } from "lucide-react";
 import { sortEleves } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 
 interface EvalInfo {
@@ -141,7 +142,7 @@ export default function EvaluationGradesPage() {
       .from("notes")
       .upsert(payload, { onConflict: "evaluation_id,eleve_id" });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success(`${dirtyRows.length} note(s) enregistrée(s)`);
     setRows((rs) => rs.map((r) => ({ ...r, dirty: false })));
   };

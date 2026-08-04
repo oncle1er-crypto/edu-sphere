@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface SpTestSession {
   id: string;
@@ -27,7 +28,7 @@ export function useSpTestSessions() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("date_test", { ascending: true });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setSessions((data ?? []) as SpTestSession[]);
     setLoading(false);
   }, [ecoleId]);
@@ -47,14 +48,14 @@ export function useSpTestSessions() {
     const { error } = patch.id
       ? await (supabase as any).from("sp_test_sessions").update(payload).eq("id", patch.id)
       : await (supabase as any).from("sp_test_sessions").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Session enregistrée");
     await load();
   };
 
   const remove = async (id: string) => {
     const { error } = await (supabase as any).from("sp_test_sessions").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Session supprimée");
     await load();
   };

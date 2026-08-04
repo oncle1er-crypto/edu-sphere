@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface CompteTresorerie {
   id: string;
@@ -46,7 +47,7 @@ export function useTresorerie() {
   const addCompte = async (c: Pick<CompteTresorerie, "nom" | "numero" | "type" | "solde">) => {
     if (!ecoleId) return;
     const { error } = await supabase.from("comptes_tresorerie").insert({ ...c, ecole_id: ecoleId });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Compte ajouté");
     fetch();
   };
@@ -54,7 +55,7 @@ export function useTresorerie() {
   const addMouvement = async (m: Pick<MouvementTresorerie, "compte_id" | "libelle" | "montant" | "type" | "date_mouvement">) => {
     if (!ecoleId) return;
     const { error } = await supabase.from("mouvements_tresorerie").insert({ ...m, ecole_id: ecoleId });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Mouvement enregistré");
     fetch();
   };

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type PeriodeRow = {
   id: string;
@@ -65,7 +66,7 @@ export function usePeriodesAvecBulletins() {
   const setPeriodeStatut = async (periodeId: string, statut: PeriodeRow["statut"]) => {
     const { error } = await supabase.from("periodes").update({ statut }).eq("id", periodeId);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     toast.success(
@@ -88,7 +89,7 @@ export function usePeriodesAvecBulletins() {
       .eq("periode_id", periodeId)
       .eq("locked", false);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return false;
     }
     if (!bulletins || bulletins.length === 0) {

@@ -20,6 +20,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import PersonnelDetail from "@/pages/enseignants/components/PersonnelDetail";
 import { useRhReferentiels } from "@/hooks/useRhReferentiels";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const SITUATIONS = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"];
 
@@ -163,7 +164,7 @@ export default function StaffList() {
         body: { enseignant_id: created.id, app_base_url: window.location.origin },
       });
       if (error || data?.error) {
-        toast.error(`Compte non créé : ${data?.error ?? error?.message ?? "erreur"}`);
+        toast.error(`Compte non créé : ${data?.error ?? messageErreurBase(error) ?? "erreur"}`);
       } else {
         const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
         toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
@@ -186,7 +187,7 @@ export default function StaffList() {
     });
     setInvitingId(null);
     if (error || data?.error) {
-      toast.error(data?.error ?? error?.message ?? "Erreur");
+      toast.error(data?.error ?? messageErreurBase(error) ?? "Erreur");
     } else {
       const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
       toast.success(`Invitation renvoyée${channels ? ` par ${channels}` : ""}`);

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface DocumentEleve {
   id: string;
@@ -102,7 +103,7 @@ export function useDocumentsEleves(eleveId?: string) {
       .eq("id", doc.id);
 
     if (dbError) {
-      toast.error("Erreur suppression métadonnées : " + dbError.message);
+      toast.error("Erreur suppression métadonnées : " + messageErreurBase(dbError));
       return false;
     }
 
@@ -117,7 +118,7 @@ export function useDocumentsEleves(eleveId?: string) {
       .download(doc.chemin_stockage);
 
     if (error) {
-      toast.error("Erreur téléchargement : " + error.message);
+      toast.error("Erreur téléchargement : " + messageErreurBase(error));
       return;
     }
 

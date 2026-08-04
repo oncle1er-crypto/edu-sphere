@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface FinanceSettingsData {
   devise: string;
@@ -76,7 +77,7 @@ export function useFinanceSettings() {
       toast.success("Paramètres financiers enregistrés");
     },
     onError: (e: Error) => {
-      toast.error("Erreur : " + e.message);
+      toast.error("Erreur : " + messageErreurBase(e));
     },
   });
 

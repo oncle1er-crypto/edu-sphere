@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import type { InvoiceForPayment } from "./InvoicePaymentDialog";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
@@ -63,7 +64,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
     setSavingMode(true);
     const { error } = await supabase.from("paiements").update({ mode: editMode.mode as any }).eq("id", editMode.id);
     setSavingMode(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Mode de paiement modifié");
     setEditMode(null);
     await fetchPaiements();
@@ -127,7 +128,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
       await fetchPaiements();
       onChanged?.();
     } catch (err: any) {
-      toast.error("Annulation refusée", { description: err?.message ?? "Erreur inconnue" });
+      toast.error("Annulation refusée", { description: messageErreurBase(err) ?? "Erreur inconnue" });
     } finally {
       setCancelling(null);
     }

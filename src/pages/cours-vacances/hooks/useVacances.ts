@@ -4,6 +4,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
 import { sortEleves } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type VacClasse = {
   id: string; ecole_id: string; annee_id: string | null;
@@ -76,7 +77,7 @@ export function useVacancesData() {
       const { data, error } = await q;
       if (error) {
         console.error(`[vacances.save] ${table} error:`, error, "payload:", payload);
-        toast.error(error.message);
+        toast.error(messageErreurBase(error));
         return null;
       }
       toast.success(id ? "Modifié" : "Enregistré");
@@ -85,7 +86,7 @@ export function useVacancesData() {
     },
     remove: async (table: string, id: string) => {
       const { error } = await supabase.from(table as any).delete().eq("id", id);
-      if (error) { toast.error(error.message); return false; }
+      if (error) { toast.error(messageErreurBase(error)); return false; }
       toast.success("Supprimé");
       await load();
       return true;

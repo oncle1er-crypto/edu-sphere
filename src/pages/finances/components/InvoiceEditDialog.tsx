@@ -8,6 +8,7 @@ import { Loader2, Pencil, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
@@ -86,7 +87,7 @@ export function InvoiceEditDialog({ facture, open, onOpenChange, onSaved }: Prop
       .update({ libelle, date_echeance: dateEcheance })
       .eq("id", facture.id);
     setSaving(false);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Facture mise à jour");
     onOpenChange(false);
     onSaved?.();
@@ -98,7 +99,7 @@ export function InvoiceEditDialog({ facture, open, onOpenChange, onSaved }: Prop
     setSavingModeId(id);
     const { error } = await supabase.from("paiements").update({ mode: newMode as any }).eq("id", id);
     setSavingModeId(null);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Mode de paiement modifié");
     setPaiements((prev) => prev.map((p) => (p.id === id ? { ...p, mode: newMode } : p)));
     setPendingModes((prev) => { const { [id]: _, ...rest } = prev; return rest; });

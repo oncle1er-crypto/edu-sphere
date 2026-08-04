@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Enseignant = Database["public"]["Tables"]["enseignants"]["Row"];
 type BulletinPaie = Database["public"]["Tables"]["bulletins_paie"]["Row"];
@@ -80,8 +81,8 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
           .order("date_debut", { ascending: false }),
       ]);
       if (cancelled) return;
-      if (b.error) toast.error(`Erreur chargement paies : ${b.error.message}`);
-      if (c.error) toast.error(`Erreur chargement contrats : ${c.error.message}`);
+      if (b.error) toast.error(`Erreur chargement paies : ${b.messageErreurBase(error)}`);
+      if (c.error) toast.error(`Erreur chargement contrats : ${c.messageErreurBase(error)}`);
       setBulletins(b.data ?? []);
       setContrats(c.data ?? []);
       setLoading(false);
@@ -119,7 +120,7 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
     const { error } = await supabase.from("enseignants").update(patch).eq("id", membre.id);
     setSaving(false);
     if (error) {
-      toast.error(error.message);
+      toast.error(messageErreurBase(error));
       return;
     }
     setMembre({ ...membre, ...patch });

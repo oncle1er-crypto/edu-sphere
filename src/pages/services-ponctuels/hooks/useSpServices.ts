@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface SpService {
   id: string;
@@ -31,7 +32,7 @@ export function useSpServices() {
       .select("*")
       .eq("ecole_id", ecoleId)
       .order("nom");
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     setServices((data ?? []) as SpService[]);
     setLoading(false);
   }, [ecoleId]);
@@ -53,14 +54,14 @@ export function useSpServices() {
     const { error } = patch.id
       ? await (supabase as any).from("sp_services").update(payload).eq("id", patch.id)
       : await (supabase as any).from("sp_services").insert(payload);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Service enregistré");
     await load();
   };
 
   const remove = async (id: string) => {
     const { error } = await (supabase as any).from("sp_services").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) return toast.error(messageErreurBase(error));
     toast.success("Service supprimé");
     await load();
   };

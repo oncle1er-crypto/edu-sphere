@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAnneeId } from "./useAnneeId";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export type NiveauCode =
   | "MAT1" | "MAT2" | "GS"
@@ -96,7 +97,7 @@ export function useGrilleTarifs() {
       qc.invalidateQueries({ queryKey: key });
       toast.success("Tarif enregistré");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const remove = useMutation({
@@ -111,7 +112,7 @@ export function useGrilleTarifs() {
       qc.invalidateQueries({ queryKey: key });
       toast.success("Tarif supprimé");
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const regenererPreInscrits = useMutation({
@@ -126,7 +127,7 @@ export function useGrilleTarifs() {
     onSuccess: (n) => {
       toast.success(`${n} élève(s) pré-inscrit(s) régénéré(s)`);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const dupliquerDepuis = useMutation({
@@ -142,7 +143,7 @@ export function useGrilleTarifs() {
       qc.invalidateQueries({ queryKey: key });
       toast.success(`${n} ligne(s) reconduite(s)`);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   const recalculerTousEleves = useMutation({
@@ -162,7 +163,7 @@ export function useGrilleTarifs() {
     onSuccess: (n: number) => {
       toast.success(`${n} élève(s) recalculé(s). Paiements déjà encaissés préservés.`);
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => toast.error(messageErreurBase(e)),
   });
 
   return {

@@ -8,6 +8,7 @@ import { Loader2, Ban, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { fcfa } from "../scolarite-data";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface CancelPaymentTarget {
   id: string;
@@ -27,6 +28,7 @@ interface Props {
 }
 
 function friendlyError(msg: string): string {
+  // Messages propres à cet écran, conservés à l'identique ; le reste passe par la traduction partagée.
   if (msg.includes("not_authenticated")) return "Session expirée, reconnectez-vous";
   if (msg.includes("not_authorized")) return "Réservé aux administrateurs et directeurs";
   if (msg.includes("deja_annule")) return "Ce paiement a déjà été annulé";
@@ -34,11 +36,8 @@ function friendlyError(msg: string): string {
   if (msg.includes("paiement_hors_tranche")) return "Ce paiement n'est rattaché à aucune tranche";
   if (msg.includes("paiement_introuvable")) return "Paiement introuvable";
   if (msg.includes("tranche_introuvable")) return "Tranche introuvable";
-  if (msg.includes("motif_requis")) return "Le motif est obligatoire (5 caractères minimum)";
   if (msg.includes("montant_invalide")) return "Montant invalide";
-  const m = msg.match(/tranche_posterieure_payee:(\d+)/);
-  if (m) return `Annulez d'abord les encaissements de la tranche T${m[1]}`;
-  return "Impossible d'annuler cet encaissement";
+  return messageErreurBase(msg, "Impossible d'annuler cet encaissement");
 }
 
 export function CancelPaymentDialog({ paiement, open, onOpenChange, onCancelled }: Props) {

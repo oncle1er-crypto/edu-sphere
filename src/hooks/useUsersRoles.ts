@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export interface UserWithRole {
   user_id: string;
@@ -34,7 +35,7 @@ export function useUsersRoles() {
       setUsers((data?.users ?? []) as UserWithRole[]);
     } catch (e: any) {
       console.error("[useUsersRoles] list error:", e);
-      toast.error("Erreur chargement utilisateurs: " + e.message);
+      toast.error("Erreur chargement utilisateurs: " + messageErreurBase(e));
       setUsers([]);
     } finally {
       setLoading(false);
@@ -51,7 +52,7 @@ export function useUsersRoles() {
     const { error } = await supabase.from("user_roles").insert({
       user_id: userId, ecole_id: ecoleId, role: role as any,
     });
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Rôle attribué");
     await fetchUsers();
     return true;
@@ -61,7 +62,7 @@ export function useUsersRoles() {
     if (!ecoleId) return false;
     const { error } = await supabase.from("user_roles").delete()
       .eq("user_id", userId).eq("ecole_id", ecoleId).eq("role", role as any);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Rôle retiré");
     await fetchUsers();
     return true;
@@ -85,7 +86,7 @@ export function useUsersRoles() {
         channel: res?.channel ?? (payload.phone ? "phone" : "email"),
         full_name: payload.full_name,
       };
-    } catch (e: any) { toast.error(e.message); return { ok: false }; }
+    } catch (e: any) { toast.error(messageErreurBase(e)); return { ok: false }; }
   };
 
 
@@ -97,7 +98,7 @@ export function useUsersRoles() {
       toast.success("Utilisateur mis à jour");
       await fetchUsers();
       return true;
-    } catch (e: any) { toast.error(e.message); return false; }
+    } catch (e: any) { toast.error(messageErreurBase(e)); return false; }
   };
 
   const deleteUser = async (target_user_id: string) => {
@@ -111,7 +112,7 @@ export function useUsersRoles() {
       toast.success("Utilisateur supprimé");
       await fetchUsers();
       return true;
-    } catch (e: any) { toast.error(e.message); return false; }
+    } catch (e: any) { toast.error(messageErreurBase(e)); return false; }
   };
 
   const resetPassword = async (target_user_id: string, new_password: string) => {
@@ -120,7 +121,7 @@ export function useUsersRoles() {
       await call({ action: "reset_password", ecole_id: ecoleId, target_user_id, new_password });
       toast.success("Mot de passe réinitialisé");
       return true;
-    } catch (e: any) { toast.error(e.message); return false; }
+    } catch (e: any) { toast.error(messageErreurBase(e)); return false; }
   };
 
   return { users, loading: loading || ecoleLoading, fetchUsers, addUserRole, removeUserRole, createUser, updateUser, deleteUser, resetPassword, ecoleId };

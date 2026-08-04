@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useVacancesData } from "../hooks/useVacances";
 import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
 
@@ -149,7 +150,7 @@ export default function VacancesEnrollmentWorkflow({ open, onOpenChange }: Props
       const url = pdf.output("bloburl");
       window.open(url, "_blank");
     } catch (e: any) {
-      toast.error(e.message ?? "Erreur d'impression");
+      toast.error(messageErreurBase(e) ?? "Erreur d'impression");
     } finally {
       setBusy(false);
     }

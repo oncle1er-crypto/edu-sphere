@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { finalizeInscription } from "@/lib/finalizeInscription";
 import { useAuth } from "@/context/AuthContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   eleve: any | null;
@@ -124,7 +125,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     setSavingClasse(true);
     const { error } = await supabase.from("eleves").update({ classe_id: classeId }).eq("id", eleve.id);
     setSavingClasse(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(messageErreurBase(error)); return; }
     toast.success("Classe affectée");
     onUpdated?.();
     fetchData();
@@ -282,7 +283,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       });
       if (error) {
         setPayLoading(false);
-        toast.error(`Encaissement refusé sur T${tr.numero}`, { description: error.message });
+        toast.error(`Encaissement refusé sur T${tr.numero}`, { description: messageErreurBase(error) });
         if (totalEncaisse > 0) {
           toast.warning(`${totalEncaisse.toLocaleString("fr-FR")} FCFA déjà encaissés sur les tranches précédentes.`);
         }

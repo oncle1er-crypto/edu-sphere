@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Props {
   open: boolean;
@@ -67,7 +68,7 @@ export function BulletinOverrideDialog(props: Props) {
       _override_motif: motif,
     });
     setSaving(false);
-    if (error) { toast.error("Erreur : " + error.message); return; }
+    if (error) { toast.error("Erreur : " + messageErreurBase(error)); return; }
     toast.success("Override enregistré dans l'audit.");
     onSaved?.(data as unknown as string);
     onOpenChange(false);

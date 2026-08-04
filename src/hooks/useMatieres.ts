@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 type MatiereRow = Database["public"]["Tables"]["matieres"]["Row"];
 type MatiereUpdate = Database["public"]["Tables"]["matieres"]["Update"];
@@ -41,7 +42,7 @@ export function useMatieres() {
   const addMatiere = async (m: Database["public"]["Tables"]["matieres"]["Insert"]) => {
     if (!ecoleId) return null;
     const { data, error } = await supabase.from("matieres").insert({ ...m, ecole_id: ecoleId }).select().single();
-    if (error) { toast.error(error.message); return null; }
+    if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Matière ajoutée");
     await fetchMatieres();
     return data;
@@ -49,7 +50,7 @@ export function useMatieres() {
 
   const updateMatiere = async (id: string, updates: MatiereUpdate) => {
     const { error } = await supabase.from("matieres").update(updates).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success("Matière mise à jour");
     await fetchMatieres();
     return true;
@@ -57,7 +58,7 @@ export function useMatieres() {
 
   const toggleActive = async (id: string, active: boolean) => {
     const { error } = await supabase.from("matieres").update({ active }).eq("id", id);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success(active ? "Matière restaurée" : "Matière archivée");
     await fetchMatieres();
     return true;
@@ -73,7 +74,7 @@ export function useMatieres() {
       .update({ categorie: cible })
       .eq("ecole_id", ecoleId)
       .eq("categorie", ancien);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success(`Catégorie renommée en « ${cible} »`);
     await fetchMatieres();
     return true;
@@ -86,7 +87,7 @@ export function useMatieres() {
       .update({ categorie: null })
       .eq("ecole_id", ecoleId)
       .eq("categorie", nom);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(messageErreurBase(error)); return false; }
     toast.success(`Catégorie « ${nom} » supprimée`);
     await fetchMatieres();
     return true;

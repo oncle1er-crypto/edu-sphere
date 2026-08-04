@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeSmsText } from "@/lib/smsText";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Parent {
   id: string;
@@ -84,7 +85,7 @@ export function BulletinSendDialog(props: Props) {
     const { error } = await supabase.storage.from("bulletins").upload(path, pdfBlob, {
       contentType: "application/pdf", upsert: true,
     });
-    if (error) { toast.error("Upload PDF: " + error.message); return null; }
+    if (error) { toast.error("Upload PDF: " + messageErreurBase(error)); return null; }
     const { data: signed } = await supabase.storage.from("bulletins").createSignedUrl(path, 60 * 60 * 24 * 7);
     return { path, signedUrl: signed?.signedUrl ?? "" };
   };
@@ -125,7 +126,7 @@ export function BulletinSendDialog(props: Props) {
         const { data, error } = await supabase.functions.invoke("send-sms", {
           body: { ecole_id: ecoleId, destinataires: smsNums, message: smsTxt },
         });
-        if (error || data?.error) toast.error("SMS: " + (error?.message ?? data?.error));
+        if (error || data?.error) toast.error("SMS: " + (messageErreurBase(error) ?? data?.error));
         else { channelsLog.push("sms"); recipientsLog.push(...smsNums.map((t) => ({ ch: "sms", to: t }))); }
       }
 
@@ -134,7 +135,7 @@ export function BulletinSendDialog(props: Props) {
         const { data, error } = await supabase.functions.invoke("send-whatsapp", {
           body: { ecole_id: ecoleId, destinataires: waNums, message: baseTxt },
         });
-        if (error || data?.error) toast.error("WhatsApp: " + (error?.message ?? data?.error));
+        if (error || data?.error) toast.error("WhatsApp: " + (messageErreurBase(error) ?? data?.error));
         else { channelsLog.push("whatsapp"); recipientsLog.push(...waNums.map((t) => ({ ch: "whatsapp", to: t }))); }
       }
 
@@ -163,7 +164,7 @@ export function BulletinSendDialog(props: Props) {
         onOpenChange(false);
       }
     } catch (err: any) {
-      toast.error("Erreur envoi : " + (err?.message ?? "inconnue"));
+      toast.error("Erreur envoi : " + (messageErreurBase(err) ?? "inconnue"));
     } finally {
       setSending(false);
     }

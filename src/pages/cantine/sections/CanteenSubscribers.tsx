@@ -22,6 +22,7 @@ import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { sortByEleve } from "@/lib/sortEleves";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 interface Abonnement {
   id: string;
@@ -126,7 +127,7 @@ export default function CanteenSubscribers() {
         ? Math.round((grille?.montant_total ?? 0) / Math.max(grille?.tranches.length ?? 1, 1))
         : Math.round((grille?.montant_total ?? 0) / 12),
     });
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Abonnement créé"); setForm({ eleve_id: "", regime: "normal", grille_id: "" }); await fetchData(); }
     setOpen(false);
     setSaving(false);
@@ -141,14 +142,14 @@ export default function CanteenSubscribers() {
       return;
     }
     const { error } = await supabase.from("abonnements_cantine").delete().eq("id", toDelete.id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Abonnement supprimé"); await fetchData(); }
     setToDelete(null);
   };
 
   const doDisable = async (a: Abonnement) => {
     const { error } = await supabase.from("abonnements_cantine").update({ statut: "resilie" }).eq("id", a.id);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { toast.success("Abonnement désactivé"); fetchData(); }
   };
 

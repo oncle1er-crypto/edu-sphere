@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
+import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function UserProfile() {
   const { user } = useAuth();
@@ -44,7 +45,7 @@ export default function UserProfile() {
       fonction: data.fonction, langue: data.langue,
     }).eq("id", user.id);
     setSaving(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else toast.success("Profil enregistré");
   };
 
@@ -55,11 +56,11 @@ export default function UserProfile() {
     const ext = file.name.split(".").pop();
     const path = `${user.id}/avatar-${Date.now()}.${ext}`;
     const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (upErr) { toast.error(upErr.message); setUploading(false); return; }
+    if (upErr) { toast.error(messageErreurBase(upErr)); setUploading(false); return; }
     const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
     const { error } = await supabase.from("profiles").update({ avatar_url: pub.publicUrl }).eq("id", user.id);
     setUploading(false);
-    if (error) toast.error(error.message);
+    if (error) toast.error(messageErreurBase(error));
     else { update("avatar_url", pub.publicUrl); toast.success("Photo mise à jour"); }
   };
 
