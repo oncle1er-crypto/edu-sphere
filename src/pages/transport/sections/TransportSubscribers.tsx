@@ -435,7 +435,7 @@ export default function TransportSubscribers() {
         onDone={fetchData}
       />
 
-      <InvoicePaymentDialog facture={payFor} open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)} onPaymentRecorded={fetchData} />
+      <InvoicePaymentDialog facture={payFor} montantInitial={payMontant} open={!!payFor} onOpenChange={(o) => { if (!o) { setPayFor(null); setPayMontant(undefined); } }} onPaymentRecorded={fetchData} />
       <InvoicePaymentsHistoryDialog facture={historyFor} open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)} onChanged={fetchData} />
 
     </SettingsSection>
