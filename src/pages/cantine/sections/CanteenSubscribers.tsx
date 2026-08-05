@@ -134,19 +134,41 @@ export default function CanteenSubscribers() {
     }
     setSaving(true);
     const grille = grilles.find((g) => g.id === form.grille_id);
-    const { error } = await supabase.from("abonnements_cantine").insert({
+    const { data: created, error } = await supabase.from("abonnements_cantine").insert({
       ecole_id: ecoleId, eleve_id: form.eleve_id, annee_id: anneeId,
       regime: form.regime,
       grille_id: form.grille_id,
       montant_mensuel: grille?.periodicite === "mensuel"
         ? Math.round((grille?.montant_total ?? 0) / Math.max(grille?.tranches.length ?? 1, 1))
         : Math.round((grille?.montant_total ?? 0) / 12),
-    });
+    }).select("id").single();
     if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Abonnement créé"); setForm({ eleve_id: "", regime: "normal", grille_id: "" }); await fetchData(); }
-    setOpen(false);
+    else {
+      toast.success("Abonnement créé");
+      const eleve = eleves.find((e) => e.id === form.eleve_id);
+      const portion = form.portion;
+      setForm({ eleve_id: "", regime: "normal", grille_id: "", portion: "aucun" });
+      setOpen(false);
+      if (portion !== "aucun" && created?.id) {
+        try {
+          const fac = await ouvrirEtRecupererFacture({
+            ecoleId, abonnementId: created.id, serviceType: "cantine", eleveId: form.eleve_id,
+          });
+          if (fac) {
+            setPayMontant(montantAEncaisser(grille, portion));
+            setPayFor({ ...fac, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
+          } else {
+            toast.info("Aucune échéance à encaisser pour le moment");
+          }
+        } catch (e) {
+          toast.error(messageErreurBase(e as Error));
+        }
+      }
+      await fetchData();
+    }
     setSaving(false);
   };
+
 
   const doDelete = async () => {
     if (!toDelete) return;
