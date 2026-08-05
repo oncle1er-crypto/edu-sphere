@@ -68,13 +68,17 @@ export default function CanteenSubscribers() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ eleve_id: "", regime: "normal", grille_id: "" });
+  const [form, setForm] = useState<{ eleve_id: string; regime: string; grille_id: string; portion: PortionEncaissement }>({ eleve_id: "", regime: "normal", grille_id: "", portion: "aucun" });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Abonnement | null>(null);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
+  const [payMontant, setPayMontant] = useState<number | undefined>(undefined);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
   const [toResilier, setToResilier] = useState<AbonnementResiliable | null>(null);
   const [relanceOpen, setRelanceOpen] = useState(false);
+
+  const grilleSelectionnee = grilles.find((g) => g.id === form.grille_id) ?? null;
+
 
   const fetchData = async () => {
     if (!ecoleId) return;
