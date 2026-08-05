@@ -383,7 +383,7 @@ export default function CanteenSubscribers() {
             <AlertDialogTitle>Supprimer cet abonnement ?</AlertDialogTitle>
             <AlertDialogDescription>
               L'abonnement de <b>{toDelete?.eleve_nom}</b> sera supprimé définitivement.
-              Les factures déjà encaissées bloqueront la suppression — utilisez <b>Désactiver</b> dans ce cas.
+              Les factures déjà encaissées bloqueront la suppression — utilisez <b>Arrêter</b> dans ce cas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -393,8 +393,26 @@ export default function CanteenSubscribers() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <ResilierAbonnementDialog
+        abonnement={toResilier}
+        service="cantine"
+        open={!!toResilier}
+        onOpenChange={(o) => !o && setToResilier(null)}
+        onDone={fetchData}
+      />
+
+      <RelanceImpayesDialog
+        cibles={ciblesRelance}
+        ecoleId={ecoleId}
+        service="cantine"
+        open={relanceOpen}
+        onOpenChange={setRelanceOpen}
+        onDone={fetchData}
+      />
+
       <InvoicePaymentDialog facture={payFor} open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)} onPaymentRecorded={fetchData} />
       <InvoicePaymentsHistoryDialog facture={historyFor} open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)} onChanged={fetchData} />
+
     </SettingsSection>
   );
 }
