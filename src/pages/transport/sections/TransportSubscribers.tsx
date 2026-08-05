@@ -23,6 +23,11 @@ import { toast } from "sonner";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { sortByEleve } from "@/lib/sortEleves";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { computeServiceKpis } from "@/components/services/serviceKpis";
+import { ServiceKpiCards } from "@/components/services/ServiceKpiCards";
+import { ServiceEcheancesAlert } from "@/components/services/ServiceEcheancesAlert";
+import { ResilierAbonnementDialog, type AbonnementResiliable } from "@/components/services/ResilierAbonnementDialog";
+import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
 
 interface Row {
   id: string;
