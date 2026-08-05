@@ -247,15 +247,7 @@ export default function TransportSubscribers() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nouvel abonnement transport</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <FieldRow label="Élève *">
-                  <SearchableSelect
-                    value={form.eleve_id}
-                    onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}
-                    placeholder="Sélectionner un élève"
-                    searchPlaceholder="Rechercher un élève..."
-                    options={eleves.map((e) => ({ value: e.id, label: `${e.nom} ${e.prenom}`, keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}` }))}
-                  />
-                </FieldRow>
+                <EleveClassePicker value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))} />
                 <FieldRow label="Ligne *">
                   <Select value={form.ligne_id} onValueChange={(v) => setForm((p) => ({ ...p, ligne_id: v }))}>
                     <SelectTrigger><SelectValue placeholder="Sélectionner une ligne" /></SelectTrigger>
@@ -274,6 +266,12 @@ export default function TransportSubscribers() {
                     </SelectContent>
                   </Select>
                 </FieldRow>
+                <EncaissementInitialChoice
+                  grille={grilles.find((g) => g.id === form.grille_id) ?? null}
+                  value={form.portion}
+                  onValueChange={(v) => setForm((p) => ({ ...p, portion: v }))}
+                />
+
                 {grilles.length === 0 && (
                   <p className="text-xs text-muted-foreground">
                     Créez d'abord un tarif dans <b>Finances → Grille tarifaire — Transport</b>.
