@@ -300,8 +300,9 @@ export default function CanteenSubscribers() {
                       {isAdmin && (
                         <>
                           {a.statut === "actif" && (
-                            <Button size="sm" variant="ghost" title="Désactiver" onClick={() => doDisable(a)}>
-                              Désactiver
+                            <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année"
+                              onClick={() => setToResilier({ id: a.id, eleve_nom: a.eleve_nom })}>
+                              Arrêter
                             </Button>
                           )}
                           <Button size="sm" variant="ghost" title="Supprimer" onClick={() => setToDelete(a)}>
