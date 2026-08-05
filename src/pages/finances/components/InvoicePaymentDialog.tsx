@@ -38,11 +38,13 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPaymentRecorded?: () => void;
+  /** Montant pré-rempli (ex. 1 mois d'un trimestre). Par défaut : le restant dû. */
+  montantInitial?: number;
 }
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString("fr-FR").replace(/\u202f/g, " ")} FCFA`;
 
-export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRecorded }: Props) {
+export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRecorded, montantInitial }: Props) {
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
@@ -58,11 +60,12 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   useEffect(() => {
     if (!open || !facture) return;
     submittingRef.current = false;
-    setMontant(String(restant));
+    setMontant(String(montantInitial && montantInitial > 0 ? Math.min(montantInitial, restant) : restant));
     setMoyen("especes");
     setReference("");
     setDatePaiement(new Date().toISOString().slice(0, 10));
-  }, [open, facture, restant]);
+  }, [open, facture, restant, montantInitial]);
+
 
   if (!facture) return null;
 
