@@ -4340,6 +4340,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "v_creances_services"
+            referencedColumns: ["facture_id"]
+          },
+          {
             foreignKeyName: "paiements_tranche_id_fkey"
             columns: ["tranche_id"]
             isOneToOne: false
@@ -7628,6 +7635,57 @@ export type Database = {
           gravite: string | null
         }
         Relationships: []
+      }
+      v_creances_services: {
+        Row: {
+          annee_id: string | null
+          categorie: string | null
+          classe: string | null
+          date_echeance: string | null
+          echue: boolean | null
+          ecole_id: string | null
+          eleve: string | null
+          eleve_id: string | null
+          facture_id: string | null
+          jours_retard: number | null
+          libelle: string | null
+          matricule: string | null
+          montant: number | null
+          montant_paye: number | null
+          numero: string | null
+          reste_du: number | null
+          statut: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
       }
       v_encaissements_detail: {
         Row: {
