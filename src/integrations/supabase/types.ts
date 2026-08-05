@@ -18,11 +18,15 @@ export type Database = {
         Row: {
           annee_id: string
           created_at: string
+          date_debut: string | null
+          date_fin_effet: string | null
+          derniere_relance_at: string | null
           ecole_id: string
           eleve_id: string
           grille_id: string | null
           id: string
           montant_mensuel: number | null
+          motif_resiliation: string | null
           regime: string | null
           statut: string
           updated_at: string
@@ -30,11 +34,15 @@ export type Database = {
         Insert: {
           annee_id: string
           created_at?: string
+          date_debut?: string | null
+          date_fin_effet?: string | null
+          derniere_relance_at?: string | null
           ecole_id: string
           eleve_id: string
           grille_id?: string | null
           id?: string
           montant_mensuel?: number | null
+          motif_resiliation?: string | null
           regime?: string | null
           statut?: string
           updated_at?: string
@@ -42,11 +50,15 @@ export type Database = {
         Update: {
           annee_id?: string
           created_at?: string
+          date_debut?: string | null
+          date_fin_effet?: string | null
+          derniere_relance_at?: string | null
           ecole_id?: string
           eleve_id?: string
           grille_id?: string | null
           id?: string
           montant_mensuel?: number | null
+          motif_resiliation?: string | null
           regime?: string | null
           statut?: string
           updated_at?: string
@@ -93,31 +105,43 @@ export type Database = {
         Row: {
           annee_id: string
           created_at: string
+          date_debut: string | null
+          date_fin_effet: string | null
+          derniere_relance_at: string | null
           ecole_id: string
           eleve_id: string
           grille_id: string | null
           id: string
           ligne_id: string
+          motif_resiliation: string | null
           statut: string
         }
         Insert: {
           annee_id: string
           created_at?: string
+          date_debut?: string | null
+          date_fin_effet?: string | null
+          derniere_relance_at?: string | null
           ecole_id: string
           eleve_id: string
           grille_id?: string | null
           id?: string
           ligne_id: string
+          motif_resiliation?: string | null
           statut?: string
         }
         Update: {
           annee_id?: string
           created_at?: string
+          date_debut?: string | null
+          date_fin_effet?: string | null
+          derniere_relance_at?: string | null
           ecole_id?: string
           eleve_id?: string
           grille_id?: string | null
           id?: string
           ligne_id?: string
+          motif_resiliation?: string | null
           statut?: string
         }
         Relationships: [
@@ -8199,6 +8223,16 @@ export type Database = {
         Returns: Json
       }
       reset_failed_mfa: { Args: never; Returns: undefined }
+      resilier_abonnement_service: {
+        Args: {
+          _abonnement_id: string
+          _date_effet?: string
+          _motif?: string
+          _service_type: string
+          _statut?: string
+        }
+        Returns: Json
+      }
       resilier_contrat_enseignant: {
         Args: { _contrat_id: string; _date_rupture?: string; _motif: string }
         Returns: undefined
