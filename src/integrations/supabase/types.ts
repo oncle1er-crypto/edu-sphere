@@ -8096,6 +8096,7 @@ export type Database = {
         Args: {
           _abonnement_id: string
           _ecole_id: string
+          _forcer?: boolean
           _service_type: string
         }
         Returns: number

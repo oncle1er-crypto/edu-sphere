@@ -189,14 +189,17 @@ export default function CanteenSubscribers() {
   return (
     <SettingsSection icon={<Users className="h-5 w-5" />} title={`Abonnés (${filtered.length})`} description="Abonnements cantine, adossés à la grille tarifaire (mensuel ou trimestriel)." hideSave>
       <ServiceKpiCards abonnesActifs={abonnesActifs} kpis={kpis} service="cantine" />
-      <ServiceEcheancesAlert kpis={kpis} service="cantine" onRelancer={() => setRelanceOpen(true)} />
+      <ServiceEcheancesAlert kpis={kpis} service="cantine" />
 
       <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs flex items-start gap-2">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-muted-foreground">
-          Les reçus <b>double-souche</b> se réimpriment via l'icône <Printer className="inline h-3 w-3" /> à côté de chaque facture (ci-dessous ou dans <b>Facturation cantine</b>).
+          Facturation <b>séquentielle</b> : « Période suivante » n'ouvre qu'une seule échéance à la fois, après l'échéance
+          de la précédente et seulement si celle-ci est soldée. Les relances SMS des familles en retard se font dans
+          <b> Facturation cantine</b> (filtre « En retard »).
           Un élève qui arrête la cantine en cours d'année doit être <b>résilié</b> (bouton « Arrêter ») : les échéances futures sont annulées, les impayés passés restent dus.
         </p>
+
       </div>
 
 
@@ -206,14 +209,12 @@ export default function CanteenSubscribers() {
           <Input placeholder="Rechercher..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" disabled={ciblesRelance.length === 0} onClick={() => setRelanceOpen(true)}
-            title={ciblesRelance.length === 0 ? "Aucune famille en retard" : "Relancer par SMS les familles en retard"}>
-            <MessageSquare className="h-4 w-4" /> Relancer les impayés ({ciblesRelance.length})
-          </Button>
           <Button size="sm" variant="outline" disabled={isBulkGenerating || filtered.length === 0}
+            title="Ouvre, pour chaque abonné actif, la période échue suivante si la précédente est soldée"
             onClick={() => generateBulk(filtered.filter((a) => a.statut === "actif" && a.grille_id).map((a) => a.id))}>
-            {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Générer factures (masse)
+            {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Ouvrir les périodes échues
           </Button>
+
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouvel abonnement</Button></DialogTrigger>
             <DialogContent>
@@ -298,9 +299,12 @@ export default function CanteenSubscribers() {
                       <Button size="sm" variant="ghost" onClick={() => setExpanded(isOpen ? null : a.id)}>
                         {eleveFacs.length} facture{eleveFacs.length > 1 ? "s" : ""}
                       </Button>
-                      <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating} onClick={() => generateFor(a.id)}>
-                        <Receipt className="h-3.5 w-3.5" /> Générer
+                      <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif"}
+                        title="Ouvrir la période suivante (bloqué si la précédente n'est pas soldée)"
+                        onClick={() => generateFor(a.id)}>
+                        <Receipt className="h-3.5 w-3.5" /> Période suivante
                       </Button>
+
                       {a.statut === "actif" && (
                         <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année (résiliation ou suspension)"
                           onClick={() => setToResilier({ id: a.id, eleve_nom: a.eleve_nom })}>

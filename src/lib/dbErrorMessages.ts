@@ -37,7 +37,13 @@ const REGLES: Regle[] = [
     code: "facture_avec_reglement_actif",
     build: (p) => `La facture ${p[0]} porte encore un règlement de ${fmt(p[1])} FCFA. Annulez d'abord ce règlement.`,
   },
+  {
+    code: "facture_precedente_non_soldee",
+    build: () =>
+      "La facture précédente de cet abonné n'est pas soldée : encaissez-la avant d'ouvrir la période suivante.",
+  },
   { code: "montant_tranche_sous_paye", build: () => "Le montant de cette tranche ne peut pas être inférieur à ce qui a déjà été versé." },
+
   { code: "montant_depasse_reste", build: (p) => `Le montant dépasse le reste dû, qui est de ${fmt(p[0])} FCFA.` },
   { code: "montant_depasse_tranche", build: () => "Le montant dépasse ce qu'il reste à payer sur cette tranche." },
   { code: "montant_depasse_facture", build: () => "Le montant dépasse le reste dû de cette facture." },
