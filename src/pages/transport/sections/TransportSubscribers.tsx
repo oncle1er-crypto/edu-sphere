@@ -1,4 +1,4 @@
-import { useEffect, useState, Fragment } from "react";
+import { useEffect, useMemo, useState, Fragment } from "react";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,11 @@ import { toast } from "sonner";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { sortByEleve } from "@/lib/sortEleves";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { computeServiceKpis } from "@/components/services/serviceKpis";
+import { ServiceKpiCards } from "@/components/services/ServiceKpiCards";
+import { ServiceEcheancesAlert } from "@/components/services/ServiceEcheancesAlert";
+import { ResilierAbonnementDialog, type AbonnementResiliable } from "@/components/services/ResilierAbonnementDialog";
+import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
 
 interface Row {
   id: string;
@@ -67,6 +72,8 @@ export default function TransportSubscribers() {
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
+  const [toResilier, setToResilier] = useState<AbonnementResiliable | null>(null);
+  const [relanceOpen, setRelanceOpen] = useState(false);
 
   const fetchData = async () => {
     if (!ecoleId) return;
@@ -142,12 +149,6 @@ export default function TransportSubscribers() {
     setToDelete(null);
   };
 
-  const doDisable = async (a: Row) => {
-    const { error } = await supabase.from("abonnements_transport").update({ statut: "resilie" }).eq("id", a.id);
-    if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Abonnement désactivé"); fetchData(); }
-  };
-
   const reprint = async (f: FactureLite) => {
     if (f.montant_paye <= 0) { toast.info("Aucun paiement à réimprimer"); return; }
     await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
@@ -159,16 +160,40 @@ export default function TransportSubscribers() {
     a.classe_nom.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const abonnesActifs = filtered.filter((a) => a.statut === "actif").length;
+
+  const kpis = useMemo(() => {
+    const facs = filtered.flatMap((a) => factures[a.eleve_id] ?? []);
+    return computeServiceKpis(facs);
+  }, [filtered, factures]);
+
+  const ciblesRelance: CibleRelance[] = useMemo(() => {
+    const jour = new Date().toISOString().slice(0, 10);
+    return filtered
+      .map((a) => {
+        const reste = (factures[a.eleve_id] ?? [])
+          .filter((f) => f.statut !== "annulee" && f.date_echeance <= jour)
+          .reduce((s, f) => s + Math.max(0, f.montant - f.montant_paye), 0);
+        return { abonnement_id: a.id, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, classe_nom: a.classe_nom, reste };
+      })
+      .filter((c) => c.reste > 0);
+  }, [filtered, factures]);
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection icon={<Users className="h-5 w-5" />} title={`Élèves abonnés (${filtered.length})`} description="Abonnements transport, adossés à la grille tarifaire (mensuel ou trimestriel)." hideSave>
+      <ServiceKpiCards abonnesActifs={abonnesActifs} kpis={kpis} service="transport" />
+      <ServiceEcheancesAlert kpis={kpis} service="transport" onRelancer={() => setRelanceOpen(true)} />
+
       <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs flex items-start gap-2">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-muted-foreground">
           Les reçus <b>double-souche</b> se réimpriment via l'icône <Printer className="inline h-3 w-3" /> à côté de chaque facture (ci-dessous ou dans <b>Facturation transport</b>).
+          Un élève qui arrête le car en cours d'année doit être <b>résilié</b> (bouton « Arrêter ») : les échéances futures sont annulées, les impayés passés restent dus.
         </p>
       </div>
+
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="relative max-w-sm w-full">
@@ -264,7 +289,7 @@ export default function TransportSubscribers() {
                       {isAdmin && (
                         <>
                           {a.statut === "actif" && (
-                            <Button size="sm" variant="ghost" onClick={() => doDisable(a)}>Désactiver</Button>
+                            <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année" onClick={() => setToResilier({ id: a.id, eleve_nom: a.eleve_nom })}>Arrêter</Button>
                           )}
                           <Button size="sm" variant="ghost" title="Supprimer" onClick={() => setToDelete(a)}>
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
@@ -344,7 +369,7 @@ export default function TransportSubscribers() {
             <AlertDialogTitle>Supprimer cet abonnement ?</AlertDialogTitle>
             <AlertDialogDescription>
               L'abonnement de <b>{toDelete?.eleve_nom}</b> sera supprimé définitivement.
-              Les factures déjà encaissées bloqueront la suppression — utilisez <b>Désactiver</b> dans ce cas.
+              Les factures déjà encaissées bloqueront la suppression — utilisez <b>Arrêter</b> dans ce cas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -354,8 +379,26 @@ export default function TransportSubscribers() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <ResilierAbonnementDialog
+        abonnement={toResilier}
+        service="transport"
+        open={!!toResilier}
+        onOpenChange={(o) => !o && setToResilier(null)}
+        onDone={fetchData}
+      />
+
+      <RelanceImpayesDialog
+        cibles={ciblesRelance}
+        ecoleId={ecoleId}
+        service="transport"
+        open={relanceOpen}
+        onOpenChange={setRelanceOpen}
+        onDone={fetchData}
+      />
+
       <InvoicePaymentDialog facture={payFor} open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)} onPaymentRecorded={fetchData} />
       <InvoicePaymentsHistoryDialog facture={historyFor} open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)} onChanged={fetchData} />
+
     </SettingsSection>
   );
 }
