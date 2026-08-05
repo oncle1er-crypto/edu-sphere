@@ -72,6 +72,8 @@ export default function TransportSubscribers() {
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
+  const [toResilier, setToResilier] = useState<AbonnementResiliable | null>(null);
+  const [relanceOpen, setRelanceOpen] = useState(false);
 
   const fetchData = async () => {
     if (!ecoleId) return;
