@@ -33,12 +33,15 @@ export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => voi
       const forcer = typeof arg === "string" ? false : !!arg.forcer;
       return callRpc(id, forcer);
     },
-    onSuccess: async (n) => {
+    onSuccess: async (n, arg) => {
       qc.invalidateQueries({ queryKey: ["factures"] });
       await onDone?.();
+      const anticipe = typeof arg !== "string" && !!arg.forcer;
       toast.success(
         n > 0
-          ? "Période suivante ouverte : 1 facture générée"
+          ? anticipe
+            ? "Période suivante ouverte par anticipation : 1 facture générée"
+            : "Période suivante ouverte : 1 facture générée"
           : "Aucune période à ouvrir : l'échéance suivante n'est pas encore atteinte"
       );
     },
