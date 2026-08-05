@@ -318,11 +318,25 @@ export default function TransportSubscribers() {
                       <Button size="sm" variant="ghost" onClick={() => setExpanded(isOpen ? null : a.id)}>
                         {eleveFacs.length} facture{eleveFacs.length > 1 ? "s" : ""}
                       </Button>
-                      <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif"}
-                        title="Ouvrir la période suivante (bloqué si la précédente n'est pas soldée)"
-                        onClick={() => generateFor(a.id)}>
-                        <Receipt className="h-3.5 w-3.5" /> Période suivante
-                      </Button>
+                      {(() => {
+                        const enAttente = eleveFacs.filter((f) => f.statut !== "annulee" && f.montant_paye < f.montant);
+                        const jourJ = new Date().toISOString().slice(0, 10);
+                        const enRetard = enAttente.some((f) => f.date_echeance <= jourJ);
+                        const toutSolde = enAttente.length === 0;
+                        return toutSolde ? (
+                          <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif"}
+                            title="Ouvrir la période suivante par anticipation (tout est soldé)"
+                            onClick={() => generateFor({ id: a.id, forcer: true })}>
+                            <Receipt className="h-3.5 w-3.5" /> Ouvrir par anticipation
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif" || !enRetard}
+                            title="Ouvrir la période suivante (bloqué si la précédente n'est pas soldée)"
+                            onClick={() => generateFor(a.id)}>
+                            <Receipt className="h-3.5 w-3.5" /> Période suivante
+                          </Button>
+                        );
+                      })()}
 
                       {a.statut === "actif" && (
                         <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année (résiliation ou suspension)"
