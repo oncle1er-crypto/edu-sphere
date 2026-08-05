@@ -83,10 +83,11 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
   const [relanceCibles, setRelanceCibles] = useState<CibleRelance[] | null>(null);
   const [form, setForm] = useState({
     eleve_id: "",
-    libelle: cfg.libelleDefaut,
-    montant: cfg.montantDefaut,
+    libelle: String(cfg.libelleDefaut),
+    montant: String(cfg.montantDefaut),
     date_echeance: new Date().toISOString().slice(0, 10),
   });
+
 
   const fetchData = async () => {
     if (!ecoleId) return;
