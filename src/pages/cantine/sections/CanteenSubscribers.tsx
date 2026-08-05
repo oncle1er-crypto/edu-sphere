@@ -30,6 +30,8 @@ import { ResilierAbonnementDialog, type AbonnementResiliable } from "@/component
 import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
 import { EleveClassePicker } from "@/components/services/EleveClassePicker";
 import { EncaissementInitialChoice, montantAEncaisser, type PortionEncaissement } from "@/components/services/EncaissementInitialChoice";
+import { ouvrirEtRecupererFacture } from "@/lib/ouvrirFactureService";
+
 
 
 interface Abonnement {
