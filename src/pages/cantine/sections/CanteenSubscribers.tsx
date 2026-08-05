@@ -28,6 +28,9 @@ import { ServiceKpiCards } from "@/components/services/ServiceKpiCards";
 import { ServiceEcheancesAlert } from "@/components/services/ServiceEcheancesAlert";
 import { ResilierAbonnementDialog, type AbonnementResiliable } from "@/components/services/ResilierAbonnementDialog";
 import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
+import { EleveClassePicker } from "@/components/services/EleveClassePicker";
+import { EncaissementInitialChoice, montantAEncaisser, type PortionEncaissement } from "@/components/services/EncaissementInitialChoice";
+
 
 interface Abonnement {
   id: string;
