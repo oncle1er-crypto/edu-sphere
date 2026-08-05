@@ -102,6 +102,7 @@ export default function CanteenSubscribers() {
         .select("id, numero, libelle, montant, montant_paye, date_echeance, statut, ecole_id, categorie, eleve_id")
         .eq("ecole_id", ecoleId).eq("categorie", "cantine")
         .in("eleve_id", eleveIds)
+        .neq("statut", "annulee")
         .order("date_echeance");
       const grouped: Record<string, FactureLite[]> = {};
       ((fData ?? []) as any[]).forEach((f) => {
