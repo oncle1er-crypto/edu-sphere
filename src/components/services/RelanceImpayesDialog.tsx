@@ -8,12 +8,14 @@ import { toast } from "sonner";
 import { fmtF } from "./serviceKpis";
 
 export interface CibleRelance {
-  abonnement_id: string;
+  /** Présent lorsque la relance part de la liste des abonnés (trace la dernière relance). */
+  abonnement_id?: string;
   eleve_id: string;
   eleve_nom: string;
   classe_nom: string;
   reste: number;
 }
+
 
 interface Props {
   cibles: CibleRelance[];
@@ -93,9 +95,13 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
     }
 
     const table = service === "cantine" ? "abonnements_cantine" : "abonnements_transport";
-    await (supabase as any).from(table)
-      .update({ derniere_relance_at: new Date().toISOString() })
-      .in("id", joignables.map((d) => d.abonnement_id));
+    const abos = joignables.map((d) => d.abonnement_id).filter((id): id is string => !!id);
+    if (abos.length > 0) {
+      await (supabase as any).from(table)
+        .update({ derniere_relance_at: new Date().toISOString() })
+        .in("id", abos);
+    }
+
 
     setSending(false);
     if (ok > 0) toast.success(`${ok} relance(s) SMS envoyée(s)`);
@@ -122,7 +128,7 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
         ) : (
           <div className="max-h-72 overflow-y-auto space-y-1.5">
             {dest.map((d) => (
-              <div key={d.abonnement_id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
+              <div key={d.abonnement_id ?? d.eleve_id} className="flex items-center justify-between gap-2 rounded-md border p-2 text-sm">
                 <div className="min-w-0">
                   <p className="font-medium truncate">{d.eleve_nom} <span className="text-muted-foreground">· {d.classe_nom}</span></p>
                   <p className="text-xs text-muted-foreground truncate">
