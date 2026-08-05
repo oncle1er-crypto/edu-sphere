@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { Users, Plus, Search, Loader2, Trash2, Receipt, Printer, History, Wallet, Info } from "lucide-react";
+import { Users, Plus, Search, Loader2, Trash2, Receipt, Printer, History, Wallet, Info, MessageSquare, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useEleves } from "@/hooks/useEleves";
@@ -205,7 +205,11 @@ export default function CanteenSubscribers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Rechercher..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={ciblesRelance.length === 0} onClick={() => setRelanceOpen(true)}
+            title={ciblesRelance.length === 0 ? "Aucune famille en retard" : "Relancer par SMS les familles en retard"}>
+            <MessageSquare className="h-4 w-4" /> Relancer les impayés ({ciblesRelance.length})
+          </Button>
           <Button size="sm" variant="outline" disabled={isBulkGenerating || filtered.length === 0}
             onClick={() => generateBulk(filtered.filter((a) => a.statut === "actif" && a.grille_id).map((a) => a.id))}>
             {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Générer factures (masse)
@@ -297,19 +301,18 @@ export default function CanteenSubscribers() {
                       <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating} onClick={() => generateFor(a.id)}>
                         <Receipt className="h-3.5 w-3.5" /> Générer
                       </Button>
-                      {isAdmin && (
-                        <>
-                          {a.statut === "actif" && (
-                            <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année"
-                              onClick={() => setToResilier({ id: a.id, eleve_nom: a.eleve_nom })}>
-                              Arrêter
-                            </Button>
-                          )}
-                          <Button size="sm" variant="ghost" title="Supprimer" onClick={() => setToDelete(a)}>
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </>
+                      {a.statut === "actif" && (
+                        <Button size="sm" variant="ghost" title="Arrêter l'abonnement en cours d'année (résiliation ou suspension)"
+                          onClick={() => setToResilier({ id: a.id, eleve_nom: a.eleve_nom })}>
+                          <LogOut className="h-3.5 w-3.5" /> Arrêter
+                        </Button>
                       )}
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" title="Supprimer" onClick={() => setToDelete(a)}>
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </Button>
+                      )}
+
                     </TableCell>
                   </TableRow>
                   {isOpen && (
