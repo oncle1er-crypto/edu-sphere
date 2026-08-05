@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { SettingsSection, FieldRow } from "@/components/settings/SettingsSection";
 import { Receipt, Plus, Loader2, Wallet, Printer, History, Pencil, ArrowUpDown, ArrowUp, ArrowDown, MessageSquare, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -11,8 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
-import { useAnneeId } from "@/hooks/useAnneeId";
-import { useEleves } from "@/hooks/useEleves";
 import { InvoicePaymentDialog, type InvoiceForPayment } from "@/pages/finances/components/InvoicePaymentDialog";
 import { InvoicePaymentsHistoryDialog } from "@/pages/finances/components/InvoicePaymentsHistoryDialog";
 import { InvoiceEditDialog, type EditableInvoice } from "@/pages/finances/components/InvoiceEditDialog";
@@ -76,8 +73,6 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
   const cfg = CONFIG[service];
   const { ecoleId } = useEcoleId();
   const { keepClasse } = useNiveauFilters();
-  const { anneeId } = useAnneeId();
-  const { eleves } = useEleves();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
