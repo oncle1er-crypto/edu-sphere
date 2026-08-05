@@ -39,6 +39,14 @@ interface Row {
   classe_id?: string | null;
 }
 
+interface AbonnementActif {
+  id: string;
+  eleve_id: string;
+  eleve_nom: string;
+  classe_nom: string;
+  classe_id: string | null;
+}
+
 type SortKey = "date_echeance" | "libelle" | "statut";
 type SortDir = "asc" | "desc";
 
@@ -49,7 +57,7 @@ const CONFIG = {
     libelleDefaut: "Cantine - Mensuel",
     montantDefaut: "15000",
     prefixe: "CTN",
-    dialogTitre: "Nouvelle facture cantine",
+    dialogTitre: "Ouvrir une période — cantine",
     vide: "Aucune facture cantine.",
   },
   transport: {
@@ -58,7 +66,7 @@ const CONFIG = {
     libelleDefaut: "Transport - Mensuel",
     montantDefaut: "18000",
     prefixe: "TRP",
-    dialogTitre: "Nouvelle facture transport",
+    dialogTitre: "Ouvrir une période — transport",
     vide: "Aucune facture transport.",
   },
 } as const;
@@ -81,16 +89,24 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
   const [sortKey, setSortKey] = useState<SortKey>("date_echeance");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [relanceCibles, setRelanceCibles] = useState<CibleRelance[] | null>(null);
-  const [form, setForm] = useState({
-    eleve_id: "",
-    libelle: String(cfg.libelleDefaut),
-    montant: String(cfg.montantDefaut),
-    date_echeance: new Date().toISOString().slice(0, 10),
-  });
+  const [abonnements, setAbonnements] = useState<AbonnementActif[]>([]);
+  const [abonnementId, setAbonnementId] = useState("");
 
 
   const fetchData = async () => {
     if (!ecoleId) return;
+    const { data: abos } = await supabase
+      .from(service === "cantine" ? "abonnements_cantine" : "abonnements_transport")
+      .select("id, eleve_id, statut, eleves(nom, prenom, classe_id, classes(nom))")
+      .eq("ecole_id", ecoleId)
+      .eq("statut", "actif");
+    setAbonnements(((abos ?? []) as any[]).map((a) => ({
+      id: a.id,
+      eleve_id: a.eleve_id,
+      eleve_nom: a.eleves ? `${a.eleves.nom} ${a.eleves.prenom}` : "?",
+      classe_nom: a.eleves?.classes?.nom ?? "—",
+      classe_id: a.eleves?.classe_id ?? null,
+    })));
     const { data } = await supabase.from("factures")
       .select("id, numero, libelle, montant, montant_paye, statut, date_echeance, ecole_id, categorie, eleve_id, eleves(nom, prenom, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId).eq("categorie", service)
@@ -151,6 +167,12 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
     return Array.from(map.values());
   }, [displayed]);
 
+  const abonnesVisibles = useMemo(
+    () => abonnements.filter((a) => keepClasse(a.classe_id))
+      .sort((a, b) => a.eleve_nom.localeCompare(b.eleve_nom, "fr")),
+    [abonnements, keepClasse]
+  );
+
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir(sortDir === "asc" ? "desc" : "asc");
     else { setSortKey(k); setSortDir("asc"); }
@@ -160,18 +182,30 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
     ? <ArrowUpDown className="h-3 w-3 inline ml-1 opacity-40" />
     : sortDir === "asc" ? <ArrowUp className="h-3 w-3 inline ml-1" /> : <ArrowDown className="h-3 w-3 inline ml-1" />;
 
+  /** Ouvre la période suivante de l'abonné via la facturation séquentielle (anticipation autorisée). */
   const handleAdd = async () => {
-    if (!form.eleve_id || !ecoleId || !anneeId) return;
+    if (!abonnementId || !ecoleId) return;
     setSaving(true);
-    const numero = `${cfg.prefixe}-${new Date().getFullYear()}-${Math.floor(Math.random() * 9000 + 1000)}`;
-    const { error } = await supabase.from("factures").insert({
-      ecole_id: ecoleId, eleve_id: form.eleve_id, annee_id: anneeId,
-      numero, libelle: form.libelle, montant: parseFloat(form.montant) || 0,
-      date_echeance: form.date_echeance, statut: "emise", categorie: service,
+    const { data, error } = await supabase.rpc("generer_factures_service" as any, {
+      _ecole_id: ecoleId,
+      _abonnement_id: abonnementId,
+      _service_type: service,
+      _forcer: true,
     });
-    if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Facture créée"); await fetchData(); }
-    setOpen(false); setSaving(false);
+    if (error) {
+      toast.error(messageErreurBase(error));
+    } else if (Number(data ?? 0) > 0) {
+      toast.success("Période ouverte : 1 facture générée");
+      setOpen(false);
+      setAbonnementId("");
+      await fetchData();
+    } else {
+      toast.error(messageErreurBase(
+        "facture_precedente_non_soldee",
+        "Aucune période à ouvrir pour cet abonné (toutes les échéances sont déjà facturées)."
+      ));
+    }
+    setSaving(false);
   };
 
   const [searchParams, setSearchParams] = useSearchParams();
@@ -245,20 +279,30 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
           )}
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouvelle facture</Button></DialogTrigger>
+          <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Ouvrir une période</Button></DialogTrigger>
           <DialogContent>
             <DialogHeader><DialogTitle>{cfg.dialogTitre}</DialogTitle></DialogHeader>
             <div className="space-y-3">
-              <FieldRow label="Élève *">
-                <Select value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>{eleves.map((e) => <SelectItem key={e.id} value={e.id}>{e.nom} {e.prenom}</SelectItem>)}</SelectContent>
+              <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
+                La période suivante de l'abonné est ouverte automatiquement (montant, libellé et échéance issus de sa grille tarifaire).
+                L'ouverture est refusée si la période précédente n'est pas soldée.
+              </div>
+              <FieldRow label="Abonné *">
+                <Select value={abonnementId} onValueChange={setAbonnementId} disabled={abonnesVisibles.length === 0}>
+                  <SelectTrigger><SelectValue placeholder={abonnesVisibles.length === 0 ? "Aucun abonnement actif" : "Sélectionner un abonné"} /></SelectTrigger>
+                  <SelectContent>
+                    {abonnesVisibles.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.eleve_nom} · {a.classe_nom}</SelectItem>
+                    ))}
+                  </SelectContent>
                 </Select>
               </FieldRow>
-              <FieldRow label="Libellé"><Input value={form.libelle} onChange={(e) => setForm((p) => ({ ...p, libelle: e.target.value }))} /></FieldRow>
-              <FieldRow label="Montant (FCFA)"><Input type="number" value={form.montant} onChange={(e) => setForm((p) => ({ ...p, montant: e.target.value }))} /></FieldRow>
-              <FieldRow label="Échéance"><Input type="date" value={form.date_echeance} onChange={(e) => setForm((p) => ({ ...p, date_echeance: e.target.value }))} /></FieldRow>
-              <Button className="w-full" onClick={handleAdd} disabled={saving || !form.eleve_id}>
+              {abonnesVisibles.length === 0 && (
+                <p className="text-xs text-destructive">
+                  Aucun abonnement actif pour ce service. Créez d'abord un abonnement dans l'écran <b>Abonnés</b>.
+                </p>
+              )}
+              <Button className="w-full" onClick={handleAdd} disabled={saving || !abonnementId}>
                 {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
               </Button>
             </div>
