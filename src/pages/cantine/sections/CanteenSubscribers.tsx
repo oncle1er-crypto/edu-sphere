@@ -28,6 +28,11 @@ import { ServiceKpiCards } from "@/components/services/ServiceKpiCards";
 import { ServiceEcheancesAlert } from "@/components/services/ServiceEcheancesAlert";
 import { ResilierAbonnementDialog, type AbonnementResiliable } from "@/components/services/ResilierAbonnementDialog";
 import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
+import { EleveClassePicker } from "@/components/services/EleveClassePicker";
+import { EncaissementInitialChoice, montantAEncaisser, type PortionEncaissement } from "@/components/services/EncaissementInitialChoice";
+import { ouvrirEtRecupererFacture } from "@/lib/ouvrirFactureService";
+
+
 
 interface Abonnement {
   id: string;
@@ -65,13 +70,17 @@ export default function CanteenSubscribers() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ eleve_id: "", regime: "normal", grille_id: "" });
+  const [form, setForm] = useState<{ eleve_id: string; regime: string; grille_id: string; portion: PortionEncaissement }>({ eleve_id: "", regime: "normal", grille_id: "", portion: "aucun" });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Abonnement | null>(null);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
+  const [payMontant, setPayMontant] = useState<number | undefined>(undefined);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
   const [toResilier, setToResilier] = useState<AbonnementResiliable | null>(null);
   const [relanceOpen, setRelanceOpen] = useState(false);
+
+  const grilleSelectionnee = grilles.find((g) => g.id === form.grille_id) ?? null;
+
 
   const fetchData = async () => {
     if (!ecoleId) return;
@@ -127,19 +136,41 @@ export default function CanteenSubscribers() {
     }
     setSaving(true);
     const grille = grilles.find((g) => g.id === form.grille_id);
-    const { error } = await supabase.from("abonnements_cantine").insert({
+    const { data: created, error } = await supabase.from("abonnements_cantine").insert({
       ecole_id: ecoleId, eleve_id: form.eleve_id, annee_id: anneeId,
       regime: form.regime,
       grille_id: form.grille_id,
       montant_mensuel: grille?.periodicite === "mensuel"
         ? Math.round((grille?.montant_total ?? 0) / Math.max(grille?.tranches.length ?? 1, 1))
         : Math.round((grille?.montant_total ?? 0) / 12),
-    });
+    }).select("id").single();
     if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Abonnement créé"); setForm({ eleve_id: "", regime: "normal", grille_id: "" }); await fetchData(); }
-    setOpen(false);
+    else {
+      toast.success("Abonnement créé");
+      const eleve = eleves.find((e) => e.id === form.eleve_id);
+      const portion = form.portion;
+      setForm({ eleve_id: "", regime: "normal", grille_id: "", portion: "aucun" });
+      setOpen(false);
+      if (portion !== "aucun" && created?.id) {
+        try {
+          const fac = await ouvrirEtRecupererFacture({
+            ecoleId, abonnementId: created.id, serviceType: "cantine", eleveId: form.eleve_id,
+          });
+          if (fac) {
+            setPayMontant(montantAEncaisser(grille, portion));
+            setPayFor({ ...fac, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
+          } else {
+            toast.info("Aucune échéance à encaisser pour le moment");
+          }
+        } catch (e) {
+          toast.error(messageErreurBase(e as Error));
+        }
+      }
+      await fetchData();
+    }
     setSaving(false);
   };
+
 
   const doDelete = async () => {
     if (!toDelete) return;
@@ -221,18 +252,7 @@ export default function CanteenSubscribers() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nouvel abonnement cantine</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <FieldRow label="Élève *">
-                  <SearchableSelect
-                    value={form.eleve_id}
-                    onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}
-                    placeholder="Sélectionner un élève"
-                    searchPlaceholder="Rechercher un élève..."
-                    options={eleves.map((e) => ({
-                      value: e.id, label: `${e.nom} ${e.prenom}`,
-                      keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}`,
-                    }))}
-                  />
-                </FieldRow>
+                <EleveClassePicker value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))} />
                 <FieldRow label="Régime">
                   <Select value={form.regime} onValueChange={(v) => setForm((p) => ({ ...p, regime: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -256,11 +276,17 @@ export default function CanteenSubscribers() {
                     </SelectContent>
                   </Select>
                 </FieldRow>
+                <EncaissementInitialChoice
+                  grille={grilleSelectionnee}
+                  value={form.portion}
+                  onValueChange={(v) => setForm((p) => ({ ...p, portion: v }))}
+                />
                 {grilles.length === 0 && (
                   <p className="text-xs text-muted-foreground">
                     Créez d'abord un tarif dans <b>Finances → Grille tarifaire — Cantine</b>.
                   </p>
                 )}
+
                 <Button className="w-full" onClick={handleAdd} disabled={saving || !form.eleve_id || !form.grille_id}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
                 </Button>
@@ -418,7 +444,7 @@ export default function CanteenSubscribers() {
         onDone={fetchData}
       />
 
-      <InvoicePaymentDialog facture={payFor} open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)} onPaymentRecorded={fetchData} />
+      <InvoicePaymentDialog facture={payFor} montantInitial={payMontant} open={!!payFor} onOpenChange={(o) => { if (!o) { setPayFor(null); setPayMontant(undefined); } }} onPaymentRecorded={fetchData} />
       <InvoicePaymentsHistoryDialog facture={historyFor} open={!!historyFor} onOpenChange={(o) => !o && setHistoryFor(null)} onChanged={fetchData} />
 
     </SettingsSection>
