@@ -127,14 +127,39 @@ export default function TransportSubscribers() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("abonnements_transport").insert({
+    const grille = grilles.find((g) => g.id === form.grille_id);
+    const { data: created, error } = await supabase.from("abonnements_transport").insert({
       ecole_id: ecoleId, eleve_id: form.eleve_id, ligne_id: form.ligne_id,
       annee_id: anneeId, statut: "actif", grille_id: form.grille_id,
-    });
+    }).select("id").single();
     if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Abonnement créé"); setForm({ eleve_id: "", ligne_id: "", grille_id: "" }); await fetchData(); }
-    setOpen(false); setSaving(false);
+    else {
+      toast.success("Abonnement créé");
+      const eleve = eleves.find((e) => e.id === form.eleve_id);
+      const portion = form.portion;
+      const eleveId = form.eleve_id;
+      setForm({ eleve_id: "", ligne_id: "", grille_id: "", portion: "aucun" });
+      setOpen(false);
+      if (portion !== "aucun" && created?.id) {
+        try {
+          const fac = await ouvrirEtRecupererFacture({
+            ecoleId, abonnementId: created.id, serviceType: "transport", eleveId,
+          });
+          if (fac) {
+            setPayMontant(montantAEncaisser(grille, portion));
+            setPayFor({ ...fac, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
+          } else {
+            toast.info("Aucune échéance à encaisser pour le moment");
+          }
+        } catch (e) {
+          toast.error(messageErreurBase(e as Error));
+        }
+      }
+      await fetchData();
+    }
+    setSaving(false);
   };
+
 
   const doDelete = async () => {
     if (!toDelete) return;
