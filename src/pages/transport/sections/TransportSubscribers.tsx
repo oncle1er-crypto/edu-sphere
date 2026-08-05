@@ -149,12 +149,6 @@ export default function TransportSubscribers() {
     setToDelete(null);
   };
 
-  const doDisable = async (a: Row) => {
-    const { error } = await supabase.from("abonnements_transport").update({ statut: "resilie" }).eq("id", a.id);
-    if (error) toast.error(messageErreurBase(error));
-    else { toast.success("Abonnement désactivé"); fetchData(); }
-  };
-
   const reprint = async (f: FactureLite) => {
     if (f.montant_paye <= 0) { toast.info("Aucun paiement à réimprimer"); return; }
     await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
@@ -166,16 +160,40 @@ export default function TransportSubscribers() {
     a.classe_nom.toLowerCase().includes(search.toLowerCase()))
   );
 
+  const abonnesActifs = filtered.filter((a) => a.statut === "actif").length;
+
+  const kpis = useMemo(() => {
+    const facs = filtered.flatMap((a) => factures[a.eleve_id] ?? []);
+    return computeServiceKpis(facs);
+  }, [filtered, factures]);
+
+  const ciblesRelance: CibleRelance[] = useMemo(() => {
+    const jour = new Date().toISOString().slice(0, 10);
+    return filtered
+      .map((a) => {
+        const reste = (factures[a.eleve_id] ?? [])
+          .filter((f) => f.statut !== "annulee" && f.date_echeance <= jour)
+          .reduce((s, f) => s + Math.max(0, f.montant - f.montant_paye), 0);
+        return { abonnement_id: a.id, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, classe_nom: a.classe_nom, reste };
+      })
+      .filter((c) => c.reste > 0);
+  }, [filtered, factures]);
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <SettingsSection icon={<Users className="h-5 w-5" />} title={`Élèves abonnés (${filtered.length})`} description="Abonnements transport, adossés à la grille tarifaire (mensuel ou trimestriel)." hideSave>
+      <ServiceKpiCards abonnesActifs={abonnesActifs} kpis={kpis} service="transport" />
+      <ServiceEcheancesAlert kpis={kpis} service="transport" onRelancer={() => setRelanceOpen(true)} />
+
       <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs flex items-start gap-2">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-muted-foreground">
           Les reçus <b>double-souche</b> se réimpriment via l'icône <Printer className="inline h-3 w-3" /> à côté de chaque facture (ci-dessous ou dans <b>Facturation transport</b>).
+          Un élève qui arrête le car en cours d'année doit être <b>résilié</b> (bouton « Arrêter ») : les échéances futures sont annulées, les impayés passés restent dus.
         </p>
       </div>
+
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="relative max-w-sm w-full">
