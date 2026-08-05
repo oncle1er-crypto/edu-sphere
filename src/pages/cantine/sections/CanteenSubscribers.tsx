@@ -221,18 +221,7 @@ export default function CanteenSubscribers() {
             <DialogContent>
               <DialogHeader><DialogTitle>Nouvel abonnement cantine</DialogTitle></DialogHeader>
               <div className="space-y-3">
-                <FieldRow label="Élève *">
-                  <SearchableSelect
-                    value={form.eleve_id}
-                    onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))}
-                    placeholder="Sélectionner un élève"
-                    searchPlaceholder="Rechercher un élève..."
-                    options={eleves.map((e) => ({
-                      value: e.id, label: `${e.nom} ${e.prenom}`,
-                      keywords: `${e.matricule ?? ""} ${e.classe_nom ?? ""}`,
-                    }))}
-                  />
-                </FieldRow>
+                <EleveClassePicker value={form.eleve_id} onValueChange={(v) => setForm((p) => ({ ...p, eleve_id: v }))} />
                 <FieldRow label="Régime">
                   <Select value={form.regime} onValueChange={(v) => setForm((p) => ({ ...p, regime: v }))}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
@@ -256,11 +245,17 @@ export default function CanteenSubscribers() {
                     </SelectContent>
                   </Select>
                 </FieldRow>
+                <EncaissementInitialChoice
+                  grille={grilleSelectionnee}
+                  value={form.portion}
+                  onValueChange={(v) => setForm((p) => ({ ...p, portion: v }))}
+                />
                 {grilles.length === 0 && (
                   <p className="text-xs text-muted-foreground">
                     Créez d'abord un tarif dans <b>Finances → Grille tarifaire — Cantine</b>.
                   </p>
                 )}
+
                 <Button className="w-full" onClick={handleAdd} disabled={saving || !form.eleve_id || !form.grille_id}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
                 </Button>
