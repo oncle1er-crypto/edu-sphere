@@ -42,6 +42,11 @@ const REGLES: Regle[] = [
     build: () =>
       "La facture précédente de cet abonné n'est pas soldée : encaissez-la avant d'ouvrir la période suivante.",
   },
+  {
+    code: "abonnement_deja_actif",
+    build: () =>
+      "Cet élève a déjà un abonnement actif pour ce service. Résiliez l'abonnement existant avant d'en créer un nouveau.",
+  },
   { code: "montant_tranche_sous_paye", build: () => "Le montant de cette tranche ne peut pas être inférieur à ce qui a déjà été versé." },
 
   { code: "montant_depasse_reste", build: (p) => `Le montant dépasse le reste dû, qui est de ${fmt(p[0])} FCFA.` },
