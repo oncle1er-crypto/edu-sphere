@@ -71,11 +71,13 @@ export default function TransportSubscribers() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ eleve_id: "", ligne_id: "", grille_id: "" });
+  const [form, setForm] = useState<{ eleve_id: string; ligne_id: string; grille_id: string; portion: PortionEncaissement }>({ eleve_id: "", ligne_id: "", grille_id: "", portion: "aucun" });
   const [expanded, setExpanded] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<Row | null>(null);
   const [payFor, setPayFor] = useState<InvoiceForPayment | null>(null);
+  const [payMontant, setPayMontant] = useState<number | undefined>(undefined);
   const [historyFor, setHistoryFor] = useState<InvoiceForPayment | null>(null);
+
   const [toResilier, setToResilier] = useState<AbonnementResiliable | null>(null);
   const [relanceOpen, setRelanceOpen] = useState(false);
 
