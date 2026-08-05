@@ -205,7 +205,11 @@ export default function CanteenSubscribers() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Rechercher..." className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="outline" disabled={ciblesRelance.length === 0} onClick={() => setRelanceOpen(true)}
+            title={ciblesRelance.length === 0 ? "Aucune famille en retard" : "Relancer par SMS les familles en retard"}>
+            <MessageSquare className="h-4 w-4" /> Relancer les impayés ({ciblesRelance.length})
+          </Button>
           <Button size="sm" variant="outline" disabled={isBulkGenerating || filtered.length === 0}
             onClick={() => generateBulk(filtered.filter((a) => a.statut === "actif" && a.grille_id).map((a) => a.id))}>
             {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Générer factures (masse)
