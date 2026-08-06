@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Save } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
+import { useAnneeId } from "@/hooks/useAnneeId";
 import { useSpStockTenues, type SpGenre } from "../hooks/useSpStockTenues";
 
 interface Draft { stock: string; seuil: string; prix: string }
 
 export default function SpStockTenuesConfig() {
-  const { classes, loading: lc } = useClasses();
+  const { anneeId } = useAnneeId();
+  const { classes, loading: lc } = useClasses(anneeId ?? undefined);
   const { loading: ls, upsert, findFor } = useSpStockTenues();
   const [draft, setDraft] = useState<Record<string, Draft>>({});
 
