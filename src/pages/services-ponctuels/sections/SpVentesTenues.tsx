@@ -12,6 +12,7 @@ import { VenteTenueDialog } from "../components/VenteTenueDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoleInfo } from "../hooks/useEcoleInfo";
 import { useClasses } from "@/hooks/useClasses";
+import { useAnneeId } from "@/hooks/useAnneeId";
 
 const STATUT_COLOR: Record<string, string> = {
   paye: "bg-emerald-600", remis: "bg-blue-600", attente: "bg-orange-500", reservation: "bg-amber-500", annule: "bg-destructive",
@@ -21,7 +22,8 @@ export default function SpVentesTenues() {
   const { ventes, loading, annuler, save } = useSpVentes();
   const { findFor } = useSpStockTenues();
   const ecole = useEcoleInfo();
-  const { classes } = useClasses();
+  const { anneeId } = useAnneeId();
+  const { classes } = useClasses(anneeId ?? undefined);
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
 
