@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { GraduationCap, Users, Wallet, UserCheck, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -56,8 +56,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
 
-  const ouvrirDetail = async () => {
-    setOpen(true);
+  const chargerDetail = useCallback(async () => {
     if (!ecoleId) {
       setErreur("École introuvable pour cet utilisateur.");
       return;
@@ -77,7 +76,18 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
       setDetail(res as unknown as EncaissementsJour);
     }
     setLoading(false);
+  }, [ecoleId]);
+
+  // Charge le montant corrigé (hors remises/bourses) dès l'affichage de la tuile.
+  useEffect(() => {
+    if (ecoleId) void chargerDetail();
+  }, [ecoleId, chargerDetail]);
+
+  const ouvrirDetail = async () => {
+    setOpen(true);
+    if (!detail) await chargerDetail();
   };
+
 
   const tiles = [
     {
