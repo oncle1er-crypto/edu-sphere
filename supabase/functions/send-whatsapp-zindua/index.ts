@@ -95,7 +95,10 @@ Deno.serve(async (req) => {
     const usage: Usage = USAGES.includes(body?.usage as Usage) ? (body.usage as Usage) : "relance";
     const brut = Array.isArray(body?.destinataires) ? body.destinataires : [];
 
-    if (!ecole_id || brut.length === 0) {
+    const action = body?.action === "lister_modeles" ? "lister_modeles" : "envoyer";
+
+    if (!ecole_id) return json(400, { error: "Champ requis : ecole_id." });
+    if (action === "envoyer" && brut.length === 0) {
       return json(400, { error: "Champs requis : ecole_id et destinataires." });
     }
     if (brut.length > MAX_DESTINATAIRES) {
@@ -113,6 +116,26 @@ Deno.serve(async (req) => {
       .in("role", ["admin", "directeur", "comptable", "secretaire", "surveillant"] as never)
       .maybeSingle();
     if (!membership) return json(403, { error: "Accès refusé pour cette école." });
+
+    if (action === "lister_modeles") {
+      const { data: cfg } = await service
+        .from("zindua_config")
+        .select("api_base_url")
+        .eq("ecole_id", ecole_id)
+        .maybeSingle();
+      const res = await zinduaListTemplates(
+        (cfg?.api_base_url as string | undefined) ?? "https://zindua.run/api/v1",
+      );
+      if (!res.ok) {
+        return json(200, {
+          ok: false,
+          detail: CODES[res.code] ??
+            "Impossible de récupérer la liste des modèles chez Zindua (endpoint non exposé par l'API).",
+          essais: res.essais,
+        });
+      }
+      return json(200, { ok: true, endpoint: res.endpoint, templates: res.templates });
+    }
 
     const cibles: Cible[] = brut.map((d) =>
       typeof d === "string" ? { to: d } : { to: d.to, variables: d.variables, sms: d.sms }
