@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 
-export type ZinduaUsage = "test" | "relance" | "echeance" | "bulletin";
+export type ZinduaUsage = "test" | "relance" | "echeance" | "bulletin" | "recu";
 
 export interface CibleWhatsApp {
   /** Numéro au format ivoirien (+225… ou 10 chiffres). */
