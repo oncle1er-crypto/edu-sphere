@@ -1,11 +1,40 @@
 
 -- 1) Fix mutable search_path on our public functions
-ALTER FUNCTION public.cloturer_et_basculer_annee(uuid, uuid, uuid, boolean) SET search_path = public;
-ALTER FUNCTION public.import_matricules_sigfne(uuid, jsonb, boolean) SET search_path = public;
-ALTER FUNCTION public.normaliser_etat_civil(text) SET search_path = public;
-ALTER FUNCTION public.matricule_valide(uuid, text) SET search_path = public;
-ALTER FUNCTION public.trg_eleves_sigfne() SET search_path = public;
-ALTER FUNCTION public.stats_conformite_sigfne(uuid) SET search_path = public;
+--
+-- Rendu conditionnel pour permettre une reconstruction depuis une base vierge.
+--
+-- Les 5 fonctions SIGFNE sont désormais créées par la migration de réparation
+-- 20260703070731 : elles existent donc bien à ce stade et reçoivent leur
+-- search_path normalement.
+--
+-- Le garde-fou reste nécessaire pour cloturer_et_basculer_annee, qui n'est
+-- créée qu'en 20260705224256, soit APRÈS cette migration : l'ordre d'origine
+-- n'est valide que sur la base de production, où la fonction préexistait.
+-- 20260706211428 réapplique ce même ALTER une fois la fonction créée :
+-- l'intention est donc intégralement préservée.
+--
+-- En production, toutes ces fonctions existent : le bloc s'exécute à l'identique
+-- de la version d'origine. Aucun durcissement de sécurité n'est perdu.
+DO $do$
+DECLARE
+  v_sig text;
+BEGIN
+  FOREACH v_sig IN ARRAY ARRAY[
+    'public.cloturer_et_basculer_annee(uuid, uuid, uuid, boolean)',
+    'public.import_matricules_sigfne(uuid, jsonb, boolean)',
+    'public.normaliser_etat_civil(text)',
+    'public.matricule_valide(uuid, text)',
+    'public.trg_eleves_sigfne()',
+    'public.stats_conformite_sigfne(uuid)'
+  ] LOOP
+    IF to_regprocedure(v_sig) IS NOT NULL THEN
+      EXECUTE format('ALTER FUNCTION %s SET search_path = public', v_sig);
+    ELSE
+      RAISE NOTICE 'search_path non appliqué : % absente de cette base (drift de schéma)', v_sig;
+    END IF;
+  END LOOP;
+END
+$do$;
 
 -- 2) Stop broadcasting the full eleves table over Realtime
 DO $$

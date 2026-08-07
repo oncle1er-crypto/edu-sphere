@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Supabase CLI (état local, ne doit jamais être versionné)
+supabase/.temp/
+supabase/.branches/

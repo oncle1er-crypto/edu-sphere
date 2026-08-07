@@ -77,13 +77,13 @@ export function useSmsConfig() {
     await fetchConfig();
   };
 
-  const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+  const functionsBaseUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
 
   const invoke = async (fn: "send-sms" | "send-whatsapp", body: Record<string, unknown>) => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Non connecté");
     const res = await window.fetch(
-      `https://${projectId}.supabase.co/functions/v1/${fn}`,
+      `${functionsBaseUrl}/${fn}`,
       {
         method: "POST",
         headers: {
