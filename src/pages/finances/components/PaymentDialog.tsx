@@ -9,7 +9,7 @@ import { Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
 import { fcfa, friendlyRpcError, type EleveScolarite, type PaiementHistorique } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
-import { shareReceiptWhatsApp } from "@/lib/downloadReceipt";
+
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
 import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
 import { useParentContactGuard } from "@/hooks/useParentContactGuard";
