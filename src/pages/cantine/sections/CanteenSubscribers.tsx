@@ -158,7 +158,7 @@ export default function CanteenSubscribers() {
           });
           if (fac) {
             setPayMontant(montantAEncaisser(grille, portion));
-            setPayFor({ ...fac, eleve_id: eleve?.id ?? fac.eleve_id, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
+            setPayFor({ ...fac, eleve_id: eleve?.id, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
           } else {
             toast.info("Aucune échéance à encaisser pour le moment");
           }
