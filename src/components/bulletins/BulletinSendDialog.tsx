@@ -9,6 +9,9 @@ import { Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeSmsText } from "@/lib/smsText";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import {
+  envoyerWhatsAppZindua, premierEchec, ZINDUA_MAX_DESTINATAIRES,
+} from "@/lib/sendWhatsAppZindua";
 
 interface Parent {
   id: string;
@@ -130,14 +133,36 @@ export function BulletinSendDialog(props: Props) {
         else { channelsLog.push("sms"); recipientsLog.push(...smsNums.map((t) => ({ ch: "sms", to: t }))); }
       }
 
-      // WhatsApp
+      // WhatsApp (Zindua, modèle approuvé) avec repli SMS
       if (waNums.length > 0) {
-        const { data, error } = await supabase.functions.invoke("send-whatsapp", {
-          body: { ecole_id: ecoleId, destinataires: waNums, message: baseTxt },
-        });
-        if (error || data?.error) toast.error("WhatsApp: " + (messageErreurBase(error) ?? data?.error));
-        else { channelsLog.push("whatsapp"); recipientsLog.push(...waNums.map((t) => ({ ch: "whatsapp", to: t }))); }
+        try {
+          for (let i = 0; i < waNums.length; i += ZINDUA_MAX_DESTINATAIRES) {
+            const lot = waNums.slice(i, i + ZINDUA_MAX_DESTINATAIRES);
+            const r = await envoyerWhatsAppZindua({
+              ecoleId: ecoleId as string,
+              usage: "bulletin",
+              destinataires: lot,
+              variables: {
+                eleve: `${eleveNom} ${elevePrenom}`.trim(),
+                classe: classeNom,
+                periode: periodeNom,
+                lien: link,
+              },
+              sms: smsTxt,
+              fallbackSms: true,
+            });
+            if (r.envoyes > 0) {
+              channelsLog.push("whatsapp");
+              recipientsLog.push(...lot.map((t) => ({ ch: "whatsapp", to: t })));
+            }
+            const echec = premierEchec(r);
+            if (echec) toast.error("WhatsApp: " + echec);
+          }
+        } catch (e) {
+          toast.error("WhatsApp: " + (e instanceof Error ? e.message : String(e)));
+        }
       }
+
 
       // Email — fallback mailto (à connecter à un provider plus tard)
       if (emails.length > 0) {

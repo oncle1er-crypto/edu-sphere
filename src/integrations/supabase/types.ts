@@ -7549,7 +7549,11 @@ export type Database = {
           id: string
           intervalle_min_secondes: number
           quota_mensuel: number
+          template_bulletin: string
+          template_echeance: string
           template_otp: string
+          template_relance: string
+          template_test: string
           test_destinataires: string[]
           test_mode: boolean
           updated_at: string
@@ -7565,7 +7569,11 @@ export type Database = {
           id?: string
           intervalle_min_secondes?: number
           quota_mensuel?: number
+          template_bulletin?: string
+          template_echeance?: string
           template_otp?: string
+          template_relance?: string
+          template_test?: string
           test_destinataires?: string[]
           test_mode?: boolean
           updated_at?: string
@@ -7581,7 +7589,11 @@ export type Database = {
           id?: string
           intervalle_min_secondes?: number
           quota_mensuel?: number
+          template_bulletin?: string
+          template_echeance?: string
           template_otp?: string
+          template_relance?: string
+          template_test?: string
           test_destinataires?: string[]
           test_mode?: boolean
           updated_at?: string
@@ -8367,7 +8379,7 @@ export type Database = {
         Returns: undefined
       }
       zindua_verifier_envoi: {
-        Args: { _destinataire: string; _ecole_id: string }
+        Args: { _destinataire: string; _ecole_id: string; _usage?: string }
         Returns: Json
       }
     }

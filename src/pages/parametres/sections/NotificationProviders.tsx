@@ -9,13 +9,17 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Send, MessageSquare, Smartphone, Mail, AlertTriangle, ExternalLink,
-  ShieldCheck, Trash2, Plus, Lock,
+  ShieldCheck, Trash2, Plus, Lock, Loader2, Rocket,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useSmsConfig } from "@/hooks/useSmsConfig";
 import { useZinduaConfig, ZINDUA_INTERVALLE_MIN } from "@/hooks/useZinduaConfig";
 import { useNotificationProviders } from "@/hooks/useNotificationProviders";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+
 
 function StatCell({ label, value }: { label: string; value: number | string }) {
   return (
@@ -32,11 +36,40 @@ export default function NotificationProviders() {
     config: zindua, loading: zinduaLoading,
     updateConfig, addTestDestinataire, removeTestDestinataire,
   } = useZinduaConfig();
-  const { get, volumeMoisTotal, loading: statsLoading } = useNotificationProviders();
+  const { get, volumeMoisTotal, loading: statsLoading, refetch: refetchStats } =
+    useNotificationProviders();
   const { isAdmin } = useIsAdmin();
+  const { ecoleId } = useEcoleId();
 
   const [newNumero, setNewNumero] = useState("");
-  const [templateOtp, setTemplateOtp] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [testNumero, setTestNumero] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const envoyerTest = async () => {
+    if (!ecoleId) return;
+    const cible = testNumero || (zindua?.test_destinataires ?? [])[0];
+    if (!cible) {
+      toast.error("Ajoutez d'abord un destinataire de test.");
+      return;
+    }
+    setTesting(true);
+    try {
+      const r = await envoyerWhatsAppZindua({
+        ecoleId,
+        usage: "test",
+        destinataires: [{ to: cible, variables: { code: "123456", otp: "123456" } }],
+      });
+      if (r.whatsapp > 0) toast.success(`Message WhatsApp envoyé à ${cible}`);
+      else toast.error(premierEchec(r) ?? "Le message n'a pas pu être envoyé.");
+      await refetchStats?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec de l'envoi du test.");
+    } finally {
+      setTesting(false);
+    }
+  };
+
 
   const yellika = get("yellikasms");
   const zin = get("zindua");
@@ -236,28 +269,44 @@ export default function NotificationProviders() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="template-otp">Modèle OTP</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="template-otp"
-                    value={templateOtp ?? zindua.template_otp}
-                    disabled={readOnly}
-                    onChange={(e) => setTemplateOtp(e.target.value)}
-                  />
-                  {!readOnly && templateOtp !== null && templateOtp !== zindua.template_otp && (
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        await updateConfig({ template_otp: templateOtp.trim() });
-                        setTemplateOtp(null);
-                      }}
-                    >
-                      Enregistrer
-                    </Button>
-                  )}
-                </div>
-              </div>
+              {([
+                { key: "template_otp" as const, label: "Modèle — code de vérification" },
+                { key: "template_test" as const, label: "Modèle — message de test" },
+                { key: "template_relance" as const, label: "Modèle — relance d'impayé" },
+                { key: "template_echeance" as const, label: "Modèle — rappel d'échéance" },
+                { key: "template_bulletin" as const, label: "Modèle — bulletin disponible" },
+              ]).map(({ key, label }) => {
+                const actuel = String(zindua[key] ?? "");
+                const saisie = templates[key];
+                const modifie = saisie !== undefined && saisie.trim() !== actuel;
+                return (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{label}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id={key}
+                        value={saisie ?? actuel}
+                        disabled={readOnly}
+                        onChange={(e) => setTemplates((t) => ({ ...t, [key]: e.target.value }))}
+                      />
+                      {!readOnly && modifie && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            await updateConfig({ [key]: saisie.trim() });
+                            setTemplates((t) => {
+                              const { [key]: _omit, ...rest } = t;
+                              return rest;
+                            });
+                          }}
+                        >
+                          Enregistrer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
               <div className="space-y-2">
                 <Label htmlFor="cadence">Cadence minimale</Label>
@@ -271,6 +320,53 @@ export default function NotificationProviders() {
                 </p>
               </div>
             </div>
+
+            {/* Test réel du canal WhatsApp */}
+            {!readOnly && (
+              <div className="space-y-3 rounded-lg border p-4">
+                <div>
+                  <div className="text-sm font-semibold">Tester le canal WhatsApp</div>
+                  <p className="text-xs text-muted-foreground">
+                    Envoie un vrai message via Zindua pour confirmer que le compte WhatsApp et le
+                    modèle sont opérationnels.
+                    {zindua.test_mode && " En mode test, seuls les numéros autorisés sont acceptés."}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    placeholder={(zindua.test_destinataires ?? [])[0] ?? "+225 07 07 07 07 07"}
+                    value={testNumero}
+                    onChange={(e) => setTestNumero(e.target.value)}
+                  />
+                  <Button type="button" onClick={envoyerTest} disabled={testing}>
+                    {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Envoyer un test WhatsApp
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Passage en production */}
+            {!readOnly && zindua.test_mode && (
+              <Alert>
+                <Rocket className="h-4 w-4" />
+                <AlertTitle>Mode test actif</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Seuls les numéros de la liste ci-dessous reçoivent des messages. En quittant le
+                    mode test, les envois partent aux vraies familles et consomment le quota mensuel.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateConfig({ test_mode: false })}
+                  >
+                    Quitter le mode test
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
 
             {/* Liste blanche de test */}
             {zindua.test_mode && (
@@ -330,11 +426,22 @@ export default function NotificationProviders() {
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCell label="Total" value={zin?.total ?? 0} />
               <StatCell label="Envoyés" value={zin?.envoyes ?? 0} />
               <StatCell label="Échecs" value={zin?.echecs ?? 0} />
               <StatCell label="Ce mois" value={zin?.moisCourant ?? 0} />
+              <StatCell label="Quota restant" value={Math.max(0, quota - used)} />
             </div>
+
+            {zin?.derniereErreur && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Dernier échec WhatsApp</AlertTitle>
+                <AlertDescription className="font-mono text-xs break-all">
+                  {zin.derniereErreur}
+                </AlertDescription>
+              </Alert>
+            )}
+
 
             <Alert>
               <ShieldCheck className="h-4 w-4" />
