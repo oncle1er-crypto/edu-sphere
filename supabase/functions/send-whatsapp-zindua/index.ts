@@ -3,7 +3,7 @@ import { corsHeaders } from "https://esm.sh/@supabase/supabase-js@2.95.0/cors";
 import { normalizePhoneCI } from "../_shared/phone-ci.ts";
 import { zinduaSend, zinduaListTemplates, ZINDUA_CONFIG_ERRORS } from "../_shared/zindua-client.ts";
 
-type Usage = "test" | "relance" | "echeance" | "bulletin" | "otp";
+type Usage = "test" | "relance" | "echeance" | "bulletin" | "otp" | "recu";
 
 interface Cible {
   to: string;
