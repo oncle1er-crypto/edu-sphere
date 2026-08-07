@@ -371,7 +371,45 @@ export default function NotificationProviders() {
                     Envoyer un test WhatsApp
                   </Button>
                 </div>
+
+                <div className="space-y-2 border-t pt-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={listerModeles}
+                      disabled={chargementModeles}
+                    >
+                      {chargementModeles
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <ShieldCheck className="h-4 w-4" />}
+                      Vérifier les modèles disponibles
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      « Modèle introuvable » = le nom saisi ci-dessus ne correspond pas au modèle
+                      approuvé dans Zindua.
+                    </span>
+                  </div>
+                  {modeles !== null && (
+                    <div className="rounded-md bg-muted/40 p-3 text-xs">
+                      {modeles.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          Aucun modèle renvoyé. Recopiez le nom exact du modèle validé depuis le
+                          tableau de bord Zindua dans les champs ci-dessus.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {modeles.map((m) => (
+                            <Badge key={m} variant="secondary" className="font-mono">{m}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
+
             )}
 
             {/* Passage en production */}
