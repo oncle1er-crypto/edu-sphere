@@ -43,12 +43,17 @@ function friendlySolde(err: any): string {
   return friendlyRpcError(err);
 }
 
+import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
+import { useParentContactGuard } from "@/hooks/useParentContactGuard";
+import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
+
 export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, contexteLabel, onCompleted }: Props) {
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, current: "" });
   const submittingRef = useRef(false);
+  const { dialog: parentGuardDialog, verifierAvant } = useParentContactGuard();
 
   const cibles = useMemo<EleveScolarite[]>(() => {
     if (eleves && eleves.length > 0) return eleves.filter((e) => e.resteDu > 0);
@@ -70,7 +75,21 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
     setProgress({ done: 0, total: cibles.length, current: "" });
   }, [open, cibles.length]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (!ecoleId || cibles.length === 0) return;
+    // Encaissement individuel : coordonnées parent obligatoires
+    if (cibles.length === 1) {
+      const el = cibles[0];
+      verifierAvant(
+        { ecoleId, eleveId: el.id, nomEleve: `${el.nom} ${el.prenom}`.trim(), parent: el.parent, telephone: el.telephone },
+        (contact) => { void executerSolde(contact); },
+      );
+      return;
+    }
+    void executerSolde(null);
+  };
+
+  const executerSolde = async (contact: ContactParent | null) => {
     if (!ecoleId || cibles.length === 0) return;
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -99,6 +118,26 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
         } else {
           okCount++;
           tranchesCount += Number((data as any)?.nb_tranches ?? 0);
+
+          // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
+          const paiementId = (data as any)?.lignes?.[0]?.paiement_id as string | undefined;
+          const parentNom = contact?.nomComplet ?? el.parent;
+          const parentTel = contact?.telephone ?? el.telephone;
+          if (paiementId && parentNom && parentTel) {
+            void envoyerRecuWhatsApp({
+              ecoleId,
+              eleveId: el.id,
+              paiementId,
+              type: "encaissement",
+              telephone: parentTel,
+              parent: parentNom,
+              nomEleve: el.nom,
+              prenomEleve: el.prenom,
+              montant: el.resteDu,
+              reference: reference || `SOLDE-${el.matricule}`,
+              objet: "scolarité",
+            });
+          }
         }
       }
       setProgress({ done: processed, total: cibles.length, current: "" });
@@ -146,6 +185,8 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
   const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   return (
+    <>
+    {parentGuardDialog}
     <Dialog open={open} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -201,5 +242,6 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
