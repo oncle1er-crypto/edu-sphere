@@ -11,6 +11,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
 import { shareReceiptWhatsApp } from "@/lib/downloadReceipt";
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
+import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
+import { useParentContactGuard } from "@/hooks/useParentContactGuard";
+import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
 import { toast } from "sonner";
 
 interface Props {
