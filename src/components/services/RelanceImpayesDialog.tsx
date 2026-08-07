@@ -81,20 +81,40 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
     if (!ecoleId || joignables.length === 0) return;
     setSending(true);
     let ok = 0;
-    for (const d of joignables) {
-      const message =
+    let parWhatsapp = 0;
+    let dernierEchec: string | null = null;
+
+    const cibles = joignables.map((d) => ({
+      to: d.telephone as string,
+      variables: {
+        parent: d.parent,
+        eleve: d.eleve_nom,
+        classe: d.classe_nom,
+        montant: fmtF(d.reste).replace(" F", " FCFA"),
+        service: LABEL[service],
+      },
+      sms:
         `GSP - Bonjour ${d.parent}, un montant de ${fmtF(d.reste).replace(" F", " FCFA")} reste dû pour ` +
         `${LABEL[service]} de ${d.eleve_nom} (${d.classe_nom}). Merci de régulariser au secrétariat. ` +
-        `Foi, Savoir, Excellence.`;
+        `Foi, Savoir, Excellence.`,
+    }));
+
+    // WhatsApp d'abord (Zindua), repli SMS automatique ; lots limités par la cadence Zindua.
+    for (let i = 0; i < cibles.length; i += ZINDUA_MAX_DESTINATAIRES) {
+      const lot = cibles.slice(i, i + ZINDUA_MAX_DESTINATAIRES);
       try {
-        const { data, error } = await supabase.functions.invoke("send-sms", {
-          body: { ecole_id: ecoleId, destinataires: [d.telephone], message },
+        const r = await envoyerWhatsAppZindua({
+          ecoleId,
+          usage: "relance",
+          destinataires: lot,
+          fallbackSms: true,
         });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        if ((data?.sent ?? 0) > 0) ok += 1;
+        ok += r.envoyes;
+        parWhatsapp += r.whatsapp;
+        dernierEchec = premierEchec(r) ?? dernierEchec;
       } catch (e) {
-        console.error("relance sms", d.eleve_nom, e);
+        console.error("relance whatsapp", e);
+        dernierEchec = e instanceof Error ? e.message : String(e);
       }
     }
 
@@ -108,11 +128,18 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
 
 
     setSending(false);
-    if (ok > 0) toast.success(`${ok} relance(s) SMS envoyée(s)`);
-    else toast.error("Aucun SMS n'a pu être envoyé — vérifiez la configuration SMS");
+    if (ok > 0) {
+      toast.success(
+        `${ok} relance(s) envoyée(s)` +
+          (parWhatsapp > 0 ? ` — ${parWhatsapp} par WhatsApp, ${ok - parWhatsapp} par SMS` : " par SMS"),
+      );
+    } else {
+      toast.error(dernierEchec ?? "Aucune relance n'a pu être envoyée — vérifiez la configuration");
+    }
     onOpenChange(false);
     onDone?.();
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
