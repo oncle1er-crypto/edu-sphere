@@ -199,14 +199,21 @@ export default function CanteenSubscribers() {
 
   const abonnesActifs = filtered.filter((a) => a.statut === "actif").length;
 
+  /** Un élève peut avoir plusieurs abonnements (résilié + actif) : on ne compte ses factures qu'une fois. */
+  const parEleve = useMemo(() => {
+    const m = new Map<string, typeof filtered[number]>();
+    for (const a of filtered) if (!m.has(a.eleve_id) || a.statut === "actif") m.set(a.eleve_id, a);
+    return Array.from(m.values());
+  }, [filtered]);
+
   const kpis = useMemo(() => {
-    const facs = filtered.flatMap((a) => factures[a.eleve_id] ?? []);
+    const facs = parEleve.flatMap((a) => factures[a.eleve_id] ?? []);
     return computeServiceKpis(facs);
-  }, [filtered, factures]);
+  }, [parEleve, factures]);
 
   const ciblesRelance: CibleRelance[] = useMemo(() => {
     const jour = new Date().toISOString().slice(0, 10);
-    return filtered
+    return parEleve
       .map((a) => {
         const reste = (factures[a.eleve_id] ?? [])
           .filter((f) => f.statut !== "annulee" && f.date_echeance <= jour)
@@ -214,7 +221,8 @@ export default function CanteenSubscribers() {
         return { abonnement_id: a.id, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, classe_nom: a.classe_nom, reste };
       })
       .filter((c) => c.reste > 0);
-  }, [filtered, factures]);
+  }, [parEleve, factures]);
+
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
