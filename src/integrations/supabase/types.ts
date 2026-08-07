@@ -7546,12 +7546,14 @@ export type Database = {
           ecole_id: string
           email_enabled: boolean
           enabled: boolean
+          envoi_auto_recu: boolean
           id: string
           intervalle_min_secondes: number
           quota_mensuel: number
           template_bulletin: string
           template_echeance: string
           template_otp: string
+          template_recu: string | null
           template_relance: string
           template_test: string
           test_destinataires: string[]
@@ -7566,12 +7568,14 @@ export type Database = {
           ecole_id: string
           email_enabled?: boolean
           enabled?: boolean
+          envoi_auto_recu?: boolean
           id?: string
           intervalle_min_secondes?: number
           quota_mensuel?: number
           template_bulletin?: string
           template_echeance?: string
           template_otp?: string
+          template_recu?: string | null
           template_relance?: string
           template_test?: string
           test_destinataires?: string[]
@@ -7586,12 +7590,14 @@ export type Database = {
           ecole_id?: string
           email_enabled?: boolean
           enabled?: boolean
+          envoi_auto_recu?: boolean
           id?: string
           intervalle_min_secondes?: number
           quota_mensuel?: number
           template_bulletin?: string
           template_echeance?: string
           template_otp?: string
+          template_recu?: string | null
           template_relance?: string
           template_test?: string
           test_destinataires?: string[]
