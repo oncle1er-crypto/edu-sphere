@@ -14,10 +14,12 @@ interface Cible {
 
 interface Payload {
   ecole_id: string;
+  /** "lister_modeles" = diagnostic : renvoie les modèles disponibles chez Zindua. */
+  action?: "envoyer" | "lister_modeles";
   usage?: Usage;
   /** Modèle Zindua imposé (sinon celui configuré pour l'usage). */
   template?: string;
-  destinataires: (string | Cible)[];
+  destinataires?: (string | Cible)[];
   /** Variables communes à tous les destinataires. */
   variables?: Record<string, string>;
   /** Texte SMS commun pour le repli. */
