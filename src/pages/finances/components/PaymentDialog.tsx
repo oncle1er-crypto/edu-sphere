@@ -160,26 +160,32 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
         if (ok) toast.success("SMS de confirmation envoyé au parent");
       });
 
-      // Proposer l'envoi WhatsApp du reçu (sans souche)
+      // Envoi automatique du reçu au parent par WhatsApp (repli SMS)
       const premierPaiementId = lignes[0]?.paiement_id;
       if (premierPaiementId) {
-        toast("Envoyer le reçu par WhatsApp ?", {
-          description: `${eleve.parent} — ${eleve.telephone || "numéro non renseigné"}`,
-          duration: 10000,
-          action: {
-            label: "WhatsApp",
-            onClick: () => {
-              shareReceiptWhatsApp({
-                ecoleId,
-                eleveId: eleve.id,
-                paiementId: premierPaiementId,
-                type: "encaissement",
-                telephone: eleve.telephone,
-              });
-            },
-          },
+        envoyerRecuWhatsApp({
+          ecoleId,
+          eleveId: eleve.id,
+          paiementId: premierPaiementId,
+          type: "scolarite",
+          telephone: contact.telephone,
+          parent: contact.nomComplet,
+          nomEleve: eleve.nom,
+          prenomEleve: eleve.prenom,
+          montant: montantNum,
+          reference: ref,
+          objet: "scolarité",
+        }).then((r) => {
+          if (r.ok) {
+            toast.success(
+              r.canal === "sms" ? "Reçu envoyé au parent par SMS" : "Reçu envoyé au parent par WhatsApp",
+            );
+          } else if (r.detail) {
+            toast.warning("Reçu non envoyé au parent", { description: r.detail });
+          }
         });
       }
+
 
       onOpenChange(false);
       onPaymentRecorded?.();
