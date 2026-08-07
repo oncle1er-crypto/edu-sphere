@@ -128,3 +128,62 @@ export async function zinduaSend(params: ZinduaSendParams): Promise<ZinduaSendRe
     clearTimeout(timer);
   }
 }
+
+export type ZinduaTemplatesResult =
+  | { ok: true; endpoint: string; templates: string[]; raw: unknown }
+  | { ok: false; code: string; essais: { endpoint: string; status: number | null; body?: unknown }[] };
+
+function collectTemplateNames(payload: unknown): string[] {
+  const noms = new Set<string>();
+  const visit = (v: unknown, depth: number) => {
+    if (depth > 4 || v == null) return;
+    if (Array.isArray(v)) { v.forEach((x) => visit(x, depth + 1)); return; }
+    if (typeof v !== "object") return;
+    const o = v as Record<string, unknown>;
+    for (const k of ["slug", "name", "template", "template_name", "code"]) {
+      if (typeof o[k] === "string" && o[k]) noms.add(String(o[k]));
+    }
+    for (const val of Object.values(o)) {
+      if (val && typeof val === "object") visit(val, depth + 1);
+    }
+  };
+  visit(payload, 0);
+  return [...noms];
+}
+
+/** Liste les modèles disponibles chez Zindua (diagnostic de configuration). */
+export async function zinduaListTemplates(apiBaseUrl: string): Promise<ZinduaTemplatesResult> {
+  const apiKey = Deno.env.get("ZINDUA_API_KEY");
+  if (!apiKey) return { ok: false, code: "CLE_API_ABSENTE", essais: [] };
+
+  const base = apiBaseUrl.replace(/\/+$/, "");
+  const chemins = ["/templates", "/whatsapp/templates", "/messages/templates", "/template"];
+  const essais: { endpoint: string; status: number | null; body?: unknown }[] = [];
+
+  for (const chemin of chemins) {
+    let url: URL;
+    try { url = new URL(base + chemin); } catch { continue; }
+    if (url.protocol !== "https:" || !ALLOWED_HOSTS.has(url.hostname)) {
+      return { ok: false, code: "URL_API_INVALIDE", essais };
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+    try {
+      const resp = await fetch(url.toString(), {
+        method: "GET",
+        headers: { Authorization: `Bearer ${apiKey}`, Accept: "application/json" },
+        signal: controller.signal,
+      });
+      const payload = await resp.json().catch(() => null);
+      essais.push({ endpoint: chemin, status: resp.status, body: resp.ok ? undefined : payload });
+      if (resp.ok) {
+        return { ok: true, endpoint: chemin, templates: collectTemplateNames(payload), raw: payload };
+      }
+    } catch {
+      essais.push({ endpoint: chemin, status: null });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return { ok: false, code: "TEMPLATES_INTROUVABLES", essais };
+}

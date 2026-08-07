@@ -18,6 +18,7 @@ import { useNotificationProviders } from "@/hooks/useNotificationProviders";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
+import { supabase } from "@/integrations/supabase/client";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 
 
@@ -45,6 +46,33 @@ export default function NotificationProviders() {
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [testNumero, setTestNumero] = useState("");
   const [testing, setTesting] = useState(false);
+  const [modeles, setModeles] = useState<string[] | null>(null);
+  const [chargementModeles, setChargementModeles] = useState(false);
+
+  const listerModeles = async () => {
+    if (!ecoleId) return;
+    setChargementModeles(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-zindua", {
+        body: { ecole_id: ecoleId, action: "lister_modeles" },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        setModeles(data.templates ?? []);
+        if ((data.templates ?? []).length === 0) {
+          toast.warning("Zindua n'a renvoyé aucun modèle pour cette clé API.");
+        }
+      } else {
+        setModeles([]);
+        toast.error(data?.detail ?? "Liste des modèles indisponible.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setChargementModeles(false);
+    }
+  };
+
 
   const envoyerTest = async () => {
     if (!ecoleId) return;
@@ -343,7 +371,45 @@ export default function NotificationProviders() {
                     Envoyer un test WhatsApp
                   </Button>
                 </div>
+
+                <div className="space-y-2 border-t pt-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={listerModeles}
+                      disabled={chargementModeles}
+                    >
+                      {chargementModeles
+                        ? <Loader2 className="h-4 w-4 animate-spin" />
+                        : <ShieldCheck className="h-4 w-4" />}
+                      Vérifier les modèles disponibles
+                    </Button>
+                    <span className="text-xs text-muted-foreground">
+                      « Modèle introuvable » = le nom saisi ci-dessus ne correspond pas au modèle
+                      approuvé dans Zindua.
+                    </span>
+                  </div>
+                  {modeles !== null && (
+                    <div className="rounded-md bg-muted/40 p-3 text-xs">
+                      {modeles.length === 0 ? (
+                        <p className="text-muted-foreground">
+                          Aucun modèle renvoyé. Recopiez le nom exact du modèle validé depuis le
+                          tableau de bord Zindua dans les champs ci-dessus.
+                        </p>
+                      ) : (
+                        <div className="flex flex-wrap gap-1.5">
+                          {modeles.map((m) => (
+                            <Badge key={m} variant="secondary" className="font-mono">{m}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
+
             )}
 
             {/* Passage en production */}
