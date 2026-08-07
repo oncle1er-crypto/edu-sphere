@@ -215,6 +215,8 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
   };
 
   return (
+    <>
+    {parentGuardDialog}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
