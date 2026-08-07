@@ -152,8 +152,8 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
             <MessageSquare className="h-4 w-4" /> Relancer les impayés — {service === "cantine" ? "Cantine" : "Transport"}
           </DialogTitle>
           <DialogDescription>
-            Un SMS personnalisé est envoyé au contact principal de chaque famille ayant un reste dû sur une échéance
-            déjà passée.
+            Un message WhatsApp personnalisé est envoyé au contact principal de chaque famille ayant un reste dû
+            sur une échéance déjà passée, avec repli automatique par SMS si WhatsApp est indisponible.
           </DialogDescription>
         </DialogHeader>
 
