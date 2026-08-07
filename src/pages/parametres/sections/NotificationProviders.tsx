@@ -36,11 +36,40 @@ export default function NotificationProviders() {
     config: zindua, loading: zinduaLoading,
     updateConfig, addTestDestinataire, removeTestDestinataire,
   } = useZinduaConfig();
-  const { get, volumeMoisTotal, loading: statsLoading } = useNotificationProviders();
+  const { get, volumeMoisTotal, loading: statsLoading, refetch: refetchStats } =
+    useNotificationProviders();
   const { isAdmin } = useIsAdmin();
+  const { ecoleId } = useEcoleId();
 
   const [newNumero, setNewNumero] = useState("");
-  const [templateOtp, setTemplateOtp] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<Record<string, string>>({});
+  const [testNumero, setTestNumero] = useState("");
+  const [testing, setTesting] = useState(false);
+
+  const envoyerTest = async () => {
+    if (!ecoleId) return;
+    const cible = testNumero || (zindua?.test_destinataires ?? [])[0];
+    if (!cible) {
+      toast.error("Ajoutez d'abord un destinataire de test.");
+      return;
+    }
+    setTesting(true);
+    try {
+      const r = await envoyerWhatsAppZindua({
+        ecoleId,
+        usage: "test",
+        destinataires: [{ to: cible, variables: { code: "123456", otp: "123456" } }],
+      });
+      if (r.whatsapp > 0) toast.success(`Message WhatsApp envoyé à ${cible}`);
+      else toast.error(premierEchec(r) ?? "Le message n'a pas pu être envoyé.");
+      await refetchStats?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec de l'envoi du test.");
+    } finally {
+      setTesting(false);
+    }
+  };
+
 
   const yellika = get("yellikasms");
   const zin = get("zindua");
