@@ -71,7 +71,11 @@ export function RelanceImpayesDialog({ cibles, ecoleId, service, open, onOpenCha
     return () => { cancelled = true; };
   }, [open, cibles]);
 
-  const joignables = dest.filter((d) => !!d.telephone);
+  // Un même élève/numéro ne doit recevoir qu'un seul SMS, même s'il a plusieurs abonnements.
+  const joignables = dest.filter(
+    (d, i) => !!d.telephone && dest.findIndex((x) => x.eleve_id === d.eleve_id && x.telephone === d.telephone) === i,
+  );
+
 
   const send = async () => {
     if (!ecoleId || joignables.length === 0) return;
