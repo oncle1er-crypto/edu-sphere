@@ -158,7 +158,7 @@ export default function CanteenSubscribers() {
           });
           if (fac) {
             setPayMontant(montantAEncaisser(grille, portion));
-            setPayFor({ ...fac, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
+            setPayFor({ ...fac, eleve_id: eleve?.id ?? fac.eleve_id, eleve_nom: eleve ? `${eleve.nom} ${eleve.prenom}` : "" });
           } else {
             toast.info("Aucune échéance à encaisser pour le moment");
           }
@@ -399,13 +399,13 @@ export default function CanteenSubscribers() {
                                     <TableCell><Badge variant={solde ? "default" : f.montant_paye > 0 ? "secondary" : "destructive"}>{solde ? "Payée" : f.montant_paye > 0 ? "Partielle" : "Impayée"}</Badge></TableCell>
                                     <TableCell className="text-right space-x-1">
                                       {!solde && (
-                                        <Button size="sm" variant="outline" onClick={() => setPayFor({ id: f.id, numero: f.numero, libelle: f.libelle, montant: f.montant, montant_paye: f.montant_paye, eleve_nom: a.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie })}>
+                                        <Button size="sm" variant="outline" onClick={() => setPayFor({ id: f.id, numero: f.numero, libelle: f.libelle, montant: f.montant, montant_paye: f.montant_paye, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie })}>
                                           <Wallet className="h-3.5 w-3.5" />
                                         </Button>
                                       )}
                                       {f.montant_paye > 0 && (
                                         <>
-                                          <Button size="sm" variant="ghost" onClick={() => setHistoryFor({ id: f.id, numero: f.numero, libelle: f.libelle, montant: f.montant, montant_paye: f.montant_paye, eleve_nom: a.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie })} title="Historique">
+                                          <Button size="sm" variant="ghost" onClick={() => setHistoryFor({ id: f.id, numero: f.numero, libelle: f.libelle, montant: f.montant, montant_paye: f.montant_paye, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie })} title="Historique">
                                             <History className="h-3.5 w-3.5" />
                                           </Button>
                                           <Button size="sm" variant="ghost" onClick={() => reprint(f)} title="Réimprimer reçu">
