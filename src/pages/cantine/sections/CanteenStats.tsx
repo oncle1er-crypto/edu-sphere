@@ -21,16 +21,17 @@ export default function CanteenStats() {
     if (!ecoleId) { setLoading(false); return; }
     (async () => {
       const [planning, ab, inc, st] = await Promise.all([
-        supabase.from("cantine_planning").select("date_service, nombre_eleves").eq("ecole_id", ecoleId),
+        supabase.from("cantine_planning").select("date_service, effectif_realise, effectif_inscrits").eq("ecole_id", ecoleId),
         supabase.from("abonnements_cantine").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("cantine_incidents").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
-        supabase.from("stocks_cantine").select("quantite, prix_unitaire").eq("ecole_id", ecoleId),
+        supabase.from("stocks_cantine").select("quantite, seuil_alerte").eq("ecole_id", ecoleId),
       ]);
       const buckets = new Map<number, number>();
       ((planning.data ?? []) as any[]).forEach((r) => {
         const d = new Date(r.date_service);
         const key = d.getMonth();
-        buckets.set(key, (buckets.get(key) ?? 0) + (Number(r.nombre_eleves) || 0));
+        const nb = Number(r.effectif_realise) || Number(r.effectif_inscrits) || 0;
+        buckets.set(key, (buckets.get(key) ?? 0) + nb);
       });
       const now = new Date().getMonth();
       const arr = Array.from({ length: 6 }, (_, i) => {
@@ -40,8 +41,9 @@ export default function CanteenStats() {
       setRepasParMois(arr);
       setAbonnes(((ab.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length);
       setIncidents(inc.count ?? 0);
-      setStockValeur(((st.data ?? []) as any[]).reduce((s, x) => s + (Number(x.quantite) || 0) * (Number(x.prix_unitaire) || 0), 0));
+      setAlertesStock(((st.data ?? []) as any[]).filter((x) => Number(x.quantite) <= Number(x.seuil_alerte ?? 0)).length);
       setLoading(false);
+
     })();
   }, [ecoleId, keepClasse]);
 
