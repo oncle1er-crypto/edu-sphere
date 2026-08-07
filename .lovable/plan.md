@@ -48,6 +48,6 @@ Non, pas encore. La plomberie Zindua est en place, mais elle ne sert aujourd'hui
 - Journalisation : réutiliser `sms_logs` avec `provider = 'zindua'`, `canal = 'whatsapp'`, `template_slug`, `error_code`.
 - Sécurité : la clé API reste exclusivement côté serveur ; aucun appel Zindua depuis le navigateur.
 
-## Question ouverte
+## Point confirmé
 
-Le compte WhatsApp Business est-il déjà connecté et le modèle validé dans le tableau de bord Zindua ? Si non, l'étape 1 échouera avec `WHATSAPP_NOT_CONNECTED` et il faudra d'abord finaliser cette connexion chez Zindua.
+Le compte WhatsApp Business est déjà connecté chez Zindua et le modèle est validé. L'étape 1 sert donc uniquement à confirmer le lien technique depuis l'application, puis on enchaîne directement sur les étapes 2 à 4.
