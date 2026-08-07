@@ -231,7 +231,7 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
     setPayFor({
       id: r.id, numero: r.numero, libelle: r.libelle,
       montant: r.montant, montant_paye: r.montant_paye,
-      eleve_nom: r.eleve_nom, ecole_id: r.ecole_id, categorie: r.categorie,
+      eleve_id: r.eleve_id, eleve_nom: r.eleve_nom, ecole_id: r.ecole_id, categorie: r.categorie,
     });
   };
 
@@ -362,7 +362,7 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
                         <Button size="sm" variant="ghost" onClick={() => setHistoryFor({
                           id: f.id, numero: f.numero, libelle: f.libelle,
                           montant: f.montant, montant_paye: f.montant_paye,
-                          eleve_nom: f.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie,
+                          eleve_id: f.eleve_id, eleve_nom: f.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie,
                         })} title="Historique / Annuler">
                           <History className="h-3.5 w-3.5" />
                         </Button>
