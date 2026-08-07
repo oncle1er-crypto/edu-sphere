@@ -426,11 +426,22 @@ export default function NotificationProviders() {
             )}
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <StatCell label="Total" value={zin?.total ?? 0} />
               <StatCell label="Envoyés" value={zin?.envoyes ?? 0} />
               <StatCell label="Échecs" value={zin?.echecs ?? 0} />
               <StatCell label="Ce mois" value={zin?.moisCourant ?? 0} />
+              <StatCell label="Quota restant" value={Math.max(0, quota - used)} />
             </div>
+
+            {zin?.derniereErreur && (
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Dernier échec WhatsApp</AlertTitle>
+                <AlertDescription className="font-mono text-xs break-all">
+                  {zin.derniereErreur}
+                </AlertDescription>
+              </Alert>
+            )}
+
 
             <Alert>
               <ShieldCheck className="h-4 w-4" />
