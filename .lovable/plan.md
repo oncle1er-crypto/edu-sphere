@@ -43,5 +43,6 @@ Avant toute validation d'encaissement (scolarité, cantine, transport, services 
   - `src/pages/finances/components/SettleDialog.tsx`
   - `InvoicePaymentDialog` (cantine/transport)
   - caisse des services ponctuels
-- **UI** : dans `NotificationProviders.tsx`, ajout du champ « Modèle — reçu de paiement » et du commutateur d'envoi automatique.
-- **Sécurité** : le lien signé expire, le bucket reste privé, aucune donnée sensible dans le corps du message hors nom/montant.
+- **UI** : dans `NotificationProviders.tsx`, ajout du champ « Modèle — reçu de paiement », du commutateur d'envoi automatique et d'un bouton « Tester » par ligne de modèle (appel `envoyerWhatsAppZindua` avec `template` forcé, `fallbackSms: false`, variables d'exemple ; état `Record<clé, "ok" | "echec">` pour l'affichage).
+- **Coordonnées parent** : nouveau composant `src/components/finances/ParentInfoRequiredDialog.tsx` (validation zod, normalisation du numéro via l'équivalent client de `normalizePhoneCI`, écriture sur `parents` + liaison `eleve_parents` si absente). Un petit hook `useParentContactGuard` expose `verifierAvant(eleve, continuer)` et est branché dans `PaymentDialog.tsx`, `SettleDialog.tsx`, `InvoicePaymentDialog.tsx` et `ServicePaymentDialog.tsx`.
+- **Sécurité** : le lien signé expire, le bucket reste privé, aucune donnée sensible dans le corps du message hors nom/montant. Les saisies de la modale parent sont validées et bornées côté client et protégées par les politiques RLS existantes de `parents`.
