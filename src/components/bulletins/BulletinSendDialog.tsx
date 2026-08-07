@@ -9,6 +9,9 @@ import { Loader2, Mail, MessageSquare, Send } from "lucide-react";
 import { toast } from "sonner";
 import { normalizeSmsText } from "@/lib/smsText";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import {
+  envoyerWhatsAppZindua, premierEchec, ZINDUA_MAX_DESTINATAIRES,
+} from "@/lib/sendWhatsAppZindua";
 
 interface Parent {
   id: string;
