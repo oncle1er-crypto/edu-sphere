@@ -285,5 +285,6 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
