@@ -14,6 +14,24 @@ Oui, c'est possible. Avec Zindua/WhatsApp on ne peut pas joindre un PDF libremen
 
 Un modèle WhatsApp approuvé par Meta est nécessaire (nom proposé : `recu-paiement`) avec 4 variables : parent, élève, montant, lien. Tant qu'il n'est pas approuvé, l'app enverra automatiquement le SMS de repli. Le nom du modèle sera saisissable dans Paramètres → Notifications comme les autres.
 
+## Bouton de test par modèle
+
+Chaque modèle listé dans Paramètres → Notifications (OTP, test, relance, échéance, bulletin, reçu) reçoit son propre bouton « Tester » à côté du champ :
+
+- On saisit une fois un numéro de test (mémorisé pour la session), puis un clic envoie un vrai message WhatsApp avec ce modèle et des variables d'exemple.
+- Le résultat s'affiche en clair : « Envoyé », ou le motif exact du refus (modèle introuvable, WhatsApp non connecté, quota, cadence, numéro hors liste de test).
+- Un état visuel par ligne (vert « OK », rouge « échec ») reste affiché après le test pour repérer d'un coup d'œil les modèles à corriger.
+- Aucun repli SMS pendant un test : on veut savoir si WhatsApp fonctionne réellement.
+
+## Coordonnées du parent obligatoires à l'encaissement
+
+Avant toute validation d'encaissement (scolarité, cantine, transport, services ponctuels) :
+
+- Si le nom du parent ou son numéro de téléphone est absent ou invalide (format ivoirien : +225 puis 10 chiffres commençant par 01/05/07/27), une fenêtre modale bloquante s'ouvre : « Coordonnées du parent incomplètes ».
+- L'utilisateur y saisit nom, prénom, téléphone (et éventuellement un second numéro et le lien de parenté). L'enregistrement met à jour la fiche parent liée à l'élève et l'encaissement reprend automatiquement là où il s'était arrêté.
+- Impossible de fermer la modale sans compléter, hormis un bouton « Annuler l'encaissement ».
+- Les mêmes informations restent modifiables à tout moment depuis la fiche élève.
+
 ## Détails techniques
 
 - **Stockage** : nouveau bucket privé `recus` + politiques d'accès réservées au personnel autorisé ; upload du PDF sous `ecole/<ecole_id>/<paiement_id>.pdf`, lien signé 30 jours (même schéma que `bulletins`).
