@@ -15,7 +15,7 @@ export default function CanteenStats() {
   const [repasParMois, setRepasParMois] = useState<{ mois: string; nb: number }[]>([]);
   const [abonnes, setAbonnes] = useState(0);
   const [incidents, setIncidents] = useState(0);
-  const [stockValeur, setStockValeur] = useState(0);
+  const [alertesStock, setAlertesStock] = useState(0);
 
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
@@ -80,7 +80,7 @@ export default function CanteenStats() {
             <ul className="space-y-3 text-sm">
               <li className="flex justify-between"><span>Abonnés actifs</span><span className="font-semibold">{abonnes}</span></li>
               <li className="flex justify-between"><span>Incidents enregistrés</span><span className="font-semibold">{incidents}</span></li>
-              <li className="flex justify-between border-t pt-2"><span>Valeur du stock</span><span className="font-semibold text-primary">{Math.round(stockValeur).toLocaleString("fr-FR")} FCFA</span></li>
+              <li className="flex justify-between border-t pt-2"><span>Produits sous le seuil d'alerte</span><span className="font-semibold text-primary">{alertesStock}</span></li>
             </ul>
           </CardContent>
         </Card>
