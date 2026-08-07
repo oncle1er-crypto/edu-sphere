@@ -27,7 +27,7 @@ interface Payload {
   fallback_sms?: boolean;
 }
 
-const USAGES: Usage[] = ["test", "relance", "echeance", "bulletin", "otp"];
+const USAGES: Usage[] = ["test", "relance", "echeance", "bulletin", "otp", "recu"];
 const MAX_DESTINATAIRES = 10;
 const ALLOWED_SMS_HOSTS = new Set([
   "panel.yellikasms.com",
