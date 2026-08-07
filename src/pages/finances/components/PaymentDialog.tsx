@@ -45,6 +45,7 @@ interface LigneVentilation {
 
 export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
   const [saving, setSaving] = useState(false);
+  const { dialog: parentGuardDialog, verifierAvant } = useParentContactGuard();
   const submittingRef = useRef(false);
 
   const [montant, setMontant] = useState<string>("");
@@ -89,7 +90,15 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
 
   const valid = montantNum > 0 && montantNum <= resteDu && !!ecoleId;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (!valid || !ecoleId || !eleve) return;
+    verifierAvant(
+      { ecoleId, eleveId: eleve.id, nomEleve: `${eleve.nom} ${eleve.prenom}`.trim(), parent: eleve.parent, telephone: eleve.telephone },
+      (contact) => { void executerPaiement(contact); },
+    );
+  };
+
+  const executerPaiement = async (contact: ContactParent) => {
     if (!valid || !ecoleId) return;
     if (submittingRef.current) return; // anti double-clic infaillible
     submittingRef.current = true;
@@ -167,7 +176,7 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
           ecoleId,
           eleveId: eleve.id,
           paiementId: premierPaiementId,
-          type: "scolarite",
+          type: "encaissement",
           telephone: contact.telephone,
           parent: contact.nomComplet,
           nomEleve: eleve.nom,
