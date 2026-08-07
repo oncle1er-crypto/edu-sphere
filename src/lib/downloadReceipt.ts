@@ -16,7 +16,7 @@ interface Params {
 /**
  * Récupère les données du paiement + école + élève et construit le PDF reçu.
  */
-async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true, hideVersementLine }: Params) {
+export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true, hideVersementLine }: Params) {
   // 1) Récupère l'année scolaire active de l'élève pour scoper les cumuls
   const { data: eleveScope } = await supabase
     .from("eleves")

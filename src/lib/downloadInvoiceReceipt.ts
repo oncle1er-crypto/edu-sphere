@@ -18,10 +18,11 @@ interface Params {
 }
 
 /**
- * Génère et télécharge le reçu PDF d'un paiement ou d'une annulation de facture.
+ * Construit le reçu PDF d'un paiement (ou annulation) de facture.
+ * Retourne le PDF et les données utiles (facture, élève, référence).
  */
-export async function downloadInvoiceReceipt(params: Params): Promise<void> {
-  try {
+export async function buildInvoiceReceiptPdf(params: Params) {
+  {
     const {
       ecoleId, factureId, montant, mode = "especes", souche = true,
       annulation = false, motifAnnulation, datePaiement,
@@ -136,8 +137,30 @@ export async function downloadInvoiceReceipt(params: Params): Promise<void> {
         : undefined,
     });
 
-    const prefix = annulation ? "annulation" : "recu";
-    pdf.save(`${prefix}-${facture.numero}.pdf`);
+    return {
+      pdf,
+      reference,
+      numero: facture.numero,
+      libelle: facture.libelle,
+      categorie: catLabel,
+      eleveId: (facture as any).eleve_id as string | null,
+      eleveNom: String(eleve.nom ?? ""),
+      elevePrenom: String(eleve.prenom ?? ""),
+      montant: Number(montantVersement) || 0,
+      annulation,
+    };
+  }
+}
+
+/**
+ * Génère et télécharge le reçu PDF d'un paiement ou d'une annulation de facture.
+ */
+export async function downloadInvoiceReceipt(params: Params): Promise<void> {
+  try {
+    const built = await buildInvoiceReceiptPdf(params);
+    if (!built) return;
+    const prefix = built.annulation ? "annulation" : "recu";
+    built.pdf.save(`${prefix}-${built.numero}.pdf`);
   } catch (err) {
     console.error("downloadInvoiceReceipt failed", err);
   }

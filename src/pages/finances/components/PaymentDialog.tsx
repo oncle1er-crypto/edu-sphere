@@ -9,8 +9,11 @@ import { Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
 import { fcfa, friendlyRpcError, type EleveScolarite, type PaiementHistorique } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
-import { shareReceiptWhatsApp } from "@/lib/downloadReceipt";
+
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
+import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
+import { useParentContactGuard } from "@/hooks/useParentContactGuard";
+import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
 import { toast } from "sonner";
 
 interface Props {
@@ -42,6 +45,7 @@ interface LigneVentilation {
 
 export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
   const [saving, setSaving] = useState(false);
+  const { dialog: parentGuardDialog, verifierAvant } = useParentContactGuard();
   const submittingRef = useRef(false);
 
   const [montant, setMontant] = useState<string>("");
@@ -86,7 +90,15 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
 
   const valid = montantNum > 0 && montantNum <= resteDu && !!ecoleId;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (!valid || !ecoleId || !eleve) return;
+    verifierAvant(
+      { ecoleId, eleveId: eleve.id, nomEleve: `${eleve.nom} ${eleve.prenom}`.trim(), parent: eleve.parent, telephone: eleve.telephone },
+      (contact) => { void executerPaiement(contact); },
+    );
+  };
+
+  const executerPaiement = async (contact: ContactParent) => {
     if (!valid || !ecoleId) return;
     if (submittingRef.current) return; // anti double-clic infaillible
     submittingRef.current = true;
@@ -157,26 +169,32 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
         if (ok) toast.success("SMS de confirmation envoyé au parent");
       });
 
-      // Proposer l'envoi WhatsApp du reçu (sans souche)
+      // Envoi automatique du reçu au parent par WhatsApp (repli SMS)
       const premierPaiementId = lignes[0]?.paiement_id;
       if (premierPaiementId) {
-        toast("Envoyer le reçu par WhatsApp ?", {
-          description: `${eleve.parent} — ${eleve.telephone || "numéro non renseigné"}`,
-          duration: 10000,
-          action: {
-            label: "WhatsApp",
-            onClick: () => {
-              shareReceiptWhatsApp({
-                ecoleId,
-                eleveId: eleve.id,
-                paiementId: premierPaiementId,
-                type: "encaissement",
-                telephone: eleve.telephone,
-              });
-            },
-          },
+        envoyerRecuWhatsApp({
+          ecoleId,
+          eleveId: eleve.id,
+          paiementId: premierPaiementId,
+          type: "encaissement",
+          telephone: contact.telephone,
+          parent: contact.nomComplet,
+          nomEleve: eleve.nom,
+          prenomEleve: eleve.prenom,
+          montant: montantNum,
+          reference: ref,
+          objet: "scolarité",
+        }).then((r) => {
+          if (r.ok) {
+            toast.success(
+              r.canal === "sms" ? "Reçu envoyé au parent par SMS" : "Reçu envoyé au parent par WhatsApp",
+            );
+          } else if (r.detail) {
+            toast.warning("Reçu non envoyé au parent", { description: r.detail });
+          }
         });
       }
+
 
       onOpenChange(false);
       onPaymentRecorded?.();
@@ -197,6 +215,8 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
   };
 
   return (
+    <>
+    {parentGuardDialog}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -265,5 +285,6 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
