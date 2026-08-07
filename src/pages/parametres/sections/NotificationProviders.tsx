@@ -18,6 +18,7 @@ import { useNotificationProviders } from "@/hooks/useNotificationProviders";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
+import { supabase } from "@/integrations/supabase/client";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 
 
