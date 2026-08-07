@@ -269,28 +269,44 @@ export default function NotificationProviders() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="template-otp">Modèle OTP</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="template-otp"
-                    value={templateOtp ?? zindua.template_otp}
-                    disabled={readOnly}
-                    onChange={(e) => setTemplateOtp(e.target.value)}
-                  />
-                  {!readOnly && templateOtp !== null && templateOtp !== zindua.template_otp && (
-                    <Button
-                      size="sm"
-                      onClick={async () => {
-                        await updateConfig({ template_otp: templateOtp.trim() });
-                        setTemplateOtp(null);
-                      }}
-                    >
-                      Enregistrer
-                    </Button>
-                  )}
-                </div>
-              </div>
+              {([
+                { key: "template_otp" as const, label: "Modèle — code de vérification" },
+                { key: "template_test" as const, label: "Modèle — message de test" },
+                { key: "template_relance" as const, label: "Modèle — relance d'impayé" },
+                { key: "template_echeance" as const, label: "Modèle — rappel d'échéance" },
+                { key: "template_bulletin" as const, label: "Modèle — bulletin disponible" },
+              ]).map(({ key, label }) => {
+                const actuel = String(zindua[key] ?? "");
+                const saisie = templates[key];
+                const modifie = saisie !== undefined && saisie.trim() !== actuel;
+                return (
+                  <div key={key} className="space-y-2">
+                    <Label htmlFor={key}>{label}</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id={key}
+                        value={saisie ?? actuel}
+                        disabled={readOnly}
+                        onChange={(e) => setTemplates((t) => ({ ...t, [key]: e.target.value }))}
+                      />
+                      {!readOnly && modifie && (
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            await updateConfig({ [key]: saisie.trim() });
+                            setTemplates((t) => {
+                              const { [key]: _omit, ...rest } = t;
+                              return rest;
+                            });
+                          }}
+                        >
+                          Enregistrer
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
 
               <div className="space-y-2">
                 <Label htmlFor="cadence">Cadence minimale</Label>
@@ -304,6 +320,53 @@ export default function NotificationProviders() {
                 </p>
               </div>
             </div>
+
+            {/* Test réel du canal WhatsApp */}
+            {!readOnly && (
+              <div className="space-y-3 rounded-lg border p-4">
+                <div>
+                  <div className="text-sm font-semibold">Tester le canal WhatsApp</div>
+                  <p className="text-xs text-muted-foreground">
+                    Envoie un vrai message via Zindua pour confirmer que le compte WhatsApp et le
+                    modèle sont opérationnels.
+                    {zindua.test_mode && " En mode test, seuls les numéros autorisés sont acceptés."}
+                  </p>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Input
+                    placeholder={(zindua.test_destinataires ?? [])[0] ?? "+225 07 07 07 07 07"}
+                    value={testNumero}
+                    onChange={(e) => setTestNumero(e.target.value)}
+                  />
+                  <Button type="button" onClick={envoyerTest} disabled={testing}>
+                    {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    Envoyer un test WhatsApp
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Passage en production */}
+            {!readOnly && zindua.test_mode && (
+              <Alert>
+                <Rocket className="h-4 w-4" />
+                <AlertTitle>Mode test actif</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Seuls les numéros de la liste ci-dessous reçoivent des messages. En quittant le
+                    mode test, les envois partent aux vraies familles et consomment le quota mensuel.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => updateConfig({ test_mode: false })}
+                  >
+                    Quitter le mode test
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
 
             {/* Liste blanche de test */}
             {zindua.test_mode && (
