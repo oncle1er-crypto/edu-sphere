@@ -45,6 +45,33 @@ export default function NotificationProviders() {
   const [templates, setTemplates] = useState<Record<string, string>>({});
   const [testNumero, setTestNumero] = useState("");
   const [testing, setTesting] = useState(false);
+  const [modeles, setModeles] = useState<string[] | null>(null);
+  const [chargementModeles, setChargementModeles] = useState(false);
+
+  const listerModeles = async () => {
+    if (!ecoleId) return;
+    setChargementModeles(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("send-whatsapp-zindua", {
+        body: { ecole_id: ecoleId, action: "lister_modeles" },
+      });
+      if (error) throw error;
+      if (data?.ok) {
+        setModeles(data.templates ?? []);
+        if ((data.templates ?? []).length === 0) {
+          toast.warning("Zindua n'a renvoyé aucun modèle pour cette clé API.");
+        }
+      } else {
+        setModeles([]);
+        toast.error(data?.detail ?? "Liste des modèles indisponible.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e));
+    } finally {
+      setChargementModeles(false);
+    }
+  };
+
 
   const envoyerTest = async () => {
     if (!ecoleId) return;
