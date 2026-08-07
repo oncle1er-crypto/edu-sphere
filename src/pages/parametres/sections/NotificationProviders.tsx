@@ -13,14 +13,31 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useSmsConfig } from "@/hooks/useSmsConfig";
-import { useZinduaConfig, ZINDUA_INTERVALLE_MIN } from "@/hooks/useZinduaConfig";
+import { useZinduaConfig, ZINDUA_INTERVALLE_MIN, normalizePhoneCI } from "@/hooks/useZinduaConfig";
 import { useNotificationProviders } from "@/hooks/useNotificationProviders";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { useEcoleId } from "@/hooks/useEcoleId";
-import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
+import { envoyerWhatsAppZindua, premierEchec, type ZinduaUsage } from "@/lib/sendWhatsAppZindua";
 import { supabase } from "@/integrations/supabase/client";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 
+
+/** Variables factices couvrant tous les modèles, pour les tests d'envoi. */
+const VARIABLES_TEST: Record<string, string> = {
+  code: "123456",
+  otp: "123456",
+  parent: "Parent test",
+  eleve: "Élève Test",
+  classe: "6ème A",
+  montant: "10 000 FCFA",
+  reste: "0 FCFA",
+  objet: "scolarité",
+  reference: "TEST-0001",
+  periode: "Trimestre 1",
+  echeance: "31/12/2026",
+  lien: "https://exemple.ci/recu",
+  url: "https://exemple.ci/recu",
+};
 
 function StatCell({ label, value }: { label: string; value: number | string }) {
   return (
@@ -98,6 +115,33 @@ export default function NotificationProviders() {
     }
   };
 
+
+  const [testModele, setTestModele] = useState<string | null>(null);
+
+  /** Test réel d'un modèle donné (envoi WhatsApp avec variables factices). */
+  const testerModele = async (usage: ZinduaUsage, cle: string) => {
+    if (!ecoleId) return;
+    const cible = normalizePhoneCI(testNumero) ?? (zindua?.test_destinataires ?? [])[0];
+    if (!cible) {
+      toast.error("Renseignez un numéro de test valide (ex. 07 07 07 07 07).");
+      return;
+    }
+    setTestModele(cle);
+    try {
+      const r = await envoyerWhatsAppZindua({
+        ecoleId,
+        usage,
+        destinataires: [{ to: cible, variables: VARIABLES_TEST }],
+      });
+      if (r.whatsapp > 0) toast.success(`Modèle testé avec succès — message envoyé à ${cible}`);
+      else toast.error(premierEchec(r) ?? "Le modèle n'a pas pu être envoyé.");
+      await refetchStats?.();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Échec du test.");
+    } finally {
+      setTestModele(null);
+    }
+  };
 
   const yellika = get("yellikasms");
   const zin = get("zindua");
@@ -298,12 +342,13 @@ export default function NotificationProviders() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {([
-                { key: "template_otp" as const, label: "Modèle — code de vérification" },
-                { key: "template_test" as const, label: "Modèle — message de test" },
-                { key: "template_relance" as const, label: "Modèle — relance d'impayé" },
-                { key: "template_echeance" as const, label: "Modèle — rappel d'échéance" },
-                { key: "template_bulletin" as const, label: "Modèle — bulletin disponible" },
-              ]).map(({ key, label }) => {
+                { key: "template_otp" as const, label: "Modèle — code de vérification", usage: "test" as ZinduaUsage },
+                { key: "template_test" as const, label: "Modèle — message de test", usage: "test" as ZinduaUsage },
+                { key: "template_relance" as const, label: "Modèle — relance d'impayé", usage: "relance" as ZinduaUsage },
+                { key: "template_echeance" as const, label: "Modèle — rappel d'échéance", usage: "echeance" as ZinduaUsage },
+                { key: "template_bulletin" as const, label: "Modèle — bulletin disponible", usage: "bulletin" as ZinduaUsage },
+                { key: "template_recu" as const, label: "Modèle — reçu de paiement", usage: "recu" as ZinduaUsage },
+              ]).map(({ key, label, usage }) => {
                 const actuel = String(zindua[key] ?? "");
                 const saisie = templates[key];
                 const modifie = saisie !== undefined && saisie.trim() !== actuel;
@@ -329,6 +374,20 @@ export default function NotificationProviders() {
                           }}
                         >
                           Enregistrer
+                        </Button>
+                      )}
+                      {!readOnly && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          title="Envoyer un vrai message avec ce modèle"
+                          disabled={testModele !== null}
+                          onClick={() => testerModele(usage, key)}
+                        >
+                          {testModele === key
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Send className="h-4 w-4" />}
+                          Tester
                         </Button>
                       )}
                     </div>
