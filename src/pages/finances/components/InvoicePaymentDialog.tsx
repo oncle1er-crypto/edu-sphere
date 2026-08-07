@@ -11,6 +11,9 @@ import { useAuth } from "@/context/AuthContext";
 import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { envoyerRecuFactureWhatsApp } from "@/lib/sendReceiptWhatsApp";
+import { useParentContactGuard } from "@/hooks/useParentContactGuard";
+import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
 
 const MOYENS = [
   { label: "Espèces", value: "especes" },
@@ -30,6 +33,8 @@ export interface InvoiceForPayment {
   montant_paye: number;
   eleve_nom: string;
   ecole_id: string;
+  /** Nécessaire pour l'envoi automatique du reçu au parent. */
+  eleve_id?: string;
   categorie?: string;
 }
 
@@ -48,6 +53,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   const { user } = useAuth();
   const [saving, setSaving] = useState(false);
   const submittingRef = useRef(false);
+  const { dialog: parentGuardDialog, verifierAvant } = useParentContactGuard();
   const [montant, setMontant] = useState("");
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
@@ -69,7 +75,16 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
 
   if (!facture) return null;
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
+    if (!valid || !facture) return;
+    if (!facture.eleve_id) { void executerPaiement(null); return; }
+    verifierAvant(
+      { ecoleId: facture.ecole_id, eleveId: facture.eleve_id, nomEleve: facture.eleve_nom },
+      (contact) => { void executerPaiement(contact); },
+    );
+  };
+
+  const executerPaiement = async (contact: ContactParent | null) => {
     if (!valid || submittingRef.current) return;
     submittingRef.current = true;
     setSaving(true);
@@ -97,6 +112,28 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         datePaiement,
       });
 
+      // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
+      if (contact) {
+        void envoyerRecuFactureWhatsApp({
+          ecoleId: facture.ecole_id,
+          factureId: facture.id,
+          montant: montantNum,
+          mode: moyen,
+          reference: reference || null,
+          datePaiement,
+          telephone: contact.telephone,
+          parent: contact.nomComplet,
+        }).then((r) => {
+          if (r.ok) {
+            toast.success(
+              r.canal === "sms" ? "Reçu envoyé au parent par SMS" : "Reçu envoyé au parent par WhatsApp",
+            );
+          } else if (r.detail) {
+            toast.warning("Reçu non envoyé au parent", { description: r.detail });
+          }
+        });
+      }
+
       onOpenChange(false);
       onPaymentRecorded?.();
     } catch (err: any) {
@@ -109,6 +146,8 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   };
 
   return (
+    <>
+    {parentGuardDialog}
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
@@ -170,5 +209,6 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   );
 }
