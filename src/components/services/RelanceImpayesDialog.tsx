@@ -6,6 +6,9 @@ import { Loader2, MessageSquare, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { fmtF } from "./serviceKpis";
+import {
+  envoyerWhatsAppZindua, premierEchec, ZINDUA_MAX_DESTINATAIRES,
+} from "@/lib/sendWhatsAppZindua";
 
 export interface CibleRelance {
   /** Présent lorsque la relance part de la liste des abonnés (trace la dernière relance). */
