@@ -340,6 +340,39 @@ export default function NotificationProviders() {
               </div>
             </div>
 
+            {/* Reçu automatique au parent */}
+            <div className="flex items-center justify-between gap-4 rounded-lg border p-4">
+              <div>
+                <div className="text-sm font-semibold">Envoi automatique du reçu au parent</div>
+                <p className="text-xs text-muted-foreground">
+                  À chaque encaissement, le reçu PDF est envoyé au parent par WhatsApp (repli SMS)
+                  via un lien sécurisé valable 30 jours.
+                </p>
+              </div>
+              <Switch
+                checked={zindua.envoi_auto_recu !== false}
+                disabled={readOnly}
+                onCheckedChange={(v) => updateConfig({ envoi_auto_recu: v })}
+              />
+            </div>
+
+            {/* Numéro utilisé par les boutons « Tester » */}
+            {!readOnly && (
+              <div className="space-y-1.5">
+                <Label htmlFor="test-numero-modeles">Numéro de test des modèles</Label>
+                <Input
+                  id="test-numero-modeles"
+                  placeholder={(zindua.test_destinataires ?? [])[0] ?? "07 07 07 07 07"}
+                  value={testNumero}
+                  onChange={(e) => setTestNumero(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Utilisé par le bouton « Tester » de chaque modèle ci-dessous.
+                </p>
+              </div>
+            )}
+
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {([
                 { key: "template_otp" as const, label: "Modèle — code de vérification", usage: "test" as ZinduaUsage },
