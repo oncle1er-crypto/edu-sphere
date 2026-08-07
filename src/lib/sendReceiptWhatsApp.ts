@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { buildReceiptPdf } from "@/lib/downloadReceipt";
+import { buildInvoiceReceiptPdf } from "@/lib/downloadInvoiceReceipt";
 import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
 import type { RecuData } from "@/lib/generateDocumentsPDF";
 
@@ -117,5 +118,98 @@ export async function envoyerRecuWhatsApp(p: EnvoiRecuParams): Promise<EnvoiRecu
       canal: null,
       detail: err instanceof Error ? err.message : String(err),
     };
+  }
+}
+
+export interface EnvoiRecuFactureParams {
+  ecoleId: string;
+  factureId: string;
+  montant: number;
+  mode?: string;
+  reference?: string | null;
+  datePaiement?: string;
+  telephone: string;
+  parent: string;
+}
+
+/**
+ * Même principe que `envoyerRecuWhatsApp`, pour un reçu de facture de service
+ * (cantine, transport, scolarité facturée).
+ */
+export async function envoyerRecuFactureWhatsApp(
+  p: EnvoiRecuFactureParams,
+): Promise<EnvoiRecuResultat> {
+  try {
+    const { data: cfg } = await supabase
+      .from("zindua_config")
+      .select("envoi_auto_recu")
+      .eq("ecole_id", p.ecoleId)
+      .maybeSingle();
+    if (cfg && (cfg as { envoi_auto_recu?: boolean }).envoi_auto_recu === false) {
+      return { ok: false, canal: null, detail: "Envoi automatique du reçu désactivé." };
+    }
+
+    const built = await buildInvoiceReceiptPdf({
+      ecoleId: p.ecoleId,
+      factureId: p.factureId,
+      montant: p.montant,
+      mode: p.mode,
+      reference: p.reference ?? null,
+      datePaiement: p.datePaiement,
+      souche: false,
+    });
+    if (!built) return { ok: false, canal: null, detail: "Facture introuvable." };
+
+    const blob = built.pdf.output("blob") as Blob;
+    const chemin = `${p.ecoleId}/facture-${p.factureId}-${built.reference}.pdf`;
+    const { error: upErr } = await supabase.storage
+      .from("recus")
+      .upload(chemin, blob, { contentType: "application/pdf", upsert: true });
+    if (upErr) return { ok: false, canal: null, detail: upErr.message };
+
+    const { data: signe } = await supabase.storage
+      .from("recus")
+      .createSignedUrl(chemin, LIEN_VALIDITE_SECONDES);
+    const lien = signe?.signedUrl ?? "";
+    if (!lien) return { ok: false, canal: null, detail: "Lien du reçu indisponible." };
+
+    const eleve = `${built.eleveNom} ${built.elevePrenom}`.trim();
+    const objet = built.categorie.toLowerCase();
+    const montant = fmt(built.montant);
+    const sms =
+      `GSP - Bonjour ${p.parent}, votre paiement de ${montant} (${objet}) pour ${eleve} ` +
+      `est enregistre. Recu ref. ${built.reference} : ${lien}`;
+
+    const retour = await envoyerWhatsAppZindua({
+      ecoleId: p.ecoleId,
+      usage: "recu",
+      fallbackSms: true,
+      destinataires: [
+        {
+          to: p.telephone,
+          sms,
+          variables: {
+            parent: p.parent,
+            eleve,
+            objet,
+            montant,
+            reference: String(built.reference),
+            lien,
+            url: lien,
+          },
+        },
+      ],
+    });
+
+    const r = retour.resultats[0];
+    return {
+      ok: retour.envoyes > 0,
+      canal: r?.canal ?? null,
+      detail: retour.envoyes > 0 ? undefined : premierEchec(retour) ?? "Envoi du reçu impossible.",
+      lien,
+    };
+  } catch (err) {
+    console.error("envoyerRecuFactureWhatsApp failed", err);
+    return { ok: false, canal: null, detail: err instanceof Error ? err.message : String(err) };
   }
 }
