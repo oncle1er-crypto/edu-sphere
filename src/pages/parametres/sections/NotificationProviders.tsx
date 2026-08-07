@@ -9,13 +9,17 @@ import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Send, MessageSquare, Smartphone, Mail, AlertTriangle, ExternalLink,
-  ShieldCheck, Trash2, Plus, Lock,
+  ShieldCheck, Trash2, Plus, Lock, Loader2, Rocket,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useSmsConfig } from "@/hooks/useSmsConfig";
 import { useZinduaConfig, ZINDUA_INTERVALLE_MIN } from "@/hooks/useZinduaConfig";
 import { useNotificationProviders } from "@/hooks/useNotificationProviders";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useEcoleId } from "@/hooks/useEcoleId";
+import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
 import { SettingsSection } from "@/components/settings/SettingsSection";
+
 
 function StatCell({ label, value }: { label: string; value: number | string }) {
   return (
