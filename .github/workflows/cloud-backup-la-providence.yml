@@ -43,7 +43,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes postgresql-client
-          python -m pip install --require-hashes -r scripts/cloud-backup/requirements.txt
+          python -m pip install -r scripts/cloud-backup/requirements.txt
 
       - name: Sauvegarder la base et les fichiers
         run: python scripts/cloud-backup/backup_to_r2.py
