@@ -1,0 +1,59 @@
+name: Sauvegarde Cloud La Providence
+
+on:
+  schedule:
+    # 20:00 UTC = 20:00 à Abidjan (UTC+0)
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloud-backup-la-providence
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Copier Lovable vers Cloudflare R2
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    environment: production-backup
+    env:
+      CLOUDFLARE_ACCOUNT_ID: "277e2d0f45e64919abbe2d264523c2a4"
+      R2_BUCKET: "ecf-la-providence-backups"
+      LOVABLE_DB_URL: ${{ secrets.LOVABLE_DB_URL }}
+      LOVABLE_SUPABASE_URL: ${{ secrets.LOVABLE_SUPABASE_URL }}
+      LOVABLE_SERVICE_ROLE_KEY: ${{ secrets.LOVABLE_SERVICE_ROLE_KEY }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      BACKUP_ENCRYPTION_KEY_B64: ${{ secrets.BACKUP_ENCRYPTION_KEY_B64 }}
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Préparer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Installer PostgreSQL et les bibliothèques
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+          python -m pip install --require-hashes -r scripts/cloud-backup/requirements.txt
+
+      - name: Sauvegarder la base et les fichiers
+        run: python scripts/cloud-backup/backup_to_r2.py
+
+      - name: Afficher une alerte claire en cas d'échec
+        if: failure()
+        run: |
+          {
+            echo "# Sauvegarde La Providence — échec"
+            echo
+            echo "La copie n'a pas été finalisée. Consultez l'étape rouge ci-dessus."
+            echo "La sauvegarde précédente conservée dans R2 n'a pas été supprimée."
+          } >> "$GITHUB_STEP_SUMMARY"
