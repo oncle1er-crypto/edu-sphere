@@ -1,3 +1,5 @@
+import { WhatsAppShareButton } from "@/components/WhatsAppShare";
+import { whatsAppTemplates } from "@/lib/shareToWhatsApp";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner, StatusLegend, STATUTS_BULLETIN } from "@/components/help";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -757,6 +759,12 @@ export default function Bulletins() {
                         onClick={() => handleOpenSend(b)}>
                         <Send className={`h-3.5 w-3.5 ${aJour ? "text-primary" : ""}`} />
                       </Button>
+                      <WhatsAppShareButton
+                        phoneNumber={parents[b.eleve_id]?.telephone}
+                        message={whatsAppTemplates.bulletin(`${b.prenom} ${b.nom}`, selectedClasse, period?.nom || "Période")}
+                        label=""
+                        size="default"
+                      />
                       <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-7 sm:w-7"
                         disabled={lockingId === b.eleve_id || !!audit?.locked}
                         title={audit?.locked ? "Verrouillé" : "Verrouiller la version"}
