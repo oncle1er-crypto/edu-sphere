@@ -113,6 +113,27 @@ export default function Bulletins() {
 
   useEffect(() => { refreshAudit(); }, [refreshAudit]);
 
+  // Téléphone du contact principal (parent) par élève, pour le partage WhatsApp
+  const [parentsPhoneMap, setParentsPhoneMap] = useState<Record<string, string | null>>({});
+  useEffect(() => {
+    if (eleveIds.length === 0) { setParentsPhoneMap({}); return; }
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("eleve_parents")
+        .select("eleve_id, est_contact_principal, parents(telephone, telephone2)")
+        .in("eleve_id", eleveIds);
+      const map: Record<string, string | null> = {};
+      ((data ?? []) as any[])
+        .sort((a, b) => Number(b.est_contact_principal) - Number(a.est_contact_principal))
+        .forEach((l) => {
+          if (map[l.eleve_id] !== undefined) return; // garde le contact principal (déjà trié en premier)
+          map[l.eleve_id] = l.parents ? (l.parents.telephone || l.parents.telephone2 || null) : null;
+        });
+      if (!cancelled) setParentsPhoneMap(map);
+    })();
+    return () => { cancelled = true; };
+  }, [eleveIds.join("|")]); // eslint-disable-line
 
   // Charger périodes de l'année active
   useEffect(() => {
@@ -137,6 +158,11 @@ export default function Bulletins() {
   const periodeNom = useMemo(
     () => periodes.find((p) => p.id === selectedPeriode)?.nom ?? "Trimestre",
     [periodes, selectedPeriode]
+  );
+
+  const selectedClasseNom = useMemo(
+    () => classes.find((c) => c.id === selectedClasse)?.nom ?? "Classe",
+    [classes, selectedClasse]
   );
 
   // Calcul moyennes + rangs pour la classe + trimestre
@@ -760,8 +786,8 @@ export default function Bulletins() {
                         <Send className={`h-3.5 w-3.5 ${aJour ? "text-primary" : ""}`} />
                       </Button>
                       <WhatsAppShareButton
-                        phoneNumber={parents[b.eleve_id]?.telephone}
-                        message={whatsAppTemplates.bulletin(`${b.prenom} ${b.nom}`, selectedClasse, period?.nom || "Période")}
+                        phoneNumber={parentsPhoneMap[b.eleve_id] ?? undefined}
+                        message={whatsAppTemplates.bulletin(`${b.prenom} ${b.nom}`, selectedClasseNom, periodeNom)}
                         label=""
                         size="default"
                       />
