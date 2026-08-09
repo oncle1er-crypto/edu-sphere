@@ -7973,6 +7973,27 @@ export type Database = {
         }
         Returns: string
       }
+      backup_export_rows: {
+        Args: {
+          _limit?: number
+          _offset?: number
+          _schema: string
+          _table: string
+        }
+        Returns: Json
+      }
+      backup_export_schema_ddl: {
+        Args: { _schemas?: string[] }
+        Returns: string
+      }
+      backup_list_tables: {
+        Args: { _schemas?: string[] }
+        Returns: {
+          approx_rows: number
+          schema_name: string
+          table_name: string
+        }[]
+      }
       check_and_promote_eleve: {
         Args: { _eleve_id: string }
         Returns: undefined
