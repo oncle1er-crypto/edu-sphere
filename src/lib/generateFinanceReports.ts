@@ -696,6 +696,100 @@ export async function generateRecapPaiementsJournalier(
   doc.save(`Recap_paiements_${dateISO}.pdf`);
 }
 
+// ── Export de la liste des dépenses (filtrée par l'écran Dépenses) ──
+export interface DepenseExportRow {
+  libelle: string;
+  categorie: string | null;
+  fournisseur_nom?: string;
+  montant: number;
+  date_depense: string;
+  statut: string;
+}
+
+const STATUT_DEPENSE_LABEL: Record<string, string> = { en_attente: "En attente", validee: "Validée", rejetee: "Rejetée" };
+
+export async function generateDepensesExport(
+  ecole: string | EcoleMeta,
+  depenses: DepenseExportRow[],
+  opts: { periode: string },
+) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
+  const doc = new jsPDF();
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Dépenses",
+    periode: opts.periode,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
+
+  const total = depenses.reduce((s, d) => s + d.montant, 0);
+  const totalValidees = depenses.filter((d) => d.statut === "validee").reduce((s, d) => s + d.montant, 0);
+  const sorted = [...depenses].sort((a, b) => b.date_depense.localeCompare(a.date_depense));
+
+  autoTable(doc, {
+    startY,
+    head: [["Date", "Libellé", "Catégorie", "Fournisseur", "Statut", "Montant"]],
+    body: sorted.map((d) => [
+      new Date(d.date_depense + "T00:00:00").toLocaleDateString("fr-FR"),
+      d.libelle,
+      d.categorie ?? "—",
+      d.fournisseur_nom ?? "—",
+      STATUT_DEPENSE_LABEL[d.statut] ?? d.statut,
+      FCFA(d.montant),
+    ]),
+    foot: [[
+      { content: `TOTAL (${depenses.length} dépense${depenses.length > 1 ? "s" : ""})`, colSpan: 5, styles: { halign: "right", fontStyle: "bold" } },
+      { content: FCFA(total), styles: { halign: "right", fontStyle: "bold", fillColor: [245, 235, 238] } },
+    ]],
+    showFoot: "lastPage",
+    columnStyles: { 5: { halign: "right" } },
+    ...TABLE_STYLES,
+    styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+  });
+
+  let y = (doc as any).lastAutoTable?.finalY ?? startY + 40;
+  y += 6;
+  const w = doc.internal.pageSize.getWidth();
+  doc.setFontSize(8.5);
+  doc.setTextColor(90);
+  doc.text(`Dont dépenses validées (comptées dans le bilan) : ${FCFA(totalValidees)}`, 15, y);
+  doc.setTextColor(0);
+
+  // Ventilation par catégorie (toutes dépenses affichées, tous statuts confondus)
+  const catMap = new Map<string, { total: number; nb: number }>();
+  for (const d of depenses) {
+    const cat = d.categorie || "Non catégorisé";
+    const c = catMap.get(cat) ?? { total: 0, nb: 0 };
+    c.total += d.montant; c.nb += 1; catMap.set(cat, c);
+  }
+  const ventilation = Array.from(catMap.entries()).map(([categorie, v]) => ({ categorie, ...v })).sort((a, b) => b.total - a.total);
+
+  if (ventilation.length > 0) {
+    y += 8;
+    autoTable(doc, {
+      startY: y,
+      head: [["Catégorie", "Nb", "Total"]],
+      body: ventilation.map((v) => [v.categorie, String(v.nb), FCFA(v.total)]),
+      foot: [[
+        { content: "Total", styles: { fontStyle: "bold" } },
+        { content: String(depenses.length), styles: { fontStyle: "bold" } },
+        { content: FCFA(total), styles: { fontStyle: "bold", halign: "right" } },
+      ]],
+      showFoot: "lastPage",
+      columnStyles: { 1: { halign: "center", cellWidth: 20 }, 2: { halign: "right", cellWidth: 40 } },
+      tableWidth: (w - 30) / 2 - 3,
+      margin: { left: 15 },
+      ...TABLE_STYLES,
+      styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+    });
+  }
+
+  addFooter(doc, meta.nom);
+  doc.save(`Depenses_${new Date().toISOString().slice(0, 10)}.pdf`);
+}
+
 // ── Récapitulatif de caisse journalier complet (toutes entrées + dépenses) ──
 // Contrairement à generateRecapPaiementsJournalier (scolarité uniquement, avec
 // heure/tranche/classe), ce rapport couvre TOUTES les sources d'encaissement

@@ -1923,10 +1923,15 @@ export type Database = {
           id: string
           libelle: string
           montant: number
+          motif_rejet: string | null
           notes: string | null
           reference: string | null
+          rejete_le: string | null
+          rejete_par: string | null
           statut: string
           updated_at: string
+          valide_le: string | null
+          valide_par: string | null
         }
         Insert: {
           categorie?: string | null
@@ -1939,10 +1944,15 @@ export type Database = {
           id?: string
           libelle: string
           montant: number
+          motif_rejet?: string | null
           notes?: string | null
           reference?: string | null
+          rejete_le?: string | null
+          rejete_par?: string | null
           statut?: string
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
         Update: {
           categorie?: string | null
@@ -1955,10 +1965,15 @@ export type Database = {
           id?: string
           libelle?: string
           montant?: number
+          motif_rejet?: string | null
           notes?: string | null
           reference?: string | null
+          rejete_le?: string | null
+          rejete_par?: string | null
           statut?: string
           updated_at?: string
+          valide_le?: string | null
+          valide_par?: string | null
         }
         Relationships: [
           {
