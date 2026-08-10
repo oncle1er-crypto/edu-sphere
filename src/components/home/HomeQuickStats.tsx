@@ -1,13 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
-import { GraduationCap, Users, Wallet, UserCheck, Loader2 } from "lucide-react";
+import { GraduationCap, Users, Wallet, UserCheck, Loader2, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import { usePermissions } from "@/hooks/usePermissions";
 import type { HomeOverview } from "@/hooks/useHomeOverview";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { modeMeta } from "@/pages/finances/scolarite-data";
+import { generateRecapCaisseJournalier } from "@/lib/generateFinanceReports";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
@@ -47,11 +52,13 @@ interface EncaissementsJour {
 export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const { can } = usePermissions();
   const { ecoleId } = useEcoleId();
+  const ecoleInfo = useEcoleInfo();
 
   const [open, setOpen] = useState(false);
   const [detail, setDetail] = useState<EncaissementsJour | null>(null);
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [printing, setPrinting] = useState(false);
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
@@ -86,6 +93,64 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const ouvrirDetail = async () => {
     setOpen(true);
     if (!detail) await chargerDetail();
+  };
+
+  // Imprime un récapitulatif de caisse du jour : toutes les entrées déjà
+  // chargées dans `detail` (regroupées/statistiquées par source et par mode
+  // de règlement) + les dépenses du jour (chargées à la demande, elles ne
+  // font pas partie de la RPC encaissements_du_jour). Les dépenses n'ont pas
+  // de "mode de règlement" en base (table depenses sans colonne mode) : leur
+  // ventilation se fait donc par catégorie, seule dimension réellement
+  // disponible.
+  const imprimerRecap = async () => {
+    if (!detail || !ecoleId) return;
+    setPrinting(true);
+    try {
+      const isoDate = detail.date;
+      const { data: depRows, error: depError } = await supabase
+        .from("depenses")
+        .select("libelle, categorie, montant, fournisseurs(nom)")
+        .eq("ecole_id", ecoleId)
+        .eq("date_depense", isoDate)
+        .order("montant", { ascending: false });
+      if (depError) throw depError;
+
+      const sourcesForPdf = (detail.sources ?? []).map((s) => ({
+        libelle: s.libelle,
+        estRemise: !!s.est_remise,
+        operations: (s.operations ?? []).map((o) => ({
+          beneficiaire: o.eleve ?? "—",
+          matricule: o.matricule,
+          mode: modeMeta(o.mode ?? "").label,
+          reference: o.reference,
+          montant: Number(o.montant ?? 0),
+        })),
+      }));
+
+      const depensesForPdf = (depRows ?? []).map((d: any) => ({
+        libelle: d.libelle,
+        categorie: d.categorie,
+        fournisseur: d.fournisseurs?.nom ?? null,
+        montant: Number(d.montant ?? 0),
+      }));
+
+      await generateRecapCaisseJournalier(
+        {
+          nom: ecoleInfo?.nom ?? "École",
+          adresse: ecoleInfo?.adresse,
+          telephone: ecoleInfo?.telephone,
+          email: ecoleInfo?.email,
+          logoUrl: ecoleInfo?.logo_url,
+        },
+        isoDate,
+        { sources: sourcesForPdf, depenses: depensesForPdf },
+      );
+      toast.success("Récapitulatif du jour téléchargé");
+    } catch (e: any) {
+      toast.error("Erreur : " + messageErreurBase(e));
+    } finally {
+      setPrinting(false);
+    }
   };
 
 
@@ -222,6 +287,20 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
                     <p className="text-base font-bold text-muted-foreground">{fcfa(totalRemises)}</p>
                   </div>
                 )}
+              </div>
+
+              <div className="mt-2 flex justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={printing}
+                  onClick={imprimerRecap}
+                >
+                  {printing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+                  Imprimer le récapitulatif du jour
+                </Button>
               </div>
 
               {aucune ? (

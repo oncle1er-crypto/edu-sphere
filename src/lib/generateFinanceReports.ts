@@ -695,3 +695,265 @@ export async function generateRecapPaiementsJournalier(
   if (returnDoc) return doc;
   doc.save(`Recap_paiements_${dateISO}.pdf`);
 }
+
+// ── Récapitulatif de caisse journalier complet (toutes entrées + dépenses) ──
+// Contrairement à generateRecapPaiementsJournalier (scolarité uniquement, avec
+// heure/tranche/classe), ce rapport couvre TOUTES les sources d'encaissement
+// (scolarité, cantine, transport, tenues, services récurrents/ponctuels, cours
+// de vacances — cf. vue v_encaissements_detail) ainsi que les dépenses du jour,
+// pour donner une vue de caisse complète de la journée.
+export interface RecapCaisseOperation {
+  beneficiaire: string;
+  matricule?: string | null;
+  /** Libellé déjà résolu par l'appelant (ex. modeMeta(mode).label) — ce module ne connaît pas la table des modes. */
+  mode: string;
+  reference?: string | null;
+  montant: number;
+}
+export interface RecapCaisseSource {
+  libelle: string;
+  estRemise: boolean;
+  operations: RecapCaisseOperation[];
+}
+export interface RecapCaisseDepense {
+  libelle: string;
+  categorie: string | null;
+  fournisseur: string | null;
+  montant: number;
+}
+export interface RecapCaisseJournalierData {
+  sources: RecapCaisseSource[];
+  depenses: RecapCaisseDepense[];
+}
+
+export async function generateRecapCaisseJournalier(
+  ecole: string | EcoleMeta,
+  dateISO: string,
+  data: RecapCaisseJournalierData,
+  returnDoc = false,
+): Promise<jsPDF | void> {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
+  const doc = new jsPDF();
+  const dateLabel = new Date(dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+  let y = addHeader(doc, {
+    ecole: meta,
+    titre: "Récapitulatif de caisse — Journée",
+    periode: dateLabel,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
+
+  const w = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const entrees = data.sources.filter((s) => !s.estRemise);
+  const remises = data.sources.filter((s) => s.estRemise);
+  const totalEncaisse = entrees.reduce((s, src) => s + src.operations.reduce((a, o) => a + o.montant, 0), 0);
+  const totalRemises = remises.reduce((s, src) => s + src.operations.reduce((a, o) => a + o.montant, 0), 0);
+  const totalDepenses = data.depenses.reduce((s, d) => s + d.montant, 0);
+  const soldeNet = totalEncaisse - totalDepenses;
+  const nbEncaissements = entrees.reduce((n, src) => n + src.operations.length, 0);
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageH - 18) { doc.addPage(); y = 20; }
+  };
+
+  // Bandeau synthèse (4 indicateurs)
+  const cardW = (w - 30 - 3 * 4) / 4;
+  const cards: { label: string; value: string; color: [number, number, number] }[] = [
+    { label: "Total encaissé", value: FCFA(totalEncaisse), color: [0, 110, 50] },
+    { label: "Remises & bourses", value: FCFA(totalRemises), color: [130, 105, 30] },
+    { label: "Dépenses du jour", value: FCFA(totalDepenses), color: [150, 40, 30] },
+    { label: "Solde net de caisse", value: FCFA(soldeNet), color: soldeNet >= 0 ? [0, 110, 50] : [180, 0, 0] },
+  ];
+  cards.forEach((c, i) => {
+    const x = 15 + i * (cardW + 4);
+    doc.setFillColor(250, 246, 247);
+    doc.roundedRect(x, y, cardW, 20, 2, 2, "F");
+    doc.setFontSize(7.3);
+    doc.setTextColor(90);
+    doc.text(c.label, x + 3, y + 6, { maxWidth: cardW - 6 });
+    doc.setFontSize(9.3);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(c.color[0], c.color[1], c.color[2]);
+    doc.text(c.value, x + 3, y + 15, { maxWidth: cardW - 6 });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0);
+  });
+  y += 27;
+
+  // ── Entrées du jour, groupées par source avec sous-totaux ──
+  doc.setFontSize(10.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(110, 26, 44);
+  doc.text(`Entrées du jour (${nbEncaissements} opération${nbEncaissements > 1 ? "s" : ""})`, 15, y);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0);
+  y += 4;
+
+  if (nbEncaissements === 0) {
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text("Aucun encaissement enregistré ce jour-là.", 15, y + 4);
+    doc.setTextColor(0);
+    y += 12;
+  } else {
+    const entreesRows: any[] = [];
+    for (const src of entrees) {
+      if (src.operations.length === 0) continue;
+      entreesRows.push([
+        { content: src.libelle.toUpperCase(), colSpan: 5, styles: { fontStyle: "bold", fillColor: [240, 233, 224], textColor: [90, 60, 20] } },
+      ]);
+      for (const o of src.operations) {
+        entreesRows.push([o.beneficiaire, o.matricule ?? "—", o.mode, o.reference ?? "—", FCFA(o.montant)]);
+      }
+      const subtotal = src.operations.reduce((a, o) => a + o.montant, 0);
+      entreesRows.push([
+        { content: `Sous-total ${src.libelle}`, colSpan: 4, styles: { fontStyle: "bold", halign: "right", fillColor: [250, 246, 247] } },
+        { content: FCFA(subtotal), styles: { fontStyle: "bold", halign: "right", fillColor: [250, 246, 247] } },
+      ]);
+    }
+    autoTable(doc, {
+      startY: y,
+      head: [["Bénéficiaire", "Matricule", "Mode", "Référence", "Montant"]],
+      body: entreesRows,
+      foot: [[
+        { content: "TOTAL ENCAISSÉ", colSpan: 4, styles: { halign: "right", fontStyle: "bold" } },
+        { content: FCFA(totalEncaisse), styles: { halign: "right", fontStyle: "bold", fillColor: [245, 235, 238] } },
+      ]],
+      showFoot: "lastPage",
+      columnStyles: { 4: { halign: "right" } },
+      ...TABLE_STYLES,
+      styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+    });
+    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    if (totalRemises > 0) {
+      y += 5;
+      doc.setFontSize(8.3);
+      doc.setTextColor(90);
+      doc.text(`Dont remises & bourses accordées (hors caisse, non comptées dans le total encaissé) : ${FCFA(totalRemises)}`, 15, y);
+      doc.setTextColor(0);
+    }
+    y += 10;
+  }
+
+  // ── Ventilation par mode de règlement / par catégorie de dépense (côte à côte) ──
+  const modeMap = new Map<string, { total: number; nb: number }>();
+  for (const src of entrees) {
+    for (const o of src.operations) {
+      const m = modeMap.get(o.mode) ?? { total: 0, nb: 0 };
+      m.total += o.montant; m.nb += 1; modeMap.set(o.mode, m);
+    }
+  }
+  const ventilationModes = Array.from(modeMap.entries()).map(([mode, v]) => ({ mode, ...v })).sort((a, b) => b.total - a.total);
+
+  const catMap = new Map<string, { total: number; nb: number }>();
+  for (const d of data.depenses) {
+    const cat = d.categorie || "Non catégorisé";
+    const c = catMap.get(cat) ?? { total: 0, nb: 0 };
+    c.total += d.montant; c.nb += 1; catMap.set(cat, c);
+  }
+  const ventilationCategories = Array.from(catMap.entries()).map(([categorie, v]) => ({ categorie, ...v })).sort((a, b) => b.total - a.total);
+
+  if (ventilationModes.length > 0 || ventilationCategories.length > 0) {
+    ensureSpace(14 + Math.max(ventilationModes.length, ventilationCategories.length) * 6);
+    if (ventilationModes.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [["Mode de règlement", "Nb", "Total"]],
+        body: ventilationModes.map((m) => [m.mode, String(m.nb), FCFA(m.total)]),
+        foot: [[
+          { content: "Total", styles: { fontStyle: "bold" } },
+          { content: String(nbEncaissements), styles: { fontStyle: "bold" } },
+          { content: FCFA(totalEncaisse), styles: { fontStyle: "bold", halign: "right" } },
+        ]],
+        showFoot: "lastPage",
+        columnStyles: { 1: { halign: "center", cellWidth: 15 }, 2: { halign: "right", cellWidth: 35 } },
+        tableWidth: (w - 30) / 2 - 3,
+        margin: { left: 15 },
+        ...TABLE_STYLES,
+        styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+      });
+    }
+    if (ventilationCategories.length > 0) {
+      autoTable(doc, {
+        startY: y,
+        head: [["Dépenses — Catégorie", "Nb", "Total"]],
+        body: ventilationCategories.map((c) => [c.categorie, String(c.nb), FCFA(c.total)]),
+        foot: [[
+          { content: "Total", styles: { fontStyle: "bold" } },
+          { content: String(data.depenses.length), styles: { fontStyle: "bold" } },
+          { content: FCFA(totalDepenses), styles: { fontStyle: "bold", halign: "right" } },
+        ]],
+        showFoot: "lastPage",
+        columnStyles: { 1: { halign: "center", cellWidth: 15 }, 2: { halign: "right", cellWidth: 35 } },
+        tableWidth: (w - 30) / 2 - 3,
+        margin: { left: w / 2 + 3 },
+        ...TABLE_STYLES,
+        styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+      });
+    }
+    const finalYModes = ventilationModes.length > 0 ? (doc as any).lastAutoTable?.finalY : undefined;
+    y = Math.max(finalYModes ?? y + 20, y + 20) + 8;
+  }
+
+  // ── Détail des dépenses du jour ──
+  if (data.depenses.length > 0) {
+    ensureSpace(20);
+    doc.setFontSize(10.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(110, 26, 44);
+    doc.text(`Dépenses du jour (${data.depenses.length})`, 15, y);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(0);
+    y += 4;
+    autoTable(doc, {
+      startY: y,
+      head: [["Libellé", "Catégorie", "Fournisseur", "Montant"]],
+      body: data.depenses.map((d) => [d.libelle, d.categorie ?? "—", d.fournisseur ?? "—", FCFA(d.montant)]),
+      foot: [[
+        { content: "TOTAL DÉPENSES", colSpan: 3, styles: { halign: "right", fontStyle: "bold" } },
+        { content: FCFA(totalDepenses), styles: { halign: "right", fontStyle: "bold", fillColor: [245, 235, 238] } },
+      ]],
+      showFoot: "lastPage",
+      columnStyles: { 3: { halign: "right" } },
+      ...TABLE_STYLES,
+      styles: { ...TABLE_STYLES.styles, fontSize: 8 },
+    });
+    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+  }
+
+  // ── Bandeau solde net ──
+  ensureSpace(20);
+  y += 6;
+  doc.setFillColor(soldeNet >= 0 ? 235 : 250, soldeNet >= 0 ? 247 : 235, soldeNet >= 0 ? 238 : 235);
+  doc.rect(15, y, w - 30, 12, "F");
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  const netColor = soldeNet >= 0 ? [0, 110, 50] : [180, 0, 0];
+  doc.setTextColor(netColor[0], netColor[1], netColor[2]);
+  // U+2212 (signe moins) n'est pas rendu par la police helvetica intégrée de jsPDF
+  // (même limitation que U+202F documentée en tête de fichier) : trait d'union ASCII à la place.
+  doc.text(`Solde net de caisse du jour (encaissé - dépenses) : ${FCFA(soldeNet)}`, 20, y + 8);
+  doc.setTextColor(0);
+  doc.setFont("helvetica", "normal");
+  y += 20;
+
+  // ── Signatures ──
+  ensureSpace(14);
+  const sigY = Math.min(y + 8, pageH - 16);
+  doc.setDrawColor(180);
+  doc.line(20, sigY, 80, sigY);
+  doc.line(w - 80, sigY, w - 20, sigY);
+  doc.setFontSize(8);
+  doc.setTextColor(90);
+  doc.text("Caissier", 20, sigY + 5);
+  doc.text("Comptable / Direction", w - 80, sigY + 5);
+  doc.setTextColor(0);
+
+  addFooter(doc, meta.nom);
+  if (returnDoc) return doc;
+  doc.save(`Recap_caisse_${dateISO}.pdf`);
+}
