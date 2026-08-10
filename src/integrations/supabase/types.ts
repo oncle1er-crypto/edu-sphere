@@ -3543,7 +3543,7 @@ export type Database = {
           date_incident: string
           decision: string | null
           ecole_id: string
-          eleve_id: string
+          eleve_id: string | null
           enregistre_par: string | null
           gravite: string | null
           id: string
@@ -3558,7 +3558,7 @@ export type Database = {
           date_incident?: string
           decision?: string | null
           ecole_id: string
-          eleve_id: string
+          eleve_id?: string | null
           enregistre_par?: string | null
           gravite?: string | null
           id?: string
@@ -3573,7 +3573,7 @@ export type Database = {
           date_incident?: string
           decision?: string | null
           ecole_id?: string
-          eleve_id?: string
+          eleve_id?: string | null
           enregistre_par?: string | null
           gravite?: string | null
           id?: string
@@ -3581,7 +3581,43 @@ export type Database = {
           type?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "incidents_discipline_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
       }
       justifications: {
         Row: {
@@ -6321,6 +6357,27 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sp_paiements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
             foreignKeyName: "sp_paiements_service_id_fkey"
             columns: ["service_id"]
             isOneToOne: false
@@ -6628,6 +6685,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_ventes_tenues_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_ventes_tenues_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_ventes_tenues_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
           },
           {
             foreignKeyName: "sp_ventes_tenues_paiement_id_fkey"
