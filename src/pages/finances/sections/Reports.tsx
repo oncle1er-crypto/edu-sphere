@@ -37,6 +37,7 @@ import {
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 import { compareEleves } from "@/lib/sortEleves";
+import { plageFinanciereAnnee } from "@/lib/academicRange";
 
 const ECOLE_NOM = "Complexe Scolaire La Providence de Don Orione";
 
@@ -85,7 +86,11 @@ export default function Reports() {
     if (filters.from || filters.to) {
       return { from: filters.from || activeAnnee?.debut, to: filters.to || activeAnnee?.fin };
     }
-    return periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+    // Pas de filtre explicite : inclut la fenêtre d'anticipation de rentrée
+    // (voir academicRange.ts), sinon les dépenses de juillet/août
+    // disparaissent des rapports (compte de résultat, flux de trésorerie...)
+    // — même correctif que Expenses.tsx / FinanceDashboard.tsx.
+    return periodLoading || !activeAnnee ? undefined : plageFinanciereAnnee(activeAnnee);
   }, [filters.from, filters.to, activeAnnee, periodLoading]);
 
   const { depenses, loading: depLoading } = useDepenses(effectiveRange);

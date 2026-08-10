@@ -7,6 +7,7 @@ import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { ventilerScolarite, type VentilationParams } from "@/lib/ventilationScolarite";
 import { EXPENSE_CATEGORIES } from "@/lib/expenseCategories";
 import { modeMeta } from "@/pages/finances/scolarite-data";
+import { MOIS_ANTICIPATION_FINANCIERE } from "@/lib/academicRange";
 
 export interface BilanLigne {
   libelle: string;
@@ -77,7 +78,7 @@ const ENTREES_LIBELLES = [
 type EntreeKey = (typeof ENTREES_LIBELLES)[number];
 
 /** Nombre de mois d'anticipation avant la rentrée (inscriptions anticipées) */
-const MOIS_ANTICIPATION = 2;
+const MOIS_ANTICIPATION = MOIS_ANTICIPATION_FINANCIERE;
 
 function buildMois(debut: string, fin: string): BilanMois[] {
   const d = new Date(debut);
@@ -286,6 +287,17 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       }
 
       // ── Cours de vacances ──
+      // Note : vacances_paiements.eleve_id référence vacances_eleves (roster
+      // distinct des candidats aux cours de vacances), PAS la table eleves.
+      // keepEleve() compare contre un Set construit depuis eleves : un
+      // filtrage par niveau y trouvait donc toujours 0 correspondance et
+      // masquait entièrement cette catégorie dès qu'un niveau (Primaire/
+      // Secondaire) était sélectionné (bug constaté le 10/08/2026).
+      // vacances_classes n'a par ailleurs aucune colonne cycle_id/niveau :
+      // il n'existe aucune donnée fiable pour rattacher ces paiements à un
+      // niveau précis. Cette catégorie est donc traitée comme "Commune",
+      // au même titre que les dépenses sans cycle_id ailleurs dans ce
+      // fichier — toujours visible, quel que soit le niveau sélectionné.
       const { data: vac } = await supabase
         .from("vacances_paiements")
         .select("montant_paye, mode, date_paiement, eleve_id")
@@ -293,7 +305,6 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         .gte("date_paiement", from)
         .lte("date_paiement", to);
       for (const p of (vac ?? []) as any[]) {
-        if (!keepEleve(p.eleve_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);

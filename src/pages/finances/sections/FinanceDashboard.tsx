@@ -14,11 +14,15 @@ import { useBudget } from "@/hooks/useBudget";
 import { useDepenses } from "@/hooks/useDepenses";
 import { useFactures } from "@/hooks/useFactures";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { plageFinanciereAnnee } from "@/lib/academicRange";
 
 export default function FinanceDashboard() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
-  const dateRange = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  // Inclut la fenêtre d'anticipation de rentrée (voir academicRange.ts) :
+  // sans elle, les dépenses de juillet/août (préparatifs de rentrée)
+  // disparaissaient du tableau de bord — même correctif que Expenses.tsx.
+  const dateRange = periodLoading || !activeAnnee ? undefined : plageFinanciereAnnee(activeAnnee);
   const { data: ELEVES, loading } = useFinanceData(scopedAnneeId);
   const { comptes, loading: tresLoading } = useTresorerie();
   const { lignes, loading: budgetLoading } = useBudget();

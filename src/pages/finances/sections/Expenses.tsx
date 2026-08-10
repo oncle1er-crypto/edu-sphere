@@ -16,12 +16,18 @@ import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext
 import { useEffect, useState } from "react";
 
 import { EXPENSE_CATEGORIES as CATEGORIES } from "@/lib/expenseCategories";
+import { plageFinanciereAnnee } from "@/lib/academicRange";
 
 const COMMUN = "__commun__";
 
 export default function Expenses() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
-  const range = periodLoading || !activeAnnee ? undefined : { from: activeAnnee.debut, to: activeAnnee.fin };
+  // Inclut la fenêtre d'anticipation de rentrée (voir academicRange.ts) :
+  // sans elle, les dépenses enregistrées entre la fin de l'année précédente
+  // et le début officiel de l'année active (ex: préparatifs de rentrée en
+  // juillet/août) disparaissaient de la liste alors qu'elles existent bien
+  // en base — même incohérence déjà corrigée dans useBilanComptable.
+  const range = periodLoading || !activeAnnee ? undefined : plageFinanciereAnnee(activeAnnee);
   const { depenses, loading, addDepense, updateStatut } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
   const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
