@@ -1,0 +1,15 @@
+-- Aligne le schéma local sur la production : sms_logs.sender_id est nullable
+-- en production (constatation via information_schema.columns, 10/08/2026),
+-- alors que la migration d'origine (20260505192328) le déclarait
+-- NOT NULL DEFAULT ''. La contrainte a été relâchée directement en
+-- production (par Lovable ou manuellement) sans migration correspondante.
+--
+-- Impact constaté avant correction : 6 lignes de sms_logs en production ont
+-- sender_id = NULL ; le rechargement des données de production vers le
+-- local échouait donc systématiquement sur cette table (violation NOT NULL),
+-- laissant sms_logs vide en local (0/56 lignes).
+--
+-- Ce correctif aligne uniquement la contrainte, sans toucher aux données ni
+-- à la valeur par défaut existante ('' reste le défaut pour les nouvelles
+-- insertions locales qui ne précisent pas sender_id).
+ALTER TABLE public.sms_logs ALTER COLUMN sender_id DROP NOT NULL;
