@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { CreditCard, Plus, Search, Download, Eye, AlertCircle, CheckCircle2, Clock, X, Loader2 } from "lucide-react";
+import { CreditCard, Plus, Search, Eye, AlertCircle, CheckCircle2, Clock, X, Loader2 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { HelpBanner } from "@/components/help";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ConfirmButton";
+import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
+import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,6 +39,7 @@ export default function Payments() {
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const scopedAnneeId = periodLoading ? "" : (activeAnnee?.id ?? "");
   const { data: ELEVES_SCOLARITE, loading: finLoading, refetching, refetch, ecoleId } = useFinanceData(scopedAnneeId);
+  const ecoleInfo = useEcoleInfo();
   const [search, setSearch] = useState("");
   const [adv, setAdv] = useState<AdvSearch>(EMPTY_ADV);
   const [advOpen, setAdvOpen] = useState(false);
@@ -194,7 +197,29 @@ export default function Payments() {
               <SelectItem value="retard">En retard</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+          <ReportExportButtons
+            title="Encaissements — Registre des familles"
+            filename={`encaissements_${new Date().toISOString().slice(0, 10)}`}
+            columns={["Élève", "Matricule", "Classe", "Cycle", "Attendu", "Encaissé", "Remises", "Couvert", "Reste dû", "Statut", "Téléphone"]}
+            getRows={() =>
+              filtered.map((e) => [
+                `${e.nom} ${e.prenom}`,
+                e.matricule,
+                e.classe,
+                e.cycle,
+                e.fraisAnnuel,
+                e.totalEncaisse ?? 0,
+                e.totalRemises ?? 0,
+                e.totalPaye,
+                e.resteDu,
+                STATUT_LABEL[statutEleve(e)],
+                e.telephone,
+              ])
+            }
+            ecole={ecoleInfo}
+            size="sm"
+            hide={["pdf"]}
+          />
           <Button
             size="sm"
             disabled={lock.locked}

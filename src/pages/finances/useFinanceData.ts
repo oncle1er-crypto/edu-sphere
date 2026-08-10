@@ -223,10 +223,16 @@ export function useFinanceData(scopedAnneeId?: string) {
       const totalEncaisse = actifs.filter((p) => p.kind === "encaissement").reduce((s, p) => s + p.montant, 0);
       const totalRemises  = actifs.filter((p) => p.kind === "remise").reduce((s, p) => s + p.montant, 0);
 
-      // `totalPaye` = trésorerie réellement encaissée (hors remises/bourses).
-      // Le dû couvert (encaissé + remises) sert uniquement au calcul du reste à payer.
-      const totalPaye = totalEncaisse;
+      // `totalPaye` = montant couvert (encaissé + remises/bourses/prises en charge).
+      // Correction du 10/08/2026 (audit module Paiements) : `totalPaye` valait
+      // auparavant `totalEncaisse` seul, ce qui faisait mentir le sous-texte des
+      // cartes "Couvert" (qui annonce explicitement les remises) et surestimait
+      // "Reste dû". Le reste du code (ClassSummary.tsx, downloadGlobalReceipt.ts,
+      // le prop `couvert` de VentilationScolariteCard) attendait déjà cette
+      // sémantique — cette correction aligne useFinanceData sur le reste du code.
+      // Utiliser `totalEncaisse` séparément pour tout affichage "cash uniquement".
       const totalCouvert = totalEncaisse + totalRemises;
+      const totalPaye = totalCouvert;
 
       result.push({
         id: eleveId,

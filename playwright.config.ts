@@ -1,10 +1,25 @@
 import { defineConfig, devices } from '@playwright/test';
+import { readFileSync } from 'fs';
 
 /**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
+ * Charge UNIQUEMENT .env.local (stack Supabase locale), jamais .env (config
+ * de production, suivie par Git) : les tests E2E ne doivent jamais pouvoir
+ * pointer accidentellement vers la production. Parseur minimal volontaire
+ * (pas de dépendance `dotenv` ajoutée pour ça) : lignes `CLE="valeur"`.
  */
-// require('dotenv').config();
+function loadEnvLocal(path: string) {
+  let content: string;
+  try {
+    content = readFileSync(path, 'utf-8');
+  } catch {
+    return; // fichier absent (ex: environnement CI) : pas bloquant
+  }
+  for (const line of content.split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*"?([^"]*)"?\s*$/);
+    if (m && !(m[1] in process.env)) process.env[m[1]] = m[2];
+  }
+}
+loadEnvLocal('.env.local');
 
 /**
  * See https://playwright.dev/docs/test-configuration.
