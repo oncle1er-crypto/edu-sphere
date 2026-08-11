@@ -13,7 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert, Paperclip } from "lucide-react";
+import { Users, Search, Download, MoreHorizontal, Loader2, Shuffle, Eye, Trash2, List, LayoutGrid, Sparkles, AlertTriangle, ShieldAlert, Paperclip, Printer } from "lucide-react";
 import { useEleves } from "@/hooks/useEleves";
 import { useClasses } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
@@ -25,6 +25,9 @@ import StudentDetailDrawer from "@/pages/eleves/components/StudentDetailDrawer";
 import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWorkflowDialog";
 import BulkInscriptionDialog from "@/pages/eleves/components/BulkInscriptionDialog";
 import DuplicatesDialog from "@/pages/eleves/components/DuplicatesDialog";
+import { isStatutActif } from "@/lib/eleveStatus";
+import { debutAnticipe } from "@/lib/academicRange";
+import { generateListeElevesPDF, type RosterClasse, type RosterData } from "@/lib/generateStudentRosterPDF";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -35,9 +38,18 @@ const formatDate = (d: string | null) => {
 
 type ViewMode = "list" | "grid";
 
+interface EcoleInfo {
+  nom: string;
+  devise: string;
+  adresse: string;
+  telephone: string;
+  email?: string;
+  logo_url?: string | null;
+}
+
 export default function StudentsList() {
   const { activeAnnee } = useAcademicPeriod();
-  const { eleves, loading, updateEleve, deleteEleve, fetchEleves } = useEleves(activeAnnee.id);
+  const { eleves, loading, updateEleve, deleteEleve, fetchEleves, ecoleId } = useEleves(activeAnnee.id);
   const { classes } = useClasses(activeAnnee.id);
   const { isAdmin } = useIsAdmin();
   const { cycles } = useCycles();
@@ -73,6 +85,40 @@ export default function StudentsList() {
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
   const [purgeTarget, setPurgeTarget] = useState<typeof eleves[0] | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Impression de la liste des élèves par classe
+  const [ecole, setEcole] = useState<EcoleInfo>({
+    nom: "Complexe Scolaire La Providence de Don Orione",
+    devise: "Foi, Savoir, Excellence",
+    adresse: "Abidjan, Côte d'Ivoire",
+    telephone: "+225 00 00 00 00",
+    email: "",
+    logo_url: null,
+  });
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [rosterBusy, setRosterBusy] = useState(false);
+  const [afficherStatut, setAfficherStatut] = useState(true);
+
+  useEffect(() => {
+    if (!ecoleId) return;
+    supabase
+      .from("ecoles")
+      .select("nom, devise, adresse, telephone, email, logo_url")
+      .eq("id", ecoleId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setEcole({
+            nom: data.nom || "Complexe Scolaire La Providence de Don Orione",
+            devise: data.devise || "Foi, Savoir, Excellence",
+            adresse: data.adresse || "Abidjan, Côte d'Ivoire",
+            telephone: data.telephone || "+225 00 00 00 00",
+            email: data.email || "",
+            logo_url: data.logo_url || null,
+          });
+        }
+      });
+  }, [ecoleId]);
 
   // Keep drawer eleve in sync with realtime-refreshed list
   useEffect(() => {
@@ -151,6 +197,72 @@ export default function StudentsList() {
     setActionLoading(false);
   };
 
+  // ── Liste des élèves par classe (PDF) ──
+  // Inclut les statuts "actifs" (inscrit/pré-inscrit/actif), exclut sortis/exclus,
+  // conformément à src/lib/eleveStatus.ts. "Nouveau" = date_inscription dans la
+  // fenêtre de l'année active (élève dont le dossier a été créé cette année,
+  // décision utilisateur du 11/08/2026 — cf. commentaire dans
+  // generateStudentRosterPDF.ts).
+  const anticipStart = activeAnnee.debut ? debutAnticipe(activeAnnee.debut) : null;
+  const calcEstNouveau = (e: typeof eleves[0]) =>
+    !!(anticipStart && e.date_inscription && e.date_inscription >= anticipStart);
+
+  const buildRosterData = (): RosterData => {
+    const eligibles = eleves.filter((e) => isStatutActif(e.statut));
+    const parClasse = new Map<string, typeof eligibles>();
+    for (const e of eligibles) {
+      const key = e.classe_id ?? "__sans_classe__";
+      const list = parClasse.get(key) ?? [];
+      list.push(e);
+      parClasse.set(key, list);
+    }
+    const toRoster = (list: typeof eligibles) =>
+      list.map((e) => ({
+        matricule: e.matricule,
+        nom: e.nom,
+        prenom: e.prenom,
+        sexe: e.sexe,
+        statut: e.statut,
+        estNouveau: calcEstNouveau(e),
+      }));
+    const classesTriees = [...classes].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+    const rosterClasses: RosterClasse[] = classesTriees.map((c) => ({
+      classeNom: c.nom,
+      cycleNom: c.cycle_nom,
+      eleves: toRoster(parClasse.get(c.id) ?? []),
+    }));
+    const sansClasse = parClasse.get("__sans_classe__") ?? [];
+    if (sansClasse.length > 0) {
+      rosterClasses.push({ classeNom: "Sans classe assignée", cycleNom: null, eleves: toRoster(sansClasse) });
+    }
+    return { anneeLabel: activeAnnee.libelle, classes: rosterClasses };
+  };
+
+  const handleRoster = async (previewOnly: boolean) => {
+    setRosterBusy(true);
+    try {
+      const meta = { nom: ecole.nom, devise: ecole.devise, adresse: ecole.adresse, telephone: ecole.telephone, email: ecole.email, logoUrl: ecole.logo_url };
+      const data = buildRosterData();
+      if (data.classes.every((c) => c.eleves.length === 0)) {
+        toast.info("Aucun élève inscrit ou pré-inscrit à afficher.");
+        return;
+      }
+      if (previewOnly) {
+        const pdf = await generateListeElevesPDF(meta, data, { afficherStatut, returnDoc: true });
+        if (pdf) setPdfUrl(URL.createObjectURL((pdf as any).output("blob")));
+      } else {
+        await generateListeElevesPDF(meta, data, { afficherStatut });
+        toast.success("Liste des élèves téléchargée");
+      }
+    } finally {
+      setRosterBusy(false);
+    }
+  };
+
+  const closePdfPreview = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
 
   if (loading) {
     return (
@@ -301,6 +413,31 @@ export default function StudentsList() {
               Doublons
             </Button>
             <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+            <label className="flex items-center gap-1.5 text-xs text-muted-foreground px-1 select-none">
+              <Checkbox checked={afficherStatut} onCheckedChange={(v) => setAfficherStatut(v === true)} />
+              Statut d'inscription sur le PDF
+            </label>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => handleRoster(true)}
+              disabled={rosterBusy}
+              title="Aperçu de la liste des élèves par classe (effectifs, sexe, statut d'inscription)"
+            >
+              {rosterBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+              Aperçu
+            </Button>
+            <Button
+              size="sm"
+              className="gap-1"
+              onClick={() => handleRoster(false)}
+              disabled={rosterBusy}
+              title="Imprimer / télécharger la liste des élèves par classe"
+            >
+              {rosterBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+              Imprimer
+            </Button>
             <div className="flex border rounded-md overflow-hidden">
               <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
@@ -622,6 +759,23 @@ export default function StudentsList() {
         onView={(e) => { setDuplicatesOpen(false); setViewEleve(e); }}
         onDeleted={() => fetchEleves()}
       />
+
+      {/* Aperçu PDF — liste des élèves par classe */}
+      <Dialog open={!!pdfUrl} onOpenChange={(open) => { if (!open) closePdfPreview(); }}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader><DialogTitle>Aperçu — Liste des élèves par classe</DialogTitle></DialogHeader>
+          <div className="flex-1 min-h-0">
+            {pdfUrl ? (
+              <iframe src={pdfUrl} className="w-full h-full rounded border" title="Aperçu de la liste des élèves" />
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => handleRoster(false)} disabled={rosterBusy} className="gap-1">
+              <Printer className="h-4 w-4" />Imprimer / Télécharger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
 
   );

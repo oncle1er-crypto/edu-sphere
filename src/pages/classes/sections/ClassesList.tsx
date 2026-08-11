@@ -1,15 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { BookOpen, Search, Plus, Download, Upload, MoreHorizontal, Loader2 } from "lucide-react";
+import { BookOpen, Search, Plus, Download, Upload, MoreHorizontal, Loader2, Eye, Printer } from "lucide-react";
 import { useClasses, Classe } from "@/hooks/useClasses";
 import { useCycles } from "@/hooks/useCycles";
 import { useEnseignants } from "@/hooks/useEnseignants";
@@ -19,6 +20,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { isStatutActif } from "@/lib/eleveStatus";
+import { debutAnticipe } from "@/lib/academicRange";
+import { generateListeElevesPDF, type RosterData } from "@/lib/generateStudentRosterPDF";
 
 const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
   { key: "nom", label: "Nom", required: true },
@@ -63,6 +67,40 @@ export default function ClassesList() {
   const [viewElevesClass, setViewElevesClass] = useState<Classe | null>(null);
   const { eleves } = useEleves(activeAnnee.id);
   const [showImport, setShowImport] = useState(false);
+
+  // Impression de la liste des élèves de la classe consultée
+  const [ecoleInfo, setEcoleInfo] = useState({
+    nom: "Complexe Scolaire La Providence de Don Orione",
+    devise: "Foi, Savoir, Excellence",
+    adresse: "Abidjan, Côte d'Ivoire",
+    telephone: "+225 00 00 00 00",
+    email: "",
+    logo_url: null as string | null,
+  });
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [rosterBusy, setRosterBusy] = useState(false);
+  const [afficherStatut, setAfficherStatut] = useState(true);
+
+  useEffect(() => {
+    if (!ecoleId) return;
+    supabase
+      .from("ecoles")
+      .select("nom, devise, adresse, telephone, email, logo_url")
+      .eq("id", ecoleId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setEcoleInfo({
+            nom: data.nom || "Complexe Scolaire La Providence de Don Orione",
+            devise: data.devise || "Foi, Savoir, Excellence",
+            adresse: data.adresse || "Abidjan, Côte d'Ivoire",
+            telephone: data.telephone || "+225 00 00 00 00",
+            email: data.email || "",
+            logo_url: data.logo_url || null,
+          });
+        }
+      });
+  }, [ecoleId]);
 
   const filtered = classes.filter((c) => {
     const ms =
@@ -185,6 +223,51 @@ export default function ClassesList() {
   const elevesForClass = viewElevesClass
     ? eleves.filter((e) => e.classe_id === viewElevesClass.id)
     : [];
+
+  // Statuts "actifs" uniquement (inscrit/pré-inscrit/actif), cf. src/lib/eleveStatus.ts —
+  // exclut sortis/exclus de la liste imprimée.
+  const anticipStart = activeAnnee.debut ? debutAnticipe(activeAnnee.debut) : null;
+  const handlePrintClasse = async (previewOnly: boolean) => {
+    if (!viewElevesClass) return;
+    const eligibles = elevesForClass.filter((e) => isStatutActif(e.statut));
+    if (eligibles.length === 0) {
+      toast.info("Aucun élève inscrit ou pré-inscrit dans cette classe.");
+      return;
+    }
+    setRosterBusy(true);
+    try {
+      const meta = { nom: ecoleInfo.nom, devise: ecoleInfo.devise, adresse: ecoleInfo.adresse, telephone: ecoleInfo.telephone, email: ecoleInfo.email, logoUrl: ecoleInfo.logo_url };
+      const data: RosterData = {
+        anneeLabel: activeAnnee.libelle,
+        classes: [{
+          classeNom: viewElevesClass.nom,
+          cycleNom: viewElevesClass.cycle_nom,
+          eleves: eligibles.map((e) => ({
+            matricule: e.matricule,
+            nom: e.nom,
+            prenom: e.prenom,
+            sexe: e.sexe,
+            statut: e.statut,
+            estNouveau: !!(anticipStart && e.date_inscription && e.date_inscription >= anticipStart),
+          })),
+        }],
+      };
+      if (previewOnly) {
+        const pdf = await generateListeElevesPDF(meta, data, { afficherStatut, returnDoc: true });
+        if (pdf) setPdfUrl(URL.createObjectURL((pdf as any).output("blob")));
+      } else {
+        await generateListeElevesPDF(meta, data, { afficherStatut });
+        toast.success("Liste des élèves téléchargée");
+      }
+    } finally {
+      setRosterBusy(false);
+    }
+  };
+
+  const closePdfPreview = () => {
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    setPdfUrl(null);
+  };
 
   return (
     <>
@@ -413,6 +496,39 @@ export default function ClassesList() {
               </Table>
             </div>
           )}
+          {elevesForClass.length > 0 && (
+            <>
+              <label className="flex items-center gap-1.5 text-xs text-muted-foreground select-none">
+                <Checkbox checked={afficherStatut} onCheckedChange={(v) => setAfficherStatut(v === true)} />
+                Statut d'inscription sur le PDF
+              </label>
+              <DialogFooter>
+                <Button variant="outline" size="sm" className="gap-1" onClick={() => handlePrintClasse(true)} disabled={rosterBusy}>
+                  {rosterBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+                  Aperçu
+                </Button>
+                <Button size="sm" className="gap-1" onClick={() => handlePrintClasse(false)} disabled={rosterBusy}>
+                  {rosterBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Printer className="h-4 w-4" />}
+                  Imprimer
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Aperçu PDF */}
+      <Dialog open={!!pdfUrl} onOpenChange={(o) => { if (!o) closePdfPreview(); }}>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader><DialogTitle>Aperçu — Liste des élèves ({viewElevesClass?.nom})</DialogTitle></DialogHeader>
+          <div className="flex-1 min-h-0">
+            {pdfUrl ? <iframe src={pdfUrl} className="w-full h-full rounded border" title="Aperçu de la liste des élèves" /> : null}
+          </div>
+          <DialogFooter>
+            <Button onClick={() => handlePrintClasse(false)} disabled={rosterBusy} className="gap-1">
+              <Printer className="h-4 w-4" />Imprimer / Télécharger
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       <ImportDialog
