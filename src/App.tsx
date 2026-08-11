@@ -111,6 +111,8 @@ const Budget = lazy(() => import("@/pages/finances/sections/Budget"));
 const Treasury = lazy(() => import("@/pages/finances/sections/Treasury"));
 const Ledger = lazy(() => import("@/pages/finances/sections/Ledger"));
 const BalanceSheet = lazy(() => import("@/pages/finances/sections/BalanceSheet"));
+const EntreesRecap = lazy(() => import("@/pages/finances/sections/EntreesRecap"));
+const RecapCaisse = lazy(() => import("@/pages/finances/sections/RecapCaisse"));
 const Reports = lazy(() => import("@/pages/finances/sections/Reports"));
 const Tax = lazy(() => import("@/pages/finances/sections/Tax"));
 const FinanceConfig = lazy(() => import("@/pages/finances/sections/FinanceConfig"));
@@ -425,6 +427,8 @@ const App = () => (
               <Route path="tresorerie" element={<Treasury />} />
               <Route path="grand-livre" element={<Ledger />} />
               <Route path="bilan" element={<BalanceSheet />} />
+              <Route path="recap-entrees" element={<EntreesRecap />} />
+              <Route path="recap-caisse" element={<RecapCaisse />} />
               <Route path="rapports" element={<Reports />} />
               <Route path="fiscalite" element={<Tax />} />
               <Route path="configuration" element={<FinanceConfig />} />

@@ -7841,9 +7841,11 @@ export type Database = {
       }
       v_encaissements_detail: {
         Row: {
+          cycle_id: string | null
           date_operation: string | null
           ecole_id: string | null
           eleve: string | null
+          eleve_id: string | null
           est_remise: boolean | null
           libelle: string | null
           matricule: string | null

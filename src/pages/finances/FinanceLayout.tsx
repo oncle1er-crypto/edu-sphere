@@ -1,7 +1,8 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
   LayoutDashboard, FileText, CreditCard, Receipt, Wallet, Landmark,
-  Users, PiggyBank, BarChart3, FileSpreadsheet, Settings2, AlertTriangle, UserSearch, Building2,
+  Users, PiggyBank, BarChart3, FileSpreadsheet, Settings2, AlertTriangle, UserSearch, Building2, ListChecks,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -14,6 +15,7 @@ const sections = [
   { to: "synthese-eleve", label: "Synthèse par élève", icon: UserSearch, group: "Encaissements" },
   { to: "synthese-classe", label: "Synthèse par classe", icon: Building2, group: "Encaissements" },
   { to: "recus", label: "Reçus & quittances", icon: Receipt, group: "Encaissements" },
+  { to: "recap-caisse", label: "Récapitulatif de caisse", icon: ClipboardList, group: "Encaissements" },
   { to: "impayes", label: "Impayés & relances", icon: AlertTriangle, group: "Encaissements" },
 
   { to: "depenses", label: "Dépenses", icon: Wallet, group: "Sorties" },
@@ -24,6 +26,7 @@ const sections = [
   { to: "tresorerie", label: "Trésorerie & banques", icon: Landmark, group: "Comptabilité" },
   { to: "grand-livre", label: "Grand livre", icon: FileSpreadsheet, group: "Comptabilité" },
   { to: "bilan", label: "Bilan comptable", icon: FileSpreadsheet, group: "Comptabilité" },
+  { to: "recap-entrees", label: "Récapitulatif des entrées", icon: ListChecks, group: "Comptabilité" },
 
   { to: "rapports", label: "Rapports financiers", icon: BarChart3, group: "Analyses" },
   { to: "fiscalite", label: "Fiscalité & TVA", icon: FileSpreadsheet, group: "Analyses" },

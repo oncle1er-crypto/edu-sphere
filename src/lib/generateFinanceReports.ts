@@ -820,22 +820,45 @@ export interface RecapCaisseJournalierData {
   depenses: RecapCaisseDepense[];
 }
 
+export interface RecapCaisseOptions {
+  /** Date unique au format ISO (mode "jour" historique) : sert à dériver le titre/période/fichier si periodeLabel n'est pas fourni. */
+  dateISO?: string;
+  /** Libellé de période affiché dans l'en-tête (ex. "lundi 10 août 2026" ou "Semaine du 04/08/2026 au 10/08/2026"). Prioritaire sur dateISO. */
+  periodeLabel?: string;
+  /** Titre du document (par défaut "Récapitulatif de caisse — Journée"). */
+  titre?: string;
+  /** Suffixe du nom de fichier, sans extension (par défaut dateISO ou la date du jour). */
+  filenameSuffix?: string;
+  /** Si false, n'affiche que les sous-totaux par catégorie (pas le détail opération par opération). Par défaut true. */
+  avecDetail?: boolean;
+  /** Niveau filtré actif, ajouté au libellé de période (ex. "Primaire"). Omis si global. */
+  niveauLabel?: string | null;
+}
+
 export async function generateRecapCaisseJournalier(
   ecole: string | EcoleMeta,
-  dateISO: string,
+  optsOrDateISO: string | RecapCaisseOptions,
   data: RecapCaisseJournalierData,
   returnDoc = false,
 ): Promise<jsPDF | void> {
+  const opts: RecapCaisseOptions =
+    typeof optsOrDateISO === "string" ? { dateISO: optsOrDateISO } : optsOrDateISO;
+  const avecDetail = opts.avecDetail ?? true;
   const meta = toMeta(ecole);
   const logoData = await fetchLogo(meta.logoUrl);
   const doc = new jsPDF();
-  const dateLabel = new Date(dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
-    weekday: "long", day: "2-digit", month: "long", year: "numeric",
-  });
+  const dateLabelDerive = opts.dateISO
+    ? new Date(opts.dateISO + "T00:00:00").toLocaleDateString("fr-FR", {
+        weekday: "long", day: "2-digit", month: "long", year: "numeric",
+      })
+    : "";
+  const periodeLabel = [opts.periodeLabel || dateLabelDerive, opts.niveauLabel || null]
+    .filter(Boolean)
+    .join(" · ");
   let y = addHeader(doc, {
     ecole: meta,
-    titre: "Récapitulatif de caisse — Journée",
-    periode: dateLabel,
+    titre: opts.titre || "Récapitulatif de caisse — Journée",
+    periode: periodeLabel,
     date: new Date().toLocaleDateString("fr-FR"),
     logoData,
   });
@@ -893,6 +916,37 @@ export async function generateRecapCaisseJournalier(
     doc.text("Aucun encaissement enregistré ce jour-là.", 15, y + 4);
     doc.setTextColor(0);
     y += 12;
+  } else if (!avecDetail) {
+    // Mode "sans détail" : une seule ligne par catégorie (nb + sous-total), sans lister chaque opération.
+    const rows = entrees
+      .filter((src) => src.operations.length > 0)
+      .map((src) => {
+        const subtotal = src.operations.reduce((a, o) => a + o.montant, 0);
+        return [src.libelle, String(src.operations.length), FCFA(subtotal)];
+      });
+    autoTable(doc, {
+      startY: y,
+      head: [["Catégorie", "Nb opérations", "Montant"]],
+      body: rows,
+      foot: [[
+        { content: "TOTAL ENCAISSÉ", styles: { halign: "right", fontStyle: "bold" } },
+        { content: String(nbEncaissements), styles: { halign: "right", fontStyle: "bold" } },
+        { content: FCFA(totalEncaisse), styles: { halign: "right", fontStyle: "bold", fillColor: [245, 235, 238] } },
+      ]],
+      showFoot: "lastPage",
+      columnStyles: { 1: { halign: "center", cellWidth: 30 }, 2: { halign: "right" } },
+      ...TABLE_STYLES,
+      styles: { ...TABLE_STYLES.styles, fontSize: 8.5 },
+    });
+    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    if (totalRemises > 0) {
+      y += 5;
+      doc.setFontSize(8.3);
+      doc.setTextColor(90);
+      doc.text(`Dont remises & bourses accordées (hors caisse, non comptées dans le total encaissé) : ${FCFA(totalRemises)}`, 15, y);
+      doc.setTextColor(0);
+    }
+    y += 10;
   } else {
     const entreesRows: any[] = [];
     for (const src of entrees) {
@@ -993,8 +1047,9 @@ export async function generateRecapCaisseJournalier(
     y = Math.max(finalYModes ?? y + 20, y + 20) + 8;
   }
 
-  // ── Détail des dépenses du jour ──
-  if (data.depenses.length > 0) {
+  // ── Détail des dépenses du jour (omis en mode "sans détail" : la
+  // ventilation par catégorie ci-dessus suffit alors) ──
+  if (avecDetail && data.depenses.length > 0) {
     ensureSpace(20);
     doc.setFontSize(10.5);
     doc.setFont("helvetica", "bold");
@@ -1049,5 +1104,6 @@ export async function generateRecapCaisseJournalier(
 
   addFooter(doc, meta.nom);
   if (returnDoc) return doc;
-  doc.save(`Recap_caisse_${dateISO}.pdf`);
+  const suffix = opts.filenameSuffix || opts.dateISO || new Date().toISOString().slice(0, 10);
+  doc.save(`Recap_caisse_${suffix}.pdf`);
 }
