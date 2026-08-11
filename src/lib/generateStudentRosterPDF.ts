@@ -3,20 +3,19 @@ import autoTable from "jspdf-autotable";
 
 // =====================================================================
 // Générateur PDF : liste des élèves par classe, avec effectif global,
-// répartition par sexe et statut d'inscription (finalisée ou non,
-// masquable).
+// répartition par sexe, badge "Nouveau" à côté du nom et statut
+// d'inscription (finalisée ou non, masquable).
 // =====================================================================
 //
-// "Nouveaux" (bandeau de synthèse uniquement, plus de repère par élève
-// depuis le 11/08/2026 à la demande de l'utilisateur) : élève dont
-// `date_inscription` tombe dans la fenêtre de l'année scolaire active (en
-// incluant l'anticipation de rentrée) — c'est-à-dire un dossier créé pour
-// la première fois cette année. Une réinscription (élève déjà présent
-// l'année précédente) ne touche jamais `date_inscription` (cf.
-// StudentsReregistration.tsx, simple mise à jour de classe/statut), donc ce
-// critère seul suffit pour tous les cycles. Le champ `estNouveau` de
-// `RosterEleve` reste disponible pour un futur usage mais n'est plus
-// affiché ligne par ligne.
+// "Nouveau" : élève qui n'a AUCUNE fiche dans une année scolaire
+// antérieure à l'année active — décision utilisateur du 11/08/2026, après
+// constat que `date_inscription` n'est pas fiable (227 fiches de l'année
+// active portent la date d'un import en masse du 07/07/2026 comme date
+// d'inscription, alors qu'il s'agit en réalité d'élèves déjà présents
+// l'année précédente 2025-2026). Le calcul réel (comparaison des
+// matricules entre années via `annees_scolaires.debut`) est fait par
+// l'appelant — cf. src/hooks/useAnciensMatricules.ts — ce fichier se
+// contente d'afficher le booléen `estNouveau` fourni.
 //
 // "Inscrit" : statut "inscrit" ou "actif" (= a effectué au moins un
 // versement, cf. src/lib/eleveStatus.ts). "Non inscrit" = "pre_inscrit"
@@ -163,7 +162,7 @@ export interface RosterEleve {
   prenom: string;
   sexe: "M" | "F" | null;
   statut: string;
-  /** Élève inscrit pour la première fois cette année (date_inscription dans l'année active). */
+  /** Aucune fiche pour ce matricule dans une année scolaire antérieure à l'année active. */
   estNouveau: boolean;
 }
 
@@ -285,9 +284,9 @@ export async function generateListeElevesPDF(
     doc.setTextColor(0);
     y += 14;
 
-    // La colonne "Statut" (index 4) est optionnelle. Le badge "Nouveau" précédemment
-    // dessiné à côté du nom a été retiré à la demande de l'utilisateur (11/08/2026) —
-    // seul le total "Nouveaux" du bandeau de synthèse subsiste.
+    // La colonne "Statut" (index 4) est optionnelle. Le badge "NOUVEAU" est dessiné
+    // par-dessus la colonne "Nom & Prénom" (index NOM_COL) via didDrawCell.
+    const NOM_COL = 2;
     const head = ["#", "Matricule", "Nom & Prénom", "Sexe"];
     if (afficherStatut) head.push("Statut");
 
@@ -312,6 +311,32 @@ export async function generateListeElevesPDF(
           cellData.cell.styles.textColor = isInscrit ? [0, 110, 50] : [190, 120, 0];
           cellData.cell.styles.fontStyle = "bold";
         }
+      },
+      didDrawCell: (cellData) => {
+        if (cellData.section !== "body" || cellData.column.index !== NOM_COL) return;
+        const eleve = eleves[cellData.row.index];
+        if (!eleve?.estNouveau) return;
+        const cell = cellData.cell;
+        const cellDoc = cellData.doc;
+        cellDoc.setFont("helvetica", "normal");
+        cellDoc.setFontSize(8.3);
+        const nameText = `${eleve.nom} ${eleve.prenom}`;
+        const textWidth = cellDoc.getTextWidth(nameText);
+        const padLeft = cell.padding("left");
+        const padRight = cell.padding("right");
+        const badgeW = 17;
+        const badgeH = 4.4;
+        let badgeX = cell.x + padLeft + textWidth + 2;
+        const maxX = cell.x + cell.width - padRight - badgeW;
+        if (badgeX > maxX) badgeX = Math.max(cell.x + padLeft, maxX);
+        const badgeY = cell.y + cell.height / 2 - badgeH / 2;
+        cellDoc.setFillColor(0, 110, 50);
+        cellDoc.roundedRect(badgeX, badgeY, badgeW, badgeH, 1, 1, "F");
+        cellDoc.setFontSize(6);
+        cellDoc.setTextColor(255);
+        cellDoc.text("NOUVEAU", badgeX + badgeW / 2, badgeY + badgeH / 2 + 1.4, { align: "center" });
+        cellDoc.setTextColor(0);
+        cellDoc.setFontSize(8.3);
       },
       ...TABLE_STYLES,
     });

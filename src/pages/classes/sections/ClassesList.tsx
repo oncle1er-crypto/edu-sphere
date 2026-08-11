@@ -21,7 +21,7 @@ import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { isStatutActif } from "@/lib/eleveStatus";
-import { debutAnticipe } from "@/lib/academicRange";
+import { useAnciensMatricules } from "@/hooks/useAnciensMatricules";
 import { generateListeElevesPDF, type RosterData } from "@/lib/generateStudentRosterPDF";
 
 const IMPORT_COLUMNS_CLASSES: ImportColumn[] = [
@@ -66,6 +66,7 @@ export default function ClassesList() {
   // Eleves dialog
   const [viewElevesClass, setViewElevesClass] = useState<Classe | null>(null);
   const { eleves } = useEleves(activeAnnee.id);
+  const { matriculesAnciens } = useAnciensMatricules(activeAnnee.debut);
   const [showImport, setShowImport] = useState(false);
 
   // Impression de la liste des élèves de la classe consultée
@@ -225,8 +226,8 @@ export default function ClassesList() {
     : [];
 
   // Statuts "actifs" uniquement (inscrit/pré-inscrit/actif), cf. src/lib/eleveStatus.ts —
-  // exclut sortis/exclus de la liste imprimée.
-  const anticipStart = activeAnnee.debut ? debutAnticipe(activeAnnee.debut) : null;
+  // exclut sortis/exclus de la liste imprimée. "Nouveau" = aucune fiche pour ce
+  // matricule dans une année antérieure, cf. src/hooks/useAnciensMatricules.ts.
   const handlePrintClasse = async (previewOnly: boolean) => {
     if (!viewElevesClass) return;
     const eligibles = elevesForClass.filter((e) => isStatutActif(e.statut));
@@ -248,7 +249,7 @@ export default function ClassesList() {
             prenom: e.prenom,
             sexe: e.sexe,
             statut: e.statut,
-            estNouveau: !!(anticipStart && e.date_inscription && e.date_inscription >= anticipStart),
+            estNouveau: !matriculesAnciens.has(e.matricule),
           })),
         }],
       };

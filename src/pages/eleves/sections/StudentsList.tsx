@@ -26,7 +26,7 @@ import InscriptionWorkflowDialog from "@/pages/eleves/components/InscriptionWork
 import BulkInscriptionDialog from "@/pages/eleves/components/BulkInscriptionDialog";
 import DuplicatesDialog from "@/pages/eleves/components/DuplicatesDialog";
 import { isStatutActif } from "@/lib/eleveStatus";
-import { debutAnticipe } from "@/lib/academicRange";
+import { useAnciensMatricules } from "@/hooks/useAnciensMatricules";
 import { generateListeElevesPDF, type RosterClasse, type RosterData } from "@/lib/generateStudentRosterPDF";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
@@ -50,6 +50,7 @@ interface EcoleInfo {
 export default function StudentsList() {
   const { activeAnnee } = useAcademicPeriod();
   const { eleves, loading, updateEleve, deleteEleve, fetchEleves, ecoleId } = useEleves(activeAnnee.id);
+  const { matriculesAnciens } = useAnciensMatricules(activeAnnee.debut);
   const { classes } = useClasses(activeAnnee.id);
   const { isAdmin } = useIsAdmin();
   const { cycles } = useCycles();
@@ -199,13 +200,11 @@ export default function StudentsList() {
 
   // ── Liste des élèves par classe (PDF) ──
   // Inclut les statuts "actifs" (inscrit/pré-inscrit/actif), exclut sortis/exclus,
-  // conformément à src/lib/eleveStatus.ts. "Nouveau" = date_inscription dans la
-  // fenêtre de l'année active (élève dont le dossier a été créé cette année,
-  // décision utilisateur du 11/08/2026 — cf. commentaire dans
-  // generateStudentRosterPDF.ts).
-  const anticipStart = activeAnnee.debut ? debutAnticipe(activeAnnee.debut) : null;
-  const calcEstNouveau = (e: typeof eleves[0]) =>
-    !!(anticipStart && e.date_inscription && e.date_inscription >= anticipStart);
+  // conformément à src/lib/eleveStatus.ts. "Nouveau" = aucune fiche pour ce
+  // matricule dans une année scolaire antérieure à l'année active (décision
+  // utilisateur du 11/08/2026 — cf. commentaire dans
+  // src/hooks/useAnciensMatricules.ts et generateStudentRosterPDF.ts).
+  const calcEstNouveau = (e: typeof eleves[0]) => !matriculesAnciens.has(e.matricule);
 
   const buildRosterData = (): RosterData => {
     const eligibles = eleves.filter((e) => isStatutActif(e.statut));
