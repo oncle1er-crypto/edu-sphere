@@ -6372,6 +6372,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "sp_paiements_candidat_id_fkey"
+            columns: ["candidat_id"]
+            isOneToOne: false
+            referencedRelation: "sp_candidats"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sp_paiements_ecole_id_fkey"
             columns: ["ecole_id"]
             isOneToOne: false
