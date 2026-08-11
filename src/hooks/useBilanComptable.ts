@@ -287,24 +287,24 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       }
 
       // ── Cours de vacances ──
-      // Note : vacances_paiements.eleve_id référence vacances_eleves (roster
-      // distinct des candidats aux cours de vacances), PAS la table eleves.
-      // keepEleve() compare contre un Set construit depuis eleves : un
-      // filtrage par niveau y trouvait donc toujours 0 correspondance et
-      // masquait entièrement cette catégorie dès qu'un niveau (Primaire/
-      // Secondaire) était sélectionné (bug constaté le 10/08/2026).
-      // vacances_classes n'a par ailleurs aucune colonne cycle_id/niveau :
-      // il n'existe aucune donnée fiable pour rattacher ces paiements à un
-      // niveau précis. Cette catégorie est donc traitée comme "Commune",
-      // au même titre que les dépenses sans cycle_id ailleurs dans ce
-      // fichier — toujours visible, quel que soit le niveau sélectionné.
+      // Historique : vacances_paiements.eleve_id référence vacances_eleves
+      // (roster distinct des candidats aux cours de vacances), PAS la table
+      // eleves — keepEleve() y trouvait donc toujours 0 correspondance et
+      // masquait entièrement cette catégorie dès qu'un niveau était
+      // sélectionné (bug constaté le 10/08/2026). Corrigé à la racine par la
+      // migration 20260810200000 : vacances_classes porte désormais un vrai
+      // cycle_id (nullable). On filtre donc directement sur ce cycle_id via
+      // matchesCycle — une classe de vacances sans cycle assigné reste
+      // "Commune" (visible dans tous les niveaux), au même titre que les
+      // dépenses sans cycle_id ailleurs dans ce fichier.
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, mode, date_paiement, eleve_id")
+        .select("montant_paye, mode, date_paiement, eleve_id, vacances_classes(cycle_id)")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
       for (const p of (vac ?? []) as any[]) {
+        if (!matchesCycle(p.vacances_classes?.cycle_id)) continue;
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
@@ -313,17 +313,23 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
 
 
       // ── Sorties : dépenses par catégorie ──
+      // Alignée sur le Grand livre (Ledger.tsx, .eq("statut", "validee")) :
+      // seules les dépenses VALIDÉES comptent comme sortie de trésorerie
+      // réelle. Avant le 10/08/2026, les dépenses "en_attente" étaient aussi
+      // comptées ici (seul "rejetee" était exclu), ce qui surestimait les
+      // sorties tant qu'une dépense n'était pas encore validée — incohérent
+      // avec le Grand livre, corrigé pour que les deux écrans s'accordent.
       const { data: depenses } = await supabase
         .from("depenses")
         .select("montant, categorie, date_depense, statut, cycle_id")
         .eq("ecole_id", ecoleId!)
+        .eq("statut", "validee")
         .gte("date_depense", from)
         .lte("date_depense", to);
 
       const sortiesMap = new Map<string, number[]>();
       for (const d of (depenses ?? []) as any[]) {
         if (!matchesCycle(d.cycle_id)) continue;
-        if (["rejetee", "annulee"].includes(String(d.statut))) continue;
         const i = colIndex(d.date_depense);
         if (i === undefined) continue;
         const cat = EXPENSE_CATEGORIES.includes(d.categorie) ? d.categorie : "Autres charges";

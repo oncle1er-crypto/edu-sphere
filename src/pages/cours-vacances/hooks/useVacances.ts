@@ -9,6 +9,8 @@ import { messageErreurBase } from "@/lib/dbErrorMessages";
 export type VacClasse = {
   id: string; ecole_id: string; annee_id: string | null;
   nom: string; montant: number; capacite: number | null; actif: boolean;
+  /** Niveau imputé — null = "Commune" (visible quel que soit le niveau filtré). */
+  cycle_id: string | null;
 };
 export type VacEleve = {
   id: string; ecole_id: string; annee_id: string | null; classe_id: string;

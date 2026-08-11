@@ -7223,6 +7223,7 @@ export type Database = {
           annee_id: string | null
           capacite: number | null
           created_at: string
+          cycle_id: string | null
           ecole_id: string
           id: string
           montant: number
@@ -7234,6 +7235,7 @@ export type Database = {
           annee_id?: string | null
           capacite?: number | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id: string
           id?: string
           montant?: number
@@ -7245,6 +7247,7 @@ export type Database = {
           annee_id?: string | null
           capacite?: number | null
           created_at?: string
+          cycle_id?: string | null
           ecole_id?: string
           id?: string
           montant?: number
@@ -7257,6 +7260,13 @@ export type Database = {
             columns: ["annee_id"]
             isOneToOne: false
             referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vacances_classes_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
             referencedColumns: ["id"]
           },
           {

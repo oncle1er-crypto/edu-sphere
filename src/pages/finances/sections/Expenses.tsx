@@ -3,6 +3,7 @@ import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -53,7 +54,7 @@ export default function Expenses() {
   // juillet/août) disparaissaient de la liste alors qu'elles existent bien
   // en base — même incohérence déjà corrigée dans useBilanComptable.
   const range = periodLoading || !activeAnnee ? undefined : plageFinanciereAnnee(activeAnnee);
-  const { depenses, loading, addDepense, updateDepense, deleteDepense, validerDepense, rejeterDepense, reouvrirDepense } = useDepenses(range);
+  const { depenses, loading, addDepense, updateDepense, deleteDepense, validerDepense, validerPlusieurs, rejeterDepense, reouvrirDepense } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
   const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
   const ecoleInfo = useEcoleInfo();
@@ -108,6 +109,14 @@ export default function Expenses() {
 
   const [exporting, setExporting] = useState(false);
 
+  // ── Sélection multiple (validation groupée) ──
+  // Seules les dépenses "en_attente" sont sélectionnables : mêmes règles que
+  // l'action Valider individuelle (une dépense déjà validée/rejetée ne se
+  // "revalide" pas silencieusement).
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkValiderConfirm, setBulkValiderConfirm] = useState(false);
+  const [bulkValidating, setBulkValidating] = useState(false);
+
   // Budget tracking by category (uniquement les dépenses validées)
   const parCategorie = CATEGORIES.map((cat) => {
     const items = depenses.filter((d) => d.categorie === cat && d.statut === "validee");
@@ -159,9 +168,52 @@ export default function Expenses() {
     return arr;
   }, [filtered, sortKey, sortDir, cycleName]);
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [query, filterCategorie, filterStatut, filterNiveau, dateFrom, dateTo]);
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+    setSelected(new Set());
+  }, [query, filterCategorie, filterStatut, filterNiveau, dateFrom, dateTo]);
 
   const visibles = sorted.slice(0, visibleCount);
+  const visiblesSelectionnables = visibles.filter((d) => d.statut === "en_attente");
+  const toutSelectionne = visiblesSelectionnables.length > 0 && visiblesSelectionnables.every((d) => selected.has(d.id));
+
+  const toggleSelected = (id: string) => {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const toggleSelectAllVisible = () => {
+    setSelected((s) => {
+      if (toutSelectionne) {
+        const next = new Set(s);
+        visiblesSelectionnables.forEach((d) => next.delete(d.id));
+        return next;
+      }
+      const next = new Set(s);
+      visiblesSelectionnables.forEach((d) => next.add(d.id));
+      return next;
+    });
+  };
+
+  // Filtré depuis la liste complète (pas seulement visibles) et re-vérifié sur
+  // le statut réel au moment de l'action : une sélection ne peut jamais
+  // entraîner la validation silencieuse d'une dépense déjà validée/rejetée,
+  // même si l'état de sélection contenait un id devenu obsolète entre-temps.
+  const selectedDepenses = useMemo(
+    () => depenses.filter((d) => selected.has(d.id) && d.statut === "en_attente"),
+    [depenses, selected],
+  );
+
+  const handleBulkValider = async () => {
+    setBulkValidating(true);
+    await validerPlusieurs(selectedDepenses.map((d) => d.id));
+    setBulkValidating(false);
+    setBulkValiderConfirm(false);
+    setSelected(new Set());
+  };
 
   const toggleSort = (k: SortKey) => {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -334,6 +386,11 @@ export default function Expenses() {
             )}
           </div>
           <div className="flex items-center gap-2">
+            {selectedDepenses.length > 0 && (
+              <Button size="sm" onClick={() => setBulkValiderConfirm(true)}>
+                <Check className="h-4 w-4" />Valider la sélection ({selectedDepenses.length})
+              </Button>
+            )}
             <Button variant="outline" size="sm" disabled={exporting || sorted.length === 0} onClick={handleExport}>
               {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
               Exporter
@@ -395,6 +452,15 @@ export default function Expenses() {
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/40">
+                <TableHead className="w-10">
+                  {visiblesSelectionnables.length > 0 && (
+                    <Checkbox
+                      checked={toutSelectionne}
+                      onCheckedChange={toggleSelectAllVisible}
+                      aria-label="Sélectionner toutes les dépenses en attente affichées"
+                    />
+                  )}
+                </TableHead>
                 <Th k="libelle">Libellé</Th>
                 <Th k="categorie">Catégorie</Th>
                 <Th k="niveau">Niveau</Th>
@@ -407,7 +473,16 @@ export default function Expenses() {
             </TableHeader>
             <TableBody>
               {visibles.map((e) => (
-                <TableRow key={e.id}>
+                <TableRow key={e.id} data-state={selected.has(e.id) ? "selected" : undefined}>
+                  <TableCell>
+                    {e.statut === "en_attente" && (
+                      <Checkbox
+                        checked={selected.has(e.id)}
+                        onCheckedChange={() => toggleSelected(e.id)}
+                        aria-label={`Sélectionner « ${e.libelle} »`}
+                      />
+                    )}
+                  </TableCell>
                   <TableCell className="font-medium">{e.libelle}</TableCell>
                   <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
                   <TableCell>
@@ -451,7 +526,7 @@ export default function Expenses() {
                 </TableRow>
               ))}
               {sorted.length === 0 && (
-                <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">
+                <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">
                   {depenses.length === 0 ? "Aucune dépense enregistrée." : "Aucune dépense ne correspond aux filtres."}
                 </TableCell></TableRow>
               )}
@@ -523,6 +598,25 @@ export default function Expenses() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ── Confirmation validation groupée ── */}
+      <AlertDialog open={bulkValiderConfirm} onOpenChange={(o) => !o && setBulkValiderConfirm(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Valider {selectedDepenses.length} dépense(s) ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {selectedDepenses.reduce((s, d) => s + d.montant, 0).toLocaleString("fr-FR")} FCFA au total.
+              Elles seront comptées dans le bilan comptable et le grand livre.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkValidating}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkValider} disabled={bulkValidating}>
+              {bulkValidating && <Loader2 className="h-4 w-4 animate-spin" />}Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Confirmation suppression / validation / réouverture ── */}
       <AlertDialog open={!!confirmAction} onOpenChange={(o) => !o && setConfirmAction(null)}>

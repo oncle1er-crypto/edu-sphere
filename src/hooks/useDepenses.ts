@@ -150,6 +150,18 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     fetch();
   };
 
+  /** Valide plusieurs dépenses en attente en une seule opération (sélection multiple dans la liste). */
+  const validerPlusieurs = async (ids: string[]) => {
+    if (ids.length === 0) return;
+    const { error } = await supabase
+      .from("depenses")
+      .update({ statut: "validee", valide_par: user?.id ?? null, valide_le: new Date().toISOString(), rejete_par: null, rejete_le: null, motif_rejet: null })
+      .in("id", ids);
+    if (error) { toast.error("Erreur : " + messageErreurBase(error)); return; }
+    toast.success(`${ids.length} dépense(s) validée(s)`);
+    fetch();
+  };
+
   const rejeterDepense = async (id: string, motif: string) => {
     if (!motif.trim()) { toast.error("Un motif de rejet est requis."); return; }
     const { error } = await supabase
@@ -179,6 +191,7 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     updateDepense,
     deleteDepense,
     validerDepense,
+    validerPlusieurs,
     rejeterDepense,
     reouvrirDepense,
     refetch: fetch,
