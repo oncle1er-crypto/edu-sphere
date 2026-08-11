@@ -267,6 +267,31 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         addMode(p.mode_paiement, Number(p.montant_paye || 0), j);
       }
 
+      // ── Ventes de tenues scolaires (module dédié, hors sp_paiements) ──
+      // Cf. useBilanComptable.ts pour le détail : sp_ventes_tenues est une
+      // table autonome jamais couverte par le bloc "Services ponctuels"
+      // ci-dessus, corrigé le 11/08/2026 (147 000 FCFA de ventes réelles
+      // manquantes). "attente"/"annule" exclus (pas d'encaissement réel) ;
+      // created_at fait foi comme date d'encaissement dans tous les autres cas.
+      const { data: ventesTenues } = await supabase
+        .from("sp_ventes_tenues")
+        .select("montant_total, mode_paiement, created_at, eleve_id, classe_id, statut")
+        .eq("ecole_id", ecoleId!)
+        .neq("statut", "annule")
+        .neq("statut", "attente")
+        .gte("created_at", from)
+        .lte("created_at", `${to}T23:59:59`);
+      for (const v of (ventesTenues ?? []) as any[]) {
+        if (!isGlobal) {
+          const ok = v.eleve_id ? keepEleve(v.eleve_id) : keepClasse(v.classe_id);
+          if (!ok) continue;
+        }
+        const j = dayKey(v.created_at);
+        if (!j) continue;
+        addTo(entreesParJour["Frais d'uniformes ou de fournitures"], j, Number(v.montant_total || 0));
+        addMode(v.mode_paiement, Number(v.montant_total || 0), j);
+      }
+
       // ── Cours de vacances (filtrage par cycle_id, cf. useBilanComptable.ts) ──
       const { data: vac } = await supabase
         .from("vacances_paiements")

@@ -286,6 +286,40 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         addMode(p.mode_paiement, Number(p.montant_paye || 0), i);
       }
 
+      // ── Ventes de tenues scolaires (module dédié, hors sp_paiements) ──
+      // sp_ventes_tenues est une table autonome (pas de service_id vers
+      // sp_services, aucun trigger vers sp_paiements) : les ventes de tenues
+      // via ce module n'entraient JAMAIS dans le bloc "Services ponctuels"
+      // ci-dessus et étaient donc invisibles de tout rapport financier avant
+      // cette correction (bug signalé le 11/08/2026 : 147 000 FCFA de ventes
+      // réelles manquantes). "attente" = paiement non encore reçu, "annule" =
+      // vente annulée : les deux sont exclues, comme dans generateSpReceipt
+      // (montantPaye forcé à 0 pour ces deux statuts, cf. SpVentesTenues.tsx
+      // "reprint"). Les autres statuts ("paye", "remis", "reservation")
+      // correspondent tous à un encaissement réel dès la création de la
+      // vente : "reservation"/"paye" encaissent immédiatement, "remis" est
+      // l'état final d'une "reservation" déjà payée (validerRetrait ne fait
+      // que livrer la tenue, sans nouveau paiement) — created_at reste donc
+      // la bonne date d'encaissement dans tous les cas.
+      const { data: ventesTenues } = await supabase
+        .from("sp_ventes_tenues")
+        .select("montant_total, mode_paiement, created_at, eleve_id, classe_id, statut")
+        .eq("ecole_id", ecoleId!)
+        .neq("statut", "annule")
+        .neq("statut", "attente")
+        .gte("created_at", from)
+        .lte("created_at", `${to}T23:59:59`);
+      for (const v of (ventesTenues ?? []) as any[]) {
+        if (!isGlobal) {
+          const ok = v.eleve_id ? keepEleve(v.eleve_id) : keepClasse(v.classe_id);
+          if (!ok) continue;
+        }
+        const i = colIndex(v.created_at);
+        if (i === undefined) continue;
+        entrees["Frais d'uniformes ou de fournitures"][i] += Number(v.montant_total || 0);
+        addMode(v.mode_paiement, Number(v.montant_total || 0), i);
+      }
+
       // ── Cours de vacances ──
       // Historique : vacances_paiements.eleve_id référence vacances_eleves
       // (roster distinct des candidats aux cours de vacances), PAS la table
