@@ -10,8 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FieldRow } from "@/components/settings/SettingsSection";
-import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2 } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2, ChevronRight } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
@@ -50,6 +51,16 @@ const contratColor: Record<string, string> = {
 
 type ViewMode = "list" | "grid";
 
+/** En-tête de section pour regrouper visuellement les champs des formulaires
+ * Nouveau / Modifier membre du personnel (identité, contact, poste...). */
+function SectionHeading({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-1">
+      {children}
+    </p>
+  );
+}
+
 export default function StaffList() {
   const { departements } = useRhReferentiels();
   const { enseignants, loading, addEnseignant, updateEnseignant, deleteEnseignant, fetchEnseignants } = useEnseignants();
@@ -68,6 +79,12 @@ export default function StaffList() {
     salaire_brut_base: "",
   });
   const [createAccount, setCreateAccount] = useState(true);
+  // Section "Informations complémentaires" repliée par défaut à la création
+  // (aucun champ obligatoire dedans) pour accélérer la saisie courante ;
+  // dépliée par défaut en modification pour ne rien masquer de ce qui a déjà
+  // été renseigné.
+  const [showMoreNew, setShowMoreNew] = useState(false);
+  const [showMoreEdit, setShowMoreEdit] = useState(true);
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [editEnseignant, setEditEnseignant] = useState<typeof enseignants[0] | null>(null);
   const [editForm, setEditForm] = useState({
@@ -159,24 +176,33 @@ export default function StaffList() {
       salaire_brut_base: form.salaire_brut_base ? Number(form.salaire_brut_base) : 0,
       ecole_id: "",
     });
-    if (created && createAccount) {
-      const { data, error } = await supabase.functions.invoke("create-teacher-account", {
-        body: { enseignant_id: created.id, app_base_url: window.location.origin },
-      });
-      if (error || data?.error) {
-        toast.error(`Compte non créé : ${data?.error ?? messageErreurBase(error) ?? "erreur"}`);
-      } else {
-        const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
-        toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
+    // Le formulaire ne doit être réinitialisé et le dialogue fermé que si
+    // l'enregistrement a réellement réussi — sinon l'utilisateur perd sa
+    // saisie sans recours (bug identifié le 11/08/2026 : ces deux actions
+    // s'exécutaient auparavant sans condition, même après un échec de
+    // addEnseignant, par ex. en cas de collision du matricule généré
+    // aléatoirement sur la contrainte unique enseignants_ecole_id_matricule_key).
+    if (created) {
+      if (createAccount) {
+        const { data, error } = await supabase.functions.invoke("create-teacher-account", {
+          body: { enseignant_id: created.id, app_base_url: window.location.origin },
+        });
+        if (error || data?.error) {
+          toast.error(`Compte non créé : ${data?.error ?? messageErreurBase(error) ?? "erreur"}`);
+        } else {
+          const channels = [data?.email_sent && "email", data?.sms_sent && "SMS"].filter(Boolean).join(" + ");
+          toast.success(`Compte créé · invitation envoyée${channels ? ` par ${channels}` : ""}`);
+        }
       }
+      setForm({
+        nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "",
+        type_contrat: "CDI", diplome: "", poste: "", service: "", fonction: "",
+        departement: "enseignant", nationalite: "Ivoirienne", situation_matrimoniale: "",
+        personne_a_prevenir: "", salaire_brut_base: "",
+      });
+      setShowMoreNew(false);
+      setOpen(false);
     }
-    setForm({
-      nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "",
-      type_contrat: "CDI", diplome: "", poste: "", service: "", fonction: "",
-      departement: "enseignant", nationalite: "Ivoirienne", situation_matrimoniale: "",
-      personne_a_prevenir: "", salaire_brut_base: "",
-    });
-    setOpen(false);
     setSaving(false);
   };
 
@@ -285,54 +311,83 @@ export default function StaffList() {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Nouveau membre du personnel</DialogTitle></DialogHeader>
-              <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
-                <FieldRow label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire" /></FieldRow>
-                <FieldRow label="Service"><Input value={form.service} onChange={(e) => set("service", e.target.value)} /></FieldRow>
-                <FieldRow label="Fonction"><Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} /></FieldRow>
-                <FieldRow label="Département">
-                  <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </FieldRow>
-                <FieldRow label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FieldRow>
-                <FieldRow label="Situation matrimoniale">
-                  <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>
-                      {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </FieldRow>
-                <FieldRow label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FieldRow>
-                <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FieldRow>
-                <FieldRow label="Nom *"><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} /></FieldRow>
-                <FieldRow label="Prénom *"><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FieldRow>
-                <FieldRow label="Sexe">
-                  <Select value={form.sexe} onValueChange={(v) => set("sexe", v)}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="F">Féminin</SelectItem>
-                      <SelectItem value="M">Masculin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FieldRow>
-                <FieldRow label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FieldRow>
-                <FieldRow label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FieldRow>
-                <FieldRow label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FieldRow>
-                <FieldRow label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FieldRow>
-                <FieldRow label="Contrat">
-                  <Select value={form.type_contrat} onValueChange={(v) => set("type_contrat", v)}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CDI">CDI</SelectItem>
-                      <SelectItem value="CDD">CDD</SelectItem>
-                      <SelectItem value="Vacataire">Vacataire</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FieldRow>
+              <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+                <div className="space-y-3">
+                  <SectionHeading>Identité</SectionHeading>
+                  <FieldRow label="Nom *"><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} autoFocus /></FieldRow>
+                  <FieldRow label="Prénom *"><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FieldRow>
+                  <FieldRow label="Sexe">
+                    <Select value={form.sexe} onValueChange={(v) => set("sexe", v)}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="F">Féminin</SelectItem>
+                        <SelectItem value="M">Masculin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldRow>
+                </div>
+
+                <div className="space-y-3">
+                  <SectionHeading>Contact</SectionHeading>
+                  <FieldRow label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FieldRow>
+                  <FieldRow label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FieldRow>
+                </div>
+
+                <div className="space-y-3">
+                  <SectionHeading>Poste &amp; affectation</SectionHeading>
+                  <FieldRow label="Département">
+                    <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FieldRow>
+                  <FieldRow label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FieldRow>
+                  <FieldRow label="Fonction" hint="Facultatif — précision propre à votre organisation (ex. responsabilité particulière).">
+                    <Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} />
+                  </FieldRow>
+                  <FieldRow label="Service" hint="Facultatif — unité ou équipe de rattachement.">
+                    <Input value={form.service} onChange={(e) => set("service", e.target.value)} />
+                  </FieldRow>
+                </div>
+
+                <div className="space-y-3">
+                  <SectionHeading>Contrat</SectionHeading>
+                  <FieldRow label="Type de contrat">
+                    <Select value={form.type_contrat} onValueChange={(v) => set("type_contrat", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CDI">CDI</SelectItem>
+                        <SelectItem value="CDD">CDD</SelectItem>
+                        <SelectItem value="Vacataire">Vacataire</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FieldRow>
+                  <FieldRow label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FieldRow>
+                  <FieldRow label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FieldRow>
+                </div>
+
+                <Collapsible open={showMoreNew} onOpenChange={setShowMoreNew}>
+                  <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
+                    <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showMoreNew ? "rotate-90" : ""}`} />
+                    Informations complémentaires (facultatif)
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-3 pt-3">
+                    <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FieldRow>
+                    <FieldRow label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FieldRow>
+                    <FieldRow label="Situation matrimoniale">
+                      <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
+                        <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                        <SelectContent>
+                          {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </FieldRow>
+                    <FieldRow label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FieldRow>
+                  </CollapsibleContent>
+                </Collapsible>
+
                 <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
                   <div className="flex items-start gap-2">
                     <UserPlus className="h-4 w-4 text-primary mt-0.5" />
@@ -447,55 +502,62 @@ export default function StaffList() {
       <Dialog open={!!editEnseignant} onOpenChange={(o) => !o && setEditEnseignant(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>Modifier le membre du personnel</DialogTitle></DialogHeader>
-          <div className="space-y-3 max-h-[65vh] overflow-y-auto pr-1">
-            <FieldRow label="Poste"><Input value={editForm.poste} onChange={(e) => setEditForm({ ...editForm, poste: e.target.value })} /></FieldRow>
-            <FieldRow label="Service"><Input value={editForm.service} onChange={(e) => setEditForm({ ...editForm, service: e.target.value })} /></FieldRow>
-            <FieldRow label="Fonction"><Input value={editForm.fonction} onChange={(e) => setEditForm({ ...editForm, fonction: e.target.value })} /></FieldRow>
-            <FieldRow label="Département">
-              <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </FieldRow>
-            <FieldRow label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FieldRow>
-            <FieldRow label="Situation matrimoniale">
-              <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </FieldRow>
-            <FieldRow label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FieldRow>
-            <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FieldRow>
-            <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
-            <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
-            <FieldRow label="Sexe">
-              <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
-                <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="F">Féminin</SelectItem>
-                  <SelectItem value="M">Masculin</SelectItem>
-                </SelectContent>
-              </Select>
-            </FieldRow>
-            <FieldRow label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FieldRow>
-            <FieldRow label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FieldRow>
-            <FieldRow label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FieldRow>
-            <FieldRow label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FieldRow>
-            <FieldRow label="Contrat">
-              <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CDI">CDI</SelectItem>
-                  <SelectItem value="CDD">CDD</SelectItem>
-                  <SelectItem value="Vacataire">Vacataire</SelectItem>
-                </SelectContent>
-              </Select>
-            </FieldRow>
-            <FieldRow label="Statut">
+          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+            <div className="space-y-3">
+              <SectionHeading>Identité</SectionHeading>
+              <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
+              <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
+              <FieldRow label="Sexe">
+                <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="F">Féminin</SelectItem>
+                    <SelectItem value="M">Masculin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldRow>
+            </div>
+
+            <div className="space-y-3">
+              <SectionHeading>Contact</SectionHeading>
+              <FieldRow label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FieldRow>
+              <FieldRow label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FieldRow>
+            </div>
+
+            <div className="space-y-3">
+              <SectionHeading>Poste &amp; affectation</SectionHeading>
+              <FieldRow label="Département">
+                <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </FieldRow>
+              <FieldRow label="Poste"><Input value={editForm.poste} onChange={(e) => setEditForm({ ...editForm, poste: e.target.value })} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FieldRow>
+              <FieldRow label="Fonction" hint="Facultatif — précision propre à votre organisation (ex. responsabilité particulière).">
+                <Input value={editForm.fonction} onChange={(e) => setEditForm({ ...editForm, fonction: e.target.value })} />
+              </FieldRow>
+              <FieldRow label="Service" hint="Facultatif — unité ou équipe de rattachement.">
+                <Input value={editForm.service} onChange={(e) => setEditForm({ ...editForm, service: e.target.value })} />
+              </FieldRow>
+            </div>
+
+            <div className="space-y-3">
+              <SectionHeading>Contrat &amp; statut</SectionHeading>
+              <FieldRow label="Type de contrat">
+                <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CDI">CDI</SelectItem>
+                    <SelectItem value="CDD">CDD</SelectItem>
+                    <SelectItem value="Vacataire">Vacataire</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FieldRow>
+              <FieldRow label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FieldRow>
+              <FieldRow label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FieldRow>
+              <FieldRow label="Statut">
               <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -504,7 +566,29 @@ export default function StaffList() {
                   <SelectItem value="conge">En congé</SelectItem>
                 </SelectContent>
               </Select>
-            </FieldRow>
+              </FieldRow>
+            </div>
+
+            <Collapsible open={showMoreEdit} onOpenChange={setShowMoreEdit}>
+              <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
+                <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showMoreEdit ? "rotate-90" : ""}`} />
+                Informations complémentaires (facultatif)
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-3 pt-3">
+                <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FieldRow>
+                <FieldRow label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FieldRow>
+                <FieldRow label="Situation matrimoniale">
+                  <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
+                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </FieldRow>
+                <FieldRow label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FieldRow>
+              </CollapsibleContent>
+            </Collapsible>
+
             <Button className="w-full" onClick={handleSaveEdit} disabled={savingEdit}>
               {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer les modifications
             </Button>
