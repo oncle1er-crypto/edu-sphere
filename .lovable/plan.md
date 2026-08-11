@@ -1,27 +1,21 @@
 # Dépenses enregistrées mais invisibles
 
-## Ce qui se passe
+## Cause confirmée
 
-Les dépenses sont bien enregistrées : la base contient 9 dépenses pour l'école (achat livret reçu 10 000, recharge wifi 30 000, frais de correction test 25 000, etc.), datées entre le **13 juillet et le 4 août 2026**.
+Les 9 dépenses existent bien en base (13 juillet → 4 août 2026). La page ne montre que les dépenses comprises dans l'année scolaire active (14 septembre 2026 → 30 juin 2027) : toutes sont donc filtrées, d'où « Dépenses (0) ».
 
-La liste des dépenses n'affiche que celles comprises dans l'**année scolaire active**, qui va du **14 septembre 2026 au 30 juin 2027**. Toutes les dépenses saisies sont donc antérieures à l'ouverture de l'année active et sont filtrées hors écran — d'où « Dépenses (0) ».
+## Correction retenue
 
-## Correction proposée
+Sélecteur de période sur la page Dépenses, avec « Toutes les dépenses » par défaut afin que rien ne disparaisse silencieusement :
 
-1. **Sélecteur de période** en haut de la page Dépenses :
-   - « Année scolaire active » (comportement actuel, par défaut),
-   - « Toutes les dépenses » (aucun filtre de date),
-   - « Année précédente » et « Mois en cours ».
-   Le compteur, la répartition par catégorie et le total suivent la période choisie.
+1. Sélecteur : **Toutes les dépenses** (défaut), **Année scolaire active**, **Mois en cours**. Le compteur, la répartition par catégorie et le total suivent la période choisie.
+2. État vide plus clair : si la période sélectionnée est vide alors que des dépenses existent ailleurs, message dédié + bouton « Voir toutes les dépenses ».
+3. Avertissement discret sous le champ Date du formulaire lorsque la date est hors de l'année scolaire active. L'enregistrement reste autorisé.
 
-2. **Message explicite quand la liste est vide alors que des dépenses existent** hors période : « Aucune dépense sur la période sélectionnée — des dépenses existent en dehors de cette période », avec un bouton « Voir toutes les dépenses ».
-
-3. **Avertissement à la saisie** : si la date de la dépense est hors de l'année scolaire active, un texte discret sous le champ Date prévient que la dépense n'apparaîtra pas dans la vue « Année active ». L'enregistrement reste autorisé.
-
-4. **Vérification du filtre par niveau** : les dépenses imputées à un cycle ne s'affichent que dans le niveau correspondant. Le libellé de la période indiquera aussi le niveau actif pour éviter la confusion.
+Aucune donnée n'est modifiée et l'année scolaire n'est pas touchée.
 
 ## Détails techniques
 
-- `src/pages/finances/sections/Expenses.tsx` : état local `periode`, calcul du `range` passé à `useDepenses` (`undefined` = tout), état vide enrichi, avertissement de date.
-- `src/hooks/useDepenses.ts` : ajout d'un compteur « total hors période » (requête count sans borne de date) pour alimenter le message d'état vide. Aucun changement de logique d'écriture.
-- Aucune migration SQL, aucune modification de données.
+- `src/pages/finances/sections/Expenses.tsx` : état local `periode`, `range` passé à `useDepenses` (`undefined` = tout), état vide enrichi, avertissement de date.
+- `src/hooks/useDepenses.ts` : exposer un total non borné par la date pour alimenter le message d'état vide. Aucun changement de logique d'écriture.
+- Aucune migration SQL.
