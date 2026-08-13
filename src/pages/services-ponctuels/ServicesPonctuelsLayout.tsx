@@ -81,12 +81,13 @@ export default function ServicesPonctuelsLayout() {
                           cn(
                             "menu-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium",
                             estService
-                              ? serviceActif === s.key
+                              ? (s.dedie ? location.pathname.endsWith(`/${s.to}`) : serviceActif === s.key)
                                 ? "is-active"
                                 : "text-foreground"
                               : isActive && !(s.to === "paiements" && serviceActif)
                                 ? "is-active"
                                 : "text-foreground"
+
                           )
                         }
                       >
