@@ -7,12 +7,14 @@ import { Clock, Loader2, Save } from "lucide-react";
 import { useMatieres } from "@/hooks/useMatieres";
 import { useClasses } from "@/hooks/useClasses";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function SubjectsVolumes() {
   const { matieres } = useMatieres();
-  const { classes } = useClasses();
+  const { anneeId } = useAnneeId();
+  const { classes } = useClasses(anneeId ?? undefined);
   const { ecoleId } = useEcoleId();
   const [vols, setVols] = useState<Record<string, number>>({}); // key: classe_id|matiere_id
   const [dirty, setDirty] = useState<Set<string>>(new Set());

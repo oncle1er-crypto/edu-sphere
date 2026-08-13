@@ -99,11 +99,19 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
       .from("salles" as any)
       .select("id, code, nom")
       .eq("ecole_id", opts.ecoleId),
-    supabase.from("classes").select("id, nom").eq("ecole_id", opts.ecoleId),
+    supabase.from("classes").select("id, nom").eq("ecole_id", opts.ecoleId).eq("annee_id", opts.anneeId),
     supabase.from("matieres").select("id, nom").eq("ecole_id", opts.ecoleId),
   ]);
 
-  const classeMatieres = (cmRes.data ?? []).filter((c: any) => (c.volume_horaire_hebdo ?? 0) > 0);
+  // classe_matieres n'a pas de colonne annee_id propre (son "année" est
+  // implicite via classe_id → classes.annee_id). On ne retient donc que les
+  // affectations dont la classe appartient bien à l'année scolaire ciblée,
+  // pour éviter de générer des créneaux annee_id=actif / classe_id=ancienne
+  // année (bug constaté : cf. commit sur WeeklyView.tsx du 2026-08-13).
+  const classesActivesIds = new Set((classesRes.data ?? []).map((c: any) => c.id));
+  const classeMatieres = (cmRes.data ?? [])
+    .filter((c: any) => (c.volume_horaire_hebdo ?? 0) > 0)
+    .filter((c: any) => classesActivesIds.has(c.classe_id));
   const enseignantMat = (emRes.data ?? []) as any[];
   const dispos = (dispoRes.data ?? []) as any[];
   const salles = (sallesRes.data ?? []) as any[];
