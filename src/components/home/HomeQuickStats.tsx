@@ -76,11 +76,13 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setErreur(null);
     const today = new Date();
     const isoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const [{ data: res, error }, labels] = await Promise.all([
+    const [{ data: res, error }, labels, noms] = await Promise.all([
       supabase.rpc("encaissements_du_jour", { _ecole_id: ecoleId, _date: isoDate }),
       fetchSpServiceLabels(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
+      fetchSpBeneficiaires(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
     ]);
     setSpLabels(labels);
+    setSpNoms(noms);
     if (error) {
       setErreur(messageErreurBase(error, "Impossible de charger les encaissements du jour."));
       setDetail(null);
