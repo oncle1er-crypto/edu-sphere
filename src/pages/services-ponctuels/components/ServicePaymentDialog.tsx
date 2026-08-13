@@ -35,7 +35,8 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
   const [serviceId, setServiceId] = useState<string>("");
   const [type, setType] = useState<"eleve" | "candidat" | "libre">("libre");
   const [libre, setLibre] = useState("");
-  const [montantDu, setMontantDu] = useState(0);
+  const [qte, setQte] = useState(1);
+  const [prixUnitaire, setPrixUnitaire] = useState(0);
   const [montantPaye, setMontantPaye] = useState(0);
   const [remise, setRemise] = useState(0);
   const [mode, setMode] = useState<SpModePaiement>("especes");
@@ -43,22 +44,30 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
   const [saving, setSaving] = useState(false);
 
   const service = services.find((s) => s.id === serviceId);
+  const montantDu = Math.max(0, qte) * Math.max(0, prixUnitaire);
 
   useEffect(() => {
     if (!open) return;
     setServiceId(preset?.service_id ?? "");
     setType(preset?.beneficiaire_type ?? "libre");
     setLibre(preset?.beneficiaire_libre ?? "");
+    setQte(1);
     setRemise(0);
     setObs("");
   }, [open, preset]);
 
   useEffect(() => {
     if (service) {
-      setMontantDu(Number(service.prix));
+      setPrixUnitaire(Number(service.prix));
       setMontantPaye(Number(service.prix));
+      setQte(1);
     }
   }, [serviceId]); // eslint-disable-line
+
+  // Le montant payé suit le total tant que l'utilisateur n'a pas saisi de partiel
+  useEffect(() => {
+    setMontantPaye(montantDu);
+  }, [montantDu]);
 
   const reste = Math.max(0, montantDu - montantPaye - remise);
 
