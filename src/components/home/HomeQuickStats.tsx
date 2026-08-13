@@ -62,6 +62,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const [erreur, setErreur] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [spLabels, setSpLabels] = useState<Record<string, string>>({});
+  const [spNoms, setSpNoms] = useState<Record<string, string>>({});
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
