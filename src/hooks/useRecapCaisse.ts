@@ -105,12 +105,15 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
     queryKey: ["recap_caisse", ecoleId, from, to, niveau],
     enabled: !!ecoleId,
     queryFn: async () => {
-      const { data: rows, error } = await supabase
-        .from("v_encaissements_detail")
-        .select("source, libelle, est_remise, montant, mode_paiement, reference, eleve, matricule, eleve_id, cycle_id")
-        .eq("ecole_id", ecoleId!)
-        .gte("date_operation", from)
-        .lte("date_operation", to);
+      const [{ data: rows, error }, spLabels] = await Promise.all([
+        supabase
+          .from("v_encaissements_detail")
+          .select("source, libelle, est_remise, montant, mode_paiement, reference, eleve, matricule, eleve_id, cycle_id")
+          .eq("ecole_id", ecoleId!)
+          .gte("date_operation", from)
+          .lte("date_operation", to),
+        fetchSpServiceLabels(ecoleId!, from, to),
+      ]);
       if (error) throw error;
 
       const keep = (r: { eleve_id: string | null; cycle_id: string | null }) => {
@@ -122,10 +125,12 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
       const map = new Map<string, RecapCaisseSourceAgg>();
       for (const r of (rows ?? []) as any[]) {
         if (!keep(r)) continue;
-        const key = r.source as string;
+        // Les services ponctuels sont éclatés par type de service exact
+        const service = estSourceServicePonctuel(r.source) ? libelleService(r.reference, spLabels) : null;
+        const key = service ? `${r.source}:${service}` : (r.source as string);
         const agg = map.get(key) ?? {
           source: key,
-          libelle: r.libelle as string,
+          libelle: service ? `${r.libelle} — ${service}` : (r.libelle as string),
           estRemise: !!r.est_remise,
           nb: 0,
           total: 0,
@@ -142,6 +147,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
         });
         map.set(key, agg);
       }
+
       // Tri : plus gros montants d'abord, dans chaque source (cohérent avec l'ordre déjà utilisé par la RPC encaissements_du_jour)
       for (const agg of map.values()) agg.operations.sort((a, b) => b.montant - a.montant);
       const sources = Array.from(map.values()).sort((a, b) => Number(a.estRemise) - Number(b.estRemise) || b.total - a.total);
