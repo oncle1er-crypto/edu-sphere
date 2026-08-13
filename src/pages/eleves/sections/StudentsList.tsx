@@ -156,9 +156,10 @@ export default function StudentsList() {
 
 
   const withDocsCount = useMemo(
-    () => eleves.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
-    [eleves, countByEleve]
+    () => elevesPresents.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
+    [elevesPresents, countByEleve]
   );
+
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
