@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, CreditCard, UserPlus, Sparkles, ClipboardCheck, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2, CreditCard, UserPlus, Sparkles, ClipboardCheck, Printer, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSpCandidats, type SpCandidat } from "../hooks/useSpCandidats";
 import { CandidatFormDialog } from "../components/CandidatFormDialog";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
@@ -175,7 +175,7 @@ export default function SpTestsEntree() {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-3">
-          <CardTitle>Tests d'entrée</CardTitle>
+          <CardTitle>Tests d'entrée ({filtered.length})</CardTitle>
           <div className="flex items-center gap-2 flex-wrap">
             <Input placeholder="Rechercher…" value={q} onChange={(e) => setQ(e.target.value)} className="w-56" />
 
@@ -222,7 +222,7 @@ export default function SpTestsEntree() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map((c) => (
+                {pageRows.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">{c.numero}</TableCell>
                     <TableCell>
@@ -255,6 +255,19 @@ export default function SpTestsEntree() {
                 ))}
               </TableBody>
             </Table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 pt-3">
+                <p className="text-xs text-muted-foreground">Page {page} / {totalPages} — {filtered.length} candidat(s)</p>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((n) => n - 1)}>
+                    <ChevronLeft className="h-4 w-4" /> Précédent
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((n) => n + 1)}>
+                    Suivant <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
           )}
         </CardContent>
       </Card>
