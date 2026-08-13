@@ -208,6 +208,7 @@ export default function SpTestsEntree() {
         </CardHeader>
         <CardContent>
           {loading ? <p>Chargement…</p> : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -268,6 +269,7 @@ export default function SpTestsEntree() {
                 </div>
               </div>
             )}
+            </>
           )}
         </CardContent>
       </Card>
