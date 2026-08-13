@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle, PackageCheck } from "lucide-react";
+import { Plus, Printer, XCircle, PackageCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { useSpVentes } from "../hooks/useSpVentes";
 import { useSpStockTenues } from "../hooks/useSpStockTenues";
@@ -26,6 +26,11 @@ export default function SpVentesTenues() {
   const { classes } = useClasses(anneeId ?? undefined);
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
+
+  const PAR_PAGE = 25;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(ventes.length / PAR_PAGE));
+  const pageRows = useMemo(() => ventes.slice((page - 1) * PAR_PAGE, page * PAR_PAGE), [ventes, page]);
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [focusId, setFocusId] = useState<string | null>(null);
@@ -99,11 +104,12 @@ export default function SpVentesTenues() {
     <div className="space-y-4">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Vente de tenues</CardTitle>
+          <CardTitle>Vente de tenues ({ventes.length})</CardTitle>
           <Button size="sm" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Nouvelle vente</Button>
         </CardHeader>
         <CardContent>
           {loading ? <p>Chargement…</p> : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -120,7 +126,7 @@ export default function SpVentesTenues() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ventes.map((v) => (
+                {pageRows.map((v) => (
                   <TableRow key={v.id} id={`vente-${v.id}`} className={focusId === v.id ? "bg-accent/20 ring-2 ring-accent" : undefined}>
                     <TableCell className="font-mono text-xs">{v.numero}</TableCell>
                     <TableCell>{new Date(v.created_at).toLocaleDateString("fr-FR")}</TableCell>
@@ -150,6 +156,20 @@ export default function SpVentesTenues() {
                 ))}
               </TableBody>
             </Table>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 pt-3">
+                <p className="text-xs text-muted-foreground">Page {page} / {totalPages} — {ventes.length} vente(s)</p>
+                <div className="flex gap-1">
+                  <Button size="sm" variant="outline" disabled={page === 1} onClick={() => setPage((n) => n - 1)}>
+                    <ChevronLeft className="h-4 w-4" /> Précédent
+                  </Button>
+                  <Button size="sm" variant="outline" disabled={page === totalPages} onClick={() => setPage((n) => n + 1)}>
+                    Suivant <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            </>
           )}
         </CardContent>
       </Card>
