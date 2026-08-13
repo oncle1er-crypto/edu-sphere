@@ -151,7 +151,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
         .order("montant", { ascending: false });
       if (depError) throw depError;
 
-      const sourcesForPdf = (detail.sources ?? []).map((s) => ({
+      const sourcesForPdf = sourcesAffichees.map((s) => ({
         libelle: s.libelle,
         estRemise: !!s.est_remise,
         operations: (s.operations ?? []).map((o) => ({
