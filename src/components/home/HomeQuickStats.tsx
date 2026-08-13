@@ -386,7 +386,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
                               <tbody>
                                 {(s.operations ?? []).map((o, idx) => (
                                   <tr key={`${s.source}-${idx}`} className="border-b last:border-0">
-                                    <td className="py-1.5 pr-3">{o.eleve ?? "—"}</td>
+                                    <td className="py-1.5 pr-3">{o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—"}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.matricule ?? "—"}</td>
                                     <td className="py-1.5 pr-3">{o.mode ?? "—"}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.reference ?? "—"}</td>
