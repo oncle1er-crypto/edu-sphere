@@ -61,6 +61,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [spLabels, setSpLabels] = useState<Record<string, string>>({});
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
@@ -74,10 +75,11 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setErreur(null);
     const today = new Date();
     const isoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const { data: res, error } = await supabase.rpc("encaissements_du_jour", {
-      _ecole_id: ecoleId,
-      _date: isoDate,
-    });
+    const [{ data: res, error }, labels] = await Promise.all([
+      supabase.rpc("encaissements_du_jour", { _ecole_id: ecoleId, _date: isoDate }),
+      fetchSpServiceLabels(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
+    ]);
+    setSpLabels(labels);
     if (error) {
       setErreur(messageErreurBase(error, "Impossible de charger les encaissements du jour."));
       setDetail(null);
@@ -86,6 +88,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     }
     setLoading(false);
   }, [ecoleId]);
+
 
   // Charge le montant corrigé (hors remises/bourses) dès l'affichage de la tuile.
   useEffect(() => {
