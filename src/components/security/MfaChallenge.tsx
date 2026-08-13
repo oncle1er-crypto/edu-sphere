@@ -15,6 +15,11 @@ interface Props {
   onSignOut: () => void;
 }
 
+/** Forme réelle du JSON renvoyé par la RPC register_failed_mfa (typée `Json` côté Supabase). */
+interface RegisterFailedMfaResult {
+  attempts: number;
+}
+
 /** Challenge MFA affiché après login quand le niveau requis est aal2 */
 export default function MfaChallenge({ onSuccess, onSignOut }: Props) {
   const { factors, challenge, verifyChallenge } = useMfa();
@@ -42,9 +47,9 @@ export default function MfaChallenge({ onSuccess, onSignOut }: Props) {
       await supabase.rpc("reset_failed_mfa");
       await logSecurityEvent("mfa_challenge_success", "info");
       onSuccess();
-    } catch (e: any) {
+    } catch {
       const { data } = await supabase.rpc("register_failed_mfa");
-      const remaining = 5 - (data as any)?.attempts;
+      const remaining = 5 - (data as unknown as RegisterFailedMfaResult | null)?.attempts;
       toast.error(
         remaining > 0
           ? `Code invalide. ${remaining} essai${remaining > 1 ? "s" : ""} restant${remaining > 1 ? "s" : ""}.`

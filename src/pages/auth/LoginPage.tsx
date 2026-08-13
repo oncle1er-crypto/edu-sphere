@@ -50,8 +50,8 @@ export default function LoginPage() {
       const next = raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
       navigate(next);
 
-    } catch (err: any) {
-      const msg = String(err?.message || "");
+    } catch (err) {
+      const msg = String((err as { message?: unknown } | null)?.message || "");
       const isRateLimit = /rate limit|too many/i.test(msg);
       if (isRateLimit) {
         const wait = 60;

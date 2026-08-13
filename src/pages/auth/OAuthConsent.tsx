@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, ShieldCheck } from "lucide-react";
 
+/** Forme réelle des données renvoyées par les 3 méthodes de l'API OAuth consent ci-dessous. */
+interface OAuthAuthorizationDetails {
+  client?: { name?: string };
+  redirect_url?: string;
+  redirect_to?: string;
+}
+
 type AuthNamespace = {
-  getAuthorizationDetails: (id: string) => Promise<{ data: any; error: { message: string } | null }>;
-  approveAuthorization: (id: string) => Promise<{ data: any; error: { message: string } | null }>;
-  denyAuthorization: (id: string) => Promise<{ data: any; error: { message: string } | null }>;
+  getAuthorizationDetails: (id: string) => Promise<{ data: OAuthAuthorizationDetails | null; error: { message: string } | null }>;
+  approveAuthorization: (id: string) => Promise<{ data: OAuthAuthorizationDetails | null; error: { message: string } | null }>;
+  denyAuthorization: (id: string) => Promise<{ data: OAuthAuthorizationDetails | null; error: { message: string } | null }>;
 };
 
 function oauthApi(): AuthNamespace {
@@ -18,7 +25,7 @@ function oauthApi(): AuthNamespace {
 export default function OAuthConsent() {
   const [params] = useSearchParams();
   const authorizationId = params.get("authorization_id") ?? "";
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<OAuthAuthorizationDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 

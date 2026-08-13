@@ -9,6 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { Database } from "@/integrations/supabase/types";
+
+type PaiementMode = Database["public"]["Enums"]["paiement_mode"];
 
 const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
@@ -61,7 +64,7 @@ export function InvoiceEditDialog({ facture, open, onOpenChange, onSaved }: Prop
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .in("role", ["admin","directeur","comptable"] as any);
+        .in("role", ["admin","directeur","comptable"] as Database["public"]["Enums"]["app_role"][]);
       setCanEditMode((data ?? []).length > 0);
     })();
   }, [user]);
@@ -74,7 +77,7 @@ export function InvoiceEditDialog({ facture, open, onOpenChange, onSaved }: Prop
         .select("id, montant, mode, date_paiement, annule_le")
         .eq("facture_id", facture.id)
         .order("date_paiement", { ascending: false });
-      setPaiements(((data ?? []) as any[]) as PaiementRow[]);
+      setPaiements((data ?? []) as PaiementRow[]);
     })();
   }, [open, facture?.id]);
 
@@ -97,7 +100,7 @@ export function InvoiceEditDialog({ facture, open, onOpenChange, onSaved }: Prop
     const newMode = pendingModes[id];
     if (!newMode) return;
     setSavingModeId(id);
-    const { error } = await supabase.from("paiements").update({ mode: newMode as any }).eq("id", id);
+    const { error } = await supabase.from("paiements").update({ mode: newMode as PaiementMode }).eq("id", id);
     setSavingModeId(null);
     if (error) return toast.error(messageErreurBase(error));
     toast.success("Mode de paiement modifié");

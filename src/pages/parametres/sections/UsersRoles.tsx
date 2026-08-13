@@ -108,7 +108,7 @@ export default function UsersRoles() {
       toast.success(`MFA réinitialisé pour ${resetMfaUser.name}`);
       setResetMfaUser(null);
       setResetMotif("");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Échec de la réinitialisation");
     } finally {
       setResettingMfa(false);

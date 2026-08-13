@@ -1,6 +1,9 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type RowInput } from "jspdf-autotable";
 import { compareEleves } from "@/lib/sortEleves";
+
+/** jspdf-autotable étend jsPDF au runtime avec `lastAutoTable` sans le déclarer dans ses types publics. */
+type JsPDFWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
 
 // IMPORTANT: jsPDF's built-in helvetica renders U+202F (narrow no-break space)
 // — emitted by Intl fr-FR locale — as "/". We replace it with a regular space.
@@ -182,7 +185,7 @@ export async function generateCompteResultat(
     ...TABLE_STYLES,
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 100;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 100;
 
   autoTable(doc, {
     startY: y1 + 8,
@@ -198,7 +201,7 @@ export async function generateCompteResultat(
     ...TABLE_STYLES,
   });
 
-  const y2 = (doc as any).lastAutoTable?.finalY ?? 160;
+  const y2 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 160;
   doc.setFillColor(resultat >= 0 ? 235 : 250, resultat >= 0 ? 247 : 235, resultat >= 0 ? 238 : 235);
   doc.rect(15, y2 + 6, doc.internal.pageSize.getWidth() - 30, 12, "F");
   doc.setFontSize(11);
@@ -249,7 +252,7 @@ export async function generateFluxTresorerie(
     ...TABLE_STYLES,
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 90;
 
   const entrees = data.mouvements.filter((m) => m.type === "entree");
   const sorties = data.mouvements.filter((m) => m.type === "sortie");
@@ -478,7 +481,7 @@ export async function generateBudgetExecution(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 90;
 
   autoTable(doc, {
     startY: y1 + 8,
@@ -645,7 +648,7 @@ export async function generateRecapPaiementsJournalier(
     styles: { ...TABLE_STYLES.styles, fontSize: 7.8 },
   });
 
-  y = (doc as any).lastAutoTable?.finalY ?? y;
+  y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
 
   autoTable(doc, {
     startY: y + 8,
@@ -679,7 +682,7 @@ export async function generateRecapPaiementsJournalier(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  const yEnd = (doc as any).lastAutoTable?.finalY ?? y + 40;
+  const yEnd = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
 
   const sigY = Math.min(yEnd + 20, doc.internal.pageSize.getHeight() - 30);
   doc.setDrawColor(180);
@@ -749,7 +752,7 @@ export async function generateDepensesExport(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  let y = (doc as any).lastAutoTable?.finalY ?? startY + 40;
+  let y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? startY + 40;
   y += 6;
   const w = doc.internal.pageSize.getWidth();
   doc.setFontSize(8.5);
@@ -938,7 +941,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8.5 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
     if (totalRemises > 0) {
       y += 5;
       doc.setFontSize(8.3);
@@ -948,7 +951,7 @@ export async function generateRecapCaisseJournalier(
     }
     y += 10;
   } else {
-    const entreesRows: any[] = [];
+    const entreesRows: RowInput[] = [];
     for (const src of entrees) {
       if (src.operations.length === 0) continue;
       entreesRows.push([
@@ -976,7 +979,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
     if (totalRemises > 0) {
       y += 5;
       doc.setFontSize(8.3);
@@ -1043,7 +1046,7 @@ export async function generateRecapCaisseJournalier(
         styles: { ...TABLE_STYLES.styles, fontSize: 8 },
       });
     }
-    const finalYModes = ventilationModes.length > 0 ? (doc as any).lastAutoTable?.finalY : undefined;
+    const finalYModes = ventilationModes.length > 0 ? (doc as JsPDFWithAutoTable).lastAutoTable?.finalY : undefined;
     y = Math.max(finalYModes ?? y + 20, y + 20) + 8;
   }
 
@@ -1071,7 +1074,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
   }
 
   // ── Bandeau solde net ──

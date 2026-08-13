@@ -109,7 +109,9 @@ function loadModules(): LockableModule[] {
   try {
     const raw = localStorage.getItem(STORAGE_MODULES);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (e) {
+    console.warn("loadModules: lecture localStorage échouée, valeurs par défaut utilisées", e);
+  }
   return ["notes", "presences", "paiements", "inscriptions", "discipline"];
 }
 

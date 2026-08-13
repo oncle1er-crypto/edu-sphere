@@ -34,6 +34,7 @@ import {
   type AnalyseImpayesData,
   type BudgetExecutionData,
   type RemisesData,
+  type EcoleMeta,
 } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 import { compareEleves } from "@/lib/sortEleves";
@@ -148,7 +149,11 @@ export default function Reports() {
     const totalSalaires = bulletins
       .filter((b) => b.statut === "paye")
       .reduce((s, b) => {
-        const cycleId = (b as any).cycle_id as string | null | undefined;
+        // `bulletins_paie` n'a pas de cycle_id propre : le cycle est celui de
+        // l'enseignant rattaché (enseignants.cycle_id, exposé par useBulletinsPaie
+        // via le join). Un enseignant sans cycle (personnel commun) reste au prorata,
+        // comme pour les dépenses communes (voir plus haut, même logique que d.cycle_id).
+        const cycleId = b.enseignant_cycle_id;
         if (!cycleId) return s + b.net_a_payer * ratio; // salaire commun → prorata
         if (!matchesCycle(cycleId)) return s;
         return s + b.net_a_payer;
@@ -241,7 +246,7 @@ export default function Reports() {
     try {
       // Best-effort lookup of the current school for logo + branding on the PDF
       const { supabase } = await import("@/integrations/supabase/client");
-      let meta: any = { nom: ECOLE_NOM, devise: "Foi, Savoir, Excellence" };
+      let meta: EcoleMeta = { nom: ECOLE_NOM, devise: "Foi, Savoir, Excellence" };
       try {
         const { data: userData } = await supabase.auth.getUser();
         const uid = userData.user?.id;
@@ -252,7 +257,7 @@ export default function Reports() {
             .eq("user_id", uid)
             .limit(1)
             .maybeSingle();
-          const eid = (roleRow as any)?.ecole_id;
+          const eid = roleRow?.ecole_id;
           if (eid) {
             const { data: ecole } = await supabase
               .from("ecoles")
@@ -261,12 +266,12 @@ export default function Reports() {
               .maybeSingle();
             if (ecole) {
               meta = {
-                nom: (ecole as any).nom || ECOLE_NOM,
-                devise: (ecole as any).devise || "Foi, Savoir, Excellence",
-                logoUrl: (ecole as any).logo_url,
-                adresse: (ecole as any).adresse,
-                telephone: (ecole as any).telephone,
-                email: (ecole as any).email,
+                nom: ecole.nom || ECOLE_NOM,
+                devise: ecole.devise || "Foi, Savoir, Excellence",
+                logoUrl: ecole.logo_url,
+                adresse: ecole.adresse,
+                telephone: ecole.telephone,
+                email: ecole.email,
               };
             }
           }
@@ -548,8 +553,8 @@ export default function Reports() {
                 {(() => {
                   const suffix = filters.classe && filters.classe !== ALL_CLASSES ? ` — ${filters.classe}` : "";
                   const sousTitre = `Période : ${periode}${suffix ? ` · Classe : ${filters.classe}` : ""}`;
-                  const groupByClasse = <T extends { classe: string }>(arr: T[]) =>
-                    arr.slice().sort((a, b) => a.classe.localeCompare(b.classe) || compareEleves(a as any, b as any));
+                  const groupByClasse = <T extends { classe: string; nom?: string | null; prenom?: string | null }>(arr: T[]) =>
+                    arr.slice().sort((a, b) => a.classe.localeCompare(b.classe) || compareEleves(a, b));
 
                   const listes: Array<{
                     key: string;
@@ -643,8 +648,8 @@ export default function Reports() {
                             rows.push([
                               e.classe, e.matricule, e.nom, e.prenom,
                               d ? d.toLocaleDateString("fr-FR") : "",
-                              (p as any).mode ?? "—",
-                              (p as any).reference ?? "",
+                              p.mode ?? "—",
+                              p.reference ?? "",
                               p.montant ?? 0,
                             ]);
                           }

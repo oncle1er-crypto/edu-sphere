@@ -4,6 +4,10 @@ import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { Database, Json } from "@/integrations/supabase/types";
+
+/** Rôle applicatif (enum Postgres `app_role`). */
+export type AppRole = Database["public"]["Enums"]["app_role"];
 
 export interface AppModule {
   key: string;
@@ -66,19 +70,19 @@ export function useUserPermissions(targetUserId: string | null) {
     // avec les valeurs par défaut recommandées par ROLE_DEFAULT_MODULES.
     let seedFromRoles: Record<string, PermRow> = {};
     if (usingDefaults && (roles ?? []).length > 0) {
-      const roleList = (roles ?? []).map((r: any) => r.role);
+      const roleList = (roles ?? []).map((r) => r.role);
       const { data: rp } = await supabase
         .from("role_permissions")
-        .select("module_key, can_view, can_create, can_update, can_delete, can_export")
+        .select("module_key, can_view, can_create, can_update, can_delete, can_export, role")
         .eq("ecole_id", ecoleId)
-        .in("role", roleList as any);
-      (rp ?? []).forEach((row: any) => {
+        .in("role", roleList);
+      (rp ?? []).forEach((row) => {
         const existing = seedFromRoles[row.module_key];
         seedFromRoles[row.module_key] = existing ? mergeRow(existing, row) : row;
       });
       // Fallback : pour chaque rôle sans lignes en base, appliquer les défauts.
-      const rolesInDb = new Set((rp ?? []).map((r: any) => r.role));
-      roleList.forEach((r: string) => {
+      const rolesInDb = new Set((rp ?? []).map((r) => r.role));
+      roleList.forEach((r) => {
         if (rolesInDb.has(r)) return;
         (ROLE_DEFAULT_MODULES[r] ?? []).forEach(k => {
           const existing = seedFromRoles[k];
@@ -88,7 +92,7 @@ export function useUserPermissions(targetUserId: string | null) {
     }
 
     const map: Record<string, PermRow> = {};
-    (mods ?? []).forEach((m: any) => {
+    (mods ?? []).forEach((m) => {
       const existing = userRows.find(x => x.module_key === m.key);
       if (existing) map[m.key] = existing;
       else if (usingDefaults && seedFromRoles[m.key]) map[m.key] = { ...seedFromRoles[m.key], module_key: m.key };
@@ -159,12 +163,12 @@ export function useUserPermissions(targetUserId: string | null) {
         delete: p.can_delete, export: p.can_export,
       }));
       const { error } = await supabase.rpc("set_user_permissions", {
-        _target_user: targetUserId, _ecole_id: ecoleId, _permissions: payload as any,
+        _target_user: targetUserId, _ecole_id: ecoleId, _permissions: payload as unknown as Json,
       });
       if (error) throw error;
       toast.success("Permissions enregistrées");
       return true;
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Erreur");
       return false;
     } finally { setSaving(false); }

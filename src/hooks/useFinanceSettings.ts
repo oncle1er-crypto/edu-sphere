@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { TablesInsert } from "@/integrations/supabase/types";
 
 export interface FinanceSettingsData {
   devise: string;
@@ -69,7 +70,7 @@ export function useFinanceSettings() {
       const payload: Record<string, unknown> = { ecole_id: ecoleId!, ...values };
       const { error } = await supabase
         .from("finance_settings")
-        .upsert(payload as any, { onConflict: "ecole_id" });
+        .upsert(payload as unknown as TablesInsert<"finance_settings">, { onConflict: "ecole_id" });
       if (error) throw error;
     },
     onSuccess: () => {

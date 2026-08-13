@@ -68,8 +68,8 @@ export function CancelPaymentDialog({ paiement, open, onOpenChange, onCancelled 
       });
       onCancelled?.();
       onOpenChange(false);
-    } catch (err: any) {
-      const msg = String(err?.message ?? "");
+    } catch (err) {
+      const msg = String((err as { message?: unknown } | null)?.message ?? "");
       toast.error(friendlyError(msg), { description: msg });
       setConfirming(false);
     } finally {

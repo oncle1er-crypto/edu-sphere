@@ -61,7 +61,9 @@ export async function generateAttestationInscriptionPDF(data: AttestationData): 
   doc.setFillColor(...primary);
   doc.rect(0, 0, W, 35, "F");
   if (logo) {
-    try { doc.addImage(logo, "PNG", 15, 6, 22, 22); } catch {}
+    try { doc.addImage(logo, "PNG", 15, 6, 22, 22); } catch (e) {
+      console.warn("generateAttestationInscriptionPDF: insertion du logo échouée", e);
+    }
   }
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");

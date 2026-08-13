@@ -11,7 +11,7 @@ import { messageErreurBase } from "@/lib/dbErrorMessages";
 
 export default function FirstPasswordPage() {
   const navigate = useNavigate();
-  const { user, refreshMustChangePassword } = useAuth() as any;
+  const { user, refreshMustChangePassword } = useAuth();
   const [pwd, setPwd] = useState("");
   const [pwd2, setPwd2] = useState("");
   const [saving, setSaving] = useState(false);
@@ -33,7 +33,7 @@ export default function FirstPasswordPage() {
       toast.success("Mot de passe défini !");
       await refreshMustChangePassword?.();
       navigate("/", { replace: true });
-    } catch (err: any) {
+    } catch (err) {
       toast.error(messageErreurBase(err) ?? "Erreur");
     } finally {
       setSaving(false);

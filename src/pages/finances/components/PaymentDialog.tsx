@@ -76,7 +76,7 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
       const affecte = Math.min(du, restant);
       restant -= affecte;
       lignes.push({
-        trancheId: (t as any).id,
+        trancheId: t.id,
         num: t.num,
         label: t.label,
         montant: affecte,
@@ -198,9 +198,9 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
 
       onOpenChange(false);
       onPaymentRecorded?.();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Payment error:", err);
-      const msg = String(err?.message ?? "");
+      const msg = String((err as { message?: unknown } | null)?.message ?? "");
       let friendly = friendlyRpcError(err);
       if (msg.includes("not_authorized")) friendly = "Vous n'êtes pas autorisé à encaisser";
       else if (msg.includes("rien_a_encaisser")) friendly = "Aucune tranche à encaisser pour cet élève";

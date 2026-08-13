@@ -9,7 +9,7 @@ import { useSpPaiements, type SpPaiement } from "../hooks/useSpPaiements";
 import { useSpServices } from "../hooks/useSpServices";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
-import { useEcoleInfo } from "../hooks/useEcoleInfo";
+import { useEcoleInfo, type EcoleInfo } from "../hooks/useEcoleInfo";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
@@ -34,7 +34,7 @@ export default function SpPaiements() {
 
   const printReceipt = async (p: SpPaiement, correction = false) => {
     const svc = svcMap[p.service_id];
-    const e = ecole ?? {} as any;
+    const e: Partial<EcoleInfo> = ecole ?? {};
     await generateSpReceipt({
       numero: p.numero,
       date: new Date(p.date_paiement).toLocaleString("fr-FR"),

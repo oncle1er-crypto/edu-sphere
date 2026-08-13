@@ -167,7 +167,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                               hideVersementLine: true,
                             });
                             toast.success("Reçu d'inscription généré");
-                          } catch (err: any) {
+                          } catch (err) {
                             console.error(err);
                             toast.error("Impossible de générer le reçu", { description: messageErreurBase(err) });
                           }

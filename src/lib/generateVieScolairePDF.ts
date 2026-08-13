@@ -81,7 +81,11 @@ async function drawHeader(doc: jsPDF, ecole: VieScolaireEcole, ref: string, labe
   doc.setFillColor(...ACCENT);
   doc.rect(0, 32, W, 2, "F");
 
-  if (logo) { try { doc.addImage(logo, "PNG", 14, 5, 22, 22); } catch {} }
+  if (logo) {
+    try { doc.addImage(logo, "PNG", 14, 5, 22, 22); } catch (e) {
+      console.warn("generateVieScolairePDF: insertion du logo échouée", e);
+    }
+  }
 
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");

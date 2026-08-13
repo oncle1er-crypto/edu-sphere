@@ -34,8 +34,14 @@ const MOYENS = [
   { label: "Chèque", value: "cheque" },
 ];
 
-function friendlySolde(err: any): string {
-  const msg = String(err?.message ?? "");
+/** Forme réelle du JSON renvoyé par la RPC solder_scolarite (typée `Json` côté Supabase). */
+interface SolderScolariteResult {
+  nb_tranches?: number;
+  lignes?: { paiement_id: string }[];
+}
+
+function friendlySolde(err: unknown): string {
+  const msg = String((err as { message?: unknown })?.message ?? "");
   if (msg.includes("not_authorized")) return "Non autorisé";
   if (msg.includes("rien_a_encaisser")) return "Rien à encaisser";
   if (msg.includes("montant_depasse_reste")) return "Montant supérieur au reste dû";
@@ -117,10 +123,11 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
           errors.push(`${el.nom} ${el.prenom} : ${friendlySolde(error)}`);
         } else {
           okCount++;
-          tranchesCount += Number((data as any)?.nb_tranches ?? 0);
+          const result = data as unknown as SolderScolariteResult | null;
+          tranchesCount += Number(result?.nb_tranches ?? 0);
 
           // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
-          const paiementId = (data as any)?.lignes?.[0]?.paiement_id as string | undefined;
+          const paiementId = result?.lignes?.[0]?.paiement_id;
           const parentNom = contact?.nomComplet ?? el.parent;
           const parentTel = contact?.telephone ?? el.telephone;
           if (paiementId && parentNom && parentTel) {
@@ -154,7 +161,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
 
       onCompleted?.();
       if (errors.length === 0) onOpenChange(false);
-    } catch (err: any) {
+    } catch (err) {
       toast.error("Échec du solde", { description: friendlySolde(err) });
     } finally {
       submittingRef.current = false;

@@ -15,7 +15,7 @@ interface Props {
 
 export default function VentilationScolariteCard({ total, couvert }: Props) {
   const { settings } = useFinanceSettings();
-  const s = settings as any;
+  const s = settings;
   const check = validateVentilation(total, couvert, {
     fraisInscription: Number(s.frais_inscription ?? 25000),
     fraisUniformes: Number(s.frais_uniformes ?? 15000),

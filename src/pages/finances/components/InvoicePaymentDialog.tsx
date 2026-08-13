@@ -136,7 +136,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
 
       onOpenChange(false);
       onPaymentRecorded?.();
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
       toast.error("Encaissement refusé", { description: messageErreurBase(err) ?? "Erreur inconnue" });
     } finally {

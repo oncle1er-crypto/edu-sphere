@@ -15,7 +15,9 @@ function load(): Relance[] {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch (e) {
+    console.warn("relances-store: lecture localStorage échouée, données de démo utilisées", e);
+  }
   // Données initiales pour démo
   return [
     { id: "r1", eleveId: "3", date: "2026-04-20T10:30:00", canal: "SMS", message: "Rappel : 3ème tranche échue depuis 11 jours.", destinataire: "+225 07 44 55 66 77" },
@@ -31,7 +33,9 @@ let state: Relance[] = load();
 const listeners = new Set<() => void>();
 
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {
+    console.warn("relances-store: écriture localStorage échouée", e);
+  }
   listeners.forEach((l) => l());
 }
 

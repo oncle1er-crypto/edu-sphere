@@ -62,7 +62,7 @@ export default function RecapCaisse() {
       if (previewOnly) {
         const pdf = await generateRecapCaisseJournalier(meta, opts, payload, true);
         if (pdf) {
-          const url = URL.createObjectURL((pdf as any).output("blob"));
+          const url = URL.createObjectURL(pdf.output("blob"));
           setPreviewTitle(`Récapitulatif de caisse — ${data.periodeLabel}`);
           setPdfUrl(url);
         }

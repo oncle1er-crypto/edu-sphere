@@ -72,7 +72,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
     setSaving(true);
 
     try {
-      const trancheId = (tranche as any).id;
+      const trancheId = tranche.id;
       if (!trancheId) throw new Error("Tranche sans identifiant en base");
 
       const { data: paiementId, error } = await supabase.rpc("appliquer_remise", {
@@ -97,7 +97,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
 
       onOpenChange(false);
       onApplied?.();
-    } catch (err: any) {
+    } catch (err) {
       console.error("Discount error:", err);
       toast.error("Remise refusée", { description: friendlyRpcError(err) });
       onApplied?.();
@@ -150,7 +150,7 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
 
           <div className="space-y-1.5">
             <Label className="text-xs">Type</Label>
-            <Select value={type} onValueChange={(v: any) => setType(v)}>
+            <Select value={type} onValueChange={(v) => setType(v as "remise" | "bourse" | "prise_en_charge")}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
                 {TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}

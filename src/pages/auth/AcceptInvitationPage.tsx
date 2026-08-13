@@ -61,7 +61,7 @@ export default function AcceptInvitationPage() {
       } else {
         navigate("/connexion");
       }
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     } finally { setSaving(false); }
   };

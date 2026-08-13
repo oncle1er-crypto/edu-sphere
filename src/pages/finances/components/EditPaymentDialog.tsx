@@ -87,8 +87,8 @@ export function EditPaymentDialog({ eleve, paiement, open, onOpenChange, onSaved
       });
       onSaved?.();
       onOpenChange(false);
-    } catch (err: any) {
-      const msg = err?.message ?? "";
+    } catch (err) {
+      const msg = String((err as { message?: unknown } | null)?.message ?? "");
       let friendly = "Impossible de corriger le paiement";
       if (msg.includes("not_authorized")) friendly = "Réservé aux administrateurs";
       else if (msg.includes("montant_depasse_tranche")) friendly = "Le nouveau montant dépasse le total de la tranche";
