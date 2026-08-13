@@ -49,6 +49,15 @@ export default function TimetableConfig() {
             />
           </FieldRow>
 
+          <FieldRow label="Récréation — heure de début" hint="Mettre la durée à 0 pour désactiver la récréation.">
+            <Input
+              type="time"
+              value={settings.recreation_debut}
+              onChange={(e) => update({ recreation_debut: e.target.value })}
+              disabled={settings.duree_recreation_min <= 0}
+            />
+          </FieldRow>
+
           <FieldRow label="Durée des récréations (min)">
             <Input
               type="number"
@@ -88,14 +97,20 @@ export default function TimetableConfig() {
             </Select>
           </FieldRow>
 
-          <FieldRow label="Verrouiller après publication" hint="Empêche les modifications hors administrateur.">
+          <FieldRow
+            label="Verrouiller après publication"
+            hint="Fonctionnalité prévue, pas encore appliquée : ce réglage n'empêche aucune modification pour le moment (aucun statut brouillon/publié n'existe encore sur l'emploi du temps)."
+          >
             <Switch
               checked={settings.verrouiller_apres_publication}
               onCheckedChange={(v) => update({ verrouiller_apres_publication: v })}
             />
           </FieldRow>
 
-          <FieldRow label="Auto-générer remplacements" hint="Suggère automatiquement un remplaçant disponible.">
+          <FieldRow
+            label="Auto-générer remplacements"
+            hint="Fonctionnalité prévue, pas encore appliquée : l'onglet Remplacements ne suggère pas encore automatiquement un remplaçant disponible."
+          >
             <Switch
               checked={settings.auto_generer_remplacements}
               onCheckedChange={(v) => update({ auto_generer_remplacements: v })}

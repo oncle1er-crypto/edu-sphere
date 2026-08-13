@@ -22,6 +22,28 @@ function loadEnvLocal(path: string) {
 loadEnvLocal('.env.local');
 
 /**
+ * Garde-fou de sécurité : quelle que soit la source (fichier .env.local,
+ * variables d'environnement CI, export shell...), on refuse de lancer la
+ * moindre suite Playwright si VITE_SUPABASE_URL ne pointe pas vers une
+ * instance Supabase locale. Certains specs écrivent/suppriment de vraies
+ * lignes via l'API REST (voir tests/e2e/paiements-annulation-solde.spec.ts) :
+ * une exécution accidentelle contre la production serait destructrice.
+ */
+function assertSupabaseUrlIsLocal() {
+  const url = process.env.VITE_SUPABASE_URL;
+  if (!url) return; // pas de config Supabase : rien à vérifier ici.
+  const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(url);
+  if (!isLocal) {
+    throw new Error(
+      `Garde-fou sécurité : VITE_SUPABASE_URL ("${url}") ne pointe pas vers une instance Supabase locale ` +
+        `(127.0.0.1 / localhost attendu). Les tests Playwright ne doivent JAMAIS s'exécuter contre une base ` +
+        `distante ou de production. Vérifie .env.local ou les secrets/variables du workflow CI.`
+    );
+  }
+}
+assertSupabaseUrlIsLocal();
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({

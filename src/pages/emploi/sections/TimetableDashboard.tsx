@@ -22,7 +22,6 @@ interface Creneau {
 }
 
 
-const overlaps = (aD: string, aF: string, bD: string, bF: string) => aD < bF && bD < aF;
 const minutes = (t: string) => { const [h, m] = t.split(":").map(Number); return h * 60 + m; };
 
 export default function TimetableDashboard() {
@@ -30,13 +29,14 @@ export default function TimetableDashboard() {
   const { anneeId } = useAnneeId();
   const [creneaux, setCreneaux] = useState<Creneau[]>([]);
   const [totalClasses, setTotalClasses] = useState(0);
+  const [conflits, setConflits] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!ecoleId || !anneeId) return;
     (async () => {
       setLoading(true);
-      const [crRes, clRes] = await Promise.all([
+      const [crRes, clRes, confRes] = await Promise.all([
         supabase
           .from("creneaux_emploi_temps" as any)
           .select("classe_id, enseignant_id, salle, salle_id, jour, heure_debut, heure_fin, classes(nom)")
@@ -48,10 +48,19 @@ export default function TimetableDashboard() {
           .select("id", { count: "exact", head: true })
           .eq("ecole_id", ecoleId)
           .eq("annee_id", anneeId),
+
+        // Même source de vérité que la page "Conflits & alertes" (RPC serveur
+        // detect_all_conflicts) : évite qu'un chiffre différent s'affiche ici.
+        supabase.rpc("detect_all_conflicts" as any, {
+          _ecole_id: ecoleId,
+          _annee_id: anneeId,
+        }),
       ]);
       if (crRes.error) console.error(crRes.error);
+      if (confRes.error) console.error(confRes.error);
       setCreneaux(((crRes.data as any[]) ?? []) as Creneau[]);
       setTotalClasses(clRes.count ?? 0);
+      setConflits(((confRes.data as any[]) ?? []).length);
       setLoading(false);
     })();
   }, [ecoleId, anneeId]);
@@ -65,21 +74,6 @@ export default function TimetableDashboard() {
         .filter(Boolean)
     ).size;
 
-
-    let conflits = 0;
-    for (let i = 0; i < creneaux.length; i++) {
-      for (let j = i + 1; j < creneaux.length; j++) {
-        const a = creneaux[i], b = creneaux[j];
-        if (a.jour !== b.jour) continue;
-        if (!overlaps(a.heure_debut, a.heure_fin, b.heure_debut, b.heure_fin)) continue;
-        if (a.classe_id === b.classe_id) conflits++;
-        else if (a.enseignant_id && a.enseignant_id === b.enseignant_id) conflits++;
-        else if (a.salle_id && a.salle_id === b.salle_id) conflits++;
-        else if (!a.salle_id && !b.salle_id && a.salle && b.salle && a.salle === b.salle) conflits++;
-
-      }
-    }
-
     const byDay: Record<number, number> = {};
     creneaux.forEach((c) => {
       byDay[c.jour] = (byDay[c.jour] ?? 0) + (minutes(c.heure_fin) - minutes(c.heure_debut));
@@ -87,14 +81,14 @@ export default function TimetableDashboard() {
     const maxMin = Math.max(1, ...Object.values(byDay));
     const days = [1, 2, 3, 4, 5].map((d) => [JOURS[d], Math.round(((byDay[d] ?? 0) / maxMin) * 100)] as [string, number]);
 
-    return { classesPlanifiees, enseignantsAssignes, sallesOccupees, conflits, days };
+    return { classesPlanifiees, enseignantsAssignes, sallesOccupees, days };
   }, [creneaux]);
 
   const kpis = [
     { label: "Classes planifiées", value: `${stats.classesPlanifiees} / ${totalClasses}`, icon: CalendarDays },
     { label: "Enseignants assignés", value: String(stats.enseignantsAssignes), icon: Users },
     { label: "Salles utilisées", value: String(stats.sallesOccupees), icon: DoorOpen },
-    { label: "Conflits détectés", value: String(stats.conflits), icon: AlertTriangle },
+    { label: "Conflits détectés", value: String(conflits), icon: AlertTriangle },
   ];
 
   return (

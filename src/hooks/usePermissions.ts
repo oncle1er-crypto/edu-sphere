@@ -15,6 +15,25 @@ export interface UserPermission {
 }
 
 /**
+ * Logique pure de résolution d'une permission effective : admin bypass tout,
+ * sinon recherche du module dans la liste de permissions et lecture du champ
+ * `can_<action>`. Extraite de usePermissions() pour être testable sans mock
+ * Supabase/Auth (voir usePermissions.test.ts).
+ */
+export function computeCan(
+  perms: UserPermission[],
+  isAdmin: boolean,
+  module: string,
+  action: PermAction = "view"
+): boolean {
+  if (isAdmin) return true;
+  const p = perms.find((x) => x.module_key === module);
+  if (!p) return false;
+  const key = `can_${action}` as keyof UserPermission;
+  return Boolean(p[key]);
+}
+
+/**
  * Retourne les permissions EFFECTIVES de l'utilisateur courant pour l'école courante
  * (union des permissions du/des rôle(s) via `role_permissions` et des overrides
  * individuels via `user_permissions`). L'admin bypass tout.
@@ -43,13 +62,10 @@ export function usePermissions() {
 
   useEffect(() => { load(); }, [load]);
 
-  const can = useCallback((module: string, action: PermAction = "view") => {
-    if (isAdmin) return true;
-    const p = perms.find(x => x.module_key === module);
-    if (!p) return false;
-    const key = `can_${action}` as keyof UserPermission;
-    return Boolean(p[key]);
-  }, [perms, isAdmin]);
+  const can = useCallback(
+    (module: string, action: PermAction = "view") => computeCan(perms, isAdmin, module, action),
+    [perms, isAdmin]
+  );
 
   return { perms, isAdmin, can, loading, reload: load };
 }

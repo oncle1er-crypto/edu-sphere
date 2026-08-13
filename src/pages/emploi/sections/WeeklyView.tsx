@@ -14,7 +14,7 @@ import { useClasses } from "@/hooks/useClasses";
 import { useSalles } from "@/hooks/useSalles";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
-import { useTimetableSettings, slotsFromSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
+import { useTimetableSettings, slotsFromSettings, joursFromSettings, breaksFromSettings } from "@/hooks/useTimetableSettings";
 import { toast } from "sonner";
 
 const DAY_LABELS: Record<number, string> = {
@@ -53,6 +53,26 @@ export default function WeeklyView() {
     () => joursFromSettings(settings).map((num) => ({ num, label: DAY_LABELS[num] })),
     [settings]
   );
+
+  // Lignes à afficher : créneaux entrecoupés d'une ligne "pause" (récréation,
+  // déjeuner) chaque fois que deux créneaux consécutifs ne se touchent pas —
+  // c'est-à-dire chaque fois qu'une pause a raccourci le créneau précédent.
+  const ROWS = useMemo(() => {
+    const breaks = breaksFromSettings(settings);
+    const out: Array<
+      { type: "slot"; slot: { debut: string; fin: string }; slotIdx: number }
+      | { type: "break"; label: string; debut: string; fin: string }
+    > = [];
+    SLOTS.forEach((slot, idx) => {
+      if (idx > 0 && SLOTS[idx - 1].fin !== slot.debut) {
+        const prevFin = SLOTS[idx - 1].fin;
+        const b = breaks.find((x) => x.debut === prevFin && x.fin === slot.debut);
+        out.push({ type: "break", label: b?.label ?? "Pause", debut: prevFin, fin: slot.debut });
+      }
+      out.push({ type: "slot", slot, slotIdx: idx });
+    });
+    return out;
+  }, [SLOTS, settings]);
 
   // Dialog state
   const [open, setOpen] = useState(false);
@@ -172,44 +192,59 @@ export default function WeeklyView() {
               </tr>
             </thead>
             <tbody>
-              {SLOTS.map((slot, si) => (
-                <tr key={si}>
-                  <td className="border bg-muted/50 text-xs font-semibold p-2 text-center whitespace-nowrap">
-                    {slotLabel(slot.debut, slot.fin)}
-                  </td>
-                  {DAYS.map((d) => {
-                    const key = `${d.num}-${slot.debut}`;
-                    const cell = grid[key];
-                    return (
+              {ROWS.map((row, ri) => {
+                if (row.type === "break") {
+                  return (
+                    <tr key={`b-${ri}`} className="bg-muted/70">
                       <td
-                        key={key}
-                        className="border p-1 align-top h-16 group relative cursor-pointer"
-                        onClick={() => !cell && openAdd(d.num, si)}
+                        colSpan={DAYS.length + 1}
+                        className="border text-[11px] font-semibold text-muted-foreground text-center py-1 uppercase tracking-wide"
                       >
-                        {cell ? (
-                          <div className={`rounded-md border p-1.5 text-xs h-full ${colorMap[cell.matiere_id] ?? COLORS[0]}`}>
-                            <div className="font-bold truncate">{cell.matiere_nom}</div>
-                            <div className="text-[10px] opacity-80 truncate">{cell.enseignant_nom}</div>
-                            {(cell.salle_code || cell.salle) && (
-                              <div className="text-[10px] opacity-70">{cell.salle_code || cell.salle}</div>
-                            )}
-                            <button
-                              onClick={(e) => { e.stopPropagation(); handleDelete(cell.id); }}
-                              className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/20"
-                            >
-                              <Trash2 className="h-3 w-3 text-destructive" />
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-40 transition-opacity">
-                            <Plus className="h-4 w-4" />
-                          </div>
-                        )}
+                        {row.label} — {slotLabel(row.debut, row.fin)}
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    </tr>
+                  );
+                }
+                const { slot, slotIdx: si } = row;
+                return (
+                  <tr key={si}>
+                    <td className="border bg-muted/50 text-xs font-semibold p-2 text-center whitespace-nowrap">
+                      {slotLabel(slot.debut, slot.fin)}
+                    </td>
+                    {DAYS.map((d) => {
+                      const key = `${d.num}-${slot.debut}`;
+                      const cell = grid[key];
+                      return (
+                        <td
+                          key={key}
+                          className="border p-1 align-top h-16 group relative cursor-pointer"
+                          onClick={() => !cell && openAdd(d.num, si)}
+                        >
+                          {cell ? (
+                            <div className={`rounded-md border p-1.5 text-xs h-full ${colorMap[cell.matiere_id] ?? COLORS[0]}`}>
+                              <div className="font-bold truncate">{cell.matiere_nom}</div>
+                              <div className="text-[10px] opacity-80 truncate">{cell.enseignant_nom}</div>
+                              {(cell.salle_code || cell.salle) && (
+                                <div className="text-[10px] opacity-70">{cell.salle_code || cell.salle}</div>
+                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDelete(cell.id); }}
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-destructive/20"
+                              >
+                                <Trash2 className="h-3 w-3 text-destructive" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="h-full flex items-center justify-center opacity-0 group-hover:opacity-40 transition-opacity">
+                              <Plus className="h-4 w-4" />
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
