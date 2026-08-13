@@ -67,10 +67,21 @@ jobs:
       - name: Récupérer les identifiants Supabase locaux
         id: supa
         run: |
-          supabase status -o env >> "$GITHUB_ENV"
           # `supabase status -o env` exporte notamment API_URL, ANON_KEY,
-          # SERVICE_ROLE_KEY (stack locale, valeurs fixes non secrètes — voir
-          # .env.local.example / CLAUDE.md, jamais des identifiants de prod).
+          # SERVICE_ROLE_KEY (stack locale, valeurs fixes non secrètes).
+          # IMPORTANT : sa sortie encadre chaque valeur de guillemets doubles
+          # (ex. API_URL="http://127.0.0.1:54321"). $GITHUB_ENV ne retire
+          # jamais ces guillemets : ajoutés tels quels, ils deviennent partie
+          # intégrante de la valeur (ex. $API_URL == '"http://127.0.0.1:54321"'
+          # avec les guillemets inclus), ce qui corrompt toute URL construite
+          # ensuite avec ("${API_URL}/...") — confirmé en exécution réelle
+          # (curl: "Port number was not a decimal number", run du 13/08/2026).
+          # On retire donc les guillemets avant d'écrire dans $GITHUB_ENV.
+          supabase status -o env | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+          # Diagnostic sans exposer de clé : si ce step échoue encore un jour,
+          # cette ligne dit immédiatement si API_URL est bien formée, sans
+          # attendre l'échec (silencieux) d'un step plus loin dans le pipeline.
+          echo "API_URL capturée : $(grep '^API_URL=' "$GITHUB_ENV")"
 
       - name: Créer le compte de test local (fixture CI minimale, jamais liée à la production)
         run: |
