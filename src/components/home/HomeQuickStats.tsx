@@ -239,7 +239,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     sub?: string | null; sub2?: string | null; action?: React.ReactNode; onOpen?: () => void;
   }>;
 
-  const sources = detail?.sources ?? [];
+  const sources = sourcesAffichees;
   const aucune = !loading && !erreur && sources.length === 0;
 
   return (
