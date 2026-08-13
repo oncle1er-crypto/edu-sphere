@@ -393,7 +393,7 @@ export default function StudentsList() {
                 <SelectItem value="inscrit">Inscrit</SelectItem>
                 <SelectItem value="actif">Actif</SelectItem>
                 <SelectItem value="suspendu">Suspendu</SelectItem>
-                <SelectItem value="sorti">Sorti</SelectItem>
+                
               </SelectContent>
             </Select>
             <Select value={docFilter} onValueChange={(v) => setDocFilter(v as typeof docFilter)}>
