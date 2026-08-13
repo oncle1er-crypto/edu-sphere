@@ -89,6 +89,37 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setLoading(false);
   }, [ecoleId]);
 
+  // Éclate la catégorie « Services ponctuels » par type de service exact
+  // (le libellé est retrouvé via la référence de la pièce).
+  const sourcesAffichees = useMemo<SpSource[]>(() => {
+    const brutes = detail?.sources ?? [];
+    const out: SpSource[] = [];
+    for (const s of brutes) {
+      if (!estSourceServicePonctuel(s.source) || (s.operations ?? []).length === 0) {
+        out.push(s);
+        continue;
+      }
+      const groupes = new Map<string, SpSource>();
+      for (const o of s.operations ?? []) {
+        const svc = libelleService(o.reference, spLabels);
+        const g = groupes.get(svc) ?? {
+          source: `${s.source}:${svc}`,
+          libelle: `${s.libelle} — ${svc}`,
+          est_remise: s.est_remise,
+          nb: 0,
+          total: 0,
+          operations: [],
+        };
+        g.nb = Number(g.nb ?? 0) + 1;
+        g.total = Number(g.total ?? 0) + Number(o.montant ?? 0);
+        (g.operations as SpOperation[]).push(o);
+        groupes.set(svc, g);
+      }
+      out.push(...Array.from(groupes.values()).sort((a, b) => Number(b.total ?? 0) - Number(a.total ?? 0)));
+    }
+    return out;
+  }, [detail, spLabels]);
+
 
   // Charge le montant corrigé (hors remises/bourses) dès l'affichage de la tuile.
   useEffect(() => {
