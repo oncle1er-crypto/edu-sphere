@@ -131,9 +131,16 @@ export default function StudentsList() {
     }
   }, [eleves, viewEleve]);
 
+  // Les élèves sortis / exclus / transférés n'apparaissent plus ici :
+  // ils sont archivés dans « Anciens élèves » (réinsertion possible depuis cette page).
+  const elevesPresents = useMemo(
+    () => eleves.filter((e) => !["sorti", "exclu", "transfere"].includes(e.statut ?? "")),
+    [eleves]
+  );
+
   const filtered = useMemo(() => {
     const q = debouncedSearch;
-    return eleves.filter((s) => {
+    return elevesPresents.filter((s) => {
       const matchSearch = !q ||
         s.nom.toLowerCase().includes(q) ||
         s.prenom.toLowerCase().includes(q) ||
@@ -145,12 +152,14 @@ export default function StudentsList() {
       const matchDocs = docFilter === "all" || (docFilter === "with" ? c > 0 : c === 0);
       return matchSearch && matchCycle && matchStatut && matchDocs;
     });
-  }, [eleves, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+  }, [elevesPresents, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+
 
   const withDocsCount = useMemo(
-    () => eleves.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
-    [eleves, countByEleve]
+    () => elevesPresents.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
+    [elevesPresents, countByEleve]
   );
+
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
@@ -181,17 +190,21 @@ export default function StudentsList() {
   const handlePurge = async () => {
     if (!purgeTarget || !isAdmin) return;
     setActionLoading(true);
+    // Seuls les paiements NON annulés bloquent la suppression : un élève dont
+    // tous les encaissements ont été annulés redevient supprimable.
     const { count, error: cErr } = await supabase
       .from("paiements")
       .select("id", { head: true, count: "exact" })
-      .eq("eleve_id", purgeTarget.id);
+      .eq("eleve_id", purgeTarget.id)
+      .is("annule_le", null);
     if (cErr) { setActionLoading(false); toast.error(cErr.message); return; }
     if ((count ?? 0) > 0) {
       setActionLoading(false);
-      toast.error("Suppression refusée", { description: "Cet élève a déjà des paiements enregistrés." });
+      toast.error("Suppression refusée", { description: "Cet élève a des paiements actifs (non annulés). Annulez-les d'abord." });
       setPurgeTarget(null);
       return;
     }
+
     const ok = await deleteEleve(purgeTarget.id);
     if (ok) toast.success(`${purgeTarget.nom} ${purgeTarget.prenom} supprimé(e) définitivement`);
     setPurgeTarget(null);
@@ -345,7 +358,7 @@ export default function StudentsList() {
       <SettingsSection
         icon={<Users className="h-5 w-5" />}
         title={`Liste des élèves (${filtered.length})`}
-        description={`Recherchez, filtrez et consultez la fiche d'un élève. ${withDocsCount} avec document, ${eleves.length - withDocsCount} sans.`}
+        description={`Recherchez, filtrez et consultez la fiche d'un élève. ${withDocsCount} avec document, ${elevesPresents.length - withDocsCount} sans. Les élèves sortis sont archivés dans « Anciens élèves ».`}
         hideSave
       >
         <HelpBanner storageKey="eleves-liste" title="Comment utiliser cette page ?">
@@ -380,7 +393,7 @@ export default function StudentsList() {
                 <SelectItem value="inscrit">Inscrit</SelectItem>
                 <SelectItem value="actif">Actif</SelectItem>
                 <SelectItem value="suspendu">Suspendu</SelectItem>
-                <SelectItem value="sorti">Sorti</SelectItem>
+                
               </SelectContent>
             </Select>
             <Select value={docFilter} onValueChange={(v) => setDocFilter(v as typeof docFilter)}>
