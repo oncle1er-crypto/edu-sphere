@@ -37,9 +37,9 @@ function slotLabel(d: string, f: string) {
 }
 
 export default function WeeklyView() {
-  const { classes, loading: classesLoading } = useClasses();
   const { ecoleId } = useEcoleId();
-  const { creneaux, loading, fetchCreneaux, addCreneau, updateCreneau, deleteCreneau } = useEmploiDuTemps();
+  const { creneaux, loading, fetchCreneaux, addCreneau, updateCreneau, deleteCreneau, anneeId } = useEmploiDuTemps();
+  const { classes, loading: classesLoading } = useClasses(anneeId ?? undefined);
   const { settings, loading: settingsLoading } = useTimetableSettings();
   const { salles } = useSalles();
 
