@@ -88,6 +88,16 @@ export default function SpTestsEntree() {
     );
   }, [candidats, q]);
 
+  const PAR_PAGE = 25;
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [q]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAR_PAGE));
+  const pageRows = useMemo(
+    () => filtered.slice((page - 1) * PAR_PAGE, page * PAR_PAGE),
+    [filtered, page]
+  );
+
+
   const saveNotes = async (
     id: string,
     notes: { note_francais: number | null; note_maths: number | null; note_anglais: number | null }
