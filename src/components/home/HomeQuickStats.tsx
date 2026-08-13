@@ -158,7 +158,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
         libelle: s.libelle,
         estRemise: !!s.est_remise,
         operations: (s.operations ?? []).map((o) => ({
-          beneficiaire: o.eleve ?? "—",
+          beneficiaire: o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—",
           matricule: o.matricule,
           mode: modeMeta(o.mode ?? "").label,
           reference: o.reference,
