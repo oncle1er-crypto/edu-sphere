@@ -142,7 +142,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
         agg.nb += 1;
         agg.total += Number(r.montant || 0);
         agg.operations.push({
-          beneficiaire: r.eleve ?? "—",
+          beneficiaire: r.eleve ?? (r.reference ? spNoms[r.reference] : null) ?? "—",
           matricule: r.matricule,
           mode: modeMeta(r.mode_paiement ?? "").label,
           reference: r.reference,
