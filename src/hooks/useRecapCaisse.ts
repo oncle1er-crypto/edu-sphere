@@ -3,7 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import {
+  beneficiaireService,
+  fetchSpServiceLabels,
+  fetchSpBeneficiaires,
+  libelleService,
+  estSourceServicePonctuel,
+} from "@/lib/spServiceLabels";
 
 
 /**
@@ -142,7 +148,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
         agg.nb += 1;
         agg.total += Number(r.montant || 0);
         agg.operations.push({
-          beneficiaire: r.eleve ?? (r.reference ? spNoms[r.reference] : null) ?? "—",
+          beneficiaire: beneficiaireService(r.eleve, r.reference, spNoms),
           matricule: r.matricule,
           mode: modeMeta(r.mode_paiement ?? "").label,
           reference: r.reference,
