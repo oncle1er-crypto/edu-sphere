@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { modeMeta } from "@/pages/finances/scolarite-data";
+import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+
 
 /**
  * Données du Récapitulatif de caisse (jour ou semaine), filtrées par niveau.
