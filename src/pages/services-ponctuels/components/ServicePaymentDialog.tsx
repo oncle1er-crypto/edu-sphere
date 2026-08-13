@@ -35,7 +35,8 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
   const [serviceId, setServiceId] = useState<string>("");
   const [type, setType] = useState<"eleve" | "candidat" | "libre">("libre");
   const [libre, setLibre] = useState("");
-  const [montantDu, setMontantDu] = useState(0);
+  const [qte, setQte] = useState(1);
+  const [prixUnitaire, setPrixUnitaire] = useState(0);
   const [montantPaye, setMontantPaye] = useState(0);
   const [remise, setRemise] = useState(0);
   const [mode, setMode] = useState<SpModePaiement>("especes");
@@ -43,22 +44,30 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
   const [saving, setSaving] = useState(false);
 
   const service = services.find((s) => s.id === serviceId);
+  const montantDu = Math.max(0, qte) * Math.max(0, prixUnitaire);
 
   useEffect(() => {
     if (!open) return;
     setServiceId(preset?.service_id ?? "");
     setType(preset?.beneficiaire_type ?? "libre");
     setLibre(preset?.beneficiaire_libre ?? "");
+    setQte(1);
     setRemise(0);
     setObs("");
   }, [open, preset]);
 
   useEffect(() => {
     if (service) {
-      setMontantDu(Number(service.prix));
+      setPrixUnitaire(Number(service.prix));
       setMontantPaye(Number(service.prix));
+      setQte(1);
     }
   }, [serviceId]); // eslint-disable-line
+
+  // Le montant payé suit le total tant que l'utilisateur n'a pas saisi de partiel
+  useEffect(() => {
+    setMontantPaye(montantDu);
+  }, [montantDu]);
 
   const reste = Math.max(0, montantDu - montantPaye - remise);
 
@@ -79,7 +88,10 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
       montant_paye: montantPaye,
       remise,
       mode_paiement: mode,
-      observations: obs || null,
+      observations: [
+        qte > 1 ? `Quantité : ${qte} × ${prixUnitaire.toLocaleString("fr-FR")} FCFA` : null,
+        obs.trim() || null,
+      ].filter(Boolean).join(" — ") || null,
     });
     setSaving(false);
     if (p) { onSuccess?.(p); onOpenChange(false); }
@@ -109,8 +121,12 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label>Montant dû</Label><Input type="number" value={montantDu} onChange={(e) => setMontantDu(+e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Quantité</Label><Input type="number" min={1} value={qte} onChange={(e) => setQte(Math.max(1, +e.target.value || 1))} /></div>
+            <div><Label>Prix unitaire</Label><Input type="number" min={0} value={prixUnitaire} onChange={(e) => setPrixUnitaire(+e.target.value)} /></div>
+          </div>
+          <p className="text-sm">Montant dû : <strong>{montantDu.toLocaleString("fr-FR")} FCFA</strong> <span className="text-xs text-muted-foreground">({qte} × {prixUnitaire.toLocaleString("fr-FR")})</span></p>
+          <div className="grid grid-cols-2 gap-2">
             <div><Label>Payé</Label><Input type="number" value={montantPaye} onChange={(e) => setMontantPaye(+e.target.value)} /></div>
             <div><Label>Remise</Label><Input type="number" value={remise} onChange={(e) => setRemise(+e.target.value)} /></div>
           </div>
