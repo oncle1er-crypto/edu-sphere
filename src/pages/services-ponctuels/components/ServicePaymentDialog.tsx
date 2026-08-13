@@ -88,7 +88,10 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
       montant_paye: montantPaye,
       remise,
       mode_paiement: mode,
-      observations: obs || null,
+      observations: [
+        qte > 1 ? `Quantité : ${qte} × ${prixUnitaire.toLocaleString("fr-FR")} FCFA` : null,
+        obs.trim() || null,
+      ].filter(Boolean).join(" — ") || null,
     });
     setSaving(false);
     if (p) { onSuccess?.(p); onOpenChange(false); }
