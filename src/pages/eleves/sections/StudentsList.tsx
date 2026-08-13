@@ -131,9 +131,16 @@ export default function StudentsList() {
     }
   }, [eleves, viewEleve]);
 
+  // Les élèves sortis / exclus / transférés n'apparaissent plus ici :
+  // ils sont archivés dans « Anciens élèves » (réinsertion possible depuis cette page).
+  const elevesPresents = useMemo(
+    () => eleves.filter((e) => !["sorti", "exclu", "transfere"].includes(e.statut ?? "")),
+    [eleves]
+  );
+
   const filtered = useMemo(() => {
     const q = debouncedSearch;
-    return eleves.filter((s) => {
+    return elevesPresents.filter((s) => {
       const matchSearch = !q ||
         s.nom.toLowerCase().includes(q) ||
         s.prenom.toLowerCase().includes(q) ||
@@ -145,7 +152,8 @@ export default function StudentsList() {
       const matchDocs = docFilter === "all" || (docFilter === "with" ? c > 0 : c === 0);
       return matchSearch && matchCycle && matchStatut && matchDocs;
     });
-  }, [eleves, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+  }, [elevesPresents, debouncedSearch, cycle, statut, docFilter, countByEleve]);
+
 
   const withDocsCount = useMemo(
     () => eleves.reduce((acc, s) => acc + ((countByEleve.get(s.id) ?? 0) > 0 ? 1 : 0), 0),
