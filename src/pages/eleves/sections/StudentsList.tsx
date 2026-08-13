@@ -189,17 +189,21 @@ export default function StudentsList() {
   const handlePurge = async () => {
     if (!purgeTarget || !isAdmin) return;
     setActionLoading(true);
+    // Seuls les paiements NON annulés bloquent la suppression : un élève dont
+    // tous les encaissements ont été annulés redevient supprimable.
     const { count, error: cErr } = await supabase
       .from("paiements")
       .select("id", { head: true, count: "exact" })
-      .eq("eleve_id", purgeTarget.id);
+      .eq("eleve_id", purgeTarget.id)
+      .is("annule_le", null);
     if (cErr) { setActionLoading(false); toast.error(cErr.message); return; }
     if ((count ?? 0) > 0) {
       setActionLoading(false);
-      toast.error("Suppression refusée", { description: "Cet élève a déjà des paiements enregistrés." });
+      toast.error("Suppression refusée", { description: "Cet élève a des paiements actifs (non annulés). Annulez-les d'abord." });
       setPurgeTarget(null);
       return;
     }
+
     const ok = await deleteEleve(purgeTarget.id);
     if (ok) toast.success(`${purgeTarget.nom} ${purgeTarget.prenom} supprimé(e) définitivement`);
     setPurgeTarget(null);
