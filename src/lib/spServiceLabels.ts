@@ -41,6 +41,45 @@ export async function fetchSpServiceLabels(
   return labels;
 }
 
+/**
+ * Noms des bénéficiaires saisis librement lors de la vente / du paiement
+ * (acheteur non rattaché à un élève), indexés par référence de pièce.
+ * La vue `v_encaissements_detail` n'expose que le nom d'élève : ces libellés
+ * complètent les lignes « — » des récapitulatifs de caisse.
+ */
+export async function fetchSpBeneficiaires(
+  ecoleId: string,
+  from: string,
+  to: string,
+): Promise<Record<string, string>> {
+  const finInclus = `${to}T23:59:59.999`;
+  const noms: Record<string, string> = {};
+
+  const [{ data: paiements }, { data: ventes }] = await Promise.all([
+    (supabase as any)
+      .from("sp_paiements")
+      .select("numero, beneficiaire_libre")
+      .eq("ecole_id", ecoleId)
+      .gte("date_paiement", from)
+      .lte("date_paiement", finInclus),
+    (supabase as any)
+      .from("sp_ventes_tenues")
+      .select("numero, acheteur_libre")
+      .eq("ecole_id", ecoleId)
+      .gte("created_at", from)
+      .lte("created_at", finInclus),
+  ]);
+
+  for (const p of (paiements ?? []) as any[]) {
+    if (p.numero && p.beneficiaire_libre) noms[p.numero] = p.beneficiaire_libre;
+  }
+  for (const v of (ventes ?? []) as any[]) {
+    if (v.numero && v.acheteur_libre) noms[v.numero] = v.acheteur_libre;
+  }
+  return noms;
+}
+
+
 export function libelleService(
   reference: string | null | undefined,
   labels: Record<string, string>,

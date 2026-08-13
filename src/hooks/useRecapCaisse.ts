@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
 
 
 /**
@@ -107,7 +107,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
     queryKey: ["recap_caisse", ecoleId, from, to, niveau],
     enabled: !!ecoleId,
     queryFn: async () => {
-      const [{ data: rows, error }, spLabels] = await Promise.all([
+      const [{ data: rows, error }, spLabels, spNoms] = await Promise.all([
         supabase
           .from("v_encaissements_detail")
           .select("source, libelle, est_remise, montant, mode_paiement, reference, eleve, matricule, eleve_id, cycle_id")
@@ -115,6 +115,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
           .gte("date_operation", from)
           .lte("date_operation", to),
         fetchSpServiceLabels(ecoleId!, from, to),
+        fetchSpBeneficiaires(ecoleId!, from, to),
       ]);
       if (error) throw error;
 
@@ -141,7 +142,7 @@ export function useRecapCaisse(periode: RecapCaissePeriode) {
         agg.nb += 1;
         agg.total += Number(r.montant || 0);
         agg.operations.push({
-          beneficiaire: r.eleve ?? "—",
+          beneficiaire: r.eleve ?? (r.reference ? spNoms[r.reference] : null) ?? "—",
           matricule: r.matricule,
           mode: modeMeta(r.mode_paiement ?? "").label,
           reference: r.reference,
