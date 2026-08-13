@@ -118,8 +118,12 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
             </div>
           )}
 
-          <div className="grid grid-cols-3 gap-2">
-            <div><Label>Montant dû</Label><Input type="number" value={montantDu} onChange={(e) => setMontantDu(+e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label>Quantité</Label><Input type="number" min={1} value={qte} onChange={(e) => setQte(Math.max(1, +e.target.value || 1))} /></div>
+            <div><Label>Prix unitaire</Label><Input type="number" min={0} value={prixUnitaire} onChange={(e) => setPrixUnitaire(+e.target.value)} /></div>
+          </div>
+          <p className="text-sm">Montant dû : <strong>{montantDu.toLocaleString("fr-FR")} FCFA</strong> <span className="text-xs text-muted-foreground">({qte} × {prixUnitaire.toLocaleString("fr-FR")})</span></p>
+          <div className="grid grid-cols-2 gap-2">
             <div><Label>Payé</Label><Input type="number" value={montantPaye} onChange={(e) => setMontantPaye(+e.target.value)} /></div>
             <div><Label>Remise</Label><Input type="number" value={remise} onChange={(e) => setRemise(+e.target.value)} /></div>
           </div>
