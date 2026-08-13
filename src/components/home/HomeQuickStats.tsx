@@ -10,7 +10,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
 
 import { generateRecapCaisseJournalier } from "@/lib/generateFinanceReports";
 import { Badge } from "@/components/ui/badge";
