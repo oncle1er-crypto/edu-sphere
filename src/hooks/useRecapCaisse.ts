@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
 
 
 /**
