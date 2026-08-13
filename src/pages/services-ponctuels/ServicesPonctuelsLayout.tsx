@@ -29,8 +29,9 @@ export default function ServicesPonctuelsLayout() {
     .filter((s) => s.actif)
     .map((s) => {
       const slug = (s.slug ?? "").toLowerCase();
-      const estTenue = slug.includes("tenue") || s.gere_stock;
-      const estTest = slug.includes("test");
+      const estTenue = slug === "tenue" || slug === "tenue_scolaire";
+      const estTest = slug === "test" || slug === "test_entree";
+
       return {
         to: estTenue ? "ventes-tenues" : estTest ? "tests-entree" : `paiements?service=${s.id}`,
         key: s.id,
