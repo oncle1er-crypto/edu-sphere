@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { GraduationCap, Users, Wallet, UserCheck, Loader2, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -10,6 +10,8 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { modeMeta } from "@/pages/finances/scolarite-data";
+import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+
 import { generateRecapCaisseJournalier } from "@/lib/generateFinanceReports";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +61,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const [loading, setLoading] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
+  const [spLabels, setSpLabels] = useState<Record<string, string>>({});
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
@@ -72,10 +75,11 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setErreur(null);
     const today = new Date();
     const isoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const { data: res, error } = await supabase.rpc("encaissements_du_jour", {
-      _ecole_id: ecoleId,
-      _date: isoDate,
-    });
+    const [{ data: res, error }, labels] = await Promise.all([
+      supabase.rpc("encaissements_du_jour", { _ecole_id: ecoleId, _date: isoDate }),
+      fetchSpServiceLabels(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
+    ]);
+    setSpLabels(labels);
     if (error) {
       setErreur(messageErreurBase(error, "Impossible de charger les encaissements du jour."));
       setDetail(null);
@@ -84,6 +88,38 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     }
     setLoading(false);
   }, [ecoleId]);
+
+  // Éclate la catégorie « Services ponctuels » par type de service exact
+  // (le libellé est retrouvé via la référence de la pièce).
+  const sourcesAffichees = useMemo<SpSource[]>(() => {
+    const brutes = detail?.sources ?? [];
+    const out: SpSource[] = [];
+    for (const s of brutes) {
+      if (!estSourceServicePonctuel(s.source) || (s.operations ?? []).length === 0) {
+        out.push(s);
+        continue;
+      }
+      const groupes = new Map<string, SpSource>();
+      for (const o of s.operations ?? []) {
+        const svc = libelleService(o.reference, spLabels);
+        const g = groupes.get(svc) ?? {
+          source: `${s.source}:${svc}`,
+          libelle: `${s.libelle} — ${svc}`,
+          est_remise: s.est_remise,
+          nb: 0,
+          total: 0,
+          operations: [],
+        };
+        g.nb = Number(g.nb ?? 0) + 1;
+        g.total = Number(g.total ?? 0) + Number(o.montant ?? 0);
+        (g.operations as SpOperation[]).push(o);
+        groupes.set(svc, g);
+      }
+      out.push(...Array.from(groupes.values()).sort((a, b) => Number(b.total ?? 0) - Number(a.total ?? 0)));
+    }
+    return out;
+  }, [detail, spLabels]);
+
 
   // Charge le montant corrigé (hors remises/bourses) dès l'affichage de la tuile.
   useEffect(() => {
@@ -115,7 +151,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
         .order("montant", { ascending: false });
       if (depError) throw depError;
 
-      const sourcesForPdf = (detail.sources ?? []).map((s) => ({
+      const sourcesForPdf = sourcesAffichees.map((s) => ({
         libelle: s.libelle,
         estRemise: !!s.est_remise,
         operations: (s.operations ?? []).map((o) => ({
@@ -203,7 +239,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     sub?: string | null; sub2?: string | null; action?: React.ReactNode; onOpen?: () => void;
   }>;
 
-  const sources = detail?.sources ?? [];
+  const sources = sourcesAffichees;
   const aucune = !loading && !erreur && sources.length === 0;
 
   return (
