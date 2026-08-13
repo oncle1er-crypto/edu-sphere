@@ -1,13 +1,14 @@
 import { NavLink, Outlet, useLocation, Navigate } from "react-router-dom";
 import {
-  LayoutDashboard, CreditCard, ClipboardCheck, Shirt, BookOpen, BarChart3, Settings2, Ticket, Wallet,
+  LayoutDashboard, CreditCard, ClipboardCheck, Shirt, BookOpen, BarChart3, Settings2, Ticket, Wallet, Tag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useSpServices } from "./hooks/useSpServices";
 
 const sections = [
   { to: "tableau", label: "Tableau de bord", icon: LayoutDashboard, group: "Vue d'ensemble" },
-  { to: "paiements", label: "Paiements", icon: CreditCard, group: "Opérations" },
+  { to: "paiements", label: "Tous les paiements", icon: CreditCard, group: "Opérations" },
   { to: "tests-entree", label: "Tests d'entrée", icon: ClipboardCheck, group: "Opérations" },
   { to: "ventes-tenues", label: "Vente de tenues", icon: Shirt, group: "Opérations" },
   { to: "catalogue", label: "Catalogue des services", icon: BookOpen, group: "Configuration" },
@@ -16,13 +17,29 @@ const sections = [
   { to: "parametres", label: "Paramètres", icon: Settings2, group: "Configuration" },
 ];
 
-const groups = Array.from(new Set(sections.map((s) => s.group)));
+const groups = ["Vue d'ensemble", "Opérations", "Services", "Analyses", "Configuration"];
 
 export default function ServicesPonctuelsLayout() {
   const location = useLocation();
+  const { services } = useSpServices();
+
+  // Le groupe « Services » se construit depuis le catalogue : tout nouveau
+  // service actif apparaît automatiquement dans le menu, filtré sur ses
+  // propres encaissements.
+  const serviceLinks = services
+    .filter((s) => s.actif)
+    .map((s) => ({
+      to: `paiements?service=${s.id}`,
+      key: s.id,
+      label: s.nom,
+      icon: Tag,
+      group: "Services",
+    }));
+
   if (location.pathname === "/services-ponctuels" || location.pathname === "/services-ponctuels/") {
     return <Navigate to="/services-ponctuels/tableau" replace />;
   }
+
 
   return (
     <div className="space-y-6">
