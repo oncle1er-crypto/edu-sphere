@@ -10,17 +10,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useEnseignants } from "@/hooks/useEnseignants";
-import { useState } from "react";
+import { useNiveau } from "@/context/NiveauContext";
+import { useMemo, useState } from "react";
 
 const MOIS_LABELS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 export default function Payroll() {
   const [mois, setMois] = useState(new Date().getMonth() + 1);
   const [annee] = useState(new Date().getFullYear());
-  const { bulletins, loading, addBulletin, payBulletin } = useBulletinsPaie(mois, annee);
+  const { bulletins: bulletinsRaw, loading, addBulletin, payBulletin } = useBulletinsPaie(mois, annee);
   const { enseignants } = useEnseignants();
+  const { isGlobal, matchesCycle, label: niveauLabel } = useNiveau();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ enseignant_id: "", salaire_brut: "", retenues: "" });
+
+  // Un bulletin sans cycle (personnel commun) reste visible dans toutes les vues —
+  // même logique que useEnseignants/useDepenses/Reports.tsx/StaffPayroll.tsx.
+  const bulletins = useMemo(
+    () => (isGlobal ? bulletinsRaw : bulletinsRaw.filter((b) => matchesCycle(b.enseignant_cycle_id))),
+    [bulletinsRaw, isGlobal, matchesCycle],
+  );
 
   const masse = bulletins.reduce((s, b) => s + b.net_a_payer, 0);
 
@@ -36,7 +45,7 @@ export default function Payroll() {
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
-    <SettingsSection title="Salaires & paie" description={`${MOIS_LABELS[mois - 1]} ${annee} · Masse salariale : ${masse.toLocaleString("fr-FR")} FCFA`} icon={<Users className="h-5 w-5" />} hideSave>
+    <SettingsSection title="Salaires & paie" description={`${MOIS_LABELS[mois - 1]} ${annee} · Masse salariale : ${masse.toLocaleString("fr-FR")} FCFA${isGlobal ? "" : ` · ${niveauLabel}`}`} icon={<Users className="h-5 w-5" />} hideSave>
       <div className="flex flex-wrap justify-between gap-3">
         <Select value={String(mois)} onValueChange={(v) => setMois(Number(v))}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>

@@ -83,6 +83,8 @@ export interface BulletinPaieRh {
   personnel_nom: string;
   personnel_matricule: string | null;
   personnel_poste: string | null;
+  /** Cycle de rattachement (`enseignants.cycle_id`). `null` = personnel commun. */
+  personnel_cycle_id: string | null;
 }
 
 const ERREURS: Record<string, string> = {
@@ -115,7 +117,7 @@ export function useRhPaie(mois: number, annee: number) {
     const { data, error } = await supabase
       .from("bulletins_paie")
       .select(
-        "id, enseignant_id, mois, annee, statut, salaire_brut, retenues, net_a_payer, total_gains, brut_imposable, base_cnps, total_charges_patronales, cout_employeur, anciennete_annees, date_paiement, valide_le, notes, enseignants(nom, prenom, matricule, poste, specialite)",
+        "id, enseignant_id, mois, annee, statut, salaire_brut, retenues, net_a_payer, total_gains, brut_imposable, base_cnps, total_charges_patronales, cout_employeur, anciennete_annees, date_paiement, valide_le, notes, enseignants(nom, prenom, matricule, poste, specialite, cycle_id)",
       )
       .eq("ecole_id", ecoleId)
       .eq("mois", mois)
@@ -136,6 +138,7 @@ export function useRhPaie(mois: number, annee: number) {
           matricule: string | null;
           poste: string | null;
           specialite: string | null;
+          cycle_id: string | null;
         } | null;
         return {
           id: b.id,
@@ -158,6 +161,7 @@ export function useRhPaie(mois: number, annee: number) {
           personnel_nom: p ? `${p.nom} ${p.prenom}` : "—",
           personnel_matricule: p?.matricule ?? null,
           personnel_poste: p?.poste ?? p?.specialite ?? null,
+          personnel_cycle_id: p?.cycle_id ?? null,
         };
       }),
     );

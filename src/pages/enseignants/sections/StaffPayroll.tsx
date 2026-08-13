@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
 import { useRhPaie, normaliserStatut, type RhBulletinLigne } from "@/hooks/useRhPaie";
 import { useEnseignants } from "@/hooks/useEnseignants";
+import { useNiveau } from "@/context/NiveauContext";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import PreparePaieDialog from "../components/PreparePaieDialog";
 import { downloadBulletinPaiePDF } from "@/lib/generateBulletinPaiePDF";
@@ -46,12 +47,19 @@ export default function StaffPayroll() {
   const [mois, setMois] = useState(now.getMonth() + 1);
   const [annee, setAnnee] = useState(now.getFullYear());
   const {
-    bulletins, loading, apercu, genererBrouillons, validerBulletin, payerBulletin,
+    bulletins: bulletinsRaw, loading, apercu, genererBrouillons, validerBulletin, payerBulletin,
     lignesBulletin, refetch,
   } = useRhPaie(mois, annee);
   const { addBulletin } = useBulletinsPaie(mois, annee);
   const { enseignants } = useEnseignants();
+  const { isGlobal, matchesCycle, label: niveauLabel } = useNiveau();
   const ecole = useEcoleInfo();
+  // Un bulletin sans cycle (personnel commun, ex. administration) reste visible dans
+  // toutes les vues — même logique que useEnseignants/useDepenses/Reports.tsx.
+  const bulletins = useMemo(
+    () => (isGlobal ? bulletinsRaw : bulletinsRaw.filter((b) => matchesCycle(b.personnel_cycle_id))),
+    [bulletinsRaw, isGlobal, matchesCycle],
+  );
   const [open, setOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
@@ -228,7 +236,7 @@ export default function StaffPayroll() {
       <SettingsSection
         icon={<Wallet className="h-5 w-5" />}
         title="Paie & salaires"
-        description={`${MOIS_LABELS[mois - 1]} ${annee} · ${bulletins.length} bulletin(s)`}
+        description={`${MOIS_LABELS[mois - 1]} ${annee} · ${bulletins.length} bulletin(s)${isGlobal ? "" : ` · ${niveauLabel}`}`}
         hideSave
       >
         <div className="flex flex-col md:flex-row gap-3 md:items-center md:justify-between">

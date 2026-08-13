@@ -39,7 +39,7 @@ function slotLabel(d: string, f: string) {
 export default function WeeklyView() {
   const { classes, loading: classesLoading } = useClasses();
   const { ecoleId } = useEcoleId();
-  const { creneaux, loading, fetchCreneaux, addCreneau, deleteCreneau } = useEmploiDuTemps();
+  const { creneaux, loading, fetchCreneaux, addCreneau, updateCreneau, deleteCreneau } = useEmploiDuTemps();
   const { settings, loading: settingsLoading } = useTimetableSettings();
   const { salles } = useSalles();
 
@@ -76,6 +76,8 @@ export default function WeeklyView() {
 
   // Dialog state
   const [open, setOpen] = useState(false);
+  // Id du créneau en cours d'édition (null = création d'un nouveau créneau).
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [formJour, setFormJour] = useState(1);
   const [formSlot, setFormSlot] = useState(0);
   const [formMatiere, setFormMatiere] = useState("");
@@ -121,6 +123,7 @@ export default function WeeklyView() {
   );
 
   const openAdd = (jour: number, slotIdx: number) => {
+    setEditingId(null);
     setFormJour(jour);
     setFormSlot(slotIdx);
     setFormMatiere(matieres[0]?.id ?? "");
@@ -129,20 +132,41 @@ export default function WeeklyView() {
     setOpen(true);
   };
 
+  // Ouvre le même dialog pré-rempli pour lier/modifier enseignant, salle ou
+  // matière d'un créneau déjà créé — jour et horaire restent fixes (ce n'est
+  // pas un déplacement de créneau, seulement une liaison différée).
+  const openEdit = (cell: Creneau, jour: number, slotIdx: number) => {
+    setEditingId(cell.id);
+    setFormJour(jour);
+    setFormSlot(slotIdx);
+    setFormMatiere(cell.matiere_id);
+    setFormEnseignant(cell.enseignant_id ?? "");
+    setFormSalleId(cell.salle_id ?? "");
+    setOpen(true);
+  };
+
   const handleSave = async () => {
     if (!formMatiere) { toast.error("Sélectionnez une matière"); return; }
     setSaving(true);
     const slot = SLOTS[formSlot];
-    const result = await addCreneau({
-      classe_id: classeId,
-      matiere_id: formMatiere,
-      enseignant_id: formEnseignant || null,
-      jour: formJour,
-      heure_debut: slot.debut,
-      heure_fin: slot.fin,
-      salle_id: formSalleId || null,
-      salle: formSalleId ? sallesActives.find((s) => s.id === formSalleId)?.code ?? null : null,
-    });
+    const salleCode = formSalleId ? sallesActives.find((s) => s.id === formSalleId)?.code ?? null : null;
+    const result = editingId
+      ? await updateCreneau(editingId, classeId, {
+          matiere_id: formMatiere,
+          enseignant_id: formEnseignant || null,
+          salle_id: formSalleId || null,
+          salle: salleCode,
+        })
+      : await addCreneau({
+          classe_id: classeId,
+          matiere_id: formMatiere,
+          enseignant_id: formEnseignant || null,
+          jour: formJour,
+          heure_debut: slot.debut,
+          heure_fin: slot.fin,
+          salle_id: formSalleId || null,
+          salle: salleCode,
+        });
     setSaving(false);
     if (result) {
       setOpen(false);
@@ -160,7 +184,7 @@ export default function WeeklyView() {
   return (
     <SettingsSection
       title="Vue hebdomadaire"
-      description="Emploi du temps interactif — cliquez sur une case vide pour ajouter un créneau. Horaires et jours ouvrés viennent de la configuration."
+      description="Emploi du temps interactif — cliquez sur une case vide pour ajouter un créneau, ou sur un créneau existant pour lier/modifier son enseignant, sa salle ou sa matière. Horaires et jours ouvrés viennent de la configuration."
       icon={<CalendarDays className="h-5 w-5" />}
       hideSave
     >
@@ -218,14 +242,18 @@ export default function WeeklyView() {
                         <td
                           key={key}
                           className="border p-1 align-top h-16 group relative cursor-pointer"
-                          onClick={() => !cell && openAdd(d.num, si)}
+                          onClick={() => (cell ? openEdit(cell, d.num, si) : openAdd(d.num, si))}
                         >
                           {cell ? (
                             <div className={`rounded-md border p-1.5 text-xs h-full ${colorMap[cell.matiere_id] ?? COLORS[0]}`}>
                               <div className="font-bold truncate">{cell.matiere_nom}</div>
-                              <div className="text-[10px] opacity-80 truncate">{cell.enseignant_nom}</div>
-                              {(cell.salle_code || cell.salle) && (
+                              <div className="text-[10px] opacity-80 truncate">
+                                {cell.enseignant_nom || <span className="italic opacity-60">Enseignant à lier</span>}
+                              </div>
+                              {(cell.salle_code || cell.salle) ? (
                                 <div className="text-[10px] opacity-70">{cell.salle_code || cell.salle}</div>
+                              ) : (
+                                <div className="text-[10px] italic opacity-60">Salle à lier</div>
                               )}
                               <button
                                 onClick={(e) => { e.stopPropagation(); handleDelete(cell.id); }}
@@ -254,7 +282,7 @@ export default function WeeklyView() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Ajouter un créneau — {DAY_LABELS[formJour]}{" "}
+              {editingId ? "Modifier le créneau" : "Ajouter un créneau"} — {DAY_LABELS[formJour]}{" "}
               {SLOTS[formSlot] && slotLabel(SLOTS[formSlot].debut, SLOTS[formSlot].fin)}
             </DialogTitle>
           </DialogHeader>
@@ -303,7 +331,7 @@ export default function WeeklyView() {
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleSave} disabled={saving}>
               {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Ajouter
+              {editingId ? "Enregistrer" : "Ajouter"}
             </Button>
           </DialogFooter>
         </DialogContent>
