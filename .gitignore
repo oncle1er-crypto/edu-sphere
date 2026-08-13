@@ -28,3 +28,7 @@ test-results/
 # Supabase CLI (état local, ne doit jamais être versionné)
 supabase/.temp/
 supabase/.branches/
+
+# Fichiers temporaires générés par Vite/Vitest lors d'un arrêt non gracieux
+vite.config.ts.timestamp-*.mjs
+vitest.config.ts.timestamp-*.mjs
