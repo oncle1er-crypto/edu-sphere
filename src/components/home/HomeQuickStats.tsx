@@ -10,7 +10,13 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import {
+  beneficiaireService,
+  fetchSpServiceLabels,
+  fetchSpBeneficiaires,
+  libelleService,
+  estSourceServicePonctuel,
+} from "@/lib/spServiceLabels";
 
 import { generateRecapCaisseJournalier } from "@/lib/generateFinanceReports";
 import { Badge } from "@/components/ui/badge";
@@ -158,7 +164,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
         libelle: s.libelle,
         estRemise: !!s.est_remise,
         operations: (s.operations ?? []).map((o) => ({
-          beneficiaire: o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—",
+          beneficiaire: beneficiaireService(o.eleve, o.reference, spNoms),
           matricule: o.matricule,
           mode: modeMeta(o.mode ?? "").label,
           reference: o.reference,
@@ -386,7 +392,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
                               <tbody>
                                 {(s.operations ?? []).map((o, idx) => (
                                   <tr key={`${s.source}-${idx}`} className="border-b last:border-0">
-                                    <td className="py-1.5 pr-3">{o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—"}</td>
+                                    <td className="py-1.5 pr-3">{beneficiaireService(o.eleve, o.reference, spNoms)}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.matricule ?? "—"}</td>
                                     <td className="py-1.5 pr-3">{o.mode ?? "—"}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.reference ?? "—"}</td>

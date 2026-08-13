@@ -79,6 +79,23 @@ export async function fetchSpBeneficiaires(
   return noms;
 }
 
+/**
+ * La vue financière renvoie parfois la chaîne « — » au lieu de NULL lorsque
+ * le paiement n'est pas rattaché à un élève. Dans ce cas, utiliser le nom
+ * libre retrouvé par la référence de la pièce.
+ */
+export function beneficiaireService(
+  eleve: string | null | undefined,
+  reference: string | null | undefined,
+  noms: Record<string, string>,
+): string {
+  const nomEleve = eleve?.trim();
+  if (nomEleve && nomEleve !== "—" && nomEleve !== "-") return nomEleve;
+
+  const nomLibre = reference ? noms[reference]?.trim() : undefined;
+  return nomLibre || "—";
+}
+
 
 export function libelleService(
   reference: string | null | undefined,
