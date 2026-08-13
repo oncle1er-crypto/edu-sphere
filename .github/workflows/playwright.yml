@@ -100,6 +100,19 @@ jobs:
             -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
             -H 'Content-Type: application/json' \
             -d "{\"user_id\":\"${USER_ID}\",\"ecole_id\":\"${ECOLE_ID}\",\"role\":\"admin\"}"
+          # IMPORTANT : usePermissions()/useEcoleId() résolvent l'école courante
+          # via profiles.ecole_id, PAS via user_roles.ecole_id (voir
+          # src/hooks/useEcoleId.ts). Le trigger handle_new_user()
+          # (supabase/migrations/20260501092250_...sql:533) crée bien une ligne
+          # profiles à l'inscription, mais ne renseigne jamais ecole_id (reste
+          # NULL). Sans ce PATCH, isAdmin reste false et perms reste vide côté
+          # app -> RequirePerm bloque tout, TopNav masque tous les liens
+          # protégés. Confirmé en exécution réelle (CI du 13/08/2026 : "Écoles"
+          # invisible dans TopNav, bouton "Nouvelle matière" introuvable).
+          curl -sS -X PATCH "${API_URL}/rest/v1/profiles?id=eq.${USER_ID}" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"ecole_id\":\"${ECOLE_ID}\"}"
           echo "LOCAL_TEST_EMAIL=ci-test@local.test" >> "$GITHUB_ENV"
           echo "LOCAL_TEST_PASSWORD=CiTestLocal2026!" >> "$GITHUB_ENV"
 
