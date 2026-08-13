@@ -358,7 +358,7 @@ export default function StudentsList() {
       <SettingsSection
         icon={<Users className="h-5 w-5" />}
         title={`Liste des élèves (${filtered.length})`}
-        description={`Recherchez, filtrez et consultez la fiche d'un élève. ${withDocsCount} avec document, ${eleves.length - withDocsCount} sans.`}
+        description={`Recherchez, filtrez et consultez la fiche d'un élève. ${withDocsCount} avec document, ${elevesPresents.length - withDocsCount} sans. Les élèves sortis sont archivés dans « Anciens élèves ».`}
         hideSave
       >
         <HelpBanner storageKey="eleves-liste" title="Comment utiliser cette page ?">
