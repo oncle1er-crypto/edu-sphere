@@ -10,7 +10,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { modeMeta } from "@/pages/finances/scolarite-data";
-import { fetchSpServiceLabels, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
+import { fetchSpServiceLabels, fetchSpBeneficiaires, libelleService, estSourceServicePonctuel } from "@/lib/spServiceLabels";
 
 import { generateRecapCaisseJournalier } from "@/lib/generateFinanceReports";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +62,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
   const [erreur, setErreur] = useState<string | null>(null);
   const [printing, setPrinting] = useState(false);
   const [spLabels, setSpLabels] = useState<Record<string, string>>({});
+  const [spNoms, setSpNoms] = useState<Record<string, string>>({});
 
   const totalEncaisse = Number(detail?.total_encaisse ?? data.encaisseJour);
   const totalRemises = Number(detail?.total_remises ?? 0);
@@ -75,11 +76,13 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setErreur(null);
     const today = new Date();
     const isoDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-    const [{ data: res, error }, labels] = await Promise.all([
+    const [{ data: res, error }, labels, noms] = await Promise.all([
       supabase.rpc("encaissements_du_jour", { _ecole_id: ecoleId, _date: isoDate }),
       fetchSpServiceLabels(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
+      fetchSpBeneficiaires(ecoleId, isoDate, isoDate).catch(() => ({} as Record<string, string>)),
     ]);
     setSpLabels(labels);
+    setSpNoms(noms);
     if (error) {
       setErreur(messageErreurBase(error, "Impossible de charger les encaissements du jour."));
       setDetail(null);
@@ -155,7 +158,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
         libelle: s.libelle,
         estRemise: !!s.est_remise,
         operations: (s.operations ?? []).map((o) => ({
-          beneficiaire: o.eleve ?? "—",
+          beneficiaire: o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—",
           matricule: o.matricule,
           mode: modeMeta(o.mode ?? "").label,
           reference: o.reference,
@@ -383,7 +386,7 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
                               <tbody>
                                 {(s.operations ?? []).map((o, idx) => (
                                   <tr key={`${s.source}-${idx}`} className="border-b last:border-0">
-                                    <td className="py-1.5 pr-3">{o.eleve ?? "—"}</td>
+                                    <td className="py-1.5 pr-3">{o.eleve ?? (o.reference ? spNoms[o.reference] : null) ?? "—"}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.matricule ?? "—"}</td>
                                     <td className="py-1.5 pr-3">{o.mode ?? "—"}</td>
                                     <td className="py-1.5 pr-3 text-muted-foreground">{o.reference ?? "—"}</td>
