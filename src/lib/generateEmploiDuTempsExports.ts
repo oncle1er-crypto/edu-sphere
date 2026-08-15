@@ -133,24 +133,6 @@ export async function exportEDTParClassePDF(ecoleId: string, anneeId: string) {
   doc.save(`EDT_classes_${annee || "annee"}.pdf`);
 }
 
-export async function exportEDTUneClassePDF(ecoleId: string, anneeId: string, classeId: string) {
-  const { creneaux, ecole, annee } = await fetchData(ecoleId, anneeId);
-  const list = creneaux.filter((c) => c.classe_id === classeId);
-  const nom = list[0]?.classes?.nom ?? "Classe";
-  const doc = new jsPDF({ orientation: "landscape", format: "a4" });
-  header(doc, ecole, "Emploi du temps – Classe", nom, annee);
-  const grid = buildGrid(list);
-  autoTable(doc, {
-    startY: 52,
-    head: grid.head,
-    body: grid.body,
-    styles: { fontSize: 8, cellPadding: 2.5, valign: "middle", halign: "center" },
-    headStyles: { fillColor: [110, 26, 44], textColor: 255 },
-    columnStyles: { 0: { fontStyle: "bold", fillColor: [245, 240, 230] } },
-  });
-  doc.save(`EDT_${nom.replace(/[\\/?*[\]:]/g, "_")}_${annee || "annee"}.pdf`);
-}
-
 export async function exportEDTParEnseignantPDF(ecoleId: string, anneeId: string) {
   const { creneaux, ecole, annee } = await fetchData(ecoleId, anneeId);
   const doc = new jsPDF({ orientation: "landscape", format: "a4" });

@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { CalendarDays, Plus, Trash2, Loader2, Printer } from "lucide-react";
 import {
@@ -15,7 +15,6 @@ import { useSalles } from "@/hooks/useSalles";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useTimetableSettings, slotsFromSettings, joursFromSettings, breaksFromSettings } from "@/hooks/useTimetableSettings";
-import { exportEDTUneClassePDF } from "@/lib/generateEmploiDuTempsExports";
 import { toast } from "sonner";
 
 const DAY_LABELS: Record<number, string> = {
@@ -86,6 +85,7 @@ export default function WeeklyView() {
   const [formSalleId, setFormSalleId] = useState("");
   const [saving, setSaving] = useState(false);
   const [printing, setPrinting] = useState(false);
+  const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
     if (classes.length > 0 && !classeId) setClasseId(classes[0].id);
@@ -149,11 +149,41 @@ export default function WeeklyView() {
     setOpen(true);
   };
 
+  // Capture fidèle du tableau tel qu'affiché à l'écran (mêmes couleurs,
+  // mêmes lignes de pause) plutôt qu'une reconstruction texte — même
+  // technique que generateClassCardsPDF.ts (html2canvas + jsPDF).
   const handlePrint = async () => {
-    if (!ecoleId || !anneeId || !classeId) return;
+    if (!classeId || !tableRef.current) return;
     setPrinting(true);
     try {
-      await exportEDTUneClassePDF(ecoleId, anneeId, classeId);
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const canvas = await html2canvas(tableRef.current, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        logging: false,
+      });
+      const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "Classe";
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const titleH = 8;
+      pdf.setFontSize(14).setFont("helvetica", "bold");
+      pdf.text(`Emploi du temps — ${classeNom}`, margin, margin);
+      const availW = pageWidth - margin * 2;
+      const availH = pageHeight - margin * 2 - titleH;
+      const ratio = Math.min(availW / canvas.width, availH / canvas.height);
+      const imgW = canvas.width * ratio;
+      const imgH = canvas.height * ratio;
+      pdf.addImage(
+        canvas.toDataURL("image/png"), "PNG",
+        margin, margin + titleH, imgW, imgH
+      );
+      pdf.save(`EDT_${classeNom.replace(/[\\/?*[\]:]/g, "_")}.pdf`);
     } catch (e) {
       console.error(e);
       toast.error("Erreur lors de la génération du PDF");
@@ -243,7 +273,7 @@ export default function WeeklyView() {
         </p>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse min-w-[750px]">
+          <table ref={tableRef} className="w-full border-collapse min-w-[750px]">
             <thead>
               <tr>
                 <th className="border bg-muted text-xs p-2 w-24">Horaire</th>
