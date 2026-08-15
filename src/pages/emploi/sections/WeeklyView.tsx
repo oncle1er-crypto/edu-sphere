@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { CalendarDays, Plus, Trash2, Loader2 } from "lucide-react";
+import { CalendarDays, Plus, Trash2, Loader2, Printer } from "lucide-react";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -15,6 +15,7 @@ import { useSalles } from "@/hooks/useSalles";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useTimetableSettings, slotsFromSettings, joursFromSettings, breaksFromSettings } from "@/hooks/useTimetableSettings";
+import { exportEDTUneClassePDF } from "@/lib/generateEmploiDuTempsExports";
 import { toast } from "sonner";
 
 const DAY_LABELS: Record<number, string> = {
@@ -84,6 +85,7 @@ export default function WeeklyView() {
   const [formEnseignant, setFormEnseignant] = useState("");
   const [formSalleId, setFormSalleId] = useState("");
   const [saving, setSaving] = useState(false);
+  const [printing, setPrinting] = useState(false);
 
   useEffect(() => {
     if (classes.length > 0 && !classeId) setClasseId(classes[0].id);
@@ -130,6 +132,34 @@ export default function WeeklyView() {
     setFormEnseignant("");
     setFormSalleId("");
     setOpen(true);
+  };
+
+  // Ouverture depuis le bouton « + Ajouter un créneau » en haut de page :
+  // contrairement à openAdd (clic sur une case précise), le jour et
+  // l'horaire ne sont pas encore connus et deviennent sélectionnables dans
+  // le formulaire (cf. rendu conditionnel plus bas, editingId === null).
+  const openAddGlobal = () => {
+    if (!classeId) { toast.error("Sélectionnez d'abord une classe"); return; }
+    setEditingId(null);
+    setFormJour(DAYS[0]?.num ?? 1);
+    setFormSlot(0);
+    setFormMatiere(matieres[0]?.id ?? "");
+    setFormEnseignant("");
+    setFormSalleId("");
+    setOpen(true);
+  };
+
+  const handlePrint = async () => {
+    if (!ecoleId || !anneeId || !classeId) return;
+    setPrinting(true);
+    try {
+      await exportEDTUneClassePDF(ecoleId, anneeId, classeId);
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la génération du PDF");
+    } finally {
+      setPrinting(false);
+    }
   };
 
   // Ouvre le même dialog pré-rempli pour lier/modifier enseignant, salle ou
@@ -197,6 +227,13 @@ export default function WeeklyView() {
             ))}
           </SelectContent>
         </Select>
+        <Button size="sm" onClick={openAddGlobal} disabled={!classeId || matieres.length === 0}>
+          <Plus className="h-4 w-4 mr-1" /> Ajouter un créneau
+        </Button>
+        <Button size="sm" variant="outline" onClick={handlePrint} disabled={!classeId || printing}>
+          {printing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
+          Imprimer
+        </Button>
         {(loading || isLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
       </div>
 
@@ -287,6 +324,32 @@ export default function WeeklyView() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            {editingId === null && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>Jour *</Label>
+                  <Select value={String(formJour)} onValueChange={(v) => setFormJour(Number(v))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {DAYS.map((d) => (
+                        <SelectItem key={d.num} value={String(d.num)}>{d.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Horaire *</Label>
+                  <Select value={String(formSlot)} onValueChange={(v) => setFormSlot(Number(v))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {SLOTS.map((s, i) => (
+                        <SelectItem key={i} value={String(i)}>{slotLabel(s.debut, s.fin)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
             <div>
               <Label>Matière *</Label>
               <Select value={formMatiere} onValueChange={setFormMatiere}>
