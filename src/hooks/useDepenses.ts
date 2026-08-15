@@ -26,6 +26,9 @@ export interface Depense {
   rejete_par: string | null;
   rejete_le: string | null;
   motif_rejet: string | null;
+  /** Numéro séquentiel formel (BSC-YYYY-00001) assigné par trigger DB à la
+   * validation — null tant que la dépense est en_attente ou rejetée. */
+  numero_bon_sortie: string | null;
 }
 
 /** Génère une référence de pièce comptable, même convention que les autres

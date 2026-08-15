@@ -1,4 +1,4 @@
-import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download } from "lucide-react";
+import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download, Printer } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ import { toast } from "sonner";
 
 import { EXPENSE_CATEGORIES as CATEGORIES } from "@/lib/expenseCategories";
 import { plageFinanciereAnnee } from "@/lib/academicRange";
-import { generateDepensesExport } from "@/lib/generateFinanceReports";
+import { generateDepensesExport, generateBonSortiePDF } from "@/lib/generateFinanceReports";
 
 const COMMUN = "__commun__";
 const TOUS = "__tous__";
@@ -108,6 +108,7 @@ export default function Expenses() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const [exporting, setExporting] = useState(false);
+  const [printingBonId, setPrintingBonId] = useState<string | null>(null);
 
   // ── Sélection multiple (validation groupée) ──
   // Seules les dépenses "en_attente" sont sélectionnables : mêmes règles que
@@ -318,6 +319,38 @@ export default function Expenses() {
     }
   };
 
+  // Le numéro (BSC-YYYY-00001) n'existe qu'une fois la dépense validée — assigné
+  // par le trigger DB à la validation, jamais généré côté client (cf. migration
+  // 20260815180000). Garde défensive : normalement toujours présent ici puisque
+  // le bouton n'est visible que pour statut === "validee".
+  const handlePrintBon = async (d: Depense) => {
+    if (!d.numero_bon_sortie) {
+      toast.error("Numéro de bon indisponible — rafraîchissez la page et réessayez.");
+      return;
+    }
+    setPrintingBonId(d.id);
+    try {
+      await generateBonSortiePDF(
+        { nom: ecoleInfo?.nom ?? "École", adresse: ecoleInfo?.adresse, telephone: ecoleInfo?.telephone, email: ecoleInfo?.email, logoUrl: ecoleInfo?.logo_url },
+        {
+          numero: d.numero_bon_sortie,
+          libelle: d.libelle,
+          categorie: d.categorie,
+          fournisseur_nom: d.fournisseur_nom,
+          montant: d.montant,
+          date_depense: d.date_depense,
+          niveau_label: cycleName(d.cycle_id),
+          notes: d.notes,
+          valide_le: d.valide_le ?? d.created_at,
+        },
+      );
+    } catch (e: unknown) {
+      toast.error("Erreur lors de la génération du bon : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setPrintingBonId(null);
+    }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -494,7 +527,15 @@ export default function Expenses() {
                   <TableCell className="text-right font-semibold">{e.montant.toLocaleString("fr-FR")} FCFA</TableCell>
                   <TableCell className="text-muted-foreground">{new Date(e.date_depense).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={STATUT_BADGE[e.statut] ?? ""} title={e.statut === "rejetee" && e.motif_rejet ? `Motif : ${e.motif_rejet}` : undefined}>
+                    <Badge
+                      variant="outline"
+                      className={STATUT_BADGE[e.statut] ?? ""}
+                      title={
+                        e.statut === "rejetee" && e.motif_rejet ? `Motif : ${e.motif_rejet}`
+                        : e.statut === "validee" && e.numero_bon_sortie ? `Bon de sortie ${e.numero_bon_sortie}`
+                        : undefined
+                      }
+                    >
                       {STATUT_LABEL[e.statut] ?? e.statut}
                     </Badge>
                   </TableCell>
@@ -514,6 +555,12 @@ export default function Expenses() {
                               <Trash2 className="h-3.5 w-3.5" />Supprimer
                             </DropdownMenuItem>
                           </>
+                        )}
+                        {e.statut === "validee" && (
+                          <DropdownMenuItem onClick={() => handlePrintBon(e)} disabled={printingBonId === e.id}>
+                            {printingBonId === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+                            Imprimer le bon
+                          </DropdownMenuItem>
                         )}
                         {(e.statut === "validee" || e.statut === "rejetee") && (
                           <DropdownMenuItem onClick={() => setConfirmAction({ type: "reouvrir", depense: e })}>

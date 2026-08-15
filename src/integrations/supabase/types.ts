@@ -1925,6 +1925,7 @@ export type Database = {
           montant: number
           motif_rejet: string | null
           notes: string | null
+          numero_bon_sortie: string | null
           reference: string | null
           rejete_le: string | null
           rejete_par: string | null
@@ -1946,6 +1947,7 @@ export type Database = {
           montant: number
           motif_rejet?: string | null
           notes?: string | null
+          numero_bon_sortie?: string | null
           reference?: string | null
           rejete_le?: string | null
           rejete_par?: string | null
@@ -1967,6 +1969,7 @@ export type Database = {
           montant?: number
           motif_rejet?: string | null
           notes?: string | null
+          numero_bon_sortie?: string | null
           reference?: string | null
           rejete_le?: string | null
           rejete_par?: string | null
