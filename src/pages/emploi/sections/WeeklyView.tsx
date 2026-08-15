@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { CalendarDays, Plus, Trash2, Loader2, Printer } from "lucide-react";
 import {
@@ -84,8 +84,6 @@ export default function WeeklyView() {
   const [formEnseignant, setFormEnseignant] = useState("");
   const [formSalleId, setFormSalleId] = useState("");
   const [saving, setSaving] = useState(false);
-  const [printing, setPrinting] = useState(false);
-  const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
     if (classes.length > 0 && !classeId) setClasseId(classes[0].id);
@@ -149,48 +147,15 @@ export default function WeeklyView() {
     setOpen(true);
   };
 
-  // Capture fidèle du tableau tel qu'affiché à l'écran (mêmes couleurs,
-  // mêmes lignes de pause) plutôt qu'une reconstruction texte — même
-  // technique que generateClassCardsPDF.ts (html2canvas + jsPDF).
-  const handlePrint = async () => {
-    if (!classeId || !tableRef.current) return;
-    setPrinting(true);
-    try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
-        import("jspdf"),
-      ]);
-      const canvas = await html2canvas(tableRef.current, {
-        scale: 4,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        logging: false,
-        letterRendering: true,
-      });
-      const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "Classe";
-      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const titleH = 8;
-      pdf.setFontSize(14).setFont("helvetica", "bold");
-      pdf.text(`Emploi du temps — ${classeNom}`, margin, margin);
-      const availW = pageWidth - margin * 2;
-      const availH = pageHeight - margin * 2 - titleH;
-      const ratio = Math.min(availW / canvas.width, availH / canvas.height);
-      const imgW = canvas.width * ratio;
-      const imgH = canvas.height * ratio;
-      pdf.addImage(
-        canvas.toDataURL("image/png"), "PNG",
-        margin, margin + titleH, imgW, imgH
-      );
-      pdf.save(`EDT_${classeNom.replace(/[\\/?*[\]:]/g, "_")}.pdf`);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erreur lors de la génération du PDF");
-    } finally {
-      setPrinting(false);
-    }
+  // Impression native du navigateur : deux tentatives html2canvas ont échoué
+  // (texte flou, puis lettres coupées — cf. commits précédents). On réutilise
+  // ici le pattern déjà éprouvé dans CardsPrintQueue.tsx (zone imprimable
+  // isolée via #edt-print-area + CSS visibility, window.print()), qui garantit
+  // une fidélité parfaite du texte puisque c'est le moteur de rendu du
+  // navigateur lui-même qui imprime, pas une reconstruction en canvas.
+  const handlePrint = () => {
+    if (!classeId) return;
+    window.print();
   };
 
   // Ouvre le même dialog pré-rempli pour lier/modifier enseignant, salle ou
@@ -249,7 +214,7 @@ export default function WeeklyView() {
       icon={<CalendarDays className="h-5 w-5" />}
       hideSave
     >
-      <div className="flex flex-wrap gap-3 items-center">
+      <div className="flex flex-wrap gap-3 items-center print:hidden">
         <Select value={classeId} onValueChange={setClasseId}>
           <SelectTrigger className="w-56"><SelectValue placeholder="Classe" /></SelectTrigger>
           <SelectContent>
@@ -261,8 +226,8 @@ export default function WeeklyView() {
         <Button size="sm" onClick={openAddGlobal} disabled={!classeId || matieres.length === 0}>
           <Plus className="h-4 w-4 mr-1" /> Ajouter un créneau
         </Button>
-        <Button size="sm" variant="outline" onClick={handlePrint} disabled={!classeId || printing}>
-          {printing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Printer className="h-4 w-4 mr-1" />}
+        <Button size="sm" variant="outline" onClick={handlePrint} disabled={!classeId}>
+          <Printer className="h-4 w-4 mr-1" />
           Imprimer
         </Button>
         {(loading || isLoading) && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
@@ -273,8 +238,13 @@ export default function WeeklyView() {
           Aucun créneau généré depuis la configuration. Vérifiez heure début/fin, durée et pause déjeuner dans l'onglet <strong>Configuration</strong>.
         </p>
       ) : (
-        <div className="overflow-x-auto">
-          <table ref={tableRef} className="w-full border-collapse min-w-[750px]">
+        <div id="edt-print-area" className="overflow-x-auto">
+          <div className="hidden print:block mb-2">
+            <h2 className="text-base font-bold">
+              Emploi du temps — {classes.find((c) => c.id === classeId)?.nom ?? ""}
+            </h2>
+          </div>
+          <table className="w-full border-collapse min-w-[750px]">
             <thead>
               <tr>
                 <th className="border bg-muted text-xs p-2 w-24">Horaire</th>
@@ -345,6 +315,21 @@ export default function WeeklyView() {
           </table>
         </div>
       )}
+
+      <style>{`
+        @media print {
+          body * { visibility: hidden !important; }
+          #edt-print-area, #edt-print-area * { visibility: visible !important; }
+          #edt-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          @page { size: landscape; margin: 10mm; }
+        }
+      `}</style>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-md">
