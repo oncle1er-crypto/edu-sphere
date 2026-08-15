@@ -161,10 +161,11 @@ export default function WeeklyView() {
         import("jspdf"),
       ]);
       const canvas = await html2canvas(tableRef.current, {
-        scale: 2,
+        scale: 4,
         backgroundColor: "#ffffff",
         useCORS: true,
         logging: false,
+        letterRendering: true,
       });
       const classeNom = classes.find((c) => c.id === classeId)?.nom ?? "Classe";
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
