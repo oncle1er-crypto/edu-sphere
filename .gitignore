@@ -29,6 +29,10 @@ test-results/
 supabase/.temp/
 supabase/.branches/
 
+# Lots de rechargement de données prod → local (contiennent des données
+# personnelles réelles : noms/téléphones du personnel — ne jamais versionner)
+scripts/db-sync/sync_batches/
+
 # Fichiers temporaires générés par Vite/Vitest lors d'un arrêt non gracieux
 vite.config.ts.timestamp-*.mjs
 vitest.config.ts.timestamp-*.mjs
