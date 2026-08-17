@@ -29,6 +29,16 @@ export interface Depense {
   /** Numéro séquentiel formel (BSC-YYYY-00001) assigné par trigger DB à la
    * validation — null tant que la dépense est en_attente ou rejetée. */
   numero_bon_sortie: string | null;
+  /** Fiche de paiement à faire signer par le bénéficiaire (facultatif, activé
+   * via le bascule dans le formulaire) — null si non utilisée pour cette dépense. */
+  fiche_objet: string | null;
+  fiche_beneficiaire_nom: string | null;
+  fiche_beneficiaire_fonction: string | null;
+  fiche_periode_service: string | null;
+  /** Chemin de stockage (bucket privé justificatifs-depenses) du document
+   * scanné signé, téléversé après impression + signature manuscrite. */
+  fiche_piece_jointe_chemin: string | null;
+  fiche_piece_jointe_nom: string | null;
 }
 
 /** Génère une référence de pièce comptable, même convention que les autres
@@ -46,11 +56,19 @@ export type NouvelleDepense = {
   cycle_id?: string | null;
   date_depense: string;
   notes: string | null;
+  fiche_objet?: string | null;
+  fiche_beneficiaire_nom?: string | null;
+  fiche_beneficiaire_fonction?: string | null;
+  fiche_periode_service?: string | null;
 };
 
 /** Champs modifiables via l'édition — uniquement autorisée tant que la dépense est "en_attente" (cf. updateDepense). */
 export type DepenseEditable = Partial<
-  Pick<Depense, "libelle" | "categorie" | "montant" | "fournisseur_id" | "cycle_id" | "date_depense" | "notes">
+  Pick<
+    Depense,
+    | "libelle" | "categorie" | "montant" | "fournisseur_id" | "cycle_id" | "date_depense" | "notes"
+    | "fiche_objet" | "fiche_beneficiaire_nom" | "fiche_beneficiaire_fonction" | "fiche_periode_service"
+  >
 >;
 
 export function useDepenses(range?: { from?: string; to?: string }) {
@@ -187,6 +205,47 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     fetch();
   };
 
+  /**
+   * Téléverse le document scanné (fiche de paiement signée à la main) vers le
+   * bucket privé justificatifs-depenses, puis référence son chemin sur la
+   * dépense. Réservé aux dépenses en_attente (comme les autres modifications)
+   * — une fois validée, la dépense n'est plus éditable, cf. updateDepense.
+   */
+  const uploadJustificatifFiche = async (id: string, file: File) => {
+    if (!ecoleId) return false;
+    const cible = trouver(id);
+    if (!cible) return false;
+    if (cible.statut !== "en_attente") {
+      toast.error("Seules les dépenses en attente peuvent recevoir un justificatif.");
+      return false;
+    }
+    const ext = file.name.split(".").pop();
+    const path = `${ecoleId}/${id}/${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("justificatifs-depenses").upload(path, file, { upsert: true });
+    if (upErr) { toast.error("Erreur de téléversement : " + messageErreurBase(upErr)); return false; }
+    const { error } = await supabase
+      .from("depenses")
+      .update({ fiche_piece_jointe_chemin: path, fiche_piece_jointe_nom: file.name })
+      .eq("id", id);
+    if (error) { toast.error("Erreur : " + messageErreurBase(error)); return false; }
+    toast.success("Justificatif joint à la dépense");
+    fetch();
+    return true;
+  };
+
+  /** Télécharge le justificatif scanné (bucket privé, pas d'URL publique). */
+  const telechargerJustificatifFiche = async (d: Depense) => {
+    if (!d.fiche_piece_jointe_chemin) return;
+    const { data, error } = await supabase.storage.from("justificatifs-depenses").download(d.fiche_piece_jointe_chemin);
+    if (error || !data) { toast.error("Erreur de téléchargement : " + (error ? messageErreurBase(error) : "")); return; }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = d.fiche_piece_jointe_nom || "justificatif.pdf";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return {
     depenses,
     loading: loading || ecoleLoading,
@@ -197,6 +256,8 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     validerPlusieurs,
     rejeterDepense,
     reouvrirDepense,
+    uploadJustificatifFiche,
+    telechargerJustificatifFiche,
     refetch: fetch,
     ecoleId,
   };

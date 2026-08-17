@@ -28,7 +28,9 @@ interface ReportHeader {
 }
 
 // Convert an image URL to a base64 data URL usable by jsPDF
-async function fetchLogo(url?: string | null): Promise<string | null> {
+// (exportée : réutilisée par generateFichePaiement.ts pour le logo école ET
+// les armoiries nationales, mêmes contraintes de format/CORS)
+export async function fetchLogo(url?: string | null): Promise<string | null> {
   if (!url) return null;
   try {
     const res = await fetch(url, { mode: "cors" });
@@ -45,7 +47,7 @@ async function fetchLogo(url?: string | null): Promise<string | null> {
   }
 }
 
-function detectFormat(dataUrl: string): "PNG" | "JPEG" {
+export function detectFormat(dataUrl: string): "PNG" | "JPEG" {
   return dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")
     ? "JPEG"
     : "PNG";
