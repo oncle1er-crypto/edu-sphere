@@ -9,11 +9,22 @@ export interface EcoleInfo {
   telephone?: string | null;
   email?: string | null;
   logo_url?: string | null;
+  ville?: string | null;
+  directeur?: string | null;
+  // En-tête officiel (Ministère/DRENET/DDENET/devise nationale/armoiries) —
+  // saisi une fois dans Paramètres > Profil de l'école, réutilisé pour les
+  // documents administratifs formels (ex. fiche de paiement à signer).
+  ministere?: string | null;
+  drenet?: string | null;
+  ddenet?: string | null;
+  devise_nationale?: string | null;
+  armoiries_url?: string | null;
 }
 
 /**
- * Récupère les infos d'école (nom, logo, coordonnées) pour l'entête des reçus PDF.
- * Utilise l'ecole_id du profil utilisateur — indépendant du contexte multi-école.
+ * Récupère les infos d'école (nom, logo, coordonnées, en-tête officiel) pour
+ * l'entête des reçus/documents PDF. Utilise l'ecole_id du profil
+ * utilisateur — indépendant du contexte multi-école.
  */
 export function useEcoleInfo() {
   const { ecoleId } = useEcoleId();
@@ -25,7 +36,7 @@ export function useEcoleInfo() {
     (async () => {
       const { data } = await supabase
         .from("ecoles")
-        .select("nom, sigle, adresse, telephone, email, logo_url")
+        .select("nom, sigle, adresse, telephone, email, logo_url, ville, directeur, ministere, drenet, ddenet, devise_nationale, armoiries_url")
         .eq("id", ecoleId)
         .maybeSingle();
       if (!cancelled) setEcole((data as EcoleInfo) ?? null);

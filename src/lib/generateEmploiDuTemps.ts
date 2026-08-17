@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { buildVariableSlots } from "@/lib/timeSlots";
 
 export interface GenerateOptions {
   ecoleId: string;
@@ -6,6 +7,7 @@ export interface GenerateOptions {
   jours: number[];                // ex: [1,2,3,4,5]
   plageMatin: [string, string];   // ex: ["08:00","12:00"]
   plageAprem: [string, string];   // ex: ["14:00","17:00"]
+  recreation?: [string, string];  // ex: ["09:45","10:00"] — raccourcit le créneau qui la chevauche
   dureeCreneauMin: number;        // ex: 60
   heuresParJourMax: number;       // ex: 6
   respectDispo: boolean;
@@ -49,22 +51,28 @@ function minToTime(m: number) {
 
 function buildSlotsTemplate(opts: GenerateOptions) {
   const slots: { jour: number; debut: string; fin: string; plage: "matin" | "apres_midi" }[] = [];
+  const recreation = opts.recreation
+    ? { start: timeToMin(opts.recreation[0]), end: timeToMin(opts.recreation[1]) }
+    : null;
+
+  // Un seul découpage sur toute la journée (comme useTimetableSettings.slotsFromSettings),
+  // avec la pause déjeuner traitée comme une pause interne et non comme une fin de
+  // plage : sinon le créneau qui la précède (ex. 11h00-11h50) serait purement
+  // supprimé au lieu d'être raccourci, contrairement à ce qui est affiché dans la
+  // vue hebdomadaire (cf. commentaire en tête de src/lib/timeSlots.ts).
+  const dayStart = timeToMin(opts.plageMatin[0]);
+  const pauseDejDebut = timeToMin(opts.plageMatin[1]);
+  const pauseDejFin = timeToMin(opts.plageAprem[0]);
+  const dayEnd = timeToMin(opts.plageAprem[1]);
+  const breaks = [{ start: pauseDejDebut, end: pauseDejFin }];
+  if (recreation && recreation.start >= dayStart && recreation.end <= dayEnd) {
+    breaks.push(recreation);
+  }
+
   for (const j of opts.jours) {
-    for (const [plageNom, plage] of [
-      ["matin", opts.plageMatin],
-      ["apres_midi", opts.plageAprem],
-    ] as const) {
-      let cur = timeToMin(plage[0]);
-      const end = timeToMin(plage[1]);
-      while (cur + opts.dureeCreneauMin <= end) {
-        slots.push({
-          jour: j,
-          debut: minToTime(cur),
-          fin: minToTime(cur + opts.dureeCreneauMin),
-          plage: plageNom,
-        });
-        cur += opts.dureeCreneauMin;
-      }
+    for (const sl of buildVariableSlots(dayStart, dayEnd, opts.dureeCreneauMin, breaks)) {
+      const plage: "matin" | "apres_midi" = sl.start < pauseDejDebut ? "matin" : "apres_midi";
+      slots.push({ jour: j, debut: minToTime(sl.start), fin: minToTime(sl.end), plage });
     }
   }
   return slots;
@@ -91,11 +99,19 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
       .from("salles" as any)
       .select("id, code, nom")
       .eq("ecole_id", opts.ecoleId),
-    supabase.from("classes").select("id, nom").eq("ecole_id", opts.ecoleId),
+    supabase.from("classes").select("id, nom").eq("ecole_id", opts.ecoleId).eq("annee_id", opts.anneeId),
     supabase.from("matieres").select("id, nom").eq("ecole_id", opts.ecoleId),
   ]);
 
-  const classeMatieres = (cmRes.data ?? []).filter((c: any) => (c.volume_horaire_hebdo ?? 0) > 0);
+  // classe_matieres n'a pas de colonne annee_id propre (son "année" est
+  // implicite via classe_id → classes.annee_id). On ne retient donc que les
+  // affectations dont la classe appartient bien à l'année scolaire ciblée,
+  // pour éviter de générer des créneaux annee_id=actif / classe_id=ancienne
+  // année (bug constaté : cf. commit sur WeeklyView.tsx du 2026-08-13).
+  const classesActivesIds = new Set((classesRes.data ?? []).map((c: any) => c.id));
+  const classeMatieres = (cmRes.data ?? [])
+    .filter((c: any) => (c.volume_horaire_hebdo ?? 0) > 0)
+    .filter((c: any) => classesActivesIds.has(c.classe_id));
   const enseignantMat = (emRes.data ?? []) as any[];
   const dispos = (dispoRes.data ?? []) as any[];
   const salles = (sallesRes.data ?? []) as any[];
@@ -131,6 +147,30 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
     .eq("annee_id", opts.anneeId);
 
   const slotsTpl = buildSlotsTemplate(opts);
+
+  // Adjacence chronologique des créneaux (même jour, même plage — la pause
+  // déjeuner rompt volontairement la contiguïté matin/après-midi). Utilisée
+  // uniquement quand opts.eviterTrous est actif, pour préférer prolonger un
+  // bloc déjà commencé plutôt que d'ouvrir une heure isolée dans la journée.
+  const adjacency = new Map<string, { prev: string | null; next: string | null }>();
+  if (opts.eviterTrous) {
+    const byDayPlage = new Map<string, typeof slotsTpl>();
+    for (const s of slotsTpl) {
+      const k = `${s.jour}-${s.plage}`;
+      if (!byDayPlage.has(k)) byDayPlage.set(k, []);
+      byDayPlage.get(k)!.push(s);
+    }
+    for (const arr of byDayPlage.values()) {
+      arr.sort((a, b) => a.debut.localeCompare(b.debut));
+      arr.forEach((s, i) => {
+        const key = `${s.jour}|${s.debut}`;
+        adjacency.set(key, {
+          prev: i > 0 ? `${arr[i - 1].jour}|${arr[i - 1].debut}` : null,
+          next: i < arr.length - 1 ? `${arr[i + 1].jour}|${arr[i + 1].debut}` : null,
+        });
+      });
+    }
+  }
 
   // Maps d'occupation
   const occClasse = new Map<string, Set<string>>(); // classe -> set("jour|heure")
@@ -190,16 +230,17 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
     });
 
 
-    for (const slot of slotsOrdonnes) {
-      if (placed >= need) break;
+    // Tente de placer une heure de la tâche sur `slot`. Retourne true si
+    // effectivement placée (contraintes dures respectées), false sinon.
+    const tryPlace = (slot: (typeof slotsOrdonnes)[number]): boolean => {
       const sk = `${slot.jour}|${slot.debut}`;
 
       // Limite heures/jour pour la classe
       const m = heuresJourClasse.get(tache.classe_id) ?? new Map<number, number>();
-      if ((m.get(slot.jour) ?? 0) >= opts.heuresParJourMax) continue;
+      if ((m.get(slot.jour) ?? 0) >= opts.heuresParJourMax) return false;
 
       // Classe libre ?
-      if (isOcc(occClasse, tache.classe_id, sk)) continue;
+      if (isOcc(occClasse, tache.classe_id, sk)) return false;
 
       // Trouver un prof
       let chosenProf: string | null = null;
@@ -209,7 +250,7 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
         chosenProf = p.id;
         break;
       }
-      if (candidatsProf.length > 0 && !chosenProf) continue;
+      if (candidatsProf.length > 0 && !chosenProf) return false;
 
       // Trouver une salle libre
       let chosenSalle: { id: string; code: string | null; nom: string } | null = null;
@@ -240,6 +281,39 @@ export async function generateEmploiDuTemps(opts: GenerateOptions): Promise<Gene
         salle: chosenSalle?.code ?? chosenSalle?.nom ?? null,
       });
       placed++;
+      return true;
+    };
+
+    if (opts.eviterTrous) {
+      // Passe 1 : ne place que sur des créneaux qui prolongent un bloc déjà
+      // commencé ce jour-là pour cette classe (adjacent à une heure déjà
+      // occupée), ou qui ouvrent une première heure sur un jour encore vide
+      // (sinon aucune heure ne pourrait jamais démarrer un bloc).
+      for (const slot of slotsOrdonnes) {
+        if (placed >= need) break;
+        const sk = `${slot.jour}|${slot.debut}`;
+        const adj = adjacency.get(sk);
+        const isAdjacent = !!(
+          adj && ((adj.prev && isOcc(occClasse, tache.classe_id, adj.prev)) ||
+                  (adj.next && isOcc(occClasse, tache.classe_id, adj.next)))
+        );
+        const classeDejaCeJour = ((heuresJourClasse.get(tache.classe_id)?.get(slot.jour)) ?? 0) > 0;
+        if (classeDejaCeJour && !isAdjacent) continue;
+        tryPlace(slot);
+      }
+      // Passe 2 (repli) : comble le volume restant sans la préférence de
+      // contiguïté, pour ne jamais placer moins d'heures qu'avant ce réglage.
+      if (placed < need) {
+        for (const slot of slotsOrdonnes) {
+          if (placed >= need) break;
+          tryPlace(slot);
+        }
+      }
+    } else {
+      for (const slot of slotsOrdonnes) {
+        if (placed >= need) break;
+        tryPlace(slot);
+      }
     }
 
     if (placed < need) {

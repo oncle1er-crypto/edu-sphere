@@ -1,4 +1,8 @@
-name: Playwright Tests
+name: CI — Lint, Types, Tests, Build, E2E
+
+# Remarque : ce workflow s'appelait auparavant "Playwright Tests". S'il existe
+# une règle de protection de branche exigeant ce nom précis comme check
+# obligatoire, il faudra la mettre à jour vers "CI — Lint, Types, Tests, Build, E2E".
 
 on:
   push:
@@ -7,44 +11,129 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  ci:
     timeout-minutes: 60
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
       issues: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
+      # Découplé du reste du pipeline (Étape 9) : l'audit de la dette ESLint
+      # (Étape 8, voir rapport) recense 1219 problèmes existants sur le code
+      # actuel. Les laisser bloquants rendrait la CI rouge en permanence dès
+      # ce step, sans jamais atteindre Typecheck/Tests/Build/E2E — donc sans
+      # jamais valider ce qui compte le plus (régressions fonctionnelles).
+      # `continue-on-error: true` : le résultat reste visible dans les logs et
+      # dans l'onglet Checks, mais ne bloque pas la suite. À repasser en
+      # bloquant une fois la catégorie A (bugs réels, priorité) résorbée.
+      - name: Lint (non bloquant — dette historique, voir Étape 8)
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Tests unitaires (Vitest)
+        run: npm run test:unit
+
+      # ---- Stack Supabase LOCALE uniquement, jamais la production ----
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Démarrer Supabase local
+        run: supabase start
+
+      - name: Réinitialiser la base locale (rejoue toutes les migrations depuis une base vierge)
+        run: supabase db reset
+        # Valide directement l'exigence CLAUDE.md : "supabase db reset doit
+        # terminer sans erreur" — sur CHAQUE pull request, pas seulement en local.
+
+      - name: Récupérer les identifiants Supabase locaux
+        id: supa
+        run: |
+          # `supabase status -o env` exporte notamment API_URL, ANON_KEY,
+          # SERVICE_ROLE_KEY (stack locale, valeurs fixes non secrètes).
+          # IMPORTANT : sa sortie encadre chaque valeur de guillemets doubles
+          # (ex. API_URL="http://127.0.0.1:54321"). $GITHUB_ENV ne retire
+          # jamais ces guillemets : ajoutés tels quels, ils deviennent partie
+          # intégrante de la valeur (ex. $API_URL == '"http://127.0.0.1:54321"'
+          # avec les guillemets inclus), ce qui corrompt toute URL construite
+          # ensuite avec ("${API_URL}/...") — confirmé en exécution réelle
+          # (curl: "Port number was not a decimal number", run du 13/08/2026).
+          # On retire donc les guillemets avant d'écrire dans $GITHUB_ENV.
+          supabase status -o env | sed -E 's/^([A-Z_]+)="(.*)"$/\1=\2/' >> "$GITHUB_ENV"
+          # Diagnostic sans exposer de clé : si ce step échoue encore un jour,
+          # cette ligne dit immédiatement si API_URL est bien formée, sans
+          # attendre l'échec (silencieux) d'un step plus loin dans le pipeline.
+          echo "API_URL capturée : $(grep '^API_URL=' "$GITHUB_ENV")"
+
+      - name: Créer le compte de test local (fixture CI minimale, jamais liée à la production)
+        run: |
+          set -e
+          RESP=$(curl -sS -X POST "${API_URL}/auth/v1/admin/users" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" \
+            -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d '{"email":"ci-test@local.test","password":"CiTestLocal2026!","email_confirm":true}')
+          USER_ID=$(echo "$RESP" | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8")).id')
+          ECOLE_ID=$(curl -sS -X POST "${API_URL}/rest/v1/ecoles" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' -H 'Prefer: return=representation' \
+            -d '{"nom":"École CI","code":"CI-TEST"}' | node -pe 'JSON.parse(require("fs").readFileSync(0,"utf8"))[0].id')
+          curl -sS -X POST "${API_URL}/rest/v1/user_roles" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"user_id\":\"${USER_ID}\",\"ecole_id\":\"${ECOLE_ID}\",\"role\":\"admin\"}"
+          # IMPORTANT : usePermissions()/useEcoleId() résolvent l'école courante
+          # via profiles.ecole_id, PAS via user_roles.ecole_id (voir
+          # src/hooks/useEcoleId.ts). Le trigger handle_new_user()
+          # (supabase/migrations/20260501092250_...sql:533) crée bien une ligne
+          # profiles à l'inscription, mais ne renseigne jamais ecole_id (reste
+          # NULL). Sans ce PATCH, isAdmin reste false et perms reste vide côté
+          # app -> RequirePerm bloque tout, TopNav masque tous les liens
+          # protégés. Confirmé en exécution réelle (CI du 13/08/2026 : "Écoles"
+          # invisible dans TopNav, bouton "Nouvelle matière" introuvable).
+          curl -sS -X PATCH "${API_URL}/rest/v1/profiles?id=eq.${USER_ID}" \
+            -H "apikey: ${SERVICE_ROLE_KEY}" -H "Authorization: Bearer ${SERVICE_ROLE_KEY}" \
+            -H 'Content-Type: application/json' \
+            -d "{\"ecole_id\":\"${ECOLE_ID}\"}"
+          echo "LOCAL_TEST_EMAIL=ci-test@local.test" >> "$GITHUB_ENV"
+          echo "LOCAL_TEST_PASSWORD=CiTestLocal2026!" >> "$GITHUB_ENV"
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
-      
-      - name: Build application
+
+      - name: Build application (contre Supabase LOCAL uniquement)
         run: npm run build
         env:
-          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID || 'yvsnokvgxqtpqkuizsfo' }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://yvsnokvgxqtpqkuizsfo.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      
+          VITE_SUPABASE_URL: ${{ env.API_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ env.ANON_KEY }}
+
       - name: Run Playwright tests
         run: npx playwright test --reporter=html
         env:
-          VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID || 'yvsnokvgxqtpqkuizsfo' }}
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL || 'https://yvsnokvgxqtpqkuizsfo.supabase.co' }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      
+          VITE_SUPABASE_URL: ${{ env.API_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ env.ANON_KEY }}
+          SUPABASE_LOCAL_SERVICE_ROLE_KEY: ${{ env.SERVICE_ROLE_KEY }}
+          LOCAL_TEST_EMAIL: ${{ env.LOCAL_TEST_EMAIL }}
+          LOCAL_TEST_PASSWORD: ${{ env.LOCAL_TEST_PASSWORD }}
+
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
         if: always()
@@ -52,7 +141,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 30
-      
+
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -60,14 +149,14 @@ jobs:
           name: test-results
           path: test-results/
           retention-days: 30
-      
+
       - name: Upload screenshots
         uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: screenshots
           path: test-results/
-      
+
       - name: Comment PR with test results
         if: always() && github.event_name == 'pull_request'
         uses: actions/github-script@v7
@@ -75,23 +164,23 @@ jobs:
           script: |
             const fs = require('fs');
             const testResultsPath = 'test-results/results.json';
-            
-            let comment = '## 🧪 Playwright Test Results\n\n';
-            
+
+            let comment = '## 🧪 CI Results\n\n';
+
             if (fs.existsSync(testResultsPath)) {
               try {
                 const results = JSON.parse(fs.readFileSync(testResultsPath, 'utf8'));
                 const passed = results.stats.expected;
                 const failed = results.stats.unexpected;
                 const total = results.stats.total;
-                
+
                 comment += `**Status:** ${failed === 0 ? '✅ All tests passed' : '❌ Some tests failed'}\n\n`;
                 comment += `| Metric | Count |\n`;
                 comment += `|--------|-------|\n`;
                 comment += `| Total | ${total} |\n`;
                 comment += `| Passed | ✅ ${passed} |\n`;
                 comment += `| Failed | ${failed > 0 ? '❌ ' : ''}${failed} |\n\n`;
-                
+
                 if (failed === 0) {
                   comment += '**Great! All tests passed.** 🎉\n';
                 } else {
@@ -104,7 +193,7 @@ jobs:
             } else {
               comment += 'Tests execution completed. [View detailed report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) in GitHub Actions artifacts.\n';
             }
-            
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,

@@ -124,7 +124,7 @@ export default function Unpaid() {
   const relancesCeMois = useMemo(() => {
     const now = new Date();
     const prefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    return (relances ?? []).filter((r: any) => (r.date_envoi ?? "").startsWith(prefix)).length;
+    return (relances ?? []).filter((r) => (r.date_envoi ?? "").startsWith(prefix)).length;
   }, [relances]);
 
 

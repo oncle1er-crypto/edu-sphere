@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useVacancesData } from "../hooks/useVacances";
+import { useVacancesData, type VacPaiement } from "../hooks/useVacances";
 import { Plus, Trash2, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
@@ -21,7 +21,7 @@ export default function VacancesPaiements() {
   const { ecoleId, classes, eleves, paiements, loading, save, remove } = useVacancesData();
   const [printing, setPrinting] = useState<string | null>(null);
 
-  const printRecu = async (p: any) => {
+  const printRecu = async (p: VacPaiement) => {
     const eleve = eleves.find((x) => x.id === p.eleve_id);
     const classe = classes.find((c) => c.id === p.classe_id);
     if (!eleve || !classe || !ecoleId) { toast.error("Données introuvables"); return; }
@@ -45,14 +45,14 @@ export default function VacancesPaiements() {
       });
       pdf.autoPrint();
       window.open(pdf.output("bloburl"), "_blank");
-    } catch (e: any) { toast.error(messageErreurBase(e) ?? "Erreur d'impression"); }
+    } catch (e) { toast.error(messageErreurBase(e) ?? "Erreur d'impression"); }
     finally { setPrinting(null); }
   };
 
   const [open, setOpen] = useState(false);
   const [fClasse, setFClasse] = useState<string>("all");
   const [fStatut, setFStatut] = useState<string>("all");
-  const [form, setForm] = useState<any>({});
+  const [form, setForm] = useState<Partial<VacPaiement>>({});
 
   const openNew = () => {
     const first = eleves[0];
@@ -68,7 +68,7 @@ export default function VacancesPaiements() {
   const onEleveChange = (id: string) => {
     const e = eleves.find(x => x.id === id);
     const cl = classes.find(c => c.id === e?.classe_id);
-    setForm((f: any) => ({ ...f, eleve_id: id, classe_id: e?.classe_id ?? "", montant_attendu: Number(cl?.montant ?? 0), montant_paye: Number(cl?.montant ?? 0) }));
+    setForm((f) => ({ ...f, eleve_id: id, classe_id: e?.classe_id ?? "", montant_attendu: Number(cl?.montant ?? 0), montant_paye: Number(cl?.montant ?? 0) }));
   };
   const submit = async () => {
     if (!form.eleve_id || !form.classe_id) return;
@@ -124,7 +124,7 @@ export default function VacancesPaiements() {
               <div><Label>Date</Label><Input type="date" value={form.date_paiement || ""} onChange={(e) => setForm({ ...form, date_paiement: e.target.value })} /></div>
               <div>
                 <Label>Mode</Label>
-                <Select value={form.mode || "especes"} onValueChange={(v) => setForm({ ...form, mode: v })}>
+                <Select value={form.mode || "especes"} onValueChange={(v) => setForm({ ...form, mode: v as VacPaiement["mode"] })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="especes">Espèces</SelectItem>

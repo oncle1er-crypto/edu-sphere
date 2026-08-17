@@ -12,6 +12,7 @@ import { BookOpen, Loader2, Sparkles, Copy, Settings2 } from "lucide-react";
 import { useMatieres } from "@/hooks/useMatieres";
 import { useClasses } from "@/hooks/useClasses";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useAnneeId } from "@/hooks/useAnneeId";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
@@ -23,7 +24,8 @@ type CellData = { coefficient: number; volume_horaire_hebdo: number };
 export default function SubjectsClassesAssignment() {
   const [cycleFilter, setCycleFilter] = useState<string>("all");
   const { matieres, loading: lm } = useMatieres();
-  const { classes, loading: lc } = useClasses();
+  const { anneeId } = useAnneeId();
+  const { classes, loading: lc } = useClasses(anneeId ?? undefined);
   const { ecoleId } = useEcoleId();
   const [cells, setCells] = useState<Record<string, CellData>>({});
   const [loading, setLoading] = useState(true);

@@ -2,12 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
-import type { AppModule, PermRow } from "./useUserPermissions";
+import type { AppModule, AppRole, PermRow } from "./useUserPermissions";
 import { ROLE_DEFAULT_MODULES } from "@/lib/roleDefaults";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { Json } from "@/integrations/supabase/types";
 
 /** Permissions par défaut pour un rôle donné, à l'échelle d'une école. */
-export function useRolePermissions(role: string | null) {
+export function useRolePermissions(role: AppRole | null) {
   const { ecoleId } = useEcoleId();
   const [modules, setModules] = useState<AppModule[]>([]);
   const [perms, setPerms] = useState<Record<string, PermRow>>({});
@@ -22,15 +23,15 @@ export function useRolePermissions(role: string | null) {
       supabase.from("app_modules").select("key, label, ordre").order("ordre"),
       supabase.from("role_permissions")
         .select("module_key, can_view, can_create, can_update, can_delete, can_export")
-        .eq("ecole_id", ecoleId).eq("role", role as any),
+        .eq("ecole_id", ecoleId).eq("role", role),
     ]);
     setModules((mods ?? []) as AppModule[]);
-    const rows = (p ?? []) as any[];
+    const rows = p ?? [];
     const usingDefaults = rows.length === 0;
     const defaultKeys = new Set(ROLE_DEFAULT_MODULES[role] ?? []);
     const map: Record<string, PermRow> = {};
-    (mods ?? []).forEach((m: any) => {
-      const existing = rows.find((x: any) => x.module_key === m.key);
+    (mods ?? []).forEach((m) => {
+      const existing = rows.find((x) => x.module_key === m.key);
       if (existing) {
         map[m.key] = existing;
       } else if (usingDefaults && defaultKeys.has(m.key)) {
@@ -97,12 +98,12 @@ export function useRolePermissions(role: string | null) {
         delete: p.can_delete, export: p.can_export,
       }));
       const { error } = await supabase.rpc("set_role_permissions", {
-        _ecole_id: ecoleId, _role: role as any, _permissions: payload as any,
+        _ecole_id: ecoleId, _role: role, _permissions: payload as unknown as Json,
       });
       if (error) throw error;
       toast.success(`Permissions du rôle « ${role} » enregistrées`);
       return true;
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Erreur");
       return false;
     } finally { setSaving(false); }

@@ -18,7 +18,9 @@ export function useDraftForm<T extends Record<string, any>>(
     try {
       const raw = sessionStorage.getItem(storageKey);
       if (raw) return { ...initialValue, ...JSON.parse(raw) };
-    } catch {}
+    } catch (e) {
+      console.warn(`useDraftForm(${key}): lecture du brouillon échouée`, e);
+    }
     return initialValue;
   });
 
@@ -31,13 +33,17 @@ export function useDraftForm<T extends Record<string, any>>(
     }
     try {
       sessionStorage.setItem(storageKey, JSON.stringify(state));
-    } catch {}
+    } catch (e) {
+      console.warn(`useDraftForm(${storageKey}): écriture du brouillon échouée`, e);
+    }
   }, [state, storageKey, enabled]);
 
   const clear = useCallback(() => {
     try {
       sessionStorage.removeItem(storageKey);
-    } catch {}
+    } catch (e) {
+      console.warn(`useDraftForm(${storageKey}): suppression du brouillon échouée`, e);
+    }
     setState(initialValue);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
@@ -46,7 +52,9 @@ export function useDraftForm<T extends Record<string, any>>(
     setState(next);
     try {
       sessionStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {}
+    } catch (e) {
+      console.warn(`useDraftForm(${storageKey}): écriture du brouillon échouée (reset)`, e);
+    }
   }, [storageKey]);
 
   return [state, setState, clear, reset] as const;
@@ -62,5 +70,7 @@ export function clearAllDrafts() {
       if (k && k.startsWith("draft:")) keys.push(k);
     }
     keys.forEach((k) => sessionStorage.removeItem(k));
-  } catch {}
+  } catch (e) {
+    console.warn("clearAllDrafts: purge des brouillons échouée", e);
+  }
 }

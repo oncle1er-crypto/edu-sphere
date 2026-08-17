@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("must_change_password")
       .eq("id", uid)
       .maybeSingle();
-    setMustChangePassword(!!(data as any)?.must_change_password);
+    setMustChangePassword(!!data?.must_change_password);
   };
 
 
@@ -113,8 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           filter: `user_id=eq.${userId}`,
         },
         async (payload) => {
-          const ev = (payload.new as any)?.event_type as string | undefined;
-          const sev = (payload.new as any)?.event_severity as string | undefined;
+          const newRow = payload.new as { event_type?: string; event_severity?: string } | null;
+          const ev = newRow?.event_type;
+          const sev = newRow?.event_severity;
           if (!ev) return;
           // Fenêtre de grâce post-login
           if (signedInAt && Date.now() - signedInAt < SUSPICIOUS_GRACE_MS) return;
@@ -141,7 +142,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select("must_change_password")
       .eq("id", uid)
       .maybeSingle()
-      .then(({ data }) => setMustChangePassword(!!(data as any)?.must_change_password));
+      .then(({ data }) => setMustChangePassword(!!data?.must_change_password));
   }, [session?.user?.id]);
 
   const signOut = async () => {

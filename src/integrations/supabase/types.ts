@@ -1919,12 +1919,19 @@ export type Database = {
           date_depense: string
           ecole_id: string
           enregistre_par: string | null
+          fiche_beneficiaire_fonction: string | null
+          fiche_beneficiaire_nom: string | null
+          fiche_objet: string | null
+          fiche_periode_service: string | null
+          fiche_piece_jointe_chemin: string | null
+          fiche_piece_jointe_nom: string | null
           fournisseur_id: string | null
           id: string
           libelle: string
           montant: number
           motif_rejet: string | null
           notes: string | null
+          numero_bon_sortie: string | null
           reference: string | null
           rejete_le: string | null
           rejete_par: string | null
@@ -1940,12 +1947,19 @@ export type Database = {
           date_depense?: string
           ecole_id: string
           enregistre_par?: string | null
+          fiche_beneficiaire_fonction?: string | null
+          fiche_beneficiaire_nom?: string | null
+          fiche_objet?: string | null
+          fiche_periode_service?: string | null
+          fiche_piece_jointe_chemin?: string | null
+          fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
           libelle: string
           montant: number
           motif_rejet?: string | null
           notes?: string | null
+          numero_bon_sortie?: string | null
           reference?: string | null
           rejete_le?: string | null
           rejete_par?: string | null
@@ -1961,12 +1975,19 @@ export type Database = {
           date_depense?: string
           ecole_id?: string
           enregistre_par?: string | null
+          fiche_beneficiaire_fonction?: string | null
+          fiche_beneficiaire_nom?: string | null
+          fiche_objet?: string | null
+          fiche_periode_service?: string | null
+          fiche_piece_jointe_chemin?: string | null
+          fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
           libelle?: string
           montant?: number
           motif_rejet?: string | null
           notes?: string | null
+          numero_bon_sortie?: string | null
           reference?: string | null
           rejete_le?: string | null
           rejete_par?: string | null
@@ -2177,15 +2198,20 @@ export type Database = {
           adresse: string | null
           agrement: string | null
           annee_creation: number | null
+          armoiries_url: string | null
           code: string
           created_at: string
           cycles: string | null
+          ddenet: string | null
           devise: string | null
+          devise_nationale: string | null
           diocese: string | null
           directeur: string | null
+          drenet: string | null
           email: string | null
           id: string
           logo_url: string | null
+          ministere: string | null
           nom: string
           pays: string
           sigle: string | null
@@ -2201,15 +2227,20 @@ export type Database = {
           adresse?: string | null
           agrement?: string | null
           annee_creation?: number | null
+          armoiries_url?: string | null
           code: string
           created_at?: string
           cycles?: string | null
+          ddenet?: string | null
           devise?: string | null
+          devise_nationale?: string | null
           diocese?: string | null
           directeur?: string | null
+          drenet?: string | null
           email?: string | null
           id?: string
           logo_url?: string | null
+          ministere?: string | null
           nom: string
           pays?: string
           sigle?: string | null
@@ -2225,15 +2256,20 @@ export type Database = {
           adresse?: string | null
           agrement?: string | null
           annee_creation?: number | null
+          armoiries_url?: string | null
           code?: string
           created_at?: string
           cycles?: string | null
+          ddenet?: string | null
           devise?: string | null
+          devise_nationale?: string | null
           diocese?: string | null
           directeur?: string | null
+          drenet?: string | null
           email?: string | null
           id?: string
           logo_url?: string | null
+          ministere?: string | null
           nom?: string
           pays?: string
           sigle?: string | null

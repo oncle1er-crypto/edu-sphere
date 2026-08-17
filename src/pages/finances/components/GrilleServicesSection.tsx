@@ -121,7 +121,7 @@ export default function GrilleServicesSection({ serviceType }: Props) {
         open={editorOpen}
         onOpenChange={setEditorOpen}
         initial={editing}
-        onSave={(data) => upsert(data as any, { onSuccess: () => setEditorOpen(false) } as any)}
+        onSave={(data) => upsert(data, { onSuccess: () => setEditorOpen(false) })}
         saving={isSaving}
       />
     </SettingsSection>

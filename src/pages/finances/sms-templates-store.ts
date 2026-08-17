@@ -55,7 +55,9 @@ function load(): Record<TrancheKey, SmsTemplate> {
         (Object.keys(DEFAULTS) as TrancheKey[]).map((key) => [key, parsed[key] ?? DEFAULTS[key]]),
       ) as Record<TrancheKey, SmsTemplate>;
     }
-  } catch {}
+  } catch (e) {
+    console.warn("sms-templates-store: lecture localStorage échouée, valeurs par défaut utilisées", e);
+  }
   return { ...DEFAULTS };
 }
 
@@ -63,7 +65,9 @@ let state: Record<TrancheKey, SmsTemplate> = load();
 const listeners = new Set<() => void>();
 
 function persist() {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {
+    console.warn("sms-templates-store: écriture localStorage échouée", e);
+  }
   listeners.forEach((l) => l());
 }
 

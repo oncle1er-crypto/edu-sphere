@@ -8,8 +8,14 @@ export function normalizeSmsText(message: string): string {
     .replace(/[“”«»]/g, '"')
     .replace(/[–—]/g, "-")
     .replace(/[✓]/g, "OK")
-    .replace(/[💡]/g, "")
+    // Flag `u` obligatoire : 💡 est un caractère astral (paire de substituts
+    // UTF-16) — sans lui, la classe [💡] matche ses deux moitiés séparément
+    // et peut altérer d'autres caractères partageant un demi-substitut.
+    .replace(/[💡]/gu, "")
     .replace(/[\u00A0\u202F]/g, " ")
+    // Volontaire : ne garde que LF/CR + imprimables ASCII (jeu GSM 03.38),
+    // pour un SMS sans caractères exotiques non supportés par les opérateurs.
+    // eslint-disable-next-line no-control-regex
     .replace(/[^\x0A\x0D\x20-\x7E]/g, "")
     .replace(/[ \t]+/g, " ")
     .trim();

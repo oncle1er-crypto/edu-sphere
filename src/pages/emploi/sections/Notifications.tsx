@@ -11,7 +11,7 @@ export default function TimetableNotifications() {
   return (
     <SettingsSection
       title="Notifications emploi du temps"
-      description="Alertez profs, élèves et parents en cas de changement. Les messages sont envoyés via les canaux activés."
+      description="Alertez les parents en cas de remplacement. Seul l'envoi par SMS est actuellement opérationnel."
       icon={<BellRing className="h-5 w-5" />}
       hideSave
     >
@@ -21,33 +21,43 @@ export default function TimetableNotifications() {
         </div>
       ) : (
         <>
-          <FieldRow label="Notifier les modifications">
+          <FieldRow
+            label="Notifier les modifications"
+            hint="Fonctionnalité prévue, pas encore appliquée : ce réglage n'est relié à aucun événement réel (changement d'horaire ou de salle) pour le moment."
+          >
             <Switch
               checked={settings.notif_modifications}
               onCheckedChange={(v) => update({ notif_modifications: v })}
             />
           </FieldRow>
-          <FieldRow label="Notifier les remplacements">
+          <FieldRow
+            label="Notifier les remplacements"
+            hint="Seul réglage actif : un SMS est envoyé aux parents quand un remplacement est confirmé ou annulé (onglet Remplacements)."
+          >
             <Switch
               checked={settings.notif_remplacements}
               onCheckedChange={(v) => update({ notif_remplacements: v })}
             />
           </FieldRow>
-          <FieldRow label="Notifier les annulations de cours">
+          <FieldRow
+            label="Notifier les annulations de cours"
+            hint="Fonctionnalité prévue, pas encore appliquée : ce réglage n'est relié à aucun événement réel pour le moment."
+          >
             <Switch
               checked={settings.notif_annulations}
               onCheckedChange={(v) => update({ notif_annulations: v })}
             />
           </FieldRow>
 
-          <FieldRow label="Canaux activés" hint="Les envois utilisent les canaux cochés.">
+          <FieldRow label="Canaux activés" hint="Seul le SMS est réellement envoyé aujourd'hui. Email et Push ne sont pas encore disponibles dans l'application (aucun service technique connecté) — les activer ici n'a aucun effet.">
             <div className="flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Switch
                   checked={settings.canal_email}
                   onCheckedChange={(v) => update({ canal_email: v })}
+                  disabled
                 />
-                Email
+                Email <span className="text-[10px]">(bientôt)</span>
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <Switch
@@ -56,12 +66,13 @@ export default function TimetableNotifications() {
                 />
                 SMS
               </label>
-              <label className="flex items-center gap-2 text-sm">
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Switch
                   checked={settings.canal_push}
                   onCheckedChange={(v) => update({ canal_push: v })}
+                  disabled
                 />
-                Push
+                Push <span className="text-[10px]">(bientôt)</span>
               </label>
             </div>
           </FieldRow>

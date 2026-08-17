@@ -7,16 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Eye, Plus, Pencil, Trash2, Download, Shield, ShieldOff, ShieldCheck, Search, ChevronDown, X } from "lucide-react";
+import { Loader2, Eye, Plus, Pencil, Trash2, Download, Shield, ShieldOff, ShieldCheck, Search, ChevronDown, X, type LucideIcon } from "lucide-react";
 import { useRolePermissions } from "@/hooks/useRolePermissions";
-import type { PermRow } from "@/hooks/useUserPermissions";
+import type { AppRole, PermRow } from "@/hooks/useUserPermissions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface Props { open: boolean; onOpenChange: (v: boolean) => void; }
 
-const ROLES = ["directeur", "secretaire", "comptable", "enseignant", "educateur", "surveillant", "parent"] as const;
+const ROLES: AppRole[] = ["directeur", "secretaire", "comptable", "enseignant", "educateur", "surveillant", "parent"];
 
-const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: any }[] = [
+const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: LucideIcon }[] = [
   { key: "can_view", label: "Voir", icon: Eye },
   { key: "can_create", label: "Créer", icon: Plus },
   { key: "can_update", label: "Modifier", icon: Pencil },
@@ -25,7 +25,7 @@ const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: an
 ];
 
 export function RolePermissionsDialog({ open, onOpenChange }: Props) {
-  const [role, setRole] = useState<string>("secretaire");
+  const [role, setRole] = useState<AppRole>("secretaire");
   const { modules, perms, loading, saving, isDefault, toggle, setAllForModule, setActionForModules, applyPreset, save } = useRolePermissions(role);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -43,7 +43,7 @@ export function RolePermissionsDialog({ open, onOpenChange }: Props) {
   const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every(k => selected.has(k));
   const someVisibleSelected = visibleKeys.some(k => selected.has(k));
 
-  const toggleRow = (k: string) => setSelected(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n; });
+  const toggleRow = (k: string) => setSelected(prev => { const n = new Set(prev); if (n.has(k)) n.delete(k); else n.add(k); return n; });
   const toggleAllVisible = () => setSelected(prev => { const n = new Set(prev); if (allVisibleSelected) visibleKeys.forEach(k => n.delete(k)); else visibleKeys.forEach(k => n.add(k)); return n; });
   const targetKeys = () => (selected.size > 0 ? Array.from(selected) : visibleKeys);
 
@@ -67,7 +67,7 @@ export function RolePermissionsDialog({ open, onOpenChange }: Props) {
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium">Rôle :</span>
-              <Select value={role} onValueChange={setRole}>
+              <Select value={role} onValueChange={(v) => setRole(v as AppRole)}>
                 <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}

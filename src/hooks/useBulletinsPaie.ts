@@ -9,6 +9,8 @@ export interface BulletinPaie {
   enseignant_id: string;
   enseignant_nom?: string;
   enseignant_fonction?: string;
+  /** Cycle de rattachement de l'enseignant (`enseignants.cycle_id`). `null` = personnel commun (prorata). */
+  enseignant_cycle_id?: string | null;
   mois: number;
   annee: number;
   salaire_brut: number;
@@ -32,7 +34,7 @@ export function useBulletinsPaie(mois?: number, annee?: number) {
     setLoading(true);
     const { data } = await supabase
       .from("bulletins_paie")
-      .select("*, enseignants(nom, prenom, specialite)")
+      .select("*, enseignants(nom, prenom, specialite, cycle_id)")
       .eq("ecole_id", ecoleId)
       .eq("mois", m)
       .eq("annee", a)
@@ -45,6 +47,7 @@ export function useBulletinsPaie(mois?: number, annee?: number) {
         net_a_payer: Number(b.net_a_payer),
         enseignant_nom: b.enseignants ? `${b.enseignants.nom} ${b.enseignants.prenom}` : "—",
         enseignant_fonction: b.enseignants?.specialite ?? "Enseignant",
+        enseignant_cycle_id: b.enseignants?.cycle_id ?? null,
       })));
     }
     setLoading(false);

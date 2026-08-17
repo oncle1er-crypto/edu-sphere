@@ -18,6 +18,56 @@ export { fcfa };
 
 export type { EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique };
 
+/** Forme réelle des lignes `eleve_parents` (select "eleve_id, parents(nom, prenom, telephone)"). */
+interface ParentJointRow {
+  eleve_id: string;
+  parents: { nom: string; prenom: string; telephone: string | null } | null;
+}
+
+/** Forme réelle des lignes `relances` (select "eleve_id, date_envoi"). */
+interface RelanceRow {
+  eleve_id: string;
+  date_envoi: string;
+}
+
+/** Forme réelle des lignes `paiements` de la pagination ci-dessous (select explicite, sans jointure). */
+interface PaiementRow {
+  id: string;
+  eleve_id: string;
+  tranche_id: string | null;
+  montant: number;
+  mode: string;
+  reference: string | null;
+  motif: string | null;
+  date_paiement: string;
+  annule_le: string | null;
+  motif_annulation: string | null;
+}
+
+/** Élève joint (select imbriqué eleves(...) sous tranches, cf. requête ci-dessous). */
+interface EleveJoint {
+  id: string;
+  matricule: string | null;
+  nom: string;
+  prenom: string;
+  sexe?: string | null;
+  photo_url?: string | null;
+  classe_id: string | null;
+  classes: { nom: string; cycles: { nom: string } | null } | null;
+}
+
+/** Forme réelle des lignes `tranches` (select "*, [frais_scolarite!inner(annee_id),] eleves(...)"). */
+interface TrancheJointRow {
+  id: string;
+  numero: number;
+  label: string;
+  echeance: string;
+  montant: number;
+  paye: number;
+  statut: string;
+  eleves: EleveJoint | null;
+}
+
 
 function computeJoursRetard(tranches: Tranche[]): number {
   const today = new Date();
@@ -101,7 +151,7 @@ export function useFinanceData(scopedAnneeId?: string) {
       .eq("est_contact_principal", true);
 
     const parentMap: Record<string, { nom: string; telephone: string }> = {};
-    (parentsData ?? []).forEach((ep: any) => {
+    ((parentsData ?? []) as unknown as ParentJointRow[]).forEach((ep) => {
       if (ep.parents) {
         parentMap[ep.eleve_id] = {
           nom: `${ep.parents.nom} ${ep.parents.prenom}`,
@@ -118,7 +168,7 @@ export function useFinanceData(scopedAnneeId?: string) {
       .order("date_envoi", { ascending: false });
 
     const derniereRelanceMap: Record<string, string> = {};
-    (relancesData ?? []).forEach((r: any) => {
+    ((relancesData ?? []) as unknown as RelanceRow[]).forEach((r) => {
       if (!derniereRelanceMap[r.eleve_id]) {
         derniereRelanceMap[r.eleve_id] = new Date(r.date_envoi).toLocaleDateString("fr-FR");
       }
@@ -130,11 +180,11 @@ export function useFinanceData(scopedAnneeId?: string) {
     // On récupère tous les paiements de l'école, puis on filtre côté client via
     // le set des tranche_ids déjà scopé à l'année active.
     const trancheNumByTrancheId = new Map<string, number>();
-    (tranchesData as any[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
-    const trancheIdsSet = new Set<string>((tranchesData as any[]).map((t) => t.id));
+    (tranchesData as unknown as TrancheJointRow[]).forEach((t) => trancheNumByTrancheId.set(t.id, t.numero));
+    const trancheIdsSet = new Set<string>((tranchesData as unknown as TrancheJointRow[]).map((t) => t.id));
 
     // Pagination pour dépasser la limite PostgREST de 1000 lignes.
-    const paiementsAll: any[] = [];
+    const paiementsAll: PaiementRow[] = [];
     let offset = 0;
     const PAGE = 1000;
     // Sécurité : plafond à 20 pages (20000 paiements) pour éviter une boucle infinie.
@@ -154,7 +204,7 @@ export function useFinanceData(scopedAnneeId?: string) {
 
 
     const paiementsByEleve = new Map<string, PaiementHistorique[]>();
-    (paiementsData ?? []).forEach((p: any) => {
+    (paiementsData ?? []).forEach((p) => {
       // Si on est en mode scopé année : ne conserver que les paiements rattachés
       // à une tranche de l'année active. Les paiements sans tranche_id (remises,
       // bourses, imports historiques) ne peuvent pas être attribués à une année
@@ -183,12 +233,12 @@ export function useFinanceData(scopedAnneeId?: string) {
 
     // Group tranches by eleve
     const eleveMap = new Map<string, {
-      eleve: any;
+      eleve: EleveJoint;
       tranches: Tranche[];
       fraisAnnuel: number;
     }>();
 
-    for (const t of tranchesData as any[]) {
+    for (const t of tranchesData as unknown as TrancheJointRow[]) {
       if (!t.eleves) continue;
       const eleveId = t.eleves.id;
 

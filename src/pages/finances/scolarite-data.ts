@@ -106,8 +106,9 @@ export function modeMeta(mode: string): { label: string; kind: PaiementKind } {
 }
 
 /** Convertit une erreur RPC PostgREST en message clair pour l'utilisateur. */
-export function friendlyRpcError(err: any): string {
-  const raw = (err?.message ?? err?.details ?? "").toString();
+export function friendlyRpcError(err: unknown): string {
+  const e = err as { message?: unknown; details?: unknown } | null;
+  const raw = (e?.message ?? e?.details ?? "").toString();
   if (!raw) return "Erreur inconnue. Réessayez ou contactez l'administrateur.";
   if (/Tranche \d+ non soldée/i.test(raw))
     return "Tranche précédente non soldée : soldez d'abord la tranche antérieure avant d'encaisser celle-ci.";

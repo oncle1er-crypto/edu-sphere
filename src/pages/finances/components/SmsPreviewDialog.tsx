@@ -72,7 +72,7 @@ export function SmsPreviewDialog({ eleve, open, onOpenChange, defaultTemplate }:
         toast.success(`SMS envoyé à ${eleve.parent}`, { description: eleve.telephone });
         onOpenChange(false);
       }
-    } catch (err: any) {
+    } catch (err) {
       toast.error("Erreur d'envoi SMS", { description: messageErreurBase(err) ?? String(err) });
     } finally {
       setSending(false);

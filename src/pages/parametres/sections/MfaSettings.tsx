@@ -38,7 +38,7 @@ export default function MfaSettings() {
       await smsMfa.activate();
       await logSecurityEvent("mfa_sms_enabled", "info");
       toast.success("MFA SMS activé");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     } finally { setActivatingSms(false); }
   };
@@ -48,7 +48,7 @@ export default function MfaSettings() {
       await smsMfa.deactivate();
       await logSecurityEvent("mfa_sms_disabled", "warning");
       toast.success("MFA SMS désactivé (le numéro reste vérifié)");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     }
   };
@@ -59,7 +59,7 @@ export default function MfaSettings() {
       await smsMfa.remove();
       await logSecurityEvent("mfa_sms_removed", "critical");
       toast.success("Numéro et facteur SMS supprimés");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     } finally { setRemovingSms(false); }
   };
@@ -76,7 +76,7 @@ export default function MfaSettings() {
       await logSecurityEvent("mfa_disabled", "critical", { factor_id: verified.id });
       toast.success("MFA désactivé");
       await refresh();
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     } finally {
       setUnenrolling(false);
@@ -91,7 +91,7 @@ export default function MfaSettings() {
       setNewCodes(codes);
       await logSecurityEvent("mfa_backup_regenerated", "warning");
       toast.success("Nouveaux codes générés");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e));
     } finally {
       setRegenerating(false);

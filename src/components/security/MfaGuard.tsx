@@ -28,7 +28,12 @@ export default function MfaGuard({ children }: { children: ReactNode }) {
           email: user.email,
           aal: currentLevel,
         });
-      } catch {}
+      } catch (e) {
+        // Best-effort (device recording / audit log) : ne doit jamais bloquer
+        // l'accès, mais une erreur silencieuse ici pouvait masquer un vrai
+        // bug dans recordCurrentDevice/logSecurityEvent indéfiniment.
+        console.warn("MfaGuard: échec de l'enregistrement de session (non bloquant)", e);
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);

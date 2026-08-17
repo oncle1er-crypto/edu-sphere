@@ -198,11 +198,14 @@ export function useEmploiDuTemps() {
         jour: number;
         heure_debut: string;
         heure_fin: string;
-        salle: string;
+        salle: string | null;
+        salle_id: string | null;
       }>
     ) => {
       if (!ecoleId || !anneeId) return false;
-      // Find existing creneau to merge values for overlap check
+      // Find existing creneau to merge values pour la vérification anti-conflit
+      // (mêmes règles que la création : chevauchement classe/enseignant + faisabilité
+      // enseignant/salle, en excluant ce créneau lui-même de la recherche via _exclude_id).
       const existing = creneaux.find((c) => c.id === id);
       const jour = updates.jour ?? existing?.jour ?? 1;
       const heure_debut = updates.heure_debut ?? existing?.heure_debut ?? "08:00";
@@ -210,18 +213,35 @@ export function useEmploiDuTemps() {
       const enseignant_id = updates.enseignant_id !== undefined
         ? updates.enseignant_id
         : existing?.enseignant_id ?? null;
+      const salle_id = updates.salle_id !== undefined
+        ? updates.salle_id
+        : existing?.salle_id ?? null;
 
       const conflict = await checkOverlap(
         ecoleId, anneeId, classeId, enseignant_id, jour, heure_debut, heure_fin, id
       );
       if (conflict) { toast.error("Conflit : " + conflict); return false; }
 
+      // Faisabilité (disponibilité enseignant, occupation salle, capacité) — absente
+      // de l'ancienne version de updateCreneau, alors que addCreneau la vérifie déjà.
+      // Sans ça, lier une salle déjà occupée à un créneau existant n'était pas bloqué.
+      const feas = await checkFeasibility(
+        ecoleId, anneeId, classeId, enseignant_id, salle_id, jour, heure_debut, heure_fin, id
+      );
+      if (feas && !feas.ok) {
+        toast.error(feas.errors.join(" • "));
+        return false;
+      }
+      if (feas && feas.warnings.length > 0) {
+        feas.warnings.forEach((w) => toast.warning(w));
+      }
+
       const { error } = await supabase
         .from("creneaux_emploi_temps" as any)
         .update(updates as any)
         .eq("id", id);
       if (error) {
-        toast.error("Erreur mise à jour");
+        toast.error("Erreur mise à jour : " + messageErreurBase(error));
         console.error(error);
         return false;
       }

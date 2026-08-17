@@ -4,6 +4,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { toast } from "sonner";
 import type { SpModePaiement } from "./useSpVentes";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
 
 export interface SpPaiement {
   id: string;
@@ -33,7 +34,7 @@ export function useSpPaiements() {
   const load = useCallback(async () => {
     if (!ecoleId) return;
     setLoading(true);
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from("sp_paiements")
       .select("*")
       .eq("ecole_id", ecoleId)
@@ -49,7 +50,7 @@ export function useSpPaiements() {
     if (!ecoleId) return;
     const channel = supabase.channel(`sp_paiements:${ecoleId}:${Math.random().toString(36).slice(2)}`);
     channel
-      .on("postgres_changes" as any, { event: "*", schema: "public", table: "sp_paiements", filter: `ecole_id=eq.${ecoleId}` }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "sp_paiements", filter: `ecole_id=eq.${ecoleId}` }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [ecoleId, load]);
@@ -57,10 +58,10 @@ export function useSpPaiements() {
   const save = async (patch: Partial<SpPaiement> & { id?: string }) => {
     if (!ecoleId) return null;
     const { data: sess } = await supabase.auth.getUser();
-    const payload: any = { ...patch, ecole_id: ecoleId, caissier_id: sess.user?.id ?? null };
+    const payload = { ...patch, ecole_id: ecoleId, caissier_id: sess.user?.id ?? null };
     const { data, error } = patch.id
-      ? await (supabase as any).from("sp_paiements").update(payload).eq("id", patch.id).select().single()
-      : await (supabase as any).from("sp_paiements").insert(payload).select().single();
+      ? await supabase.from("sp_paiements").update(payload as unknown as TablesUpdate<"sp_paiements">).eq("id", patch.id).select().single()
+      : await supabase.from("sp_paiements").insert(payload as unknown as TablesInsert<"sp_paiements">).select().single();
     if (error) { toast.error(messageErreurBase(error)); return null; }
     toast.success("Paiement enregistré");
     await load();
@@ -68,7 +69,7 @@ export function useSpPaiements() {
   };
 
   const annuler = async (id: string, motif: string) => {
-    const { error } = await (supabase as any).rpc("sp_annuler_paiement", {
+    const { error } = await supabase.rpc("sp_annuler_paiement", {
       _paiement_id: id, _motif: motif,
     });
     if (error) return toast.error(messageErreurBase(error));
@@ -77,7 +78,7 @@ export function useSpPaiements() {
   };
 
   const supprimer = async (id: string) => {
-    const { error } = await (supabase as any).rpc("sp_supprimer_paiement", { _paiement_id: id });
+    const { error } = await supabase.rpc("sp_supprimer_paiement", { _paiement_id: id });
     if (error) return toast.error(messageErreurBase(error));
     toast.success("Paiement supprimé définitivement");
     await load();

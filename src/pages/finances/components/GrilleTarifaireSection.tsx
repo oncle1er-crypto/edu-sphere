@@ -18,7 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Wallet, Plus, Pencil, Trash2, RefreshCw, Copy, Loader2, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
-import { useGrilleTarifs, NIVEAU_LABELS, type GrilleLigne } from "@/hooks/useGrilleTarifs";
+import { useGrilleTarifs, NIVEAU_LABELS, type GrilleLigne, type NiveauCode, type Variant, type TrancheGrille } from "@/hooks/useGrilleTarifs";
 import GrilleTarifEditor from "./GrilleTarifEditor";
 import { fcfa } from "../scolarite-data";
 import { toast } from "sonner";
@@ -45,13 +45,13 @@ export default function GrilleTarifaireSection() {
       .select("id, libelle")
       .eq("ecole_id", ecoleId)
       .order("debut", { ascending: false })
-      .then(({ data }) => setAnnees((data ?? []) as any));
+      .then(({ data }) => setAnnees(data ?? []));
   }, [ecoleId]);
 
   const openCreate = () => { setEditing(null); setEditorOpen(true); };
   const openEdit = (l: GrilleLigne) => { setEditing(l); setEditorOpen(true); };
 
-  const handleSave = (data: any) => {
+  const handleSave = (data: { id?: string; niveau_code: NiveauCode; variant: Variant; libelle: string; tranches: TrancheGrille[] }) => {
     upsert(data, { onSuccess: () => setEditorOpen(false) });
   };
 

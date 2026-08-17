@@ -17,6 +17,10 @@ type Ecole = {
   annee_creation: number | null; adresse: string | null; telephone: string | null;
   email: string | null; site_web: string | null; directeur: string | null;
   ville: string; pays: string; logo_url: string | null;
+  // En-tête officiel — utilisé sur les documents administratifs formels
+  // (ex. fiche de paiement à faire signer par un bénéficiaire).
+  ministere: string | null; drenet: string | null; ddenet: string | null;
+  devise_nationale: string | null; armoiries_url: string | null;
 };
 
 const EMPTY: Ecole = {
@@ -24,6 +28,8 @@ const EMPTY: Ecole = {
   cycles: "", diocese: "", agrement: "", annee_creation: null,
   adresse: "", telephone: "", email: "", site_web: "", directeur: "",
   ville: "Abidjan", pays: "Côte d'Ivoire", logo_url: null,
+  ministere: "", drenet: "", ddenet: "", devise_nationale: "Union - Discipline - Travail",
+  armoiries_url: null,
 };
 
 export default function SchoolProfile() {
@@ -32,7 +38,9 @@ export default function SchoolProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadingArmoiries, setUploadingArmoiries] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const armoiriesFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!ecoleId) { if (!loadingId) setLoading(false); return; }
@@ -56,6 +64,8 @@ export default function SchoolProfile() {
       annee_creation: data.annee_creation, adresse: data.adresse,
       telephone: data.telephone, email: data.email, site_web: data.site_web,
       directeur: data.directeur, ville: data.ville, pays: data.pays,
+      ministere: data.ministere, drenet: data.drenet, ddenet: data.ddenet,
+      devise_nationale: data.devise_nationale,
     }).eq("id", ecoleId);
     setSaving(false);
     if (error) {
@@ -79,6 +89,23 @@ export default function SchoolProfile() {
     setUploading(false);
     if (error) toast.error(messageErreurBase(error));
     else { update("logo_url", pub.publicUrl); toast.success("Logo mis à jour"); }
+  };
+
+  // Armoiries nationales — même bucket "logos" que le logo de l'école (image
+  // publique, pas de contenu sensible), champ distinct armoiries_url.
+  const handleArmoiriesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !ecoleId) return;
+    setUploadingArmoiries(true);
+    const ext = file.name.split(".").pop();
+    const path = `${ecoleId}/armoiries-${Date.now()}.${ext}`;
+    const { error: upErr } = await supabase.storage.from("logos").upload(path, file, { upsert: true });
+    if (upErr) { toast.error(messageErreurBase(upErr)); setUploadingArmoiries(false); return; }
+    const { data: pub } = supabase.storage.from("logos").getPublicUrl(path);
+    const { error } = await supabase.from("ecoles").update({ armoiries_url: pub.publicUrl }).eq("id", ecoleId);
+    setUploadingArmoiries(false);
+    if (error) toast.error(messageErreurBase(error));
+    else { update("armoiries_url", pub.publicUrl); toast.success("Armoiries mises à jour"); }
   };
 
   if (loading) return <Skeleton className="h-96 w-full" />;
@@ -129,6 +156,28 @@ export default function SchoolProfile() {
       <FieldRow label="Email"><Input type="email" value={data.email ?? ""} onChange={e => update("email", e.target.value)} /></FieldRow>
       <FieldRow label="Site web"><Input type="url" value={data.site_web ?? ""} onChange={e => update("site_web", e.target.value)} /></FieldRow>
       <FieldRow label="Directeur / Proviseur"><Input value={data.directeur ?? ""} onChange={e => update("directeur", e.target.value)} /></FieldRow>
+
+      <div className="pt-4 mt-4 border-t">
+        <p className="text-sm font-semibold mb-1">En-tête officiel</p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Utilisé sur les documents administratifs formels (ex. fiche de paiement à faire signer). Saisi une seule fois ici.
+        </p>
+      </div>
+      <FieldRow label="Ministère de tutelle"><Input value={data.ministere ?? ""} onChange={e => update("ministere", e.target.value)} placeholder="Ministère de l'Éducation Nationale et de l'Alphabétisation" /></FieldRow>
+      <FieldRow label="DRENET (rattachement)"><Input value={data.drenet ?? ""} onChange={e => update("drenet", e.target.value)} placeholder="DRENET Aboisso" /></FieldRow>
+      <FieldRow label="DDENET (rattachement)"><Input value={data.ddenet ?? ""} onChange={e => update("ddenet", e.target.value)} placeholder="DDENET Grand Bassam" /></FieldRow>
+      <FieldRow label="Devise nationale"><Input value={data.devise_nationale ?? ""} onChange={e => update("devise_nationale", e.target.value)} placeholder="Union - Discipline - Travail" /></FieldRow>
+      <FieldRow label="Armoiries nationales" hint="Image affichée en haut à droite des documents officiels">
+        <div className="flex items-center gap-4">
+          <div className="h-20 w-20 rounded-xl bg-muted border-2 border-dashed flex items-center justify-center text-muted-foreground overflow-hidden">
+            {data.armoiries_url ? <img src={data.armoiries_url} alt="Armoiries" className="h-full w-full object-contain" /> : <Building2 className="h-9 w-9 sm:h-8 sm:w-8" />}
+          </div>
+          <input ref={armoiriesFileRef} type="file" accept="image/*" className="hidden" onChange={handleArmoiriesUpload} />
+          <Button variant="outline" size="sm" onClick={() => armoiriesFileRef.current?.click()} disabled={uploadingArmoiries}>
+            {uploadingArmoiries ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} Téléverser
+          </Button>
+        </div>
+      </FieldRow>
 
       {saving && <p className="text-xs text-muted-foreground">Enregistrement...</p>}
     </SettingsSection>

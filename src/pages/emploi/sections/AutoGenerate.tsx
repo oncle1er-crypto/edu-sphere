@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAnneeId } from "@/hooks/useAnneeId";
 import { useTimetableSettings, joursFromSettings } from "@/hooks/useTimetableSettings";
+import { timeToMinutes, minutesToTime } from "@/lib/timeSlots";
 import {
   generateEmploiDuTemps,
   type GenerateOptions,
@@ -31,12 +32,20 @@ export default function AutoGenerate() {
 
   const buildOptions = (dryRun: boolean): GenerateOptions | null => {
     if (!ecoleId || !anneeId) return null;
+    const recreation: [string, string] | undefined =
+      settings.duree_recreation_min > 0
+        ? [
+            settings.recreation_debut,
+            minutesToTime(timeToMinutes(settings.recreation_debut) + settings.duree_recreation_min),
+          ]
+        : undefined;
     return {
       ecoleId,
       anneeId,
       jours: joursFromSettings(settings),
       plageMatin: [settings.heure_debut, settings.pause_dej_debut],
       plageAprem: [settings.pause_dej_fin, settings.heure_fin],
+      recreation,
       dureeCreneauMin: settings.duree_creneau_min,
       heuresParJourMax: heuresMax,
       respectDispo,
@@ -105,6 +114,14 @@ export default function AutoGenerate() {
           {settings.pause_dej_debut.slice(0,5)} → {settings.pause_dej_fin.slice(0,5)}
         </div>
       </FieldRow>
+
+      {settings.duree_recreation_min > 0 && (
+        <FieldRow label="Récréation" hint="Configurable dans l'onglet Configuration.">
+          <div className="text-sm text-muted-foreground">
+            {settings.recreation_debut.slice(0,5)} → {minutesToTime(timeToMinutes(settings.recreation_debut) + settings.duree_recreation_min).slice(0,5)}
+          </div>
+        </FieldRow>
+      )}
 
       <FieldRow label="Jours ouvrés" hint="Configurable dans l'onglet Configuration.">
         <div className="text-sm text-muted-foreground">

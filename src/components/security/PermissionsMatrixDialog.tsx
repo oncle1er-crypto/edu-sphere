@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Eye, Plus, Pencil, Trash2, Download, Shield, ShieldOff, ShieldCheck, Search, ChevronDown, X } from "lucide-react";
+import { Loader2, Eye, Plus, Pencil, Trash2, Download, Shield, ShieldOff, ShieldCheck, Search, ChevronDown, X, type LucideIcon } from "lucide-react";
 import { useUserPermissions, PermRow } from "@/hooks/useUserPermissions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -17,7 +17,7 @@ interface Props {
   userName?: string;
 }
 
-const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: any }[] = [
+const ACTIONS: { key: keyof Omit<PermRow, "module_key">; label: string; icon: LucideIcon }[] = [
   { key: "can_view", label: "Voir", icon: Eye },
   { key: "can_create", label: "Créer", icon: Plus },
   { key: "can_update", label: "Modifier", icon: Pencil },
@@ -45,7 +45,8 @@ export function PermissionsMatrixDialog({ open, onOpenChange, userId, userName }
   const toggleRow = (k: string) => {
     setSelected(prev => {
       const n = new Set(prev);
-      n.has(k) ? n.delete(k) : n.add(k);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
       return n;
     });
   };

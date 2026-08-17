@@ -1,6 +1,9 @@
 import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import autoTable, { type RowInput } from "jspdf-autotable";
 import { compareEleves } from "@/lib/sortEleves";
+
+/** jspdf-autotable étend jsPDF au runtime avec `lastAutoTable` sans le déclarer dans ses types publics. */
+type JsPDFWithAutoTable = jsPDF & { lastAutoTable?: { finalY: number } };
 
 // IMPORTANT: jsPDF's built-in helvetica renders U+202F (narrow no-break space)
 // — emitted by Intl fr-FR locale — as "/". We replace it with a regular space.
@@ -25,7 +28,9 @@ interface ReportHeader {
 }
 
 // Convert an image URL to a base64 data URL usable by jsPDF
-async function fetchLogo(url?: string | null): Promise<string | null> {
+// (exportée : réutilisée par generateFichePaiement.ts pour le logo école ET
+// les armoiries nationales, mêmes contraintes de format/CORS)
+export async function fetchLogo(url?: string | null): Promise<string | null> {
   if (!url) return null;
   try {
     const res = await fetch(url, { mode: "cors" });
@@ -42,7 +47,7 @@ async function fetchLogo(url?: string | null): Promise<string | null> {
   }
 }
 
-function detectFormat(dataUrl: string): "PNG" | "JPEG" {
+export function detectFormat(dataUrl: string): "PNG" | "JPEG" {
   return dataUrl.startsWith("data:image/jpeg") || dataUrl.startsWith("data:image/jpg")
     ? "JPEG"
     : "PNG";
@@ -182,7 +187,7 @@ export async function generateCompteResultat(
     ...TABLE_STYLES,
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 100;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 100;
 
   autoTable(doc, {
     startY: y1 + 8,
@@ -198,7 +203,7 @@ export async function generateCompteResultat(
     ...TABLE_STYLES,
   });
 
-  const y2 = (doc as any).lastAutoTable?.finalY ?? 160;
+  const y2 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 160;
   doc.setFillColor(resultat >= 0 ? 235 : 250, resultat >= 0 ? 247 : 235, resultat >= 0 ? 238 : 235);
   doc.rect(15, y2 + 6, doc.internal.pageSize.getWidth() - 30, 12, "F");
   doc.setFontSize(11);
@@ -249,7 +254,7 @@ export async function generateFluxTresorerie(
     ...TABLE_STYLES,
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 90;
 
   const entrees = data.mouvements.filter((m) => m.type === "entree");
   const sorties = data.mouvements.filter((m) => m.type === "sortie");
@@ -478,7 +483,7 @@ export async function generateBudgetExecution(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  const y1 = (doc as any).lastAutoTable?.finalY ?? 90;
+  const y1 = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? 90;
 
   autoTable(doc, {
     startY: y1 + 8,
@@ -645,7 +650,7 @@ export async function generateRecapPaiementsJournalier(
     styles: { ...TABLE_STYLES.styles, fontSize: 7.8 },
   });
 
-  y = (doc as any).lastAutoTable?.finalY ?? y;
+  y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y;
 
   autoTable(doc, {
     startY: y + 8,
@@ -679,7 +684,7 @@ export async function generateRecapPaiementsJournalier(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  const yEnd = (doc as any).lastAutoTable?.finalY ?? y + 40;
+  const yEnd = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
 
   const sigY = Math.min(yEnd + 20, doc.internal.pageSize.getHeight() - 30);
   doc.setDrawColor(180);
@@ -749,7 +754,7 @@ export async function generateDepensesExport(
     styles: { ...TABLE_STYLES.styles, fontSize: 8 },
   });
 
-  let y = (doc as any).lastAutoTable?.finalY ?? startY + 40;
+  let y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? startY + 40;
   y += 6;
   const w = doc.internal.pageSize.getWidth();
   doc.setFontSize(8.5);
@@ -938,7 +943,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8.5 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
     if (totalRemises > 0) {
       y += 5;
       doc.setFontSize(8.3);
@@ -948,7 +953,7 @@ export async function generateRecapCaisseJournalier(
     }
     y += 10;
   } else {
-    const entreesRows: any[] = [];
+    const entreesRows: RowInput[] = [];
     for (const src of entrees) {
       if (src.operations.length === 0) continue;
       entreesRows.push([
@@ -976,7 +981,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
     if (totalRemises > 0) {
       y += 5;
       doc.setFontSize(8.3);
@@ -1043,7 +1048,7 @@ export async function generateRecapCaisseJournalier(
         styles: { ...TABLE_STYLES.styles, fontSize: 8 },
       });
     }
-    const finalYModes = ventilationModes.length > 0 ? (doc as any).lastAutoTable?.finalY : undefined;
+    const finalYModes = ventilationModes.length > 0 ? (doc as JsPDFWithAutoTable).lastAutoTable?.finalY : undefined;
     y = Math.max(finalYModes ?? y + 20, y + 20) + 8;
   }
 
@@ -1071,7 +1076,7 @@ export async function generateRecapCaisseJournalier(
       ...TABLE_STYLES,
       styles: { ...TABLE_STYLES.styles, fontSize: 8 },
     });
-    y = (doc as any).lastAutoTable?.finalY ?? y + 40;
+    y = (doc as JsPDFWithAutoTable).lastAutoTable?.finalY ?? y + 40;
   }
 
   // ── Bandeau solde net ──
@@ -1106,4 +1111,100 @@ export async function generateRecapCaisseJournalier(
   if (returnDoc) return doc;
   const suffix = opts.filenameSuffix || opts.dateISO || new Date().toISOString().slice(0, 10);
   doc.save(`Recap_caisse_${suffix}.pdf`);
+}
+
+// ── Bon de sortie de caisse ──
+// Justificatif imprimable d'une dépense VALIDÉE (une seule pièce, pas un
+// export de liste). Le numéro (BSC-YYYY-00001) est assigné par le trigger DB
+// public.assign_numero_bon_sortie() au moment de la validation — jamais
+// généré côté client, pour garantir l'unicité et la séquentialité même en
+// cas de validations concurrentes. Distinct du préfixe BS- déjà utilisé par
+// billets_sortie (autorisations de sortie d'élève/personnel, module Vie
+// scolaire) pour éviter toute confusion entre les deux documents.
+//
+// Ne mentionne pas le nom du validateur (valide_par n'est qu'un UUID côté
+// dépenses — la RLS sur `profiles` empêche aujourd'hui de le résoudre en nom
+// affichable ailleurs dans l'app ; on ne l'invente pas ici). Les lignes de
+// signature servent de preuve papier à la place.
+export interface BonSortieData {
+  numero: string;
+  libelle: string;
+  categorie: string | null;
+  fournisseur_nom?: string | null;
+  montant: number;
+  date_depense: string;
+  niveau_label?: string | null;
+  notes?: string | null;
+  valide_le: string;
+}
+
+export async function generateBonSortiePDF(ecole: string | EcoleMeta, data: BonSortieData) {
+  const meta = toMeta(ecole);
+  const logoData = await fetchLogo(meta.logoUrl);
+  const doc = new jsPDF();
+  const startY = addHeader(doc, {
+    ecole: meta,
+    titre: "Bon de sortie de caisse",
+    periode: `Validé le ${new Date(data.valide_le).toLocaleDateString("fr-FR")}`,
+    date: new Date().toLocaleDateString("fr-FR"),
+    logoData,
+  });
+
+  const w = doc.internal.pageSize.getWidth();
+  let y = startY + 2;
+
+  // Numéro de pièce — mis en avant comme identifiant principal du document.
+  doc.setFontSize(12);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(110, 26, 44);
+  doc.text(`N° ${data.numero}`, w / 2, y, { align: "center" });
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0);
+  y += 12;
+
+  // Bandeau montant
+  doc.setFillColor(250, 246, 247);
+  doc.roundedRect(15, y, w - 30, 22, 2, 2, "F");
+  doc.setFontSize(9);
+  doc.setTextColor(90);
+  doc.text("Montant", 20, y + 8);
+  doc.setFontSize(16);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(110, 26, 44);
+  doc.text(FCFA(data.montant), 20, y + 18);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(0);
+  y += 32;
+
+  const field = (label: string, value: string) => {
+    doc.setFontSize(8.5);
+    doc.setTextColor(120);
+    doc.text(label, 20, y);
+    doc.setFontSize(10.5);
+    doc.setTextColor(20);
+    doc.text(value || "—", 20, y + 6);
+    doc.setTextColor(0);
+    y += 14;
+  };
+
+  field("Motif / libellé", data.libelle);
+  field("Catégorie", data.categorie ?? "—");
+  field("Bénéficiaire / fournisseur", data.fournisseur_nom ?? "—");
+  field("Niveau imputé", data.niveau_label ?? "Commun");
+  field("Date de la dépense", new Date(data.date_depense + "T00:00:00").toLocaleDateString("fr-FR"));
+  if (data.notes) field("Notes", data.notes);
+
+  const pageH = doc.internal.pageSize.getHeight();
+  const sigY = Math.max(y + 20, pageH - 40);
+  doc.setDrawColor(180);
+  doc.line(20, sigY, 85, sigY);
+  doc.line(w - 85, sigY, w - 20, sigY);
+  doc.setFontSize(8);
+  doc.setTextColor(90);
+  doc.text("Remis par (caissier / comptable)", 20, sigY + 5);
+  doc.text("Reçu par (bénéficiaire)", w - 85, sigY + 5);
+  doc.setTextColor(0);
+
+  addFooter(doc, meta.nom);
+  doc.save(`Bon_sortie_${data.numero}.pdf`);
 }

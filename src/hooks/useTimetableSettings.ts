@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { buildVariableSlots, timeToMinutes } from "@/lib/timeSlots";
 
 export interface TimetableSettings {
   id?: string;
@@ -11,6 +12,7 @@ export interface TimetableSettings {
   heure_fin: string;
   duree_creneau_min: number;
   duree_recreation_min: number;
+  recreation_debut: string;
   pause_dej_debut: string;
   pause_dej_fin: string;
   jours_ouvres: "lun-ven" | "lun-sam";
@@ -30,6 +32,7 @@ export const DEFAULT_SETTINGS: TimetableSettings = {
   heure_fin: "17:00",
   duree_creneau_min: 60,
   duree_recreation_min: 15,
+  recreation_debut: "09:45",
   pause_dej_debut: "12:00",
   pause_dej_fin: "14:00",
   jours_ouvres: "lun-ven",
@@ -52,40 +55,52 @@ export function joursFromSettings(s: Pick<TimetableSettings, "jours_ouvres">): n
   return s.jours_ouvres === "lun-sam" ? [1, 2, 3, 4, 5, 6] : [1, 2, 3, 4, 5];
 }
 
-/** Construit la liste des créneaux horaires (matin + après-midi) à partir de la config. */
-export function slotsFromSettings(
-  s: Pick<TimetableSettings, "heure_debut" | "heure_fin" | "duree_creneau_min" | "pause_dej_debut" | "pause_dej_fin">
-): Array<{ debut: string; fin: string }> {
-  const toMin = (t: string) => {
-    const [h, m] = t.split(":").map(Number);
-    return h * 60 + m;
-  };
+type SettingsForBreaks = Pick<
+  TimetableSettings,
+  "pause_dej_debut" | "pause_dej_fin" | "recreation_debut" | "duree_recreation_min"
+>;
+
+/**
+ * Liste des pauses positionnées dans le temps (récréation + déjeuner),
+ * triées, avec un libellé. La récréation est omise si sa durée est à 0
+ * (réglage désactivé). Utilisé pour le découpage des créneaux ET pour
+ * l'affichage d'une ligne de pause dans la vue hebdomadaire.
+ */
+export function breaksFromSettings(
+  s: SettingsForBreaks
+): Array<{ label: string; debut: string; fin: string }> {
   const toStr = (min: number) => {
     const h = Math.floor(min / 60).toString().padStart(2, "0");
     const m = (min % 60).toString().padStart(2, "0");
     return `${h}:${m}`;
   };
-  const out: Array<{ debut: string; fin: string }> = [];
-  const dj = toMin(s.heure_debut);
-  const df = toMin(s.heure_fin);
-  const pauseD = toMin(s.pause_dej_debut);
-  const pauseF = toMin(s.pause_dej_fin);
-  const duree = Math.max(15, s.duree_creneau_min || 60);
-  let cur = dj;
-  while (cur + duree <= df) {
-    // Skip la pause déjeuner
-    if (cur >= pauseD && cur < pauseF) {
-      cur = pauseF;
-      continue;
-    }
-    if (cur + duree > pauseD && cur < pauseD) {
-      cur = pauseF;
-      continue;
-    }
-    out.push({ debut: toStr(cur), fin: toStr(cur + duree) });
-    cur += duree;
+  const out: Array<{ label: string; debut: string; fin: string }> = [];
+  if (s.duree_recreation_min > 0) {
+    const debut = timeToMinutes(s.recreation_debut);
+    out.push({ label: "Récréation", debut: toStr(debut), fin: toStr(debut + s.duree_recreation_min) });
   }
-  return out;
+  out.push({ label: "Pause déjeuner", debut: s.pause_dej_debut.slice(0, 5), fin: s.pause_dej_fin.slice(0, 5) });
+  return out.sort((a, b) => a.debut.localeCompare(b.debut));
+}
+
+/** Construit la liste des créneaux horaires à partir de la config, en
+ * raccourcissant les créneaux qui touchent la récréation ou la pause
+ * déjeuner (voir src/lib/timeSlots.ts). */
+export function slotsFromSettings(
+  s: Pick<TimetableSettings, "heure_debut" | "heure_fin" | "duree_creneau_min"> & SettingsForBreaks
+): Array<{ debut: string; fin: string }> {
+  const toStr = (min: number) => {
+    const h = Math.floor(min / 60).toString().padStart(2, "0");
+    const m = (min % 60).toString().padStart(2, "0");
+    return `${h}:${m}`;
+  };
+  const duree = Math.max(15, s.duree_creneau_min || 60);
+  const breaks = breaksFromSettings(s).map((b) => ({
+    start: timeToMinutes(b.debut),
+    end: timeToMinutes(b.fin),
+  }));
+  const slots = buildVariableSlots(timeToMinutes(s.heure_debut), timeToMinutes(s.heure_fin), duree, breaks);
+  return slots.map((sl) => ({ debut: toStr(sl.start), fin: toStr(sl.end) }));
 }
 
 export function useTimetableSettings() {

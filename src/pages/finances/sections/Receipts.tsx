@@ -27,6 +27,39 @@ import { generateRecapPaiementsJournalier } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type jsPDF from "jspdf";
+import type { Database } from "@/integrations/supabase/types";
+
+type PaiementMode = Database["public"]["Enums"]["paiement_mode"];
+
+/** Forme réelle des lignes renvoyées par la requête `paiements` de fetchRecus (select avec jointures ci-dessous). */
+interface PaiementJointRow {
+  id: string;
+  reference: string | null;
+  montant: number;
+  date_paiement: string;
+  mode: string;
+  eleve_id: string;
+  tranche_id: string | null;
+  annule_le: string | null;
+  motif_annulation: string | null;
+  tranches: { numero: number } | null;
+  eleves: { nom: string; prenom: string; matricule: string; photo_url: string | null; classe_id: string | null; classes: { nom: string } | null } | null;
+}
+
+/** Ligne "montant" seul, avec ou sans jointure frais_scolarite (select conditionnel selon anneeId). */
+interface MontantRow { montant: number }
+
+/** Forme des lignes de la requête `paiements` de genererRecapJournalier (select avec jointures, sans eleve_id/tranche_id). */
+interface RecapPaiementRow {
+  id: string;
+  reference: string | null;
+  montant: number;
+  date_paiement: string;
+  mode: string;
+  tranches: { numero: number } | null;
+  eleves: { nom: string; prenom: string; matricule: string; classes: { nom: string } | null } | null;
+}
 
 interface PaiementRecu {
   id: string;
@@ -188,7 +221,7 @@ export default function Receipts() {
       .limit(5000)
       .then(({ data }) => {
         setRecus(
-          (data ?? []).map((p: any) => ({
+          ((data ?? []) as unknown as PaiementJointRow[]).map((p) => ({
             id: p.id,
             reference: p.reference,
             eleve_id: p.eleve_id,
@@ -251,7 +284,7 @@ export default function Receipts() {
     const arr = [...filtered];
     const dir = sortDir === "asc" ? 1 : -1;
     arr.sort((a, b) => {
-      let av: any, bv: any;
+      let av: string | number, bv: string | number;
       switch (sortKey) {
         case "date":      av = a.date_paiement; bv = b.date_paiement; break;
         case "montant":   av = a.montant; bv = b.montant; break;
@@ -381,8 +414,8 @@ export default function Receipts() {
       .is("annule_le", null);
     if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
     const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
-    const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
-    const total_paye = (paiements ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
+    const total_du = ((tranches ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
+    const total_paye = ((paiements ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
     return generateRecuPDF({
       ecole: { nom: ecole.nom, sigle: ecole.sigle, devise: ecole.devise, adresse: ecole.adresse, telephone: ecole.telephone, email: ecole.email, logoUrl: ecole.logo_url },
       reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
@@ -412,8 +445,8 @@ export default function Receipts() {
       .is("annule_le", null);
     if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
     const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
-    const total_du = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
-    const total_paye = (paiements ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
+    const total_du = ((tranches ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
+    const total_paye = ((paiements ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
 
 
     const cnt = new Map<string, number>();
@@ -436,12 +469,12 @@ export default function Receipts() {
     });
   };
 
-  const download = async (make: () => Promise<any>, filename: string) => {
+  const download = async (make: () => Promise<jsPDF>, filename: string) => {
     setBusy(true);
     try { const pdf = await make(); pdf.save(filename); }
     finally { setBusy(false); }
   };
-  const preview = async (make: () => Promise<any>, title: string) => {
+  const preview = async (make: () => Promise<jsPDF>, title: string) => {
     setBusy(true); setPreviewTitle(title);
     try {
       const pdf = await make();
@@ -466,7 +499,7 @@ export default function Receipts() {
   const saveEdit = async () => {
     if (!editing || !editMode || editMode === editing.mode) { setEditing(null); return; }
     setSaving(true);
-    const { error } = await supabase.from("paiements").update({ mode: editMode as any }).eq("id", editing.id);
+    const { error } = await supabase.from("paiements").update({ mode: editMode as PaiementMode }).eq("id", editing.id);
     setSaving(false);
     if (error) { toast.error("Impossible de modifier : " + messageErreurBase(error)); return; }
     toast.success("Mode de paiement mis à jour");
@@ -590,7 +623,7 @@ export default function Receipts() {
         .order("date_paiement", { ascending: true });
       if (error) throw error;
 
-      const paiements = (data ?? []).map((p: any) => {
+      const paiements = ((data ?? []) as unknown as RecapPaiementRow[]).map((p) => {
         const d = new Date(p.date_paiement);
         return {
           heure: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
@@ -618,7 +651,7 @@ export default function Receipts() {
       if (previewOnly) {
         const pdf = await generateRecapPaiementsJournalier(meta, recapDate, { paiements, ventilationModes, ventilationClasses }, true);
         if (pdf) {
-          const url = URL.createObjectURL((pdf as any).output("blob"));
+          const url = URL.createObjectURL(pdf.output("blob"));
           setPreviewTitle(`Récap paiements — ${new Date(recapDate).toLocaleDateString("fr-FR")}`);
           setPdfUrl(url);
         }
@@ -626,8 +659,8 @@ export default function Receipts() {
         await generateRecapPaiementsJournalier(meta, recapDate, { paiements, ventilationModes, ventilationClasses });
         toast.success("Récapitulatif journalier téléchargé");
       }
-    } catch (e: any) {
-      toast.error("Erreur : " + (messageErreurBase(e) ?? e));
+    } catch (e) {
+      toast.error("Erreur : " + messageErreurBase(e));
     } finally {
       setRecapBusy(false);
     }
@@ -665,14 +698,14 @@ export default function Receipts() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-        {[
+        {([
           { label: "Paiements du jour", value: `${fcfa(todayKpi.total)} FCFA`, sub: `${todayKpi.count} reçu(s)`, today: true, onClick: () => { const t = todayIso(); setDateFrom(t); setDateTo(t); } },
           { label: "Total encaissé", value: `${fcfa(kpis.total)} FCFA`, hero: true },
           { label: "Reçus", value: kpis.count.toLocaleString("fr-FR") },
           { label: "Ticket moyen", value: `${fcfa(kpis.avg)} FCFA` },
           { label: "Élèves", value: kpis.eleves.toLocaleString("fr-FR") },
           { label: "Jours couverts", value: kpis.jours.toLocaleString("fr-FR") },
-        ].map((k: any) => (
+        ] as { label: string; value: string; sub?: string; today?: boolean; hero?: boolean; onClick?: () => void }[]).map((k) => (
           <Card
             key={k.label}
             onClick={k.onClick}
@@ -739,7 +772,7 @@ export default function Receipts() {
             </div>
 
             {/* Presets date */}
-            <Select onValueChange={(v) => applyPreset(v as any)}>
+            <Select onValueChange={(v) => applyPreset(v as "today" | "7d" | "month" | "prevMonth" | "year")}>
               <SelectTrigger className="w-[170px]"><SelectValue placeholder="Période rapide" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="today">Aujourd'hui</SelectItem>

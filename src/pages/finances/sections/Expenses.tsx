@@ -1,4 +1,4 @@
-import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download } from "lucide-react";
+import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download, Printer, FileSignature, Paperclip, Eye } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,12 +21,13 @@ import { useFournisseurs } from "@/hooks/useFournisseurs";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { EXPENSE_CATEGORIES as CATEGORIES } from "@/lib/expenseCategories";
 import { plageFinanciereAnnee } from "@/lib/academicRange";
-import { generateDepensesExport } from "@/lib/generateFinanceReports";
+import { generateDepensesExport, generateBonSortiePDF } from "@/lib/generateFinanceReports";
+import { generateFichePaiementPDF } from "@/lib/generateFichePaiement";
 
 const COMMUN = "__commun__";
 const TOUS = "__tous__";
@@ -54,7 +55,10 @@ export default function Expenses() {
   // juillet/août) disparaissaient de la liste alors qu'elles existent bien
   // en base — même incohérence déjà corrigée dans useBilanComptable.
   const range = periodLoading || !activeAnnee ? undefined : plageFinanciereAnnee(activeAnnee);
-  const { depenses, loading, addDepense, updateDepense, deleteDepense, validerDepense, validerPlusieurs, rejeterDepense, reouvrirDepense } = useDepenses(range);
+  const {
+    depenses, loading, addDepense, updateDepense, deleteDepense, validerDepense, validerPlusieurs,
+    rejeterDepense, reouvrirDepense, uploadJustificatifFiche, telechargerJustificatifFiche,
+  } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
   const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
   const ecoleInfo = useEcoleInfo();
@@ -69,6 +73,12 @@ export default function Expenses() {
     cycle_id: COMMUN,
     date_depense: todayIso(),
     notes: "",
+    // Fiche de paiement (bascule) — voir handleSubmit : ignorés si avecFiche est faux.
+    avecFiche: false,
+    ficheObjet: "Fiche de paiement de salaire",
+    ficheBeneficiaireNom: "",
+    ficheBeneficiaireFonction: "",
+    fichePeriodeService: "",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -95,8 +105,12 @@ export default function Expenses() {
 
   // ── Édition ──
   const [editing, setEditing] = useState<Depense | null>(null);
-  const [editForm, setEditForm] = useState<{ libelle: string; categorie: string; montant: string; fournisseur_id: string; cycle_id: string; date_depense: string; notes: string }>({
+  const [editForm, setEditForm] = useState<{
+    libelle: string; categorie: string; montant: string; fournisseur_id: string; cycle_id: string; date_depense: string; notes: string;
+    avecFiche: boolean; ficheObjet: string; ficheBeneficiaireNom: string; ficheBeneficiaireFonction: string; fichePeriodeService: string;
+  }>({
     libelle: "", categorie: "", montant: "", fournisseur_id: "", cycle_id: COMMUN, date_depense: todayIso(), notes: "",
+    avecFiche: false, ficheObjet: "Fiche de paiement de salaire", ficheBeneficiaireNom: "", ficheBeneficiaireFonction: "", fichePeriodeService: "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -108,6 +122,7 @@ export default function Expenses() {
   const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
 
   const [exporting, setExporting] = useState(false);
+  const [printingBonId, setPrintingBonId] = useState<string | null>(null);
 
   // ── Sélection multiple (validation groupée) ──
   // Seules les dépenses "en_attente" sont sélectionnables : mêmes règles que
@@ -239,6 +254,12 @@ export default function Expenses() {
     const montant = Number(form.montant);
     if (!(montant > 0)) { toast.error("Le montant doit être supérieur à zéro."); return; }
     if (form.date_depense > todayIso()) { toast.error("La date ne peut pas être dans le futur."); return; }
+    if (form.avecFiche) {
+      if (!form.ficheObjet.trim() || !form.ficheBeneficiaireNom.trim() || !form.ficheBeneficiaireFonction.trim() || !form.fichePeriodeService.trim()) {
+        toast.error("Complétez l'objet, le bénéficiaire, sa fonction et la période pour la fiche de paiement.");
+        return;
+      }
+    }
     await addDepense({
       libelle: form.libelle.trim(),
       categorie: form.categorie || null,
@@ -247,6 +268,10 @@ export default function Expenses() {
       cycle_id: form.cycle_id === COMMUN ? null : form.cycle_id,
       date_depense: form.date_depense,
       notes: form.notes.trim() || null,
+      fiche_objet: form.avecFiche ? form.ficheObjet.trim() : null,
+      fiche_beneficiaire_nom: form.avecFiche ? form.ficheBeneficiaireNom.trim() : null,
+      fiche_beneficiaire_fonction: form.avecFiche ? form.ficheBeneficiaireFonction.trim() : null,
+      fiche_periode_service: form.avecFiche ? form.fichePeriodeService.trim() : null,
     });
     setForm(emptyForm);
     setOpen(false);
@@ -262,6 +287,11 @@ export default function Expenses() {
       cycle_id: d.cycle_id ?? COMMUN,
       date_depense: d.date_depense,
       notes: d.notes ?? "",
+      avecFiche: !!d.fiche_objet,
+      ficheObjet: d.fiche_objet ?? "Fiche de paiement de salaire",
+      ficheBeneficiaireNom: d.fiche_beneficiaire_nom ?? "",
+      ficheBeneficiaireFonction: d.fiche_beneficiaire_fonction ?? "",
+      fichePeriodeService: d.fiche_periode_service ?? "",
     });
   };
 
@@ -271,6 +301,12 @@ export default function Expenses() {
     const montant = Number(editForm.montant);
     if (!(montant > 0)) { toast.error("Le montant doit être supérieur à zéro."); return; }
     if (editForm.date_depense > todayIso()) { toast.error("La date ne peut pas être dans le futur."); return; }
+    if (editForm.avecFiche) {
+      if (!editForm.ficheObjet.trim() || !editForm.ficheBeneficiaireNom.trim() || !editForm.ficheBeneficiaireFonction.trim() || !editForm.fichePeriodeService.trim()) {
+        toast.error("Complétez l'objet, le bénéficiaire, sa fonction et la période pour la fiche de paiement.");
+        return;
+      }
+    }
     setSaving(true);
     const patch: DepenseEditable = {
       libelle: editForm.libelle.trim(),
@@ -280,6 +316,10 @@ export default function Expenses() {
       cycle_id: editForm.cycle_id === COMMUN ? null : editForm.cycle_id,
       date_depense: editForm.date_depense,
       notes: editForm.notes.trim() || null,
+      fiche_objet: editForm.avecFiche ? editForm.ficheObjet.trim() : null,
+      fiche_beneficiaire_nom: editForm.avecFiche ? editForm.ficheBeneficiaireNom.trim() : null,
+      fiche_beneficiaire_fonction: editForm.avecFiche ? editForm.ficheBeneficiaireFonction.trim() : null,
+      fiche_periode_service: editForm.avecFiche ? editForm.fichePeriodeService.trim() : null,
     };
     await updateDepense(editing.id, patch);
     setSaving(false);
@@ -318,10 +358,107 @@ export default function Expenses() {
     }
   };
 
+  // Le numéro (BSC-YYYY-00001) n'existe qu'une fois la dépense validée — assigné
+  // par le trigger DB à la validation, jamais généré côté client (cf. migration
+  // 20260815180000). Garde défensive : normalement toujours présent ici puisque
+  // le bouton n'est visible que pour statut === "validee".
+  const handlePrintBon = async (d: Depense) => {
+    if (!d.numero_bon_sortie) {
+      toast.error("Numéro de bon indisponible — rafraîchissez la page et réessayez.");
+      return;
+    }
+    setPrintingBonId(d.id);
+    try {
+      await generateBonSortiePDF(
+        { nom: ecoleInfo?.nom ?? "École", adresse: ecoleInfo?.adresse, telephone: ecoleInfo?.telephone, email: ecoleInfo?.email, logoUrl: ecoleInfo?.logo_url },
+        {
+          numero: d.numero_bon_sortie,
+          libelle: d.libelle,
+          categorie: d.categorie,
+          fournisseur_nom: d.fournisseur_nom,
+          montant: d.montant,
+          date_depense: d.date_depense,
+          niveau_label: cycleName(d.cycle_id),
+          notes: d.notes,
+          valide_le: d.valide_le ?? d.created_at,
+        },
+      );
+    } catch (e: unknown) {
+      toast.error("Erreur lors de la génération du bon : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setPrintingBonId(null);
+    }
+  };
+
+  // ── Fiche de paiement : génération, puis téléversement du scan signé ──
+  const [generatingFicheId, setGeneratingFicheId] = useState<string | null>(null);
+  const [uploadingJustificatifId, setUploadingJustificatifId] = useState<string | null>(null);
+  const [justificatifTargetId, setJustificatifTargetId] = useState<string | null>(null);
+  const justificatifInputRef = useRef<HTMLInputElement>(null);
+
+  const handleGenererFiche = async (d: Depense) => {
+    if (!d.fiche_objet || !d.fiche_beneficiaire_nom) {
+      toast.error("Complétez d'abord les champs de la fiche de paiement pour cette dépense.");
+      return;
+    }
+    setGeneratingFicheId(d.id);
+    try {
+      await generateFichePaiementPDF(
+        {
+          nom: ecoleInfo?.nom ?? "École",
+          adresse: ecoleInfo?.adresse,
+          telephone: ecoleInfo?.telephone,
+          email: ecoleInfo?.email,
+          ville: ecoleInfo?.ville,
+          directeur: ecoleInfo?.directeur,
+          ministere: ecoleInfo?.ministere,
+          drenet: ecoleInfo?.drenet,
+          ddenet: ecoleInfo?.ddenet,
+          devise_nationale: ecoleInfo?.devise_nationale,
+          logo_url: ecoleInfo?.logo_url,
+          armoiries_url: ecoleInfo?.armoiries_url,
+        },
+        {
+          objet: d.fiche_objet,
+          beneficiaireNom: d.fiche_beneficiaire_nom,
+          beneficiaireFonction: d.fiche_beneficiaire_fonction ?? "",
+          periodeService: d.fiche_periode_service ?? "",
+          montant: d.montant,
+        },
+      );
+    } catch (e: unknown) {
+      toast.error("Erreur lors de la génération de la fiche : " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setGeneratingFicheId(null);
+    }
+  };
+
+  const openJustificatifPicker = (d: Depense) => {
+    setJustificatifTargetId(d.id);
+    justificatifInputRef.current?.click();
+  };
+
+  const handleJustificatifFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de re-sélectionner le même fichier si besoin (remplacement)
+    if (!file || !justificatifTargetId) return;
+    setUploadingJustificatifId(justificatifTargetId);
+    await uploadJustificatifFiche(justificatifTargetId, file);
+    setUploadingJustificatifId(null);
+    setJustificatifTargetId(null);
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
+      <input
+        ref={justificatifInputRef}
+        type="file"
+        accept="application/pdf,image/*"
+        className="hidden"
+        onChange={handleJustificatifFileSelected}
+      />
       {parCategorie.length > 0 && (
         <SettingsSection title="Répartition par catégorie" description="Dépenses validées par poste." icon={<Wallet className="h-5 w-5" />} hideSave>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -441,6 +578,30 @@ export default function Expenses() {
                     </div>
                   )}
                   <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optionnel" /></div>
+
+                  <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
+                    <label className="flex items-start gap-2 cursor-pointer">
+                      <Checkbox
+                        checked={form.avecFiche}
+                        onCheckedChange={(v) => setForm({ ...form, avecFiche: v === true })}
+                      />
+                      <span className="text-sm">
+                        <span className="font-medium">Fiche de paiement à faire signer</span>
+                        <span className="block text-xs text-muted-foreground">
+                          Génère un document à imprimer, faire signer par le bénéficiaire, scanner puis joindre à cette dépense avant validation.
+                        </span>
+                      </span>
+                    </label>
+                    {form.avecFiche && (
+                      <div className="space-y-3 pl-6">
+                        <div><Label>Objet *</Label><Input value={form.ficheObjet} onChange={(e) => setForm({ ...form, ficheObjet: e.target.value })} placeholder="Fiche de paiement de salaire" /></div>
+                        <div><Label>Nom du bénéficiaire *</Label><Input value={form.ficheBeneficiaireNom} onChange={(e) => setForm({ ...form, ficheBeneficiaireNom: e.target.value })} /></div>
+                        <div><Label>Fonction du bénéficiaire *</Label><Input value={form.ficheBeneficiaireFonction} onChange={(e) => setForm({ ...form, ficheBeneficiaireFonction: e.target.value })} placeholder="Informaticien" /></div>
+                        <div><Label>Période de service *</Label><Input value={form.fichePeriodeService} onChange={(e) => setForm({ ...form, fichePeriodeService: e.target.value })} placeholder="du mois de Juillet 2026" /></div>
+                      </div>
+                    )}
+                  </div>
+
                   <Button onClick={handleSubmit} className="w-full">Enregistrer</Button>
                 </div>
               </DialogContent>
@@ -483,7 +644,17 @@ export default function Expenses() {
                       />
                     )}
                   </TableCell>
-                  <TableCell className="font-medium">{e.libelle}</TableCell>
+                  <TableCell className="font-medium">
+                    <span className="inline-flex items-center gap-1.5">
+                      {e.libelle}
+                      {!!e.fiche_objet && (
+                        <Paperclip
+                          className={`h-3 w-3 shrink-0 ${e.fiche_piece_jointe_chemin ? "text-primary" : "text-muted-foreground/50"}`}
+                          aria-label={e.fiche_piece_jointe_chemin ? "Justificatif signé joint" : "Fiche de paiement à faire signer, pas encore jointe"}
+                        />
+                      )}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
                   <TableCell>
                     <Badge variant="outline" className={e.cycle_id ? "bg-primary/10 text-primary border-primary/20" : "bg-muted text-muted-foreground"}>
@@ -494,7 +665,15 @@ export default function Expenses() {
                   <TableCell className="text-right font-semibold">{e.montant.toLocaleString("fr-FR")} FCFA</TableCell>
                   <TableCell className="text-muted-foreground">{new Date(e.date_depense).toLocaleDateString("fr-FR")}</TableCell>
                   <TableCell>
-                    <Badge variant="outline" className={STATUT_BADGE[e.statut] ?? ""} title={e.statut === "rejetee" && e.motif_rejet ? `Motif : ${e.motif_rejet}` : undefined}>
+                    <Badge
+                      variant="outline"
+                      className={STATUT_BADGE[e.statut] ?? ""}
+                      title={
+                        e.statut === "rejetee" && e.motif_rejet ? `Motif : ${e.motif_rejet}`
+                        : e.statut === "validee" && e.numero_bon_sortie ? `Bon de sortie ${e.numero_bon_sortie}`
+                        : undefined
+                      }
+                    >
                       {STATUT_LABEL[e.statut] ?? e.statut}
                     </Badge>
                   </TableCell>
@@ -514,6 +693,29 @@ export default function Expenses() {
                               <Trash2 className="h-3.5 w-3.5" />Supprimer
                             </DropdownMenuItem>
                           </>
+                        )}
+                        {e.statut === "validee" && (
+                          <DropdownMenuItem onClick={() => handlePrintBon(e)} disabled={printingBonId === e.id}>
+                            {printingBonId === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+                            Imprimer le bon
+                          </DropdownMenuItem>
+                        )}
+                        {!!e.fiche_objet && (
+                          <DropdownMenuItem onClick={() => handleGenererFiche(e)} disabled={generatingFicheId === e.id}>
+                            {generatingFicheId === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSignature className="h-3.5 w-3.5" />}
+                            Générer la fiche de paiement
+                          </DropdownMenuItem>
+                        )}
+                        {!!e.fiche_objet && e.statut === "en_attente" && (
+                          <DropdownMenuItem onClick={() => openJustificatifPicker(e)} disabled={uploadingJustificatifId === e.id}>
+                            {uploadingJustificatifId === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Paperclip className="h-3.5 w-3.5" />}
+                            {e.fiche_piece_jointe_chemin ? "Remplacer le justificatif signé" : "Joindre le justificatif signé"}
+                          </DropdownMenuItem>
+                        )}
+                        {!!e.fiche_piece_jointe_chemin && (
+                          <DropdownMenuItem onClick={() => telechargerJustificatifFiche(e)}>
+                            <Eye className="h-3.5 w-3.5" />Voir le justificatif
+                          </DropdownMenuItem>
                         )}
                         {(e.statut === "validee" || e.statut === "rejetee") && (
                           <DropdownMenuItem onClick={() => setConfirmAction({ type: "reouvrir", depense: e })}>
@@ -578,6 +780,29 @@ export default function Expenses() {
               </div>
             )}
             <div><Label>Notes</Label><Textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+
+            <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
+              <label className="flex items-start gap-2 cursor-pointer">
+                <Checkbox
+                  checked={editForm.avecFiche}
+                  onCheckedChange={(v) => setEditForm({ ...editForm, avecFiche: v === true })}
+                />
+                <span className="text-sm">
+                  <span className="font-medium">Fiche de paiement à faire signer</span>
+                  <span className="block text-xs text-muted-foreground">
+                    Génère un document à imprimer, faire signer par le bénéficiaire, scanner puis joindre à cette dépense avant validation.
+                  </span>
+                </span>
+              </label>
+              {editForm.avecFiche && (
+                <div className="space-y-3 pl-6">
+                  <div><Label>Objet *</Label><Input value={editForm.ficheObjet} onChange={(e) => setEditForm({ ...editForm, ficheObjet: e.target.value })} placeholder="Fiche de paiement de salaire" /></div>
+                  <div><Label>Nom du bénéficiaire *</Label><Input value={editForm.ficheBeneficiaireNom} onChange={(e) => setEditForm({ ...editForm, ficheBeneficiaireNom: e.target.value })} /></div>
+                  <div><Label>Fonction du bénéficiaire *</Label><Input value={editForm.ficheBeneficiaireFonction} onChange={(e) => setEditForm({ ...editForm, ficheBeneficiaireFonction: e.target.value })} placeholder="Informaticien" /></div>
+                  <div><Label>Période de service *</Label><Input value={editForm.fichePeriodeService} onChange={(e) => setEditForm({ ...editForm, fichePeriodeService: e.target.value })} placeholder="du mois de Juillet 2026" /></div>
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditing(null)} disabled={saving}>Annuler</Button>

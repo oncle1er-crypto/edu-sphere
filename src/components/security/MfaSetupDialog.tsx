@@ -72,13 +72,13 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
     setLoading(true);
     try {
       const data = await enroll(`GSP - ${new Date().toLocaleDateString("fr-FR")}`);
-      const totp = (data as any).totp;
-      setFactorId((data as any).id);
+      const totp = data.totp;
+      setFactorId(data.id);
       setSecret(totp.secret);
       const png = await QRCode.toDataURL(totp.uri, { width: 256, margin: 1 });
       setQrDataUrl(png);
       setStep("verify");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Erreur lors de l'activation");
     } finally { setLoading(false); }
   };
@@ -92,7 +92,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
       setStep("backup");
       await refresh();
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Code invalide");
       await logSecurityEvent("mfa_enrollment_failed", "warning");
     } finally { setLoading(false); }
@@ -111,7 +111,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       toast.success(
         res?.canal === "whatsapp" ? "Code envoyé sur votre WhatsApp" : "Code envoyé par SMS"
       );
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Erreur envoi SMS");
     } finally { setLoading(false); }
   };
@@ -124,7 +124,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       await logSecurityEvent("mfa_sms_phone_verified", "info", { phone_last4: phone.slice(-4) });
       toast.success("Numéro vérifié");
       setStep("activate");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Code invalide");
     } finally { setLoading(false); }
   };
@@ -136,7 +136,7 @@ export default function MfaSetupDialog({ open, onOpenChange, onSuccess }: Props)
       await logSecurityEvent("mfa_sms_enabled", "info", { phone_last4: phone.slice(-4) });
       if (user?.id) setBackupCodes(await generateBackupCodes(user.id));
       setStep("backup");
-    } catch (e: any) {
+    } catch (e) {
       toast.error(messageErreurBase(e) ?? "Activation impossible");
     } finally { setLoading(false); }
   };

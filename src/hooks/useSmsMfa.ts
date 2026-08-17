@@ -31,7 +31,8 @@ export function useSmsMfa() {
     async (opts: { phone?: string; ecole_id?: string; purpose: "enroll" | "challenge" }) => {
       const { data, error } = await supabase.functions.invoke("send-mfa-sms-otp", { body: opts });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const errMsg = data && typeof data === "object" && "error" in data ? (data as { error?: unknown }).error : undefined;
+      if (errMsg) throw new Error(String(errMsg));
       return data as {
         ok: true;
         expires_at: string;
@@ -48,7 +49,8 @@ export function useSmsMfa() {
         body: { code, purpose },
       });
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const errMsg = data && typeof data === "object" && "error" in data ? (data as { error?: unknown }).error : undefined;
+      if (errMsg) throw new Error(String(errMsg));
       await refresh();
       return data as { ok: true };
     },

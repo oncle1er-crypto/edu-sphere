@@ -132,7 +132,7 @@ export default function Ledger() {
       const entries: EcritureComptable[] = [];
 
       // ── Émission de facture : DÉBIT 411 Clients / CRÉDIT 706 Prestations
-      (fRes.data ?? []).forEach((f: any) => {
+      (fRes.data ?? []).forEach((f) => {
         const nom = f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "Client";
         const ref = f.numero ? ` — facture ${f.numero}` : "";
         entries.push({ date: f.date_emission, account: "411 - Clients", label: `${nom}${ref}`, debit: Number(f.montant), credit: 0 });
@@ -140,7 +140,7 @@ export default function Ledger() {
       });
 
       // ── Encaissement paiement : DÉBIT 571/521 / CRÉDIT 411 Clients
-      (pRes.data ?? []).forEach((p: any) => {
+      (pRes.data ?? []).forEach((p) => {
         const nom = p.eleves ? `${p.eleves.nom} ${p.eleves.prenom}` : "Scolarité";
         const ref = p.reference ? ` (réf. ${p.reference})` : "";
         entries.push({ date: p.date_paiement, account: compteTresorerie(p.mode), label: `Encaissement ${nom}${ref}`, debit: Number(p.montant), credit: 0 });
@@ -149,7 +149,7 @@ export default function Ledger() {
 
       // ── Règlement dépense : DÉBIT 401 Fournisseurs / CRÉDIT 521 Banque
       // (Le mode de règlement n'est pas stocké côté dépense — on suppose banque par défaut.)
-      (dRes.data ?? []).forEach((d: any) => {
+      (dRes.data ?? []).forEach((d) => {
         // NB : pour une comptabilité complète, il faudrait aussi enregistrer la réception de facture
         //     (DÉBIT 6xx / CRÉDIT 401). On l'ajoute ici en même temps pour l'équilibre des comptes.
         entries.push({ date: d.date_depense, account: compteCharge(d.categorie), label: d.libelle, debit: Number(d.montant), credit: 0 });

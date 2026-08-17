@@ -66,11 +66,11 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
         .select("montant")
         .eq("eleve_id", eleveId),
     ]);
-    setOptions((opts as any[]) ?? []);
-    const cur = (el as any)?.frais_id_override ?? null;
+    setOptions(opts ?? []);
+    const cur = el?.frais_id_override ?? null;
     setCurrent(cur);
     setSelection(cur ?? "");
-    setCurrentTotal((trs ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0));
+    setCurrentTotal((trs ?? []).reduce((s, t) => s + Number(t.montant || 0), 0));
     // Par défaut on suppose une correction d'erreur initiale → force recalc
     setForceRecalc(true);
     setLoading(false);
@@ -88,14 +88,14 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
     setSaving(true);
     const { error } = await supabase
       .from("eleves")
-      .update({ frais_id_override: newId } as any)
+      .update({ frais_id_override: newId })
       .eq("id", eleveId);
     if (error) { setSaving(false); toast.error(messageErreurBase(error)); return; }
     setCurrent(newId);
     setRegen(true);
     const { error: rpcErr } = await supabase.rpc(
-      "generer_tranches_eleve" as any,
-      { _eleve_id: eleveId, _force_recalc: forceRecalc } as any,
+      "generer_tranches_eleve",
+      { _eleve_id: eleveId, _force_recalc: forceRecalc },
     );
     setRegen(false);
     setSaving(false);
@@ -108,7 +108,7 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
     onChanged?.();
     // Recharger le total courant pour refléter la nouvelle grille
     const { data: trs } = await supabase.from("tranches").select("montant").eq("eleve_id", eleveId);
-    setCurrentTotal((trs ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0));
+    setCurrentTotal((trs ?? []).reduce((s, t) => s + Number(t.montant || 0), 0));
   };
 
   return (

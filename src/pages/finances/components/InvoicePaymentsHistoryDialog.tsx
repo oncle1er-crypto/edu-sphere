@@ -14,6 +14,9 @@ import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { toast } from "sonner";
 import type { InvoiceForPayment } from "./InvoicePaymentDialog";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import type { Database } from "@/integrations/supabase/types";
+
+type PaiementMode = Database["public"]["Enums"]["paiement_mode"];
 
 const MODES = ["especes","wave","orange_money","mtn_money","moov_money","virement","cheque","remise","bourse","prise_en_charge"] as const;
 
@@ -47,7 +50,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .in("role", ["admin","directeur","comptable"] as any);
+        .in("role", ["admin","directeur","comptable"] as Database["public"]["Enums"]["app_role"][]);
       setCanEditMode((data ?? []).length > 0);
     })();
   }, [user]);
@@ -62,7 +65,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
   const saveMode = async () => {
     if (!editMode) return;
     setSavingMode(true);
-    const { error } = await supabase.from("paiements").update({ mode: editMode.mode as any }).eq("id", editMode.id);
+    const { error } = await supabase.from("paiements").update({ mode: editMode.mode as PaiementMode }).eq("id", editMode.id);
     setSavingMode(false);
     if (error) return toast.error(messageErreurBase(error));
     toast.success("Mode de paiement modifié");
@@ -80,7 +83,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
       .eq("facture_id", facture.id)
       .order("date_paiement", { ascending: false })
       .order("created_at", { ascending: false });
-    setPaiements(((data ?? []) as any[]) as Paiement[]);
+    setPaiements((data ?? []) as Paiement[]);
     setLoading(false);
   };
 
@@ -127,7 +130,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
       setMotifFor(null); setMotif("");
       await fetchPaiements();
       onChanged?.();
-    } catch (err: any) {
+    } catch (err) {
       toast.error("Annulation refusée", { description: messageErreurBase(err) ?? "Erreur inconnue" });
     } finally {
       setCancelling(null);
