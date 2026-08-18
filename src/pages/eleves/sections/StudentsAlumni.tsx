@@ -159,7 +159,7 @@ export default function StudentsAlumni() {
                       size="sm"
                       variant="outline"
                       className="h-8 gap-1 text-xs"
-                      onClick={() => { setReinsertTarget(a); setReinsertClasseId(a.classe_id ?? ""); }}
+                      onClick={() => { setReinsertTarget(a); setReinsertClasseId(classes.some((c) => c.id === a.classe_id) ? (a.classe_id as string) : ""); }}
                       title="Réinsérer cet élève dans la liste des élèves"
                     >
                       <Undo2 className="h-3.5 w-3.5" />Réinsérer
