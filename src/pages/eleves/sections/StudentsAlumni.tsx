@@ -77,16 +77,20 @@ export default function StudentsAlumni() {
 
   const handleReinsert = async () => {
     if (!reinsertTarget) return;
+    if (!activeAnnee?.id) { toast.error("Aucune année scolaire active"); return; }
+    if (!reinsertClasseId) { toast.error("Sélectionnez une classe de l'année en cours"); return; }
     setBusy(true);
     const ok = await updateEleve(reinsertTarget.id, {
       statut: "inscrit",
-      ...(reinsertClasseId ? { classe_id: reinsertClasseId } : {}),
+      annee_id: activeAnnee.id,
+      classe_id: reinsertClasseId,
     });
     if (ok) toast.success(`${reinsertTarget.nom} ${reinsertTarget.prenom} réinséré(e) dans la liste des élèves`);
     setReinsertTarget(null);
     setReinsertClasseId("");
     setBusy(false);
   };
+
 
   const handlePurge = async () => {
     if (!purgeTarget || !isAdmin) return;
@@ -155,7 +159,7 @@ export default function StudentsAlumni() {
                       size="sm"
                       variant="outline"
                       className="h-8 gap-1 text-xs"
-                      onClick={() => { setReinsertTarget(a); setReinsertClasseId(a.classe_id ?? ""); }}
+                      onClick={() => { setReinsertTarget(a); setReinsertClasseId(classes.some((c) => c.id === a.classe_id) ? (a.classe_id as string) : ""); }}
                       title="Réinsérer cet élève dans la liste des élèves"
                     >
                       <Undo2 className="h-3.5 w-3.5" />Réinsérer
@@ -192,10 +196,11 @@ export default function StudentsAlumni() {
             <div className="space-y-4 text-sm">
               <p>
                 <strong>{reinsertTarget.nom} {reinsertTarget.prenom}</strong> ({reinsertTarget.matricule}) sera remis
-                au statut « inscrit » et réapparaîtra dans la liste des élèves.
+                au statut « inscrit » et rattaché à l'année scolaire en cours
+                {activeAnnee?.libelle ? ` (${activeAnnee.libelle})` : ""}.
               </p>
               <Select value={reinsertClasseId} onValueChange={setReinsertClasseId}>
-                <SelectTrigger><SelectValue placeholder="Classe d'affectation (optionnel)" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder="Classe d'affectation (obligatoire)" /></SelectTrigger>
                 <SelectContent>
                   {classes.map((c) => (
                     <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
@@ -206,7 +211,7 @@ export default function StudentsAlumni() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setReinsertTarget(null)}>Annuler</Button>
-            <Button onClick={handleReinsert} disabled={busy}>
+            <Button onClick={handleReinsert} disabled={busy || !reinsertClasseId || !activeAnnee?.id}>
               {busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}Réinsérer
             </Button>
           </DialogFooter>
