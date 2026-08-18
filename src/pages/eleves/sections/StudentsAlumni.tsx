@@ -77,16 +77,20 @@ export default function StudentsAlumni() {
 
   const handleReinsert = async () => {
     if (!reinsertTarget) return;
+    if (!activeAnnee?.id) { toast.error("Aucune année scolaire active"); return; }
+    if (!reinsertClasseId) { toast.error("Sélectionnez une classe de l'année en cours"); return; }
     setBusy(true);
     const ok = await updateEleve(reinsertTarget.id, {
       statut: "inscrit",
-      ...(reinsertClasseId ? { classe_id: reinsertClasseId } : {}),
+      annee_id: activeAnnee.id,
+      classe_id: reinsertClasseId,
     });
     if (ok) toast.success(`${reinsertTarget.nom} ${reinsertTarget.prenom} réinséré(e) dans la liste des élèves`);
     setReinsertTarget(null);
     setReinsertClasseId("");
     setBusy(false);
   };
+
 
   const handlePurge = async () => {
     if (!purgeTarget || !isAdmin) return;
