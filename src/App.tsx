@@ -412,26 +412,30 @@ const App = () => (
               <Route path="validation" element={<Validation />} />
               <Route path="configuration" element={<ExamsConfig />} />
             </Route>
-            <Route path="/finances" element={<RequirePerm module="finances"><FinanceLayout /></RequirePerm>}>
-              <Route path="tableau" element={<FinanceDashboard />} />
-              <Route path="factures" element={<Invoices />} />
-              <Route path="paiements" element={<Payments />} />
-              <Route path="synthese-eleve" element={<StudentSummary />} />
-              <Route path="synthese-classe" element={<ClassSummary />} />
-              <Route path="recus" element={<Receipts />} />
-              <Route path="impayes" element={<Unpaid />} />
-              <Route path="depenses" element={<Expenses />} />
-              <Route path="salaires" element={<Payroll />} />
-              <Route path="fournisseurs" element={<Suppliers />} />
-              <Route path="budget" element={<Budget />} />
-              <Route path="tresorerie" element={<Treasury />} />
-              <Route path="grand-livre" element={<Ledger />} />
-              <Route path="bilan" element={<BalanceSheet />} />
-              <Route path="recap-entrees" element={<EntreesRecap />} />
-              <Route path="recap-caisse" element={<RecapCaisse />} />
-              <Route path="rapports" element={<Reports />} />
-              <Route path="fiscalite" element={<Tax />} />
-              <Route path="configuration" element={<FinanceConfig />} />
+            <Route path="/finances" element={<RequirePerm module={["finances", "finances.depenses", "finances.bilan_rapports"]}><FinanceLayout /></RequirePerm>}>
+              {/* Accès complet requis (module "finances") : admin/comptable/directeur.
+                  "finances.depenses" et "finances.bilan_rapports" sont des accès
+                  scindés distincts (ex. secretaire) qui n'ouvrent QUE la route
+                  correspondante, cf. décision produit du 17/08/2026. */}
+              <Route path="tableau" element={<RequirePerm module="finances"><FinanceDashboard /></RequirePerm>} />
+              <Route path="factures" element={<RequirePerm module="finances"><Invoices /></RequirePerm>} />
+              <Route path="paiements" element={<RequirePerm module="finances"><Payments /></RequirePerm>} />
+              <Route path="synthese-eleve" element={<RequirePerm module="finances"><StudentSummary /></RequirePerm>} />
+              <Route path="synthese-classe" element={<RequirePerm module="finances"><ClassSummary /></RequirePerm>} />
+              <Route path="recus" element={<RequirePerm module="finances"><Receipts /></RequirePerm>} />
+              <Route path="impayes" element={<RequirePerm module="finances"><Unpaid /></RequirePerm>} />
+              <Route path="depenses" element={<RequirePerm module={["finances", "finances.depenses"]}><Expenses /></RequirePerm>} />
+              <Route path="salaires" element={<RequirePerm module="finances"><Payroll /></RequirePerm>} />
+              <Route path="fournisseurs" element={<RequirePerm module="finances"><Suppliers /></RequirePerm>} />
+              <Route path="budget" element={<RequirePerm module="finances"><Budget /></RequirePerm>} />
+              <Route path="tresorerie" element={<RequirePerm module="finances"><Treasury /></RequirePerm>} />
+              <Route path="grand-livre" element={<RequirePerm module="finances"><Ledger /></RequirePerm>} />
+              <Route path="bilan" element={<RequirePerm module={["finances", "finances.bilan_rapports"]}><BalanceSheet /></RequirePerm>} />
+              <Route path="recap-entrees" element={<RequirePerm module="finances"><EntreesRecap /></RequirePerm>} />
+              <Route path="recap-caisse" element={<RequirePerm module="finances"><RecapCaisse /></RequirePerm>} />
+              <Route path="rapports" element={<RequirePerm module={["finances", "finances.bilan_rapports"]}><Reports /></RequirePerm>} />
+              <Route path="fiscalite" element={<RequirePerm module="finances"><Tax /></RequirePerm>} />
+              <Route path="configuration" element={<RequirePerm module="finances"><FinanceConfig /></RequirePerm>} />
             </Route>
             <Route path="/presences" element={<RequirePerm module="presences"><AttendanceLayout /></RequirePerm>}>
               <Route path="tableau" element={<AttendanceDashboard />} />

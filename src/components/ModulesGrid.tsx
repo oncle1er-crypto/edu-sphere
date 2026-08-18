@@ -49,7 +49,16 @@ const modules: ModuleItem[] = [
 
 export function ModulesGrid() {
   const { can, loading } = usePermissions();
-  const visible = modules.filter(m => loading || can(m.moduleKey));
+  // "PAIEMENTS" reste visible pour un accès scindé (ex. secretaire limitée à
+  // Dépenses/Bilan/Rapports), même sans le module "finances" complet — cf.
+  // FinanceLayout, qui filtre ensuite le menu interne selon l'accès réel.
+  const visible = modules.filter(m => {
+    if (loading) return true;
+    if (m.moduleKey === "finances") {
+      return can("finances") || can("finances.depenses") || can("finances.bilan_rapports");
+    }
+    return can(m.moduleKey);
+  });
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
       {visible.map((m, i) => (

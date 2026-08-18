@@ -23,6 +23,7 @@ import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useNiveau, niveauOfCycle, NIVEAU_LABELS } from "@/context/NiveauContext";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { usePermissions } from "@/hooks/usePermissions";
 
 import { EXPENSE_CATEGORIES as CATEGORIES } from "@/lib/expenseCategories";
 import { plageFinanciereAnnee } from "@/lib/academicRange";
@@ -62,6 +63,14 @@ export default function Expenses() {
   const { fournisseurs } = useFournisseurs();
   const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
   const ecoleInfo = useEcoleInfo();
+  // Accès scindé (ex. secretaire, cf. décision du 17/08/2026) : peut créer/
+  // modifier des brouillons et imprimer, mais jamais valider/rejeter/rouvrir
+  // ni supprimer — ces actions restent réservées à l'accès complet "finances"
+  // (admin/comptable/directeur). Défense en profondeur : la RLS sur
+  // "depenses" bloque déjà ces écritures côté base pour l'accès scindé,
+  // ceci évite seulement d'afficher un bouton qui échouerait.
+  const { can, isAdmin } = usePermissions();
+  const hasFullFinanceAccess = isAdmin || can("finances");
 
   // ── Création ──
   const [open, setOpen] = useState(false);
@@ -189,7 +198,11 @@ export default function Expenses() {
   }, [query, filterCategorie, filterStatut, filterNiveau, dateFrom, dateTo]);
 
   const visibles = sorted.slice(0, visibleCount);
-  const visiblesSelectionnables = visibles.filter((d) => d.statut === "en_attente");
+  // Sélection multiple + validation groupée réservées à l'accès complet
+  // (même règle que Valider/Rejeter/Réouvrir/Supprimer à la ligne) : un accès
+  // scindé (ex. secretaire) ne doit jamais voir la case à cocher ni pouvoir
+  // déclencher handleBulkValider.
+  const visiblesSelectionnables = hasFullFinanceAccess ? visibles.filter((d) => d.statut === "en_attente") : [];
   const toutSelectionne = visiblesSelectionnables.length > 0 && visiblesSelectionnables.every((d) => selected.has(d.id));
 
   const toggleSelected = (id: string) => {
@@ -523,7 +536,7 @@ export default function Expenses() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            {selectedDepenses.length > 0 && (
+            {hasFullFinanceAccess && selectedDepenses.length > 0 && (
               <Button size="sm" onClick={() => setBulkValiderConfirm(true)}>
                 <Check className="h-4 w-4" />Valider la sélection ({selectedDepenses.length})
               </Button>
@@ -636,7 +649,7 @@ export default function Expenses() {
               {visibles.map((e) => (
                 <TableRow key={e.id} data-state={selected.has(e.id) ? "selected" : undefined}>
                   <TableCell>
-                    {e.statut === "en_attente" && (
+                    {hasFullFinanceAccess && e.statut === "en_attente" && (
                       <Checkbox
                         checked={selected.has(e.id)}
                         onCheckedChange={() => toggleSelected(e.id)}
@@ -686,12 +699,16 @@ export default function Expenses() {
                         {e.statut === "en_attente" && (
                           <>
                             <DropdownMenuItem onClick={() => openEdit(e)}><Pencil className="h-3.5 w-3.5" />Modifier</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setConfirmAction({ type: "valider", depense: e })}><Check className="h-3.5 w-3.5" />Valider</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setRejectTarget(e); setRejectMotif(""); }}><X className="h-3.5 w-3.5" />Rejeter</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => setConfirmAction({ type: "delete", depense: e })} className="text-destructive focus:text-destructive">
-                              <Trash2 className="h-3.5 w-3.5" />Supprimer
-                            </DropdownMenuItem>
+                            {hasFullFinanceAccess && (
+                              <>
+                                <DropdownMenuItem onClick={() => setConfirmAction({ type: "valider", depense: e })}><Check className="h-3.5 w-3.5" />Valider</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setRejectTarget(e); setRejectMotif(""); }}><X className="h-3.5 w-3.5" />Rejeter</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => setConfirmAction({ type: "delete", depense: e })} className="text-destructive focus:text-destructive">
+                                  <Trash2 className="h-3.5 w-3.5" />Supprimer
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </>
                         )}
                         {e.statut === "validee" && (
@@ -717,7 +734,7 @@ export default function Expenses() {
                             <Eye className="h-3.5 w-3.5" />Voir le justificatif
                           </DropdownMenuItem>
                         )}
-                        {(e.statut === "validee" || e.statut === "rejetee") && (
+                        {hasFullFinanceAccess && (e.statut === "validee" || e.statut === "rejetee") && (
                           <DropdownMenuItem onClick={() => setConfirmAction({ type: "reouvrir", depense: e })}>
                             <RotateCcw className="h-3.5 w-3.5" />Réouvrir pour correction
                           </DropdownMenuItem>

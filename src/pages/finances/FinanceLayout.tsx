@@ -6,7 +6,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { usePermissions } from "@/hooks/usePermissions";
 
+/** `module` optionnel : si absent, la section est visible dès qu'on a accès
+ * au module "finances" complet (comportement historique). Si présent, la
+ * section reste visible pour un accès scindé (ex. "finances.depenses") même
+ * sans le module "finances" complet — cf. RequirePerm dans App.tsx, qui
+ * gate déjà chaque route individuellement de la même façon. */
 const sections = [
   { to: "tableau", label: "Tableau de bord", icon: LayoutDashboard, group: "Vue d'ensemble" },
   { to: "factures", label: "Factures & frais", icon: FileText, group: "Vue d'ensemble" },
@@ -18,28 +24,36 @@ const sections = [
   { to: "recap-caisse", label: "Récapitulatif de caisse", icon: ClipboardList, group: "Encaissements" },
   { to: "impayes", label: "Impayés & relances", icon: AlertTriangle, group: "Encaissements" },
 
-  { to: "depenses", label: "Dépenses", icon: Wallet, group: "Sorties" },
+  { to: "depenses", label: "Dépenses", icon: Wallet, group: "Sorties", module: "finances.depenses" },
   { to: "salaires", label: "Salaires & paie", icon: Users, group: "Sorties" },
   { to: "fournisseurs", label: "Fournisseurs", icon: Landmark, group: "Sorties" },
 
   { to: "budget", label: "Budget annuel", icon: PiggyBank, group: "Comptabilité" },
   { to: "tresorerie", label: "Trésorerie & banques", icon: Landmark, group: "Comptabilité" },
   { to: "grand-livre", label: "Grand livre", icon: FileSpreadsheet, group: "Comptabilité" },
-  { to: "bilan", label: "Bilan comptable", icon: FileSpreadsheet, group: "Comptabilité" },
+  { to: "bilan", label: "Bilan comptable", icon: FileSpreadsheet, group: "Comptabilité", module: "finances.bilan_rapports" },
   { to: "recap-entrees", label: "Récapitulatif des entrées", icon: ListChecks, group: "Comptabilité" },
 
-  { to: "rapports", label: "Rapports financiers", icon: BarChart3, group: "Analyses" },
+  { to: "rapports", label: "Rapports financiers", icon: BarChart3, group: "Analyses", module: "finances.bilan_rapports" },
   { to: "fiscalite", label: "Fiscalité & TVA", icon: FileSpreadsheet, group: "Analyses" },
 
   { to: "configuration", label: "Configuration", icon: Settings2, group: "Système" },
 ];
 
-const groups = Array.from(new Set(sections.map((s) => s.group)));
-
 export default function FinanceLayout() {
   const location = useLocation();
+  const { can, isAdmin, loading } = usePermissions();
+
+  const hasFull = isAdmin || can("finances");
+  const visibleSections = hasFull
+    ? sections
+    : sections.filter((s) => s.module && can(s.module));
+  const groups = Array.from(new Set(visibleSections.map((s) => s.group)));
+
   if (location.pathname === "/finances" || location.pathname === "/finances/") {
-    return <Navigate to="/finances/tableau" replace />;
+    if (loading) return null;
+    const fallback = hasFull ? "tableau" : (visibleSections[0]?.to ?? "tableau");
+    return <Navigate to={`/finances/${fallback}`} replace />;
   }
 
   return (
@@ -61,7 +75,7 @@ export default function FinanceLayout() {
                 {group}
               </div>
               <nav className="flex flex-col gap-0.5">
-                {sections
+                {visibleSections
                   .filter((s) => s.group === group)
                   .map((s) => (
                     <NavLink
