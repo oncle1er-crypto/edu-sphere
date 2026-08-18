@@ -4667,6 +4667,7 @@ export type Database = {
           notif_remplacements: boolean
           pause_dej_debut: string
           pause_dej_fin: string
+          recreation_debut: string
           updated_at: string
           verrouiller_apres_publication: boolean
         }
@@ -4689,6 +4690,7 @@ export type Database = {
           notif_remplacements?: boolean
           pause_dej_debut?: string
           pause_dej_fin?: string
+          recreation_debut?: string
           updated_at?: string
           verrouiller_apres_publication?: boolean
         }
@@ -4711,6 +4713,7 @@ export type Database = {
           notif_remplacements?: boolean
           pause_dej_debut?: string
           pause_dej_fin?: string
+          recreation_debut?: string
           updated_at?: string
           verrouiller_apres_publication?: boolean
         }
