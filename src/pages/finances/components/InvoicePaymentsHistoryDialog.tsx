@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { History, Printer, Ban, Loader2, Pencil, Check } from "lucide-react";
@@ -72,6 +73,39 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
     setEditMode(null);
     await fetchPaiements();
     onChanged?.();
+  };
+
+  // ── Correction du montant (erreur de saisie) ──
+  // Contrairement au mode, le montant ne peut pas être modifié par un simple
+  // UPDATE : la facture (montant_paye/statut) doit être recalculée en même
+  // temps, de façon atomique et tracée — d'où le passage par une RPC dédiée
+  // (modifier_montant_paiement_facture) plutôt qu'un update direct côté
+  // client. Même périmètre de rôles que l'annulation (admin/directeur/comptable).
+  const [editMontant, setEditMontant] = useState<{ id: string; montant: string; motif: string } | null>(null);
+  const [savingMontant, setSavingMontant] = useState(false);
+
+  const saveMontant = async () => {
+    if (!editMontant) return;
+    const nouveauMontant = Number(editMontant.montant);
+    if (!(nouveauMontant > 0)) { toast.error("Montant invalide."); return; }
+    if (editMontant.motif.trim().length < 3) { toast.error("Motif obligatoire (3 caractères minimum)."); return; }
+    setSavingMontant(true);
+    try {
+      const { error } = await supabase.rpc("modifier_montant_paiement_facture", {
+        _paiement_id: editMontant.id,
+        _nouveau_montant: nouveauMontant,
+        _motif: editMontant.motif.trim(),
+      });
+      if (error) throw error;
+      toast.success("Montant corrigé");
+      setEditMontant(null);
+      await fetchPaiements();
+      onChanged?.();
+    } catch (err) {
+      toast.error("Correction refusée", { description: messageErreurBase(err) ?? "Erreur inconnue" });
+    } finally {
+      setSavingMontant(false);
+    }
   };
 
   const fetchPaiements = async () => {
@@ -188,7 +222,16 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           ) : p.mode}
                         </TableCell>
                         <TableCell className={`text-right font-medium ${isCancelled ? "line-through text-muted-foreground" : "text-primary"}`}>
-                          {fcfa(Number(p.montant))}
+                          {editMontant?.id === p.id ? (
+                            <Input
+                              type="number"
+                              className="h-7 w-28 text-right text-xs ml-auto"
+                              value={editMontant.montant}
+                              onChange={(e) => setEditMontant({ ...editMontant, montant: e.target.value })}
+                            />
+                          ) : (
+                            fcfa(Number(p.montant))
+                          )}
                         </TableCell>
                         <TableCell>
                           {isCancelled
@@ -199,10 +242,23 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           <Button size="sm" variant="ghost" onClick={() => reprint(p)} title="Réimprimer">
                             <Printer className="h-3.5 w-3.5" />
                           </Button>
-                          {!isCancelled && canEditMode && editMode?.id !== p.id && (
-                            <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={() => setEditMode({ id: p.id, mode: p.mode })} title="Modifier le mode de paiement">
+                          {!isCancelled && canEditMode && editMode?.id !== p.id && editMontant?.id !== p.id && (
+                            <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={() => { setEditMode({ id: p.id, mode: p.mode }); setEditMontant(null); }} title="Modifier le mode de paiement">
                               <Pencil className="h-3 w-3" /> Mode
                             </Button>
+                          )}
+                          {!isCancelled && canEditMode && editMontant?.id !== p.id && editMode?.id !== p.id && (
+                            <Button size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={() => { setEditMontant({ id: p.id, montant: String(p.montant), motif: "" }); setEditMode(null); }} title="Corriger le montant (erreur de saisie)">
+                              <Pencil className="h-3 w-3" /> Montant
+                            </Button>
+                          )}
+                          {editMontant?.id === p.id && (
+                            <>
+                              <Button size="sm" variant="outline" className="h-7 px-2 text-xs" onClick={() => setEditMontant(null)} disabled={savingMontant}>Annuler</Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={saveMontant} disabled={savingMontant}>
+                                {savingMontant ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5 text-primary" />}
+                              </Button>
+                            </>
                           )}
                           {!isCancelled && isAdmin && (
                             <Button size="sm" variant="ghost" className="text-destructive" onClick={() => { setMotifFor(p.id); setMotif(""); }} title="Annuler ce paiement">
@@ -211,6 +267,21 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
                           )}
                         </TableCell>
                       </TableRow>
+                      {editMontant?.id === p.id && (
+                        <TableRow>
+                          <TableCell colSpan={6} className="bg-primary/5 py-3">
+                            <div className="space-y-2">
+                              <Label className="text-xs">Motif de la correction (obligatoire)</Label>
+                              <Textarea
+                                rows={2}
+                                value={editMontant.motif}
+                                onChange={(e) => setEditMontant({ ...editMontant, motif: e.target.value })}
+                                placeholder="Ex : Erreur de saisie, montant mal compté à l'encaissement…"
+                              />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
                       {motifFor === p.id && (
                         <TableRow>
                           <TableCell colSpan={6} className="bg-destructive/5 py-3">

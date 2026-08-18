@@ -8348,6 +8348,10 @@ export type Database = {
         Args: { p_ecole_id: string; p_matricule: string }
         Returns: boolean
       }
+      modifier_montant_paiement_facture: {
+        Args: { _nouveau_montant: number; _paiement_id: string; _motif: string }
+        Returns: Json
+      }
       modifier_paiement: {
         Args: {
           _mode: string
