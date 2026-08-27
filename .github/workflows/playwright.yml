@@ -32,17 +32,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Découplé du reste du pipeline (Étape 9) : l'audit de la dette ESLint
-      # (Étape 8, voir rapport) recense 1219 problèmes existants sur le code
-      # actuel. Les laisser bloquants rendrait la CI rouge en permanence dès
-      # ce step, sans jamais atteindre Typecheck/Tests/Build/E2E — donc sans
-      # jamais valider ce qui compte le plus (régressions fonctionnelles).
-      # `continue-on-error: true` : le résultat reste visible dans les logs et
-      # dans l'onglet Checks, mais ne bloque pas la suite. À repasser en
-      # bloquant une fois la catégorie A (bugs réels, priorité) résorbée.
-      - name: Lint (non bloquant — dette historique, voir Étape 8)
+      - name: Lint
         run: npm run lint
-        continue-on-error: true
 
       - name: Typecheck
         run: npm run typecheck

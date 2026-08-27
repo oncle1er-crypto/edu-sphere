@@ -66,7 +66,7 @@ export default function SchoolsYearTransition() {
     setLoading(false);
   };
 
-  useEffect(() => { reload(); /* eslint-disable-next-line */ }, [ecoleId]);
+  useEffect(() => { reload();   }, [ecoleId]);
 
   const classesSource = useMemo(
     () => classes.filter((c) => c.annee_id === sourceId).sort((a, b) => a.nom.localeCompare(b.nom)),

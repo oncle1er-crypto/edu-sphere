@@ -121,7 +121,7 @@ export async function generateBulletinPDF(data: BulletinData): Promise<jsPDF> {
   doc.text(safe(data.ecole.direction_regionale ?? "Direction Regionale d'Abidjan"), margin, y + 16);
 
   // Logo + nom école
-  let logoBottomY = y + 22;
+  const logoBottomY = y + 22;
   if (data.ecole.logo_url) {
     const dataUrl = await urlToDataUrl(data.ecole.logo_url);
     if (dataUrl) {

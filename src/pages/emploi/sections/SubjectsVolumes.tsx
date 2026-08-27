@@ -30,7 +30,7 @@ export default function SubjectsVolumes() {
     if (!ecoleId) return;
     (async () => {
       setLoading(true);
-      let q = supabase
+      const q = supabase
         .from("classe_matieres")
         .select("id, coefficient, volume_horaire_hebdo, matieres(nom), classes(nom, annee_id)")
         .eq("ecole_id", ecoleId);

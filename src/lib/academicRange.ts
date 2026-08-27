@@ -15,8 +15,10 @@ export const MOIS_ANTICIPATION_FINANCIERE = 2;
 
 /** Premier jour du mois de début d'année, moins la fenêtre d'anticipation. */
 export function debutAnticipe(debutAnneeIso: string): string {
-  const d = new Date(debutAnneeIso);
-  const start = new Date(d.getFullYear(), d.getMonth() - MOIS_ANTICIPATION_FINANCIERE, 1);
+  // Ces valeurs sont des dates civiles. Un calcul entièrement en UTC évite
+  // qu'un fuseau horaire transforme le premier du mois en jour précédent.
+  const [year, month] = debutAnneeIso.split("-").map(Number);
+  const start = new Date(Date.UTC(year, month - 1 - MOIS_ANTICIPATION_FINANCIERE, 1));
   return start.toISOString().slice(0, 10);
 }
 

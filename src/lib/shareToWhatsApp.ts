@@ -29,7 +29,7 @@ export function shareToWhatsApp(options: WhatsAppShareOptions): void {
 export function normalizeIvorianPhoneNumber(phone: string): string {
   if (!phone) return '';
 
-  let cleaned = phone.replace(/\D/g, '');
+  const cleaned = phone.replace(/\D/g, '');
 
   if (cleaned.startsWith('225')) {
     return cleaned.length === 12 ? cleaned : '';
