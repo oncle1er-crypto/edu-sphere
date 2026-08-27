@@ -9,7 +9,7 @@ export type ServiceType = "cantine" | "transport";
 /**
  * Facturation séquentielle des services : chaque appel ouvre au maximum
  * UNE période — la plus ancienne non encore facturée — et seulement si
- * l'échéance est atteinte (ou si `forcer` est vrai : encaissement anticipé).
+ * la fin de période est atteinte (ou si `forcer` est vrai : renouvellement anticipé).
  * Si la facture précédente n'est pas soldée, la base refuse la génération.
  */
 export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => void | Promise<void>) {
@@ -40,9 +40,9 @@ export function useServiceInvoicing(serviceType: ServiceType, onDone?: () => voi
       toast.success(
         n > 0
           ? anticipe
-            ? "Période suivante ouverte par anticipation : 1 facture générée"
+            ? "Renouvellement préparé par anticipation : 1 facture générée"
             : "Période suivante ouverte : 1 facture générée"
-          : "Aucune période à ouvrir : l'échéance suivante n'est pas encore atteinte"
+          : "Aucune période à ouvrir : la fin de validité n'est pas encore atteinte"
       );
     },
     onError: (e: Error) => toast.error(messageErreurBase(e)),

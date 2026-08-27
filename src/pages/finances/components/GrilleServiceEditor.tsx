@@ -20,6 +20,7 @@ interface Props {
     libelle: string;
     periodicite: Periodicite;
     tranches: TrancheService[];
+    jours_alerte_renouvellement: number;
   }) => void;
   saving?: boolean;
 }
@@ -39,6 +40,7 @@ export default function GrilleServiceEditor({ open, onOpenChange, initial, onSav
   const [libelle, setLibelle] = useState("");
   const [periodicite, setPeriodicite] = useState<Periodicite>("trimestriel");
   const [tranches, setTranches] = useState<TrancheService[]>(DEFAULT_TRANCHES_TRIM);
+  const [joursAlerte, setJoursAlerte] = useState(7);
 
   useEffect(() => {
     if (!open) return;
@@ -46,10 +48,12 @@ export default function GrilleServiceEditor({ open, onOpenChange, initial, onSav
       setLibelle(initial.libelle);
       setPeriodicite(initial.periodicite);
       setTranches(initial.tranches?.length ? initial.tranches : DEFAULT_TRANCHES_TRIM);
+      setJoursAlerte(initial.jours_alerte_renouvellement ?? 7);
     } else {
       setLibelle("");
       setPeriodicite("trimestriel");
       setTranches(DEFAULT_TRANCHES_TRIM);
+      setJoursAlerte(7);
     }
   }, [open, initial]);
 
@@ -73,7 +77,9 @@ export default function GrilleServiceEditor({ open, onOpenChange, initial, onSav
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{initial ? "Modifier le tarif" : "Nouveau tarif"}</DialogTitle>
-          <DialogDescription>Définissez le libellé, la périodicité et les échéances.</DialogDescription>
+          <DialogDescription>
+            Définissez les échéances de paiement. Une tranche payée reste valide jusqu'à l'échéance suivante ; la dernière reste valide jusqu'à la fin de l'année scolaire.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
@@ -94,9 +100,19 @@ export default function GrilleServiceEditor({ open, onOpenChange, initial, onSav
             </div>
           </div>
 
+          <div className="max-w-xs">
+            <Label>Délai d'alerte avant expiration</Label>
+            <div className="flex items-center gap-2">
+              <Input type="number" min={1} max={30} value={joursAlerte}
+                onChange={(e) => setJoursAlerte(Math.min(30, Math.max(1, Number(e.target.value) || 7)))} />
+              <span className="text-sm text-muted-foreground whitespace-nowrap">jour(s) avant</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">L'utilisateur sera averti avant la fin de la période déjà payée.</p>
+          </div>
+
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Échéances</Label>
+              <Label>Échéances de paiement</Label>
               <Button type="button" variant="outline" size="sm" onClick={addT}>
                 <Plus className="h-3.5 w-3.5" />Ajouter
               </Button>
@@ -149,7 +165,13 @@ export default function GrilleServiceEditor({ open, onOpenChange, initial, onSav
           <Button variant="outline" onClick={() => onOpenChange(false)}>Annuler</Button>
           <Button
             disabled={!canSave}
-            onClick={() => onSave({ id: initial?.id, libelle: libelle.trim(), periodicite, tranches })}
+            onClick={() => onSave({
+              id: initial?.id,
+              libelle: libelle.trim(),
+              periodicite,
+              tranches,
+              jours_alerte_renouvellement: joursAlerte,
+            })}
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Enregistrer

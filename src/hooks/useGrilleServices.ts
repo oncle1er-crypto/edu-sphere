@@ -25,6 +25,7 @@ export interface GrilleService {
   periodicite: Periodicite;
   tranches: TrancheService[];
   montant_total: number;
+  jours_alerte_renouvellement: number;
   actif: boolean;
 }
 
@@ -55,6 +56,7 @@ export function useGrilleServices(serviceType: ServiceType) {
       libelle: string;
       periodicite: Periodicite;
       tranches: TrancheService[];
+      jours_alerte_renouvellement?: number;
     }) => {
       const payload: any = {
         ecole_id: ecoleId,
@@ -63,6 +65,7 @@ export function useGrilleServices(serviceType: ServiceType) {
         libelle: l.libelle,
         periodicite: l.periodicite,
         tranches: l.tranches,
+        jours_alerte_renouvellement: l.jours_alerte_renouvellement ?? 7,
         actif: l.actif ?? true,
       };
       if (l.id) payload.id = l.id;

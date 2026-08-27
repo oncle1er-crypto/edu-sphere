@@ -17,6 +17,7 @@ import { downloadInvoiceReceipt } from "@/lib/downloadInvoiceReceipt";
 import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/RelanceImpayesDialog";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { formatCoverageEnd } from "@/lib/serviceRenewal";
 
 export type ServiceKind = "cantine" | "transport";
 
@@ -31,6 +32,7 @@ interface Row {
   montant_paye: number;
   statut: string;
   date_echeance: string;
+  date_fin_validite: string | null;
   ecole_id: string;
   categorie: string;
   classe_id?: string | null;
@@ -50,7 +52,7 @@ type SortDir = "asc" | "desc";
 const CONFIG = {
   cantine: {
     titre: "Facturation cantine",
-    description: "Génération séquentielle, encaissement et suivi des factures de restauration.",
+    description: "Encaissement et suivi des périodes de restauration, avec leur fin de validité.",
     libelleDefaut: "Cantine - Mensuel",
     montantDefaut: "15000",
     prefixe: "CTN",
@@ -59,7 +61,7 @@ const CONFIG = {
   },
   transport: {
     titre: "Facturation transport",
-    description: "Génération séquentielle, encaissement et suivi des factures d'abonnement.",
+    description: "Encaissement et suivi des périodes de transport, avec leur fin de validité.",
     libelleDefaut: "Transport - Mensuel",
     montantDefaut: "18000",
     prefixe: "TRP",
@@ -103,13 +105,13 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
       classe_id: a.eleves?.classe_id ?? null,
     })));
     const { data } = await supabase.from("factures")
-      .select("id, numero, libelle, montant, montant_paye, statut, date_echeance, ecole_id, categorie, eleve_id, eleves(nom, prenom, classe_id, classes(nom))")
+      .select("id, numero, libelle, montant, montant_paye, statut, date_echeance, date_fin_validite, ecole_id, categorie, eleve_id, eleves(nom, prenom, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId).eq("categorie", service)
       .order("created_at", { ascending: false });
     setRows(((data ?? []) as any[]).map((f) => ({
       id: f.id, numero: f.numero, libelle: f.libelle,
       montant: Number(f.montant), montant_paye: Number(f.montant_paye),
-      statut: f.statut, date_echeance: f.date_echeance,
+      statut: f.statut, date_echeance: f.date_echeance, date_fin_validite: f.date_fin_validite,
       ecole_id: f.ecole_id, categorie: f.categorie,
       eleve_id: f.eleve_id,
       eleve_nom: f.eleves ? `${f.eleves.nom} ${f.eleves.prenom}` : "?",
@@ -247,8 +249,8 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
       <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs flex items-start gap-2">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-muted-foreground">
-          Une seule période est facturée à la fois par abonné : la suivante s'ouvre après l'échéance de la précédente,
-          et uniquement si celle-ci est soldée. La relance SMS n'est proposée que sur le filtre <b>En retard</b>.
+          Pour la cantine et le transport, la date affichée est la <b>fin de validité de la période</b>.
+          La période suivante ne peut être ouverte que lorsque la précédente est soldée. Les impayés restent suivis séparément.
         </p>
       </div>
 
@@ -279,7 +281,7 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
             <DialogHeader><DialogTitle>{cfg.dialogTitre}</DialogTitle></DialogHeader>
             <div className="space-y-3">
               <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground">
-                La période suivante de l'abonné est ouverte automatiquement (montant, libellé et échéance issus de sa grille tarifaire).
+                La période suivante de l'abonné est préparée automatiquement (montant, libellé et fin de validité issus de sa grille tarifaire).
                 L'ouverture est refusée si la période précédente n'est pas soldée.
               </div>
               <FieldRow label="Abonné *">
@@ -311,7 +313,8 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
               <TableHead>N°</TableHead>
               <TableHead>Élève</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("libelle")}>Libellé<SortIcon k="libelle" /></TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("date_echeance")}>Échéance / Période<SortIcon k="date_echeance" /></TableHead>
+              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("date_echeance")}>Échéance paiement<SortIcon k="date_echeance" /></TableHead>
+              <TableHead>Fin de validité</TableHead>
               <TableHead className="text-right">Montant</TableHead>
               <TableHead className="text-right">Réglé</TableHead>
               <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("statut")}>Statut<SortIcon k="statut" /></TableHead>
@@ -330,6 +333,7 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
                   <TableCell className="font-medium">{f.eleve_nom}</TableCell>
                   <TableCell>{f.libelle}</TableCell>
                   <TableCell>{f.date_echeance}</TableCell>
+                  <TableCell>{f.date_fin_validite ? formatCoverageEnd(f.date_fin_validite) : "—"}</TableCell>
                   <TableCell className="text-right">{f.montant.toLocaleString("fr-FR")}</TableCell>
                   <TableCell className="text-right text-primary">{f.montant_paye.toLocaleString("fr-FR")}</TableCell>
                   <TableCell>
