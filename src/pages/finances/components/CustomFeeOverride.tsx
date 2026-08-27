@@ -76,7 +76,7 @@ export function CustomFeeOverride({ eleveId, ecoleId, onChanged }: Props) {
     setLoading(false);
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [eleveId, ecoleId, activeAnnee.id]);
+  useEffect(() => { load();   }, [eleveId, ecoleId, activeAnnee.id]);
 
   const selectedOption = useMemo(() => options.find(o => o.id === selection), [options, selection]);
   const currentLabel = options.find(o => o.id === current);

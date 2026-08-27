@@ -42,6 +42,7 @@ function supabasePublishableKey() {
         if (key) return key;
       }
     } catch {
+      // Une configuration JSON invalide est ignorée au profit de la clé legacy.
     }
   }
   const legacy = configuredEnv(["SUPABASE_ANON_KEY", "VITE_SUPABASE_ANON_KEY"]);
@@ -75,7 +76,7 @@ function fcfa(n) {
 }
 
 // src/lib/mcp/tools/apercu-ecole.ts
-var apercu_ecole_default = defineTool({
+const apercu_ecole_default = defineTool({
   name: "apercu_ecole",
   title: "Aper\xE7u de l'\xE9cole",
   description: "Chiffres cl\xE9s de l'\xE9cole de l'utilisateur : ann\xE9e active, effectifs \xE9l\xE8ves (dont nouveaux), nombre de classes et d'enseignants.",
@@ -117,7 +118,7 @@ var apercu_ecole_default = defineTool({
 // src/lib/mcp/tools/lister-classes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z } from "npm:zod@^3.25.76";
-var lister_classes_default = defineTool2({
+const lister_classes_default = defineTool2({
   name: "lister_classes",
   title: "Lister les classes",
   description: "Liste les classes de l'ann\xE9e scolaire active avec leur effectif et leur capacit\xE9.",
@@ -157,7 +158,7 @@ var lister_classes_default = defineTool2({
 // src/lib/mcp/tools/point-encaissements.ts
 import { defineTool as defineTool3 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z as z2 } from "npm:zod@^3.25.76";
-var point_encaissements_default = defineTool3({
+const point_encaissements_default = defineTool3({
   name: "point_encaissements",
   title: "Point des encaissements",
   description: "Total des encaissements de scolarit\xE9 (paiements non annul\xE9s) sur une p\xE9riode, avec la r\xE9partition par mode de paiement.",
@@ -197,7 +198,7 @@ var point_encaissements_default = defineTool3({
 // src/lib/mcp/tools/rechercher-eleves.ts
 import { defineTool as defineTool4 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z as z3 } from "npm:zod@^3.25.76";
-var rechercher_eleves_default = defineTool4({
+const rechercher_eleves_default = defineTool4({
   name: "rechercher_eleves",
   title: "Rechercher des \xE9l\xE8ves",
   description: "Recherche les \xE9l\xE8ves de l'\xE9cole de l'utilisateur par nom, pr\xE9nom ou matricule. Retourne matricule, nom, classe et statut.",
@@ -233,7 +234,7 @@ var rechercher_eleves_default = defineTool4({
 // src/lib/mcp/tools/situation-scolarite.ts
 import { defineTool as defineTool5 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z as z4 } from "npm:zod@^3.25.76";
-var situation_scolarite_default = defineTool5({
+const situation_scolarite_default = defineTool5({
   name: "situation_scolarite_eleve",
   title: "Situation de scolarit\xE9 d'un \xE9l\xE8ve",
   description: "Retourne la situation financi\xE8re de scolarit\xE9 d'un \xE9l\xE8ve (total d\xFB, encaiss\xE9, reste \xE0 payer) et le d\xE9tail de ses tranches.",
@@ -278,8 +279,8 @@ var situation_scolarite_default = defineTool5({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "yvsnokvgxqtpqkuizsfo";
-var mcp_default = defineMcp({
+const projectRef = "yvsnokvgxqtpqkuizsfo";
+const mcp_default = defineMcp({
   name: "la-providence",
   title: "La Providence",
   version: "0.1.0",

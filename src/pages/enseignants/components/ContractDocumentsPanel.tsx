@@ -47,7 +47,7 @@ export function ContractDocumentsPanel() {
     })));
   };
 
-  useEffect(() => { load(); /* eslint-disable-next-line */ }, [ecoleId, selected]);
+  useEffect(() => { load();   }, [ecoleId, selected]);
 
   const handleUpload = async (fileList: FileList | null) => {
     if (!fileList || !fileList.length || !ecoleId || !selected) return;

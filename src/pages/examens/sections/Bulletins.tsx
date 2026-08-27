@@ -387,7 +387,7 @@ export default function Bulletins() {
 
     // Absences/retards de l'élève pour la période
     const periodeObj = periodes.find((p) => p.id === selectedPeriode);
-    let assiduite = { heures_absence: 0, absences_justifiees: 0, absences_non_justifiees: 0, retards: 0 };
+    const assiduite = { heures_absence: 0, absences_justifiees: 0, absences_non_justifiees: 0, retards: 0 };
     if (periodeObj) {
       const { data: presQuery } = await supabase
         .from("presences")

@@ -151,7 +151,7 @@ export function AcademicPeriodProvider({ children }: { children: ReactNode }) {
       return;
     }
     const ids = (aData ?? []).map((a) => a.id);
-    let periodesByAnnee: Record<string, Periode[]> = {};
+    const periodesByAnnee: Record<string, Periode[]> = {};
     if (ids.length > 0) {
       const { data: pData, error: pErr } = await supabase
         .from("periodes")

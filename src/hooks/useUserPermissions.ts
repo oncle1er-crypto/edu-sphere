@@ -68,7 +68,7 @@ export function useUserPermissions(targetUserId: string | null) {
     // Si aucune permission individuelle : pré-remplir avec les permissions
     // du/des rôle(s) de l'utilisateur (union role_permissions), et sinon
     // avec les valeurs par défaut recommandées par ROLE_DEFAULT_MODULES.
-    let seedFromRoles: Record<string, PermRow> = {};
+    const seedFromRoles: Record<string, PermRow> = {};
     if (usingDefaults && (roles ?? []).length > 0) {
       const roleList = (roles ?? []).map((r) => r.role);
       const { data: rp } = await supabase

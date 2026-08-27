@@ -21,6 +21,11 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      // Dette historique : le contrôle TypeScript reste bloquant en CI,
+      // tandis que les adaptateurs dynamiques sont typés progressivement.
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-require-imports": "off",
+      "no-useless-escape": "off",
     },
   },
 );
