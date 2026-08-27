@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useTransportCarburant } from "@/hooks/useTransportCarburant";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const fcfa = (n: number) => Math.round(n).toLocaleString("fr-FR");
 
 export default function TransportFuel() {
   const { ecoleId } = useEcoleId();
   const { items, loading, add, remove } = useTransportCarburant();
+  const { can } = usePermissions();
   const [vehicules, setVehicules] = useState<{ id: string; immatriculation: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -66,7 +68,7 @@ export default function TransportFuel() {
         <Card><CardContent className="p-4"><p className="text-xs text-muted-foreground">Pleins enregistrés</p><p className="text-2xl font-bold">{items.length}</p></CardContent></Card>
       </div>
 
-      <div className="flex justify-end">
+      {can("transport", "create") && <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouveau plein</Button></DialogTrigger>
           <DialogContent>
@@ -90,7 +92,7 @@ export default function TransportFuel() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </div>}
 
       <div className="border rounded-lg overflow-x-auto">
         <Table>
@@ -115,7 +117,7 @@ export default function TransportFuel() {
                 <TableCell className="text-right font-semibold">{fcfa(r.montant)}</TableCell>
                 <TableCell className="text-right">{r.km_compteur ?? "—"}</TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  {can("transport", "delete") && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
                 </TableCell>
               </TableRow>
             ))}

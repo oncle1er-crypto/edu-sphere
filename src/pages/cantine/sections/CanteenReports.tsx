@@ -9,11 +9,13 @@ import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { sortByEleve } from "@/lib/sortEleves";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CanteenReports() {
   const { ecoleId } = useEcoleId();
   const { keepClasse } = useNiveauFilters();
   const ecole = useEcoleInfo();
+  const { can } = usePermissions();
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
   const [classes, setClasses] = useState<string[]>([]);
 
@@ -22,7 +24,7 @@ export default function CanteenReports() {
     supabase.from("classes").select("id, nom").eq("ecole_id", ecoleId).order("nom").then(({ data }) => {
       setClasses(Array.from(new Set(((data ?? []) as any[]).filter((c) => keepClasse(c.id)).map((c) => c.nom).filter(Boolean))));
     });
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   const classeFilter = filters.classe && filters.classe !== ALL_CLASSES ? filters.classe : null;
   const monthDefault = useMemo(() => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); }, []);
@@ -35,9 +37,11 @@ export default function CanteenReports() {
     let q = supabase.from("factures")
       .select("numero, libelle, montant, montant_paye, statut, date_emission, eleves(nom, prenom, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId!).eq("categorie", "cantine")
+      .neq("statut", "annulee")
       .gte("date_emission", dateFrom);
     if (dateTo) q = q.lte("date_emission", dateTo);
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) throw error;
     let rows = sortByEleve(((data ?? []) as any[]).filter((f) => keepClasse(f.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom }));
     if (classeFilter) rows = rows.filter((f) => f.eleves?.classes?.nom === classeFilter);
     return rows;
@@ -48,9 +52,10 @@ export default function CanteenReports() {
       key: "abo", title: "Liste des abonnés", desc: "Export complet par formule.", hasFilter: true, filename: "abonnes-cantine",
       columns: ["Élève", "Classe", "Régime", "Statut", "Montant mensuel"],
       getRows: async () => {
-        const { data } = await supabase.from("abonnements_cantine")
+        const { data, error } = await supabase.from("abonnements_cantine")
           .select("regime, statut, montant_mensuel, eleves(nom, prenom, classe_id, classes(nom))")
           .eq("ecole_id", ecoleId!);
+        if (error) throw error;
         let rows = sortByEleve(((data ?? []) as any[]).filter((r) => keepClasse(r.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom })).map((r) => ({
           eleve: `${r.eleves?.nom ?? ""} ${r.eleves?.prenom ?? ""}`.trim(),
           classe: r.eleves?.classes?.nom ?? "",
@@ -73,18 +78,20 @@ export default function CanteenReports() {
     },
     {
       key: "menu", title: "Menus", desc: "Tous les menus enregistrés.", hasFilter: false, filename: "menus-cantine",
-      columns: ["Jour", "Formule", "Plat principal", "Accompagnement", "Prix"],
+      columns: ["Date", "Repas", "Description"],
       getRows: async () => {
-        const { data } = await supabase.from("menus_cantine").select("*").eq("ecole_id", ecoleId!);
-        return ((data ?? []) as any[]).map((r) => [r.jour ?? "", r.formule ?? "", r.plat_principal ?? "", r.accompagnement ?? "", r.prix ?? ""]);
+        const { data, error } = await supabase.from("menus_cantine").select("date_menu, repas, description").eq("ecole_id", ecoleId!).order("date_menu");
+        if (error) throw error;
+        return (data ?? []).map((r) => [r.date_menu, r.repas, r.description ?? ""]);
       },
     },
     {
       key: "stock", title: "Inventaire stock", desc: "État détaillé du stock cantine.", hasFilter: false, filename: "inventaire-cantine",
-      columns: ["Article", "Catégorie", "Quantité", "Unité", "Seuil alerte"],
+      columns: ["Produit", "Quantité", "Unité", "Seuil alerte", "État"],
       getRows: async () => {
-        const { data } = await supabase.from("stocks_cantine").select("*").eq("ecole_id", ecoleId!);
-        return ((data ?? []) as any[]).map((r) => [r.article ?? r.nom ?? "", r.categorie ?? "", r.quantite ?? 0, r.unite ?? "", r.seuil_alerte ?? ""]);
+        const { data, error } = await supabase.from("stocks_cantine").select("produit, quantite, unite, seuil_alerte").eq("ecole_id", ecoleId!).order("produit");
+        if (error) throw error;
+        return (data ?? []).map((r) => [r.produit, r.quantite, r.unite ?? "", r.seuil_alerte ?? "", Number(r.quantite) <= Number(r.seuil_alerte ?? 0) ? "Alerte" : "Normal"]);
       },
     },
     {
@@ -99,8 +106,8 @@ export default function CanteenReports() {
           ["Classe", classeFilter ?? "Toutes"],
           ["Factures émises", rows.length],
           ["Montant facturé", facture],
-          ["Montant encaissé", encaisse],
-          ["Impayés", facture - encaisse],
+          ["Payé sur ces factures", encaisse],
+          ["Solde restant sur ces factures", Math.max(0, facture - encaisse)],
         ];
       },
     },
@@ -126,7 +133,7 @@ export default function CanteenReports() {
                   getRows={e.getRows}
                   ecole={ecole}
                   sousTitre={e.hasFilter ? sousTitre : undefined}
-                  disabled={!ecoleId}
+                  disabled={!ecoleId || !can("cantine", "export")}
                 />
               </CardContent>
             </Card>

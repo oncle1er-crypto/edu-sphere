@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
-import { CalendarDays, Plus, Loader2, Trash2 } from "lucide-react";
+import { CalendarDays, Plus, Loader2, Trash2, Pencil } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,10 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useCantinePlanning } from "@/hooks/useCantine";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CanteenPlanning() {
-  const { items, loading, add, remove } = useCantinePlanning();
+  const { items, loading, add, update, remove } = useCantinePlanning();
+  const { can } = usePermissions();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
   const [form, setForm] = useState({ date_service: new Date().toISOString().slice(0, 10), service: "dejeuner", capacite_prevue: 200, notes: "" });
 
   const handleAdd = async () => {
@@ -32,9 +35,9 @@ export default function CanteenPlanning() {
       icon={<CalendarDays className="h-5 w-5" />}
       hideSave
     >
-      <div className="flex justify-end">
+      {can("cantine", "create") && <div className="flex justify-end">
         <Button size="sm" className="gap-2" onClick={() => setOpen(true)}><Plus className="h-4 w-4" /> Planifier</Button>
-      </div>
+      </div>}
       {loading ? (
         <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
       ) : items.length === 0 ? (
@@ -47,6 +50,7 @@ export default function CanteenPlanning() {
               <TableHead>Service</TableHead>
               <TableHead className="text-center">Capacité prévue</TableHead>
               <TableHead className="text-center">Inscrits</TableHead>
+              <TableHead className="text-center">Servis</TableHead>
               <TableHead>Notes</TableHead>
               <TableHead></TableHead>
             </TableRow>
@@ -58,11 +62,15 @@ export default function CanteenPlanning() {
                 <TableCell><Badge variant="secondary">{p.service}</Badge></TableCell>
                 <TableCell className="text-center">{p.capacite_prevue ?? "—"}</TableCell>
                 <TableCell className="text-center">{p.effectif_inscrits ?? 0}</TableCell>
+                <TableCell className="text-center">{p.effectif_realise ?? "—"}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{p.notes ?? "—"}</TableCell>
                 <TableCell>
-                  <Button size="icon" variant="ghost" onClick={() => remove(p.id)}>
+                  {can("cantine", "update") && <Button size="icon" variant="ghost" aria-label="Mettre à jour les effectifs" onClick={() => setEditing({ ...p })}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>}
+                  {can("cantine", "delete") && <Button size="icon" variant="ghost" aria-label="Supprimer le service" onClick={() => remove(p.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  </Button>}
                 </TableCell>
               </TableRow>
             ))}
@@ -92,6 +100,29 @@ export default function CanteenPlanning() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button>
             <Button onClick={handleAdd}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(editing)} onOpenChange={(value) => { if (!value) setEditing(null); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Effectifs du service</DialogTitle></DialogHeader>
+          {editing && <div className="space-y-3">
+            <div><Label>Élèves inscrits</Label><Input min={0} type="number" value={editing.effectif_inscrits ?? 0} onChange={(e) => setEditing({ ...editing, effectif_inscrits: Number(e.target.value) })} /></div>
+            <div><Label>Repas effectivement servis</Label><Input min={0} type="number" value={editing.effectif_realise ?? ""} onChange={(e) => setEditing({ ...editing, effectif_realise: e.target.value === "" ? null : Number(e.target.value) })} /></div>
+            <div><Label>Capacité prévue</Label><Input min={0} type="number" value={editing.capacite_prevue ?? ""} onChange={(e) => setEditing({ ...editing, capacite_prevue: e.target.value === "" ? null : Number(e.target.value) })} /></div>
+          </div>}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditing(null)}>Annuler</Button>
+            <Button onClick={async () => {
+              if (!editing) return;
+              const ok = await update(editing.id, {
+                effectif_inscrits: Math.max(0, Number(editing.effectif_inscrits) || 0),
+                effectif_realise: editing.effectif_realise == null ? null : Math.max(0, Number(editing.effectif_realise) || 0),
+                capacite_prevue: editing.capacite_prevue == null ? null : Math.max(0, Number(editing.capacite_prevue) || 0),
+              });
+              if (ok) setEditing(null);
+            }}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

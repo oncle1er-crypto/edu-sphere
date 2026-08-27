@@ -5,6 +5,8 @@ import {
   buildMoisBuckets,
   buildTrimestreBuckets,
   clipBuckets,
+  buildRollingSixMonths,
+  aggregateByMonth,
 } from "./dateBuckets";
 
 describe("buildJourBuckets", () => {
@@ -22,6 +24,30 @@ describe("buildJourBuckets", () => {
   it("traverse correctement un changement de mois", () => {
     const b = buildJourBuckets("2026-01-30", "2026-02-02");
     expect(b.map((x) => x.key)).toEqual(["2026-01-30", "2026-01-31", "2026-02-01", "2026-02-02"]);
+  });
+});
+
+describe("rolling month statistics", () => {
+  it("conserve l'année dans les clés lors d'un passage décembre/janvier", () => {
+    const buckets = buildRollingSixMonths(new Date(2027, 1, 15));
+    expect(buckets.map((b) => b.key)).toEqual([
+      "2026-09", "2026-10", "2026-11", "2026-12", "2027-01", "2027-02",
+    ]);
+  });
+
+  it("ignore les données historiques hors de la fenêtre", () => {
+    const buckets = buildRollingSixMonths(new Date(2027, 1, 15));
+    const totals = aggregateByMonth(
+      [
+        { date: "2026-01-10", count: 999 },
+        { date: "2027-01-10", count: 12 },
+      ],
+      buckets,
+      (row) => row.date,
+      (row) => row.count
+    );
+    expect(totals.find((b) => b.key === "2027-01")?.value).toBe(12);
+    expect(totals.reduce((sum, b) => sum + b.value, 0)).toBe(12);
   });
 });
 

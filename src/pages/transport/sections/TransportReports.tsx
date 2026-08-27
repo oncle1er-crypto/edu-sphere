@@ -9,11 +9,13 @@ import { ReportFilters, ALL_CLASSES, type ReportFiltersValue, formatPeriodeLabel
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { sortByEleve } from "@/lib/sortEleves";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function TransportReports() {
   const { ecoleId } = useEcoleId();
   const { keepClasse } = useNiveauFilters();
   const ecole = useEcoleInfo();
+  const { can } = usePermissions();
   const [filters, setFilters] = useState<ReportFiltersValue>({ from: "", to: "", classe: ALL_CLASSES });
   const [classes, setClasses] = useState<string[]>([]);
 
@@ -22,7 +24,7 @@ export default function TransportReports() {
     supabase.from("classes").select("id, nom").eq("ecole_id", ecoleId).order("nom").then(({ data }) => {
       setClasses(Array.from(new Set(((data ?? []) as any[]).filter((c) => keepClasse(c.id)).map((c) => c.nom).filter(Boolean))));
     });
-  }, [ecoleId]);
+  }, [ecoleId, keepClasse]);
 
   const classeFilter = filters.classe && filters.classe !== ALL_CLASSES ? filters.classe : null;
   const monthDefault = useMemo(() => { const d = new Date(); d.setDate(1); return d.toISOString().slice(0, 10); }, []);
@@ -35,9 +37,11 @@ export default function TransportReports() {
     let q = supabase.from("factures")
       .select("numero, libelle, montant, montant_paye, statut, date_emission, eleves(nom, prenom, classe_id, classes(nom))")
       .eq("ecole_id", ecoleId!).eq("categorie", "transport")
+      .neq("statut", "annulee")
       .gte("date_emission", dateFrom);
     if (dateTo) q = q.lte("date_emission", dateTo);
-    const { data } = await q;
+    const { data, error } = await q;
+    if (error) throw error;
     let rows = sortByEleve(((data ?? []) as any[]).filter((f) => keepClasse(f.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom }));
     if (classeFilter) rows = rows.filter((f) => f.eleves?.classes?.nom === classeFilter);
     return rows;
@@ -48,8 +52,9 @@ export default function TransportReports() {
       key: "abo", title: "Liste des abonnés", desc: "Export par ligne et statut.", hasFilter: true, filename: "abonnes-transport",
       columns: ["Élève", "Classe", "Ligne", "Statut"],
       getRows: async () => {
-        const { data } = await supabase.from("abonnements_transport")
+        const { data, error } = await supabase.from("abonnements_transport")
           .select("statut, lignes_transport(nom), eleves(nom, prenom, classe_id, classes(nom))").eq("ecole_id", ecoleId!);
+        if (error) throw error;
         let rows = sortByEleve(((data ?? []) as any[]).filter((r) => keepClasse(r.eleves?.classe_id)), (r) => ({ nom: r.eleves?.nom, prenom: r.eleves?.prenom })).map((r) => ({
           eleve: `${r.eleves?.nom ?? ""} ${r.eleves?.prenom ?? ""}`.trim(),
           classe: r.eleves?.classes?.nom ?? "",
@@ -78,7 +83,8 @@ export default function TransportReports() {
           .select("date_plein, litres, prix_litre, montant, km_compteur, vehicules(immatriculation)")
           .eq("ecole_id", ecoleId!).gte("date_plein", dateFrom);
         if (dateTo) q = q.lte("date_plein", dateTo);
-        const { data } = await q;
+        const { data, error } = await q;
+        if (error) throw error;
         return ((data as any) ?? []).map((r: any) => [r.date_plein, r.vehicules?.immatriculation ?? "", r.litres, r.prix_litre, r.montant, r.km_compteur]);
       },
     },
@@ -90,12 +96,13 @@ export default function TransportReports() {
           .select("date_operation, type, cout, garage, prochaine_echeance_date, vehicules(immatriculation)")
           .eq("ecole_id", ecoleId!).gte("date_operation", dateFrom);
         if (dateTo) q = q.lte("date_operation", dateTo);
-        const { data } = await q;
+        const { data, error } = await q;
+        if (error) throw error;
         return ((data as any) ?? []).map((r: any) => [r.date_operation, r.vehicules?.immatriculation ?? "", r.type, r.cout, r.garage, r.prochaine_echeance_date]);
       },
     },
     {
-      key: "synth", title: "Synthèse financière", desc: "Recettes / dépenses / marge.", hasFilter: true, filename: "synthese-transport",
+      key: "synth", title: "Synthèse financière", desc: "Facturation et charges opérationnelles partielles.", hasFilter: true, filename: "synthese-transport",
       columns: ["Indicateur", "Valeur"],
       getRows: async () => {
         let carbQ = supabase.from("transport_carburant" as any).select("montant").eq("ecole_id", ecoleId!).gte("date_plein", dateFrom);
@@ -103,6 +110,8 @@ export default function TransportReports() {
         let mainQ = supabase.from("transport_maintenance" as any).select("cout").eq("ecole_id", ecoleId!).gte("date_operation", dateFrom);
         if (dateTo) mainQ = mainQ.lte("date_operation", dateTo);
         const [fac, carb, maint] = await Promise.all([fetchFactures(), carbQ, mainQ]);
+        if ((carb as any).error) throw (carb as any).error;
+        if ((maint as any).error) throw (maint as any).error;
         const facture = fac.reduce((s: number, r: any) => s + Number(r.montant || 0), 0);
         const encaisse = fac.reduce((s: number, r: any) => s + Number(r.montant_paye || 0), 0);
         const carbTotal = (((carb as any).data ?? []) as any[]).reduce((s, r) => s + Number(r.montant || 0), 0);
@@ -111,11 +120,12 @@ export default function TransportReports() {
           ["Période", periodeLabel],
           ["Classe", classeFilter ?? "Toutes"],
           ["Montant facturé", facture],
-          ["Montant encaissé", encaisse],
-          ["Impayés", facture - encaisse],
+          ["Payé sur ces factures", encaisse],
+          ["Solde restant sur ces factures", Math.max(0, facture - encaisse)],
           ["Carburant", carbTotal],
           ["Maintenance", mainTotal],
-          ["Marge", encaisse - carbTotal - mainTotal],
+          ["Solde opérationnel partiel", encaisse - carbTotal - mainTotal],
+          ["Note", "Hors salaires, assurances, amortissements et autres charges"],
         ];
       },
     },
@@ -141,7 +151,7 @@ export default function TransportReports() {
                   getRows={e.getRows}
                   ecole={ecole}
                   sousTitre={e.hasFilter ? sousTitre : undefined}
-                  disabled={!ecoleId}
+                  disabled={!ecoleId || !can("transport", "export")}
                 />
               </CardContent>
             </Card>
