@@ -19,8 +19,12 @@ export default function TransportStats() {
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     (async () => {
+      const since = new Date();
+      since.setDate(1);
+      since.setMonth(since.getMonth() - 5);
+      const sinceIso = `${since.getFullYear()}-${String(since.getMonth() + 1).padStart(2, "0")}-01`;
       const [carb, ab, inc] = await Promise.all([
-        supabase.from("transport_carburant" as any).select("litres, montant, vehicules(immatriculation)").eq("ecole_id", ecoleId),
+        supabase.from("transport_carburant" as any).select("litres, montant, vehicules(immatriculation)").eq("ecole_id", ecoleId).gte("date_plein", sinceIso),
         supabase.from("abonnements_transport").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("transport_incidents" as any).select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
       ]);
@@ -52,7 +56,7 @@ export default function TransportStats() {
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardContent className="p-4">
-            <h3 className="font-bold mb-3">Consommation par véhicule</h3>
+            <h3 className="font-bold mb-3">Consommation par véhicule — 6 derniers mois</h3>
             {conso.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun plein enregistré.</p>
             ) : (
@@ -79,8 +83,8 @@ export default function TransportStats() {
             <ul className="space-y-3 text-sm">
               <li className="flex justify-between"><span>Abonnés actifs</span><span className="font-semibold">{abonnes}</span></li>
               <li className="flex justify-between"><span>Incidents enregistrés</span><span className="font-semibold">{incidents}</span></li>
-              <li className="flex justify-between"><span>Total litres consommés</span><span className="font-semibold">{Math.round(litresTotal)} L</span></li>
-              <li className="flex justify-between border-t pt-2"><span>Coût total carburant</span><span className="font-semibold text-primary">{Math.round(coutTotal).toLocaleString("fr-FR")} FCFA</span></li>
+              <li className="flex justify-between"><span>Litres consommés (6 mois)</span><span className="font-semibold">{Math.round(litresTotal)} L</span></li>
+              <li className="flex justify-between border-t pt-2"><span>Carburant (6 mois)</span><span className="font-semibold text-primary">{Math.round(coutTotal).toLocaleString("fr-FR")} FCFA</span></li>
               {abonnes > 0 && (
                 <li className="flex justify-between"><span className="text-muted-foreground">Coût carburant / abonné</span><span className="font-semibold">{Math.round(coutTotal / abonnes).toLocaleString("fr-FR")} FCFA</span></li>
               )}

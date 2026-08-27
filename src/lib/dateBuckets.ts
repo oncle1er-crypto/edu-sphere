@@ -140,3 +140,25 @@ export function buildTrimestreBuckets(moisBuckets: DateBucket[]): DateBucket[] {
 export function clipBuckets(buckets: DateBucket[], from: string, to: string): DateBucket[] {
   return buckets.filter((b) => b.to >= from && b.from <= to);
 }
+
+/** Six mois calendaires continus terminant au mois de `reference`. */
+export function buildRollingSixMonths(reference = new Date()): DateBucket[] {
+  const start = new Date(reference.getFullYear(), reference.getMonth() - 5, 1);
+  const end = new Date(reference.getFullYear(), reference.getMonth() + 1, 0);
+  return buildMoisBuckets(toIso(start), toIso(end));
+}
+
+/** Agrège une valeur par mois complet (année + mois, sans collision interannuelle). */
+export function aggregateByMonth<T>(
+  rows: T[],
+  buckets: DateBucket[],
+  getDate: (row: T) => string,
+  getValue: (row: T) => number
+): Array<DateBucket & { value: number }> {
+  const totals = new Map(buckets.map((bucket) => [bucket.key, 0]));
+  for (const row of rows) {
+    const key = getDate(row).slice(0, 7);
+    if (totals.has(key)) totals.set(key, (totals.get(key) ?? 0) + getValue(row));
+  }
+  return buckets.map((bucket) => ({ ...bucket, value: totals.get(bucket.key) ?? 0 }));
+}

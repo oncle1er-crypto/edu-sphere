@@ -11,17 +11,14 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useTransportMaintenance } from "@/hooks/useTransportMaintenance";
+import { maintenanceDeadlineStatus } from "@/lib/maintenanceDeadline";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const fcfa = (n: number) => Math.round(n).toLocaleString("fr-FR");
-const isEcheanceProche = (d: string | null) => {
-  if (!d) return false;
-  const diff = (new Date(d).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
-  return diff <= 30;
-};
-
 export default function TransportMaintenance() {
   const { ecoleId } = useEcoleId();
   const { items, loading, add, remove } = useTransportMaintenance();
+  const { can } = usePermissions();
   const [vehicules, setVehicules] = useState<{ id: string; immatriculation: string }[]>([]);
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -53,7 +50,7 @@ export default function TransportMaintenance() {
 
   return (
     <SettingsSection title="Maintenance" description="Entretien et contrôles techniques des véhicules." icon={<Wrench className="h-5 w-5" />} hideSave>
-      <div className="flex justify-end">
+      {can("transport", "create") && <div className="flex justify-end">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild><Button size="sm"><Plus className="h-4 w-4" /> Nouvelle opération</Button></DialogTrigger>
           <DialogContent>
@@ -90,7 +87,7 @@ export default function TransportMaintenance() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
+      </div>}
 
       <div className="border rounded-lg overflow-x-auto">
         <Table>
@@ -107,8 +104,10 @@ export default function TransportMaintenance() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((r) => (
-              <TableRow key={r.id} className={isEcheanceProche(r.prochaine_echeance_date) ? "bg-amber-50" : ""}>
+            {items.map((r) => {
+              const deadline = maintenanceDeadlineStatus(r.prochaine_echeance_date);
+              return (
+              <TableRow key={r.id} className={deadline === "overdue" ? "bg-red-50" : deadline === "due_soon" ? "bg-amber-50" : ""}>
                 <TableCell>{r.date_operation}</TableCell>
                 <TableCell className="font-mono text-xs">{r.vehicules?.immatriculation ?? "—"}</TableCell>
                 <TableCell className="capitalize">{r.type.replace(/_/g, " ")}</TableCell>
@@ -117,14 +116,14 @@ export default function TransportMaintenance() {
                 <TableCell>{r.garage ?? "—"}</TableCell>
                 <TableCell>
                   {r.prochaine_echeance_date
-                    ? <span className={isEcheanceProche(r.prochaine_echeance_date) ? "font-semibold text-amber-700" : ""}>{r.prochaine_echeance_date}{isEcheanceProche(r.prochaine_echeance_date) && <Badge variant="destructive" className="ml-2">Imminente</Badge>}</span>
+                    ? <span className={deadline === "overdue" ? "font-semibold text-red-700" : deadline === "due_soon" ? "font-semibold text-amber-700" : ""}>{r.prochaine_echeance_date}{deadline === "overdue" && <Badge variant="destructive" className="ml-2">En retard</Badge>}{deadline === "due_soon" && <Badge variant="secondary" className="ml-2">Imminente</Badge>}</span>
                     : "—"}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  {can("transport", "delete") && <Button size="sm" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>}
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
             {items.length === 0 && (
               <TableRow><TableCell colSpan={8} className="text-center text-sm text-muted-foreground py-8">Aucune opération enregistrée.</TableCell></TableRow>
             )}

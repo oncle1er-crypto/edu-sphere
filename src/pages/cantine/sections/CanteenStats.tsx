@@ -5,8 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
-
-const MONTHS = ["Jan", "Fév", "Mar", "Avr", "Mai", "Juin", "Juil", "Août", "Sep", "Oct", "Nov", "Déc"];
+import { aggregateByMonth, buildRollingSixMonths } from "@/lib/dateBuckets";
 
 export default function CanteenStats() {
   const { ecoleId } = useEcoleId();
@@ -20,24 +19,17 @@ export default function CanteenStats() {
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     (async () => {
+      const buckets = buildRollingSixMonths();
       const [planning, ab, inc, st] = await Promise.all([
-        supabase.from("cantine_planning").select("date_service, effectif_realise, effectif_inscrits").eq("ecole_id", ecoleId),
+        supabase.from("cantine_planning").select("date_service, effectif_realise, effectif_inscrits").eq("ecole_id", ecoleId).gte("date_service", buckets[0].from).lte("date_service", buckets.at(-1)!.to),
         supabase.from("abonnements_cantine").select("id, eleves(classe_id)").eq("ecole_id", ecoleId).eq("statut", "actif"),
         supabase.from("cantine_incidents").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
         supabase.from("stocks_cantine").select("quantite, seuil_alerte").eq("ecole_id", ecoleId),
       ]);
-      const buckets = new Map<number, number>();
-      ((planning.data ?? []) as any[]).forEach((r) => {
-        const d = new Date(r.date_service);
-        const key = d.getMonth();
-        const nb = Number(r.effectif_realise) || Number(r.effectif_inscrits) || 0;
-        buckets.set(key, (buckets.get(key) ?? 0) + nb);
-      });
-      const now = new Date().getMonth();
-      const arr = Array.from({ length: 6 }, (_, i) => {
-        const m = (now - 5 + i + 12) % 12;
-        return { mois: MONTHS[m], nb: buckets.get(m) ?? 0 };
-      });
+      const arr = aggregateByMonth(
+        (planning.data ?? []) as any[], buckets, (r) => r.date_service,
+        (r) => Number(r.effectif_realise) || Number(r.effectif_inscrits) || 0
+      ).map((bucket) => ({ mois: bucket.label, nb: bucket.value }));
       setRepasParMois(arr);
       setAbonnes(((ab.data ?? []) as any[]).filter((a) => keepClasse(a.eleves?.classe_id)).length);
       setIncidents(inc.count ?? 0);
