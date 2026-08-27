@@ -26,8 +26,8 @@ export default function GrilleServicesSection({ serviceType }: Props) {
 
   const title = serviceType === "cantine" ? "Grille tarifaire — Cantine" : "Grille tarifaire — Transport (Car)";
   const description = serviceType === "cantine"
-    ? "Frais de restauration. Ajoutez, modifiez ou supprimez librement les tarifs."
-    : "Frais de transport scolaire. Ajoutez, modifiez ou supprimez librement les tarifs par ligne/zone.";
+    ? "Frais de restauration, périodes de validité et délai d'alerte avant renouvellement."
+    : "Frais de transport, périodes de validité et délai d'alerte avant renouvellement.";
   const Icon = serviceType === "cantine" ? UtensilsCrossed : Bus;
 
   const openCreate = () => { setEditing(null); setEditorOpen(true); };
@@ -62,7 +62,8 @@ export default function GrilleServicesSection({ serviceType }: Props) {
               <TableRow>
                 <TableHead>Désignation</TableHead>
                 <TableHead>Périodicité</TableHead>
-                <TableHead>Échéances</TableHead>
+                <TableHead>Échéances de paiement</TableHead>
+                <TableHead>Rappel</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
@@ -74,6 +75,7 @@ export default function GrilleServicesSection({ serviceType }: Props) {
                   <TableCell>
                     <Badge variant="outline" className="text-xs capitalize">{l.periodicite}</Badge>
                   </TableCell>
+                  <TableCell>{l.jours_alerte_renouvellement ?? 7} jours avant</TableCell>
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {l.tranches.map((t, i) => (
@@ -100,7 +102,7 @@ export default function GrilleServicesSection({ serviceType }: Props) {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Supprimer ce tarif ?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Le tarif « {l.libelle} » sera supprimé. Les échéances déjà générées pour les abonnés restent en base.
+                            Le tarif « {l.libelle} » sera supprimé. Les périodes déjà générées pour les abonnés restent en base.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

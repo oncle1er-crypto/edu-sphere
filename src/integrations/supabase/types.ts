@@ -3109,6 +3109,7 @@ export type Database = {
           created_at: string
           date_echeance: string
           date_emission: string
+          date_fin_validite: string | null
           ecole_id: string
           eleve_id: string
           id: string
@@ -3126,6 +3127,7 @@ export type Database = {
           created_at?: string
           date_echeance: string
           date_emission?: string
+          date_fin_validite?: string | null
           ecole_id: string
           eleve_id: string
           id?: string
@@ -3143,6 +3145,7 @@ export type Database = {
           created_at?: string
           date_echeance?: string
           date_emission?: string
+          date_fin_validite?: string | null
           ecole_id?: string
           eleve_id?: string
           id?: string
@@ -3448,6 +3451,7 @@ export type Database = {
           cycle_id: string | null
           ecole_id: string
           id: string
+          jours_alerte_renouvellement: number
           libelle: string
           montant_total: number
           periodicite: string
@@ -3462,6 +3466,7 @@ export type Database = {
           cycle_id?: string | null
           ecole_id: string
           id?: string
+          jours_alerte_renouvellement?: number
           libelle: string
           montant_total?: number
           periodicite?: string
@@ -3476,6 +3481,7 @@ export type Database = {
           cycle_id?: string | null
           ecole_id?: string
           id?: string
+          jours_alerte_renouvellement?: number
           libelle?: string
           montant_total?: number
           periodicite?: string

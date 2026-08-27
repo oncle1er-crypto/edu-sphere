@@ -31,6 +31,8 @@ import { RelanceImpayesDialog, type CibleRelance } from "@/components/services/R
 import { EleveClassePicker } from "@/components/services/EleveClassePicker";
 import { EncaissementInitialChoice, montantAEncaisser, type PortionEncaissement } from "@/components/services/EncaissementInitialChoice";
 import { ouvrirEtRecupererFacture } from "@/lib/ouvrirFactureService";
+import { computeRenewalTargets, formatCoverageEnd, getPaidCoverageEnd } from "@/lib/serviceRenewal";
+import { ServiceRenewalAlert } from "@/components/services/ServiceRenewalAlert";
 
 
 interface Row {
@@ -45,13 +47,14 @@ interface Row {
   grille_libelle: string | null;
   periodicite: string | null;
   montant_total: number;
+  jours_alerte: number;
   statut: string;
 }
 
 interface FactureLite {
   id: string; numero: string; libelle: string;
   montant: number; montant_paye: number;
-  date_echeance: string; statut: string;
+  date_echeance: string; date_fin_validite: string | null; statut: string;
   ecole_id: string; categorie: string;
 }
 
@@ -85,7 +88,7 @@ export default function TransportSubscribers() {
     if (!ecoleId) return;
     const [{ data: ab }, { data: lg }] = await Promise.all([
       supabase.from("abonnements_transport")
-        .select("id, eleve_id, ligne_id, statut, grille_id, eleves(nom, prenom, classe_id, classes(nom)), lignes_transport(nom), grille_tarifs_services(libelle, periodicite, montant_total)")
+        .select("id, eleve_id, ligne_id, statut, grille_id, eleves(nom, prenom, classe_id, classes(nom)), lignes_transport(nom), grille_tarifs_services(libelle, periodicite, montant_total, jours_alerte_renouvellement)")
         .eq("ecole_id", ecoleId).order("created_at", { ascending: false }),
       supabase.from("lignes_transport").select("id, nom").eq("ecole_id", ecoleId).order("nom"),
     ]);
@@ -99,6 +102,7 @@ export default function TransportSubscribers() {
       grille_libelle: a.grille_tarifs_services?.libelle ?? null,
       periodicite: a.grille_tarifs_services?.periodicite ?? null,
       montant_total: Number(a.grille_tarifs_services?.montant_total ?? 0),
+      jours_alerte: Number(a.grille_tarifs_services?.jours_alerte_renouvellement ?? 7),
     }));
     setRows(list);
     setLignes(lg ?? []);
@@ -106,7 +110,7 @@ export default function TransportSubscribers() {
     const eleveIds = Array.from(new Set(list.map((a) => a.eleve_id)));
     if (eleveIds.length) {
       const { data: fData } = await supabase.from("factures")
-        .select("id, numero, libelle, montant, montant_paye, date_echeance, statut, ecole_id, categorie, eleve_id")
+        .select("id, numero, libelle, montant, montant_paye, date_echeance, date_fin_validite, statut, ecole_id, categorie, eleve_id")
         .eq("ecole_id", ecoleId).eq("categorie", "transport")
         .in("eleve_id", eleveIds)
         .neq("statut", "annulee")
@@ -116,7 +120,7 @@ export default function TransportSubscribers() {
         (grouped[f.eleve_id] ||= []).push({
           id: f.id, numero: f.numero, libelle: f.libelle,
           montant: Number(f.montant), montant_paye: Number(f.montant_paye),
-          date_echeance: f.date_echeance, statut: f.statut,
+          date_echeance: f.date_echeance, date_fin_validite: f.date_fin_validite, statut: f.statut,
           ecole_id: f.ecole_id, categorie: f.categorie,
         });
       });
@@ -206,6 +210,18 @@ export default function TransportSubscribers() {
     return computeServiceKpis(facs);
   }, [parEleve, factures]);
 
+  const renouvellements = useMemo(() => computeRenewalTargets(
+    parEleve.map((a) => ({
+      abonnement_id: a.id,
+      eleve_id: a.eleve_id,
+      eleve_nom: a.eleve_nom,
+      classe_nom: a.classe_nom,
+      statut: a.statut,
+      jours_alerte: a.jours_alerte,
+      factures: factures[a.eleve_id] ?? [],
+    })),
+  ), [parEleve, factures]);
+
   const ciblesRelance: CibleRelance[] = useMemo(() => {
     const jour = new Date().toISOString().slice(0, 10);
     return parEleve
@@ -225,14 +241,15 @@ export default function TransportSubscribers() {
     <SettingsSection icon={<Users className="h-5 w-5" />} title={`Élèves abonnés (${filtered.length})`} description="Abonnements transport, adossés à la grille tarifaire (mensuel ou trimestriel)." hideSave>
       <ServiceKpiCards abonnesActifs={abonnesActifs} kpis={kpis} service="transport" />
       <ServiceEcheancesAlert kpis={kpis} service="transport" />
+      <ServiceRenewalAlert cibles={renouvellements} ecoleId={ecoleId} service="transport" onDone={fetchData} />
 
       <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs flex items-start gap-2">
         <Info className="h-4 w-4 text-primary shrink-0 mt-0.5" />
         <p className="text-muted-foreground">
-          Facturation <b>séquentielle</b> : « Période suivante » n'ouvre qu'une seule échéance à la fois, après l'échéance
-          de la précédente et seulement si celle-ci est soldée. Les relances SMS des familles en retard se font dans
-          <b> Facturation transport</b> (filtre « En retard »).
-          Un élève qui arrête le car en cours d'année doit être <b>résilié</b> (bouton « Arrêter ») : les échéances futures sont annulées, les impayés passés restent dus.
+          La date de fin indique quand la <b>période actuellement payée expire</b>. Une alerte apparaît avant cette date
+          pour préparer la tranche suivante et informer le parent. Le service n'est jamais suspendu automatiquement.
+          Un élève qui arrête le car doit être <b>résilié</b> (bouton « Arrêter ») : les périodes futures sont annulées,
+          les impayés passés restent dus.
         </p>
 
       </div>
@@ -245,9 +262,9 @@ export default function TransportSubscribers() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="outline" disabled={isBulkGenerating || filtered.length === 0}
-            title="Ouvre, pour chaque abonné actif, la période échue suivante si la précédente est soldée"
+            title="Prépare la période suivante pour chaque abonné dont la période précédente est soldée"
             onClick={() => generateBulk(filtered.filter((a) => a.statut === "actif" && a.grille_id).map((a) => a.id))}>
-            {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Ouvrir les périodes échues
+            {isBulkGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Receipt className="h-4 w-4" />} Préparer les renouvellements
           </Button>
 
           <Dialog open={open} onOpenChange={setOpen}>
@@ -304,6 +321,7 @@ export default function TransportSubscribers() {
               <TableHead>Tarif</TableHead>
               <TableHead>Périodicité</TableHead>
               <TableHead className="text-right">Total</TableHead>
+              <TableHead>Validité payée</TableHead>
               <TableHead>Statut</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -311,6 +329,7 @@ export default function TransportSubscribers() {
           <TableBody>
             {filtered.map((a) => {
               const eleveFacs = factures[a.eleve_id] ?? [];
+              const finValidite = getPaidCoverageEnd(eleveFacs);
               const isOpen = expanded === a.id;
               return (
                 <Fragment key={a.id}>
@@ -321,6 +340,7 @@ export default function TransportSubscribers() {
                     <TableCell className="text-sm">{a.grille_libelle ?? <span className="text-muted-foreground italic">non défini</span>}</TableCell>
                     <TableCell><Badge variant="outline">{a.periodicite ?? "—"}</Badge></TableCell>
                     <TableCell className="text-right font-semibold">{a.montant_total.toLocaleString("fr-FR")} F</TableCell>
+                    <TableCell>{finValidite ? formatCoverageEnd(finValidite) : <span className="text-muted-foreground">Non payée</span>}</TableCell>
                     <TableCell><Badge variant={a.statut === "actif" ? "default" : "secondary"}>{a.statut}</Badge></TableCell>
                     <TableCell className="text-right space-x-1">
                       <Button size="sm" variant="ghost" onClick={() => setExpanded(isOpen ? null : a.id)}>
@@ -335,7 +355,7 @@ export default function TransportSubscribers() {
                           <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif"}
                             title="Ouvrir la période suivante par anticipation (tout est soldé)"
                             onClick={() => generateFor({ id: a.id, forcer: true })}>
-                            <Receipt className="h-3.5 w-3.5" /> Ouvrir par anticipation
+                            <Receipt className="h-3.5 w-3.5" /> Préparer renouvellement
                           </Button>
                         ) : (
                           <Button size="sm" variant="outline" disabled={!a.grille_id || isGenerating || a.statut !== "actif" || !enRetard}
@@ -361,7 +381,7 @@ export default function TransportSubscribers() {
                   </TableRow>
                   {isOpen && (
                     <TableRow>
-                      <TableCell colSpan={8} className="bg-muted/30">
+                      <TableCell colSpan={9} className="bg-muted/30">
                         {eleveFacs.length === 0 ? (
                           <p className="text-xs text-muted-foreground py-3 text-center">Aucune facture — cliquez sur <b>Générer</b>.</p>
                         ) : (
@@ -370,7 +390,8 @@ export default function TransportSubscribers() {
                               <TableRow>
                                 <TableHead className="text-xs">N°</TableHead>
                                 <TableHead className="text-xs">Libellé</TableHead>
-                                <TableHead className="text-xs">Échéance</TableHead>
+                                <TableHead className="text-xs">Échéance paiement</TableHead>
+                                <TableHead className="text-xs">Fin de validité</TableHead>
                                 <TableHead className="text-xs text-right">Montant</TableHead>
                                 <TableHead className="text-xs text-right">Réglé</TableHead>
                                 <TableHead className="text-xs">Statut</TableHead>
@@ -385,6 +406,7 @@ export default function TransportSubscribers() {
                                     <TableCell className="font-mono text-xs">{f.numero}</TableCell>
                                     <TableCell className="text-xs">{f.libelle}</TableCell>
                                     <TableCell className="text-xs">{f.date_echeance}</TableCell>
+                                    <TableCell className="text-xs">{f.date_fin_validite ? formatCoverageEnd(f.date_fin_validite) : "—"}</TableCell>
                                     <TableCell className="text-right text-xs">{f.montant.toLocaleString("fr-FR")}</TableCell>
                                     <TableCell className="text-right text-xs text-primary">{f.montant_paye.toLocaleString("fr-FR")}</TableCell>
                                     <TableCell><Badge variant={solde ? "default" : f.montant_paye > 0 ? "secondary" : "destructive"}>{solde ? "Payée" : f.montant_paye > 0 ? "Partielle" : "Impayée"}</Badge></TableCell>
