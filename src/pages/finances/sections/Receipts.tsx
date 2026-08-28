@@ -23,6 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
+import { buildReceiptPdf } from "@/lib/downloadReceipt";
 import { generateRecapPaiementsJournalier } from "@/lib/generateFinanceReports";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
@@ -399,33 +400,17 @@ export default function Receipts() {
 
   // ── PDF ──
   const buildSinglePDF = async (r: PaiementRecu) => {
-    const anneeId = activeAnnee?.id;
-    const trQ = supabase
-      .from("tranches")
-      .select(anneeId ? "montant, frais_scolarite!inner(annee_id)" : "montant")
-      .eq("ecole_id", ecoleId!)
-      .eq("eleve_id", r.eleve_id);
-    if (anneeId) trQ.eq("frais_scolarite.annee_id", anneeId);
-    const paQ = supabase
-      .from("paiements")
-      .select(anneeId ? "montant, tranches!inner(frais_scolarite!inner(annee_id))" : "montant")
-      .eq("ecole_id", ecoleId!)
-      .eq("eleve_id", r.eleve_id)
-      .is("annule_le", null);
-    if (anneeId) paQ.eq("tranches.frais_scolarite.annee_id", anneeId);
-    const [{ data: tranches }, { data: paiements }] = await Promise.all([trQ, paQ]);
-    const total_du = ((tranches ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
-    const total_paye = ((paiements ?? []) as unknown as MontantRow[]).reduce((s, t) => s + Number(t.montant || 0), 0);
-    return generateRecuPDF({
-      ecole: { nom: ecole.nom, sigle: ecole.sigle, devise: ecole.devise, adresse: ecole.adresse, telephone: ecole.telephone, email: ecole.email, logoUrl: ecole.logo_url },
-      reference: r.reference ?? r.id.slice(0, 8).toUpperCase(),
-      eleve: { nom: r.eleve_nom, prenom: r.eleve_prenom, matricule: r.matricule, classe: r.classe, photo_url: r.photo_url },
-      montant: r.montant,
-      mode: r.mode,
-      date_paiement: r.date_paiement,
-      total_du,
-      total_paye,
+    const receiptType = modeMeta(r.mode).kind === "remise"
+      ? (r.mode === "bourse" ? "bourse" : r.mode === "prise_en_charge" ? "prise_en_charge" : "remise")
+      : "encaissement";
+    const built = await buildReceiptPdf({
+      ecoleId: ecoleId!,
+      eleveId: r.eleve_id,
+      paiementId: r.id,
+      type: receiptType,
     });
+    if (!built) throw new Error("Reçu introuvable");
+    return built.pdf;
   };
 
 

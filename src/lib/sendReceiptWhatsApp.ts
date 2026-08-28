@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { buildReceiptPdf } from "@/lib/downloadReceipt";
+import { buildReceiptOperationPdf, buildReceiptPdf } from "@/lib/downloadReceipt";
 import { buildInvoiceReceiptPdf } from "@/lib/downloadInvoiceReceipt";
 import { envoyerWhatsAppZindua, premierEchec } from "@/lib/sendWhatsAppZindua";
 import type { RecuData } from "@/lib/generateDocumentsPDF";
@@ -10,6 +10,8 @@ export interface EnvoiRecuParams {
   ecoleId: string;
   eleveId: string;
   paiementId: string;
+  /** Toutes les lignes techniques du même encaissement ventilé. */
+  paiementIds?: string[];
   type: RecuData["type"];
   /** Numéro du parent (format ivoirien). */
   telephone: string;
@@ -51,18 +53,27 @@ export async function envoyerRecuWhatsApp(p: EnvoiRecuParams): Promise<EnvoiRecu
     }
 
     // 2) PDF sans souche école (destiné au parent)
-    const built = await buildReceiptPdf({
-      ecoleId: p.ecoleId,
-      eleveId: p.eleveId,
-      paiementId: p.paiementId,
-      type: p.type,
-      souche: false,
-    });
+    const operationIds = Array.from(new Set((p.paiementIds ?? [p.paiementId]).filter(Boolean)));
+    const built = operationIds.length > 1
+      ? await buildReceiptOperationPdf({
+          ecoleId: p.ecoleId,
+          eleveId: p.eleveId,
+          paiementIds: operationIds,
+          type: p.type,
+          souche: false,
+        })
+      : await buildReceiptPdf({
+          ecoleId: p.ecoleId,
+          eleveId: p.eleveId,
+          paiementId: operationIds[0] ?? p.paiementId,
+          type: p.type,
+          souche: false,
+        });
     if (!built) return { ok: false, canal: null, detail: "Reçu introuvable." };
 
-    const ref = p.reference ?? built.paiement.reference ?? built.paiement.id.slice(0, 8).toUpperCase();
+    const ref = built.paiement.reference ?? p.reference ?? built.paiement.id.slice(0, 8).toUpperCase();
     const blob = built.pdf.output("blob") as Blob;
-    const chemin = `${p.ecoleId}/${p.paiementId}.pdf`;
+    const chemin = `${p.ecoleId}/${operationIds.length > 1 ? "operation-" : ""}${p.paiementId}.pdf`;
 
     const { error: upErr } = await supabase.storage
       .from("recus")
@@ -78,7 +89,9 @@ export async function envoyerRecuWhatsApp(p: EnvoiRecuParams): Promise<EnvoiRecu
     // 3) Message WhatsApp (modèle « reçu de paiement ») + repli SMS
     const eleve = `${p.nomEleve} ${p.prenomEleve}`.trim();
     const objet = p.objet ?? "scolarité";
-    const montant = fmt(p.montant);
+    // Le texte doit reprendre le montant réellement présent dans le PDF, jamais
+    // un montant fourni séparément par l'interface.
+    const montant = fmt(Number(built.paiement.montant));
     const sms =
       `GSP - Bonjour ${p.parent}, votre paiement de ${montant} (${objet}) pour ${eleve} ` +
       `est enregistre. Recu ref. ${ref} : ${lien}`;
