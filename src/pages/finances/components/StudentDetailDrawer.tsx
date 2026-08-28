@@ -149,7 +149,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                         size="sm"
                         variant="outline"
                         className="h-8 text-xs"
-                        title="Réimprimer le reçu du 1er versement (inscription) — totaux mis à jour selon la grille en vigueur"
+                        title="Réimprimer uniquement le premier versement, avec sa date et ses cumuls d'origine"
                         onClick={async () => {
                           if (!ecoleId) return;
                           const encaissements = (eleve.paiements ?? []).filter((p) => p.kind === "encaissement");
@@ -164,9 +164,8 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                               eleveId: eleve.id,
                               paiementId: premier.id,
                               type: "encaissement",
-                              hideVersementLine: true,
                             });
-                            toast.success("Reçu d'inscription généré");
+                            toast.success("Duplicata du premier versement généré");
                           } catch (err) {
                             console.error(err);
                             toast.error("Impossible de générer le reçu", { description: messageErreurBase(err) });
@@ -174,7 +173,7 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                         }}
                       >
                         <Printer className="h-3.5 w-3.5 mr-1" />
-                        Reçu inscription
+                        Reçu du 1er versement
                       </Button>
                     )}
                     {((eleve.paiements?.length ?? 0) > 0 || (eleve.totalPaye ?? 0) > 0) && (

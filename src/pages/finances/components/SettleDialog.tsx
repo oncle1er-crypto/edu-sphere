@@ -37,7 +37,7 @@ const MOYENS = [
 /** Forme réelle du JSON renvoyé par la RPC solder_scolarite (typée `Json` côté Supabase). */
 interface SolderScolariteResult {
   nb_tranches?: number;
-  lignes?: { paiement_id: string }[];
+  ventilation?: { paiement_id: string }[];
 }
 
 function friendlySolde(err: unknown): string {
@@ -127,7 +127,8 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
           tranchesCount += Number(result?.nb_tranches ?? 0);
 
           // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
-          const paiementId = result?.lignes?.[0]?.paiement_id;
+          const paiementIds = (result?.ventilation ?? []).map((ligne) => ligne.paiement_id);
+          const paiementId = paiementIds[0];
           const parentNom = contact?.nomComplet ?? el.parent;
           const parentTel = contact?.telephone ?? el.telephone;
           if (paiementId && parentNom && parentTel) {
@@ -135,6 +136,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
               ecoleId,
               eleveId: el.id,
               paiementId,
+              paiementIds,
               type: "encaissement",
               telephone: parentTel,
               parent: parentNom,

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecuPDF, type RecuData } from "./generateDocumentsPDF";
 import { stampCancelled } from "./pdfCancelStamp";
+import { summarizeReceiptOperation, type ReceiptOperationLine } from "./receiptOperation";
 
 interface Params {
   ecoleId: string;
@@ -13,10 +14,38 @@ interface Params {
   hideVersementLine?: boolean;
 }
 
+interface OperationParams extends Omit<Params, "paiementId"> {
+  paiementIds: string[];
+}
+
+interface PaiementReceiptRow {
+  id: string;
+  reference: string | null;
+  montant: number;
+  mode: string;
+  motif: string | null;
+  date_paiement: string;
+  created_at: string;
+  tranche_id: string | null;
+  annule_le: string | null;
+  motif_annulation: string | null;
+  tranches: { numero: number; label: string } | null;
+}
+
 /**
  * Récupère les données du paiement + école + élève et construit le PDF reçu.
  */
-export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souche = true, hideVersementLine }: Params) {
+async function buildReceiptPdfForPayments({
+  ecoleId,
+  eleveId,
+  paiementIds,
+  type,
+  souche = true,
+  hideVersementLine,
+}: OperationParams) {
+  const ids = Array.from(new Set(paiementIds.filter(Boolean)));
+  if (ids.length === 0) return null;
+
   // 1) Récupère l'année scolaire active de l'élève pour scoper les cumuls
   const { data: eleveScope } = await supabase
     .from("eleves")
@@ -38,11 +67,14 @@ export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souc
         .eq("ecole_id", ecoleId)
         .eq("eleve_id", eleveId);
 
-  const [{ data: paiement }, { data: ecole }, { data: eleve }, { data: tranches }] =
+  const [{ data: paiementsSelectionnes }, { data: ecole }, { data: eleve }, { data: tranches }] =
     await Promise.all([
       supabase.from("paiements")
-        .select("id, reference, montant, mode, motif, date_paiement, annule_le, motif_annulation")
-        .eq("id", paiementId).maybeSingle(),
+        .select("id, reference, montant, mode, motif, date_paiement, created_at, tranche_id, annule_le, motif_annulation, tranches(numero,label)")
+        .eq("ecole_id", ecoleId)
+        .eq("eleve_id", eleveId)
+        .in("id", ids)
+        .order("created_at", { ascending: true }),
       supabase.from("ecoles")
         .select("nom, sigle, devise, adresse, telephone, email, logo_url")
         .eq("id", ecoleId).maybeSingle(),
@@ -52,22 +84,37 @@ export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souc
       tranchesQ,
     ]);
 
-  if (!paiement || !ecole || !eleve) return null;
+  if (!paiementsSelectionnes || paiementsSelectionnes.length !== ids.length || !ecole || !eleve) return null;
+
+  const lignes = paiementsSelectionnes as unknown as PaiementReceiptRow[];
+  const summary = summarizeReceiptOperation(lignes.map((paiement): ReceiptOperationLine => ({
+    id: paiement.id,
+    montant: Number(paiement.montant),
+    mode: paiement.mode,
+    reference: paiement.reference,
+    date_paiement: paiement.date_paiement,
+    tranche_numero: paiement.tranches?.numero ?? null,
+    tranche_label: paiement.tranches?.label ?? null,
+  })));
+  const paiement = lignes[0];
+  const cutoff = lignes.reduce(
+    (latest, item) => item.created_at > latest ? item.created_at : latest,
+    lignes[0].created_at,
+  );
 
   // Total dû = somme des montants des tranches de l'année active (grille override incluse).
-  // Total payé = somme de `paye` des mêmes tranches (maintenu par le trigger de rapprochement),
-  // ce qui garantit la même valeur que celle affichée à l'écran.
   const totalDu = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.montant || 0), 0);
-  const totalPaye = (tranches ?? []).reduce((s: number, t: any) => s + Number(t.paye || 0), 0);
 
-  // Ventilation encaissé / remises : on additionne les paiements réels de l'élève,
-  // scopés aux tranches de l'année active si dispo.
+  // Les cumuls d'un duplicata sont arrêtés au moment de l'opération imprimée.
+  // Ils restent ainsi fidèles au document historique et excluent les annulations.
   const trancheIds = new Set<string>((tranches ?? []).map((t: any) => t.id));
   const { data: paiementsRaw } = await supabase
     .from("paiements")
-    .select("montant, mode, tranche_id")
+    .select("montant, mode, tranche_id, created_at")
     .eq("ecole_id", ecoleId)
-    .eq("eleve_id", eleveId);
+    .eq("eleve_id", eleveId)
+    .is("annule_le", null)
+    .lte("created_at", cutoff);
   const REMISE_MODES = new Set(["remise", "bourse", "prise_en_charge"]);
   let totalEncaisse = 0;
   let totalRemises = 0;
@@ -79,6 +126,7 @@ export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souc
     if (REMISE_MODES.has(p.mode)) totalRemises += m;
     else totalEncaisse += m;
   });
+  const totalPaye = totalEncaisse + totalRemises;
 
   const pdf = await generateRecuPDF({
     ecole: {
@@ -90,7 +138,7 @@ export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souc
       email: ecole.email || "",
       logoUrl: ecole.logo_url || null,
     },
-    reference: paiement.reference ?? paiement.id.slice(0, 8).toUpperCase(),
+    reference: summary.reference ?? paiement.id.slice(0, 8).toUpperCase(),
     eleve: {
       nom: eleve.nom,
       prenom: eleve.prenom,
@@ -98,32 +146,48 @@ export async function buildReceiptPdf({ ecoleId, eleveId, paiementId, type, souc
       classe: (eleve as any).classes?.nom ?? "",
       photo_url: eleve.photo_url ?? null,
     },
-    montant: Number(paiement.montant),
-    mode: paiement.mode,
-    date_paiement: paiement.date_paiement,
+    montant: summary.montant,
+    mode: summary.mode,
+    date_paiement: summary.datePaiement,
     total_du: totalDu,
     total_paye: totalPaye,
     total_encaisse: totalEncaisse,
     total_remises: totalRemises,
     type,
-    motif: paiement.motif ?? null,
+    motif: summary.motif ?? paiement.motif ?? null,
     souche,
     hideVersementLine,
   });
 
   // Reçu d'un paiement annulé : on imprime un filigrane « ANNULÉ » rouge.
-  if ((paiement as any).annule_le) {
-    stampCancelled(pdf, (paiement as any).annule_le);
+  if (lignes.every((item) => item.annule_le)) {
+    stampCancelled(pdf, lignes[lignes.length - 1].annule_le);
   }
 
   return {
     pdf,
-    paiement,
+    paiement: {
+      ...paiement,
+      reference: summary.reference,
+      montant: summary.montant,
+      mode: summary.mode,
+      date_paiement: summary.datePaiement,
+    },
     eleve: {
       nom: eleve.nom,
       prenom: eleve.prenom,
     },
   };
+}
+
+export async function buildReceiptPdf(params: Params) {
+  const { paiementId, ...rest } = params;
+  return buildReceiptPdfForPayments({ ...rest, paiementIds: [paiementId] });
+}
+
+/** Construit un reçu unique pour toutes les lignes d'un même encaissement ventilé. */
+export async function buildReceiptOperationPdf(params: OperationParams) {
+  return buildReceiptPdfForPayments(params);
 }
 
 function filenameFor(type: RecuData["type"], reference: string): string {
@@ -146,6 +210,20 @@ export async function downloadReceiptFor(params: Params): Promise<void> {
     built.pdf.save(filenameFor(params.type, ref));
   } catch (err) {
     console.error("downloadReceiptFor failed", err);
+  }
+}
+
+/** Télécharge un reçu global limité aux lignes du même encaissement ventilé. */
+export async function downloadReceiptOperationFor(params: OperationParams): Promise<boolean> {
+  try {
+    const built = await buildReceiptOperationPdf(params);
+    if (!built) return false;
+    const ref = built.paiement.reference ?? built.paiement.id.slice(0, 8);
+    built.pdf.save(filenameFor(params.type, ref));
+    return true;
+  } catch (err) {
+    console.error("downloadReceiptOperationFor failed", err);
+    return false;
   }
 }
 

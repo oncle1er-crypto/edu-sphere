@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Wallet, Loader2, ArrowRight } from "lucide-react";
-import { fcfa, friendlyRpcError, type EleveScolarite, type PaiementHistorique } from "../scolarite-data";
+import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
-import { downloadGlobalReceipt } from "@/lib/downloadGlobalReceipt";
+import { downloadReceiptOperationFor } from "@/lib/downloadReceipt";
+import { initialPaymentAmount } from "@/lib/receiptOperation";
 
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
 import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
@@ -43,7 +44,7 @@ interface LigneVentilation {
   resteApres: number;
 }
 
-export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
+export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, onPaymentRecorded, ecoleId }: Props) {
   const [saving, setSaving] = useState(false);
   const { dialog: parentGuardDialog, verifierAvant } = useParentContactGuard();
   const submittingRef = useRef(false);
@@ -55,10 +56,10 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
   useEffect(() => {
     if (!open || !eleve) return;
     submittingRef.current = false;
-    setMontant(String(Math.max(0, eleve.resteDu)));
+    setMontant(String(initialPaymentAmount(eleve.tranches, defaultTrancheNum, eleve.resteDu)));
     setMoyen("wave");
     setReference("");
-  }, [open, eleve]);
+  }, [open, eleve, defaultTrancheNum]);
 
   const montantNum = Number(montant) || 0;
   const resteDu = eleve?.resteDu ?? 0;
@@ -130,28 +131,22 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
           (lignes.length > 1 ? ` (${lignes.length} tranches)` : ""),
       });
 
-      // Reçu global (l'encaissement peut couvrir plusieurs tranches)
-      const modeLabel = MOYENS.find((m) => m.value === moyen)?.label ?? moyen;
-      const nouveauxPaiements: PaiementHistorique[] = lignes.map((l) => ({
-        id: l.paiement_id,
-        date: new Date().toISOString(),
-        montant: Number(l.montant),
-        mode: moyen,
-        modeLabel,
-        kind: "encaissement",
-        trancheNum: l.tranche_numero,
-        reference: ref,
-        motif: null,
-        annuleLe: null,
-      }));
-      const eleveAJour: EleveScolarite = {
-        ...eleve,
-        paiements: [...nouveauxPaiements, ...(eleve.paiements ?? [])],
-        totalEncaisse: (eleve.totalEncaisse ?? 0) + montantNum,
-        totalPaye: (eleve.totalPaye ?? 0) + montantNum,
-        resteDu: resteApres,
-      };
-      downloadGlobalReceipt({ ecoleId, eleve: eleveAJour }).catch(() => { /* best-effort */ });
+      // Un reçu de l'opération : une seule ligne si une tranche est concernée,
+      // ou un reçu global détaillé si l'encaissement couvre plusieurs tranches.
+      const paiementIds = lignes.map((ligne) => ligne.paiement_id);
+      if (paiementIds.length > 0) {
+        const receiptDownloaded = await downloadReceiptOperationFor({
+          ecoleId,
+          eleveId: eleve.id,
+          paiementIds,
+          type: "encaissement",
+        });
+        if (!receiptDownloaded) {
+          toast.warning("Paiement enregistré, mais reçu non téléchargé", {
+            description: "Le reçu reste disponible dans l'historique des paiements.",
+          });
+        }
+      }
 
       // SMS de confirmation au parent (best-effort)
       sendPaymentConfirmationSms({
@@ -176,6 +171,7 @@ export function PaymentDialog({ eleve, open, onOpenChange, onPaymentRecorded, ec
           ecoleId,
           eleveId: eleve.id,
           paiementId: premierPaiementId,
+          paiementIds,
           type: "encaissement",
           telephone: contact.telephone,
           parent: contact.nomComplet,
