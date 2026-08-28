@@ -207,13 +207,14 @@ export async function finalizeInscription(opts: FinalizeOptions): Promise<Finali
       const lastPay = (paiementsRes.data ?? [])[0];
       if (lastPay) {
         try {
-          await downloadReceiptFor({
+          const receiptDownloaded = await downloadReceiptFor({
             ecoleId: eleve.ecole_id,
             eleveId: eleve.id,
             paiementId: lastPay.id,
             type: "encaissement",
           });
-          result.steps.push("Reçu paiement téléchargé");
+          if (receiptDownloaded) result.steps.push("Reçu paiement téléchargé");
+          else result.warnings.push("Reçu de paiement non généré.");
         } catch {
           result.warnings.push("Reçu de paiement non généré.");
         }

@@ -92,7 +92,12 @@ export function DiscountDialog({ eleve, defaultTrancheNum, open, onOpenChange, o
       });
 
       if (paiementId && typeof paiementId === "string") {
-        downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type });
+        const receiptDownloaded = await downloadReceiptFor({ ecoleId, eleveId: eleve.id, paiementId, type });
+        if (!receiptDownloaded) {
+          toast.warning("Remise enregistrée, mais reçu non téléchargé", {
+            description: "Le reçu reste disponible dans l'historique des paiements.",
+          });
+        }
       }
 
       onOpenChange(false);

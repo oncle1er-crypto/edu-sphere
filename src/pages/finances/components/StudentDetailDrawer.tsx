@@ -159,12 +159,13 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                           }
                           const premier = [...encaissements].sort((a, b) => a.date.localeCompare(b.date))[0];
                           try {
-                            await downloadReceiptFor({
+                            const receiptDownloaded = await downloadReceiptFor({
                               ecoleId,
                               eleveId: eleve.id,
                               paiementId: premier.id,
                               type: "encaissement",
                             });
+                            if (!receiptDownloaded) throw new Error("Reçu introuvable");
                             toast.success("Duplicata du premier versement généré");
                           } catch (err) {
                             console.error(err);
@@ -336,12 +337,20 @@ export function StudentDetailDrawer({ eleve, openTrancheNum, onOpenChange, ecole
                               variant="ghost"
                               className="h-9 w-9 sm:h-7 sm:w-7"
                               title="Télécharger le reçu PDF (avec souche)"
-                              onClick={() => ecoleId && downloadReceiptFor({
-                                ecoleId, eleveId: eleve.id, paiementId: p.id,
-                                type: (p.kind === "remise"
-                                  ? (p.mode === "bourse" ? "bourse" : p.mode === "prise_en_charge" ? "prise_en_charge" : "remise")
-                                  : "encaissement"),
-                              })}
+                              onClick={async () => {
+                                if (!ecoleId) return;
+                                const receiptDownloaded = await downloadReceiptFor({
+                                  ecoleId, eleveId: eleve.id, paiementId: p.id,
+                                  type: (p.kind === "remise"
+                                    ? (p.mode === "bourse" ? "bourse" : p.mode === "prise_en_charge" ? "prise_en_charge" : "remise")
+                                    : "encaissement"),
+                                });
+                                if (!receiptDownloaded) {
+                                  toast.error("Impossible de télécharger le reçu", {
+                                    description: "Le paiement existe, mais le document n'a pas pu être généré.",
+                                  });
+                                }
+                              }}
                             >
                               <Download className="h-3.5 w-3.5" />
                             </Button>

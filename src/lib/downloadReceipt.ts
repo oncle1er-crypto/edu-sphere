@@ -200,16 +200,19 @@ function filenameFor(type: RecuData["type"], reference: string): string {
 
 /**
  * Re-fetch a freshly-created paiement + ecole + élève and download the matching receipt PDF.
- * Returns silently on failure (best-effort companion of a successful RPC).
+ * Retourne false si le reçu ne peut pas être construit ou téléchargé afin que
+ * l'interface ne puisse jamais afficher un faux message de succès.
  */
-export async function downloadReceiptFor(params: Params): Promise<void> {
+export async function downloadReceiptFor(params: Params): Promise<boolean> {
   try {
     const built = await buildReceiptPdf(params);
-    if (!built) return;
+    if (!built) return false;
     const ref = built.paiement.reference ?? built.paiement.id.slice(0, 8);
     built.pdf.save(filenameFor(params.type, ref));
+    return true;
   } catch (err) {
     console.error("downloadReceiptFor failed", err);
+    return false;
   }
 }
 
