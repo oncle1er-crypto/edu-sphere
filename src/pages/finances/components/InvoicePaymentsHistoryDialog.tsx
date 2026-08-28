@@ -129,14 +129,16 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
   if (!facture) return null;
 
   const reprint = async (p: Paiement) => {
-    await downloadInvoiceReceipt({
+    const ok = await downloadInvoiceReceipt({
       ecoleId: facture.ecole_id,
       factureId: facture.id,
+      paiementId: p.id,
       montant: Number(p.montant),
       reference: p.reference,
       mode: p.mode,
       datePaiement: p.date_paiement,
     });
+    if (!ok) toast.error("Impossible de réimprimer ce reçu");
   };
 
   const confirmCancel = async (p: Paiement) => {
@@ -153,7 +155,7 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
       if (error) throw error;
       toast.success("Paiement annulé", { description: `${fcfa(Number(p.montant))} retirés de la facture` });
       // Reçu de correction téléchargé automatiquement
-      await downloadInvoiceReceipt({
+      const correctionDownloaded = await downloadInvoiceReceipt({
         ecoleId: facture.ecole_id,
         factureId: facture.id,
         montant: Number(p.montant),
@@ -161,6 +163,9 @@ export function InvoicePaymentsHistoryDialog({ facture, open, onOpenChange, onCh
         annulation: true,
         motifAnnulation: motif.trim(),
       });
+      if (!correctionDownloaded) {
+        toast.warning("Paiement annulé, mais le reçu de correction n’a pas pu être téléchargé");
+      }
       setMotifFor(null); setMotif("");
       await fetchPaiements();
       onChanged?.();

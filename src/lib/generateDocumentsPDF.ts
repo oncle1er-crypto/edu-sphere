@@ -38,6 +38,8 @@ export interface RecuData {
   periode?: string;
   /** Date d'échéance de la facture (ISO). */
   date_echeance?: string;
+  /** Libellé métier de la date affichée avec la période. */
+  date_echeance_label?: string;
 }
 
 async function loadImageAsDataURL(url: string): Promise<{ data: string; w: number; h: number } | null> {
@@ -189,7 +191,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     let extraRow = 0;
     if (data.periode || data.date_echeance) {
       drawField("Période concernée", data.periode || "—", M, y + 36);
-      drawField("Échéance", data.date_echeance ? formatDateLong(data.date_echeance) : "—", M + colW, y + 36);
+      drawField(data.date_echeance_label ?? "Échéance", data.date_echeance ? formatDateLong(data.date_echeance) : "—", M + colW, y + 36);
       extraRow = 12;
     }
 

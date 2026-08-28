@@ -192,7 +192,8 @@ export default function CanteenSubscribers() {
 
   const reprint = async (f: FactureLite) => {
     if (f.montant_paye <= 0) { toast.info("Aucun paiement à réimprimer"); return; }
-    await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
+    const ok = await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
+    if (!ok) toast.error("Impossible de réimprimer le reçu");
   };
 
   const filtered = abonnements.filter((a) =>
@@ -430,7 +431,7 @@ export default function CanteenSubscribers() {
                                           <Button size="sm" variant="ghost" onClick={() => setHistoryFor({ id: f.id, numero: f.numero, libelle: f.libelle, montant: f.montant, montant_paye: f.montant_paye, eleve_id: a.eleve_id, eleve_nom: a.eleve_nom, ecole_id: f.ecole_id, categorie: f.categorie })} title="Historique">
                                             <History className="h-3.5 w-3.5" />
                                           </Button>
-                                          <Button size="sm" variant="ghost" onClick={() => reprint(f)} title="Réimprimer reçu">
+                                          <Button size="sm" variant="ghost" onClick={() => reprint(f)} title="Réimprimer le dernier reçu">
                                             <Printer className="h-3.5 w-3.5" />
                                           </Button>
                                         </>

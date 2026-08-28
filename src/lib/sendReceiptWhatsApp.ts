@@ -137,6 +137,7 @@ export async function envoyerRecuWhatsApp(p: EnvoiRecuParams): Promise<EnvoiRecu
 export interface EnvoiRecuFactureParams {
   ecoleId: string;
   factureId: string;
+  paiementId?: string;
   montant: number;
   mode?: string;
   reference?: string | null;
@@ -165,6 +166,7 @@ export async function envoyerRecuFactureWhatsApp(
     const built = await buildInvoiceReceiptPdf({
       ecoleId: p.ecoleId,
       factureId: p.factureId,
+      paiementId: p.paiementId,
       montant: p.montant,
       mode: p.mode,
       reference: p.reference ?? null,
