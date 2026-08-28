@@ -187,7 +187,8 @@ export default function TransportSubscribers() {
 
   const reprint = async (f: FactureLite) => {
     if (f.montant_paye <= 0) { toast.info("Aucun paiement à réimprimer"); return; }
-    await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
+    const ok = await downloadInvoiceReceipt({ ecoleId: f.ecole_id, factureId: f.id });
+    if (!ok) toast.error("Impossible de réimprimer le reçu");
   };
 
   const filtered = rows.filter((a) =>

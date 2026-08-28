@@ -239,7 +239,8 @@ export default function ServiceBilling({ service }: { service: ServiceKind }) {
 
   const reprint = async (r: Row) => {
     if (r.montant_paye <= 0) { toast.info("Aucun paiement à réimprimer"); return; }
-    await downloadInvoiceReceipt({ ecoleId: r.ecole_id, factureId: r.id });
+    const ok = await downloadInvoiceReceipt({ ecoleId: r.ecole_id, factureId: r.id });
+    if (!ok) toast.error("Impossible de réimprimer le reçu");
   };
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;

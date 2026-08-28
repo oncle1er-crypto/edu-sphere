@@ -1,9 +1,12 @@
 import { supabase } from "@/integrations/supabase/client";
 import { generateRecuPDF } from "./generateDocumentsPDF";
+import { serviceReceiptExpiry } from "./invoiceReceipt";
 
-interface Params {
+export interface Params {
   ecoleId: string;
   factureId: string;
+  /** Paiement exact à reproduire. Sans identifiant, le dernier paiement actif est utilisé. */
+  paiementId?: string;
   /** Montant du versement à mettre en avant. Si absent, on utilise `montant_paye`. */
   montant?: number;
   reference?: string | null;
@@ -24,14 +27,25 @@ interface Params {
 export async function buildInvoiceReceiptPdf(params: Params) {
   {
     const {
-      ecoleId, factureId, montant, mode = "especes", souche = true,
+      ecoleId, factureId, paiementId, montant, mode, souche = true,
       annulation = false, motifAnnulation, datePaiement,
     } = params;
 
-    const [{ data: facture }, { data: ecole }] = await Promise.all([
+    let paiementQuery = supabase
+      .from("paiements")
+      .select("id, montant, mode, reference, date_paiement, annule_le")
+      .eq("facture_id", factureId);
+    paiementQuery = paiementId
+      ? paiementQuery.eq("id", paiementId)
+      : paiementQuery.is("annule_le", null)
+          .order("date_paiement", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(1);
+
+    const [factureResult, ecoleResult, paiementResult] = await Promise.all([
       supabase
         .from("factures")
-        .select("id, numero, libelle, montant, montant_paye, date_emission, date_echeance, categorie, eleve_id, eleves(nom, prenom, matricule, photo_url, classes(nom))")
+        .select("id, numero, libelle, montant, montant_paye, date_emission, date_echeance, date_fin_validite, categorie, eleve_id, eleves(nom, prenom, matricule, photo_url, classes(nom))")
         .eq("id", factureId)
         .maybeSingle(),
       supabase
@@ -39,7 +53,16 @@ export async function buildInvoiceReceiptPdf(params: Params) {
         .select("nom, sigle, devise, adresse, telephone, email, logo_url")
         .eq("id", ecoleId)
         .maybeSingle(),
+      paiementQuery.maybeSingle(),
     ]);
+
+    if (factureResult.error) throw factureResult.error;
+    if (ecoleResult.error) throw ecoleResult.error;
+    if (paiementResult.error) throw paiementResult.error;
+
+    const facture = factureResult.data;
+    const ecole = ecoleResult.data;
+    const paiement = paiementResult.data;
 
     if (!facture || !ecole) return;
 
@@ -50,9 +73,12 @@ export async function buildInvoiceReceiptPdf(params: Params) {
       params.reference ??
       (annulation
         ? `ANN-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`
-        : `REC-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`);
+        : paiement?.reference ?? `REC-${facture.numero}-${Math.floor(Math.random() * 900 + 100)}`);
 
-    const montantVersement = montant ?? totalPaye;
+    const montantVersement = montant ?? (paiement ? Number(paiement.montant) : totalPaye);
+    const modeEffectif = mode ?? paiement?.mode ?? "especes";
+    const today = new Date().toISOString().slice(0, 10);
+    const datePaiementEffective = datePaiement ?? (annulation ? today : paiement?.date_paiement ?? today);
 
     const catLabel =
       facture.categorie === "cantine" ? "Cantine"
@@ -120,8 +146,8 @@ export async function buildInvoiceReceiptPdf(params: Params) {
         photo_url: eleve.photo_url ?? null,
       },
       montant: Number(montantVersement) || 0,
-      mode,
-      date_paiement: datePaiement ?? new Date().toISOString().slice(0, 10),
+      mode: modeEffectif,
+      date_paiement: datePaiementEffective,
       total_du: totalDu,
       total_paye: totalPaye,
       total_encaisse: totalPaye,
@@ -132,9 +158,8 @@ export async function buildInvoiceReceiptPdf(params: Params) {
       titleOverride,
       subtitleOverride,
       periode: isService ? periode : undefined,
-      date_echeance: isService
-        ? (datePaiement ?? new Date().toISOString().slice(0, 10))
-        : undefined,
+      date_echeance: serviceReceiptExpiry(facture),
+      date_echeance_label: isService ? "Fin de validité" : undefined,
     });
 
     return {
@@ -155,13 +180,15 @@ export async function buildInvoiceReceiptPdf(params: Params) {
 /**
  * Génère et télécharge le reçu PDF d'un paiement ou d'une annulation de facture.
  */
-export async function downloadInvoiceReceipt(params: Params): Promise<void> {
+export async function downloadInvoiceReceipt(params: Params): Promise<boolean> {
   try {
     const built = await buildInvoiceReceiptPdf(params);
-    if (!built) return;
+    if (!built) return false;
     const prefix = built.annulation ? "annulation" : "recu";
     built.pdf.save(`${prefix}-${built.numero}.pdf`);
+    return true;
   } catch (err) {
     console.error("downloadInvoiceReceipt failed", err);
+    return false;
   }
 }

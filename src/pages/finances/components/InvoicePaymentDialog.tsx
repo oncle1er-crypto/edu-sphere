@@ -95,6 +95,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         _mode: moyen,
         _reference: reference || null,
         _recu_par: user?.id ?? null,
+        _date_paiement: datePaiement,
       });
       if (error) throw error;
 
@@ -103,20 +104,25 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
       });
 
       // Reçu PDF téléchargé automatiquement
-      await downloadInvoiceReceipt({
+      const receiptDownloaded = await downloadInvoiceReceipt({
         ecoleId: facture.ecole_id,
         factureId: facture.id,
+        paiementId: typeof paiementId === "string" ? paiementId : undefined,
         montant: montantNum,
-        reference: reference || (typeof paiementId === "string" ? `REC-${paiementId.slice(0, 8).toUpperCase()}` : null),
+        reference: reference || null,
         mode: moyen,
         datePaiement,
       });
+      if (!receiptDownloaded) {
+        toast.warning("Paiement enregistré, mais le reçu n’a pas pu être téléchargé");
+      }
 
       // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
       if (contact) {
         void envoyerRecuFactureWhatsApp({
           ecoleId: facture.ecole_id,
           factureId: facture.id,
+          paiementId: typeof paiementId === "string" ? paiementId : undefined,
           montant: montantNum,
           mode: moyen,
           reference: reference || null,
@@ -195,7 +201,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs">Date du paiement (échéance sur le reçu)</Label>
+            <Label className="text-xs">Date du paiement</Label>
             <Input type="date" value={datePaiement} onChange={(e) => setDatePaiement(e.target.value)} />
           </div>
         </div>
