@@ -1,6 +1,3 @@
-Warning: truncated output (original token count: 64819)
-Total output lines: 8831
-
 export type Json =
   | string
   | number
@@ -2011,7 +2008,4759 @@ export type Database = {
             foreignKeyName: "depenses_fournisseur_id_fkey"
             columns: ["fournisseur_id"]
             isOneToOne: false
-            …34819 tokens truncated…          {
+            referencedRelation: "fournisseurs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disponibilites_enseignants: {
+        Row: {
+          created_at: string
+          disponible: boolean
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          jour: number
+          note: string | null
+          plage: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          disponible?: boolean
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          jour: number
+          note?: string | null
+          plage: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          disponible?: boolean
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          jour?: number
+          note?: string | null
+          plage?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disponibilites_enseignants_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disponibilites_enseignants_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents_eleves: {
+        Row: {
+          chemin_stockage: string
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mime_type: string | null
+          nom_fichier: string
+          taille: number | null
+          type_document: string
+          updated_at: string
+          uploade_par: string | null
+        }
+        Insert: {
+          chemin_stockage: string
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier: string
+          taille?: number | null
+          type_document: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Update: {
+          chemin_stockage?: string
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mime_type?: string | null
+          nom_fichier?: string
+          taille?: number | null
+          type_document?: string
+          updated_at?: string
+          uploade_par?: string | null
+        }
+        Relationships: []
+      }
+      echeances_services: {
+        Row: {
+          annee_id: string
+          created_at: string
+          echeance: string
+          ecole_id: string
+          eleve_id: string
+          grille_id: string | null
+          id: string
+          label: string
+          montant: number
+          numero: number
+          paye: number
+          service_type: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          echeance: string
+          ecole_id: string
+          eleve_id: string
+          grille_id?: string | null
+          id?: string
+          label: string
+          montant?: number
+          numero: number
+          paye?: number
+          service_type: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          echeance?: string
+          ecole_id?: string
+          eleve_id?: string
+          grille_id?: string | null
+          id?: string
+          label?: string
+          montant?: number
+          numero?: number
+          paye?: number
+          service_type?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "echeances_services_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "echeances_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "echeances_services_grille_id_fkey"
+            columns: ["grille_id"]
+            isOneToOne: false
+            referencedRelation: "grille_tarifs_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecoles: {
+        Row: {
+          adresse: string | null
+          agrement: string | null
+          annee_creation: number | null
+          armoiries_url: string | null
+          code: string
+          created_at: string
+          cycles: string | null
+          ddenet: string | null
+          devise: string | null
+          devise_nationale: string | null
+          diocese: string | null
+          directeur: string | null
+          drenet: string | null
+          email: string | null
+          id: string
+          logo_url: string | null
+          ministere: string | null
+          nom: string
+          pays: string
+          sigle: string | null
+          site_web: string | null
+          status: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve: number
+          telephone: string | null
+          type: string
+          updated_at: string
+          ville: string
+        }
+        Insert: {
+          adresse?: string | null
+          agrement?: string | null
+          annee_creation?: number | null
+          armoiries_url?: string | null
+          code: string
+          created_at?: string
+          cycles?: string | null
+          ddenet?: string | null
+          devise?: string | null
+          devise_nationale?: string | null
+          diocese?: string | null
+          directeur?: string | null
+          drenet?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          ministere?: string | null
+          nom: string
+          pays?: string
+          sigle?: string | null
+          site_web?: string | null
+          status?: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve?: number
+          telephone?: string | null
+          type?: string
+          updated_at?: string
+          ville?: string
+        }
+        Update: {
+          adresse?: string | null
+          agrement?: string | null
+          annee_creation?: number | null
+          armoiries_url?: string | null
+          code?: string
+          created_at?: string
+          cycles?: string | null
+          ddenet?: string | null
+          devise?: string | null
+          devise_nationale?: string | null
+          diocese?: string | null
+          directeur?: string | null
+          drenet?: string | null
+          email?: string | null
+          id?: string
+          logo_url?: string | null
+          ministere?: string | null
+          nom?: string
+          pays?: string
+          sigle?: string | null
+          site_web?: string | null
+          status?: Database["public"]["Enums"]["ecole_status"]
+          tarif_honoraire_vacances_par_eleve?: number
+          telephone?: string | null
+          type?: string
+          updated_at?: string
+          ville?: string
+        }
+        Relationships: []
+      }
+      eleve_parents: {
+        Row: {
+          created_at: string
+          eleve_id: string
+          est_contact_principal: boolean | null
+          id: string
+          lien: string
+          parent_id: string
+        }
+        Insert: {
+          created_at?: string
+          eleve_id: string
+          est_contact_principal?: boolean | null
+          id?: string
+          lien?: string
+          parent_id: string
+        }
+        Update: {
+          created_at?: string
+          eleve_id?: string
+          est_contact_principal?: boolean | null
+          id?: string
+          lien?: string
+          parent_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eleve_parents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleve_parents_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "eleve_parents_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eleves: {
+        Row: {
+          adresse: string | null
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_inscription: string | null
+          date_naissance: string | null
+          ecole_id: string
+          est_nouveau: boolean
+          frais_id_override: string | null
+          id: string
+          lieu_naissance: string | null
+          matricule: string
+          matricule_national: string | null
+          nationalite: string | null
+          nom: string
+          numero_extrait_naissance: string | null
+          numero_inscription_en_ligne: string | null
+          photo_url: string | null
+          prenom: string
+          sexe: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le: string | null
+          statut: string
+          statut_sigfne: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_inscription?: string | null
+          date_naissance?: string | null
+          ecole_id: string
+          est_nouveau?: boolean
+          frais_id_override?: string | null
+          id?: string
+          lieu_naissance?: string | null
+          matricule: string
+          matricule_national?: string | null
+          nationalite?: string | null
+          nom: string
+          numero_extrait_naissance?: string | null
+          numero_inscription_en_ligne?: string | null
+          photo_url?: string | null
+          prenom: string
+          sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le?: string | null
+          statut?: string
+          statut_sigfne?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_inscription?: string | null
+          date_naissance?: string | null
+          ecole_id?: string
+          est_nouveau?: boolean
+          frais_id_override?: string | null
+          id?: string
+          lieu_naissance?: string | null
+          matricule?: string
+          matricule_national?: string | null
+          nationalite?: string | null
+          nom?: string
+          numero_extrait_naissance?: string | null
+          numero_inscription_en_ligne?: string | null
+          photo_url?: string | null
+          prenom?: string
+          sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          sigfne_verifie_le?: string | null
+          statut?: string
+          statut_sigfne?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eleves_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eleves_frais_id_override_fkey"
+            columns: ["frais_id_override"]
+            isOneToOne: false
+            referencedRelation: "frais_scolarite"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      emprunts: {
+        Row: {
+          created_at: string
+          date_emprunt: string
+          date_retour_effective: string | null
+          date_retour_prevue: string
+          ecole_id: string
+          eleve_id: string | null
+          enseignant_id: string | null
+          id: string
+          livre_id: string
+          statut: string
+        }
+        Insert: {
+          created_at?: string
+          date_emprunt?: string
+          date_retour_effective?: string | null
+          date_retour_prevue: string
+          ecole_id: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          id?: string
+          livre_id: string
+          statut?: string
+        }
+        Update: {
+          created_at?: string
+          date_emprunt?: string
+          date_retour_effective?: string | null
+          date_retour_prevue?: string
+          ecole_id?: string
+          eleve_id?: string | null
+          enseignant_id?: string | null
+          id?: string
+          livre_id?: string
+          statut?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "emprunts_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprunts_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprunts_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "emprunts_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "emprunts_livre_id_fkey"
+            columns: ["livre_id"]
+            isOneToOne: false
+            referencedRelation: "livres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignant_matieres: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          matiere_id: string
+          volume_horaire_hebdo: number | null
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          matiere_id: string
+          volume_horaire_hebdo?: number | null
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          matiere_id?: string
+          volume_horaire_hebdo?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignant_matieres_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignant_matieres_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignant_matieres_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignant_matieres_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignant_matieres_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignants: {
+        Row: {
+          banque: string | null
+          created_at: string
+          cycle_id: string | null
+          date_embauche: string | null
+          departement: string
+          diplome: string | null
+          ecole_id: string
+          email: string | null
+          fonction: string | null
+          id: string
+          invitation_accepted_at: string | null
+          invitation_sent_at: string | null
+          matricule: string | null
+          nationalite: string | null
+          nom: string
+          numero_cmu: string | null
+          numero_cnps: string | null
+          parts_fiscales: number
+          personne_a_prevenir: string | null
+          photo_url: string | null
+          poste: string | null
+          prenom: string
+          rib: string | null
+          salaire_brut_base: number
+          service: string | null
+          sexe: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale: string | null
+          specialite: string | null
+          statut: string
+          telephone: string | null
+          type_contrat: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          banque?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          date_embauche?: string | null
+          departement?: string
+          diplome?: string | null
+          ecole_id: string
+          email?: string | null
+          fonction?: string | null
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
+          matricule?: string | null
+          nationalite?: string | null
+          nom: string
+          numero_cmu?: string | null
+          numero_cnps?: string | null
+          parts_fiscales?: number
+          personne_a_prevenir?: string | null
+          photo_url?: string | null
+          poste?: string | null
+          prenom: string
+          rib?: string | null
+          salaire_brut_base?: number
+          service?: string | null
+          sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale?: string | null
+          specialite?: string | null
+          statut?: string
+          telephone?: string | null
+          type_contrat?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          banque?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          date_embauche?: string | null
+          departement?: string
+          diplome?: string | null
+          ecole_id?: string
+          email?: string | null
+          fonction?: string | null
+          id?: string
+          invitation_accepted_at?: string | null
+          invitation_sent_at?: string | null
+          matricule?: string | null
+          nationalite?: string | null
+          nom?: string
+          numero_cmu?: string | null
+          numero_cnps?: string | null
+          parts_fiscales?: number
+          personne_a_prevenir?: string | null
+          photo_url?: string | null
+          poste?: string | null
+          prenom?: string
+          rib?: string | null
+          salaire_brut_base?: number
+          service?: string | null
+          sexe?: Database["public"]["Enums"]["sexe_type"] | null
+          situation_matrimoniale?: string | null
+          specialite?: string | null
+          statut?: string
+          telephone?: string | null
+          type_contrat?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignants_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignants_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignants_candidatures: {
+        Row: {
+          created_at: string
+          cv_url: string | null
+          date_candidature: string
+          ecole_id: string
+          email: string | null
+          experience_annees: number | null
+          id: string
+          lettre_motivation_url: string | null
+          matiere_souhaitee: string | null
+          niveau_etudes: string | null
+          nom: string
+          notes_entretien: string | null
+          prenom: string
+          statut: string
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cv_url?: string | null
+          date_candidature?: string
+          ecole_id: string
+          email?: string | null
+          experience_annees?: number | null
+          id?: string
+          lettre_motivation_url?: string | null
+          matiere_souhaitee?: string | null
+          niveau_etudes?: string | null
+          nom: string
+          notes_entretien?: string | null
+          prenom: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cv_url?: string | null
+          date_candidature?: string
+          ecole_id?: string
+          email?: string | null
+          experience_annees?: number | null
+          id?: string
+          lettre_motivation_url?: string | null
+          matiere_souhaitee?: string | null
+          niveau_etudes?: string | null
+          nom?: string
+          notes_entretien?: string | null
+          prenom?: string
+          statut?: string
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignants_candidatures_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignants_documents: {
+        Row: {
+          created_at: string
+          date_emission: string | null
+          date_expiration: string | null
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          libelle: string | null
+          notes: string | null
+          type_document: string
+          updated_at: string
+          uploaded_by: string | null
+          url_fichier: string
+          valide: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          date_emission?: string | null
+          date_expiration?: string | null
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
+          type_document: string
+          updated_at?: string
+          uploaded_by?: string | null
+          url_fichier: string
+          valide?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          date_emission?: string | null
+          date_expiration?: string | null
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
+          type_document?: string
+          updated_at?: string
+          uploaded_by?: string | null
+          url_fichier?: string
+          valide?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignants_documents_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignants_documents_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignants_evaluations: {
+        Row: {
+          annee_id: string | null
+          axes_amelioration: string | null
+          created_at: string
+          date_evaluation: string
+          ecole_id: string
+          enseignant_id: string
+          evaluateur_id: string | null
+          id: string
+          note_globale: number | null
+          objectifs: string | null
+          participation: number | null
+          pedagogie: number | null
+          points_forts: string | null
+          ponctualite: number | null
+          relation_eleves: number | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          axes_amelioration?: string | null
+          created_at?: string
+          date_evaluation?: string
+          ecole_id: string
+          enseignant_id: string
+          evaluateur_id?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs?: string | null
+          participation?: number | null
+          pedagogie?: number | null
+          points_forts?: string | null
+          ponctualite?: number | null
+          relation_eleves?: number | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          axes_amelioration?: string | null
+          created_at?: string
+          date_evaluation?: string
+          ecole_id?: string
+          enseignant_id?: string
+          evaluateur_id?: string | null
+          id?: string
+          note_globale?: number | null
+          objectifs?: string | null
+          participation?: number | null
+          pedagogie?: number | null
+          points_forts?: string | null
+          ponctualite?: number | null
+          relation_eleves?: number | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignants_evaluations_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignants_evaluations_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignants_evaluations_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enseignants_formations: {
+        Row: {
+          certificat_url: string | null
+          cout: number | null
+          created_at: string
+          date_debut: string | null
+          date_fin: string | null
+          duree_heures: number | null
+          ecole_id: string
+          enseignant_id: string
+          id: string
+          intitule: string
+          lieu: string | null
+          notes: string | null
+          organisme: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          certificat_url?: string | null
+          cout?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          duree_heures?: number | null
+          ecole_id: string
+          enseignant_id: string
+          id?: string
+          intitule: string
+          lieu?: string | null
+          notes?: string | null
+          organisme?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          certificat_url?: string | null
+          cout?: number | null
+          created_at?: string
+          date_debut?: string | null
+          date_fin?: string | null
+          duree_heures?: number | null
+          ecole_id?: string
+          enseignant_id?: string
+          id?: string
+          intitule?: string
+          lieu?: string | null
+          notes?: string | null
+          organisme?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enseignants_formations_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enseignants_formations_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evaluations: {
+        Row: {
+          bareme: number
+          classe_id: string
+          coefficient: number
+          created_at: string
+          date_eval: string
+          ecole_id: string
+          enseignant_id: string | null
+          id: string
+          matiere_id: string
+          periode_id: string | null
+          titre: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          bareme?: number
+          classe_id: string
+          coefficient?: number
+          created_at?: string
+          date_eval: string
+          ecole_id: string
+          enseignant_id?: string | null
+          id?: string
+          matiere_id: string
+          periode_id?: string | null
+          titre: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          bareme?: number
+          classe_id?: string
+          coefficient?: number
+          created_at?: string
+          date_eval?: string
+          ecole_id?: string
+          enseignant_id?: string | null
+          id?: string
+          matiere_id?: string
+          periode_id?: string | null
+          titre?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evaluations_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_enseignant_id_fkey"
+            columns: ["enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evaluations_periode_id_fkey"
+            columns: ["periode_id"]
+            isOneToOne: false
+            referencedRelation: "periodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exigences_documents_eleves: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          obligatoire: boolean
+          type_document: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          obligatoire?: boolean
+          type_document: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          obligatoire?: boolean
+          type_document?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      factures: {
+        Row: {
+          annee_id: string
+          categorie: string
+          created_at: string
+          date_echeance: string
+          date_emission: string
+          date_fin_validite: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          libelle: string
+          montant: number
+          montant_paye: number
+          notes: string | null
+          numero: string
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          categorie?: string
+          created_at?: string
+          date_echeance: string
+          date_emission?: string
+          date_fin_validite?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          libelle?: string
+          montant?: number
+          montant_paye?: number
+          notes?: string | null
+          numero: string
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          categorie?: string
+          created_at?: string
+          date_echeance?: string
+          date_emission?: string
+          date_fin_validite?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          montant_paye?: number
+          notes?: string | null
+          numero?: string
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "factures_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "factures_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
+      }
+      finance_settings: {
+        Row: {
+          banque: string | null
+          cle_repartition_commune: string
+          created_at: string
+          devise: string
+          ecole_id: string
+          frais_activites: number
+          frais_inscription: number
+          frais_uniformes: number
+          id: string
+          modes_paiement: string[] | null
+          numero_momo: string | null
+          numero_om: string | null
+          penalite_retard: number | null
+          position_symbole: string
+          prefixe_facture: string | null
+          prefixe_recu: string | null
+          prochain_numero_facture: number | null
+          rappel_auto: boolean | null
+          rib: string | null
+          taux_tva: number
+          updated_at: string
+        }
+        Insert: {
+          banque?: string | null
+          cle_repartition_commune?: string
+          created_at?: string
+          devise?: string
+          ecole_id: string
+          frais_activites?: number
+          frais_inscription?: number
+          frais_uniformes?: number
+          id?: string
+          modes_paiement?: string[] | null
+          numero_momo?: string | null
+          numero_om?: string | null
+          penalite_retard?: number | null
+          position_symbole?: string
+          prefixe_facture?: string | null
+          prefixe_recu?: string | null
+          prochain_numero_facture?: number | null
+          rappel_auto?: boolean | null
+          rib?: string | null
+          taux_tva?: number
+          updated_at?: string
+        }
+        Update: {
+          banque?: string | null
+          cle_repartition_commune?: string
+          created_at?: string
+          devise?: string
+          ecole_id?: string
+          frais_activites?: number
+          frais_inscription?: number
+          frais_uniformes?: number
+          id?: string
+          modes_paiement?: string[] | null
+          numero_momo?: string | null
+          numero_om?: string | null
+          penalite_retard?: number | null
+          position_symbole?: string
+          prefixe_facture?: string | null
+          prefixe_recu?: string | null
+          prochain_numero_facture?: number | null
+          rappel_auto?: boolean | null
+          rib?: string | null
+          taux_tva?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_settings_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fournisseurs: {
+        Row: {
+          adresse: string | null
+          categorie: string | null
+          contact: string | null
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string
+          email: string | null
+          id: string
+          nom: string
+          solde_du: number
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          adresse?: string | null
+          categorie?: string | null
+          contact?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id: string
+          email?: string | null
+          id?: string
+          nom: string
+          solde_du?: number
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          adresse?: string | null
+          categorie?: string | null
+          contact?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          solde_du?: number
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fournisseurs_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frais_scolarite: {
+        Row: {
+          annee_id: string
+          created_at: string
+          cycle_id: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_annuel: number
+          nb_tranches: number
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          cycle_id: string
+          ecole_id: string
+          id?: string
+          libelle?: string
+          montant_annuel: number
+          nb_tranches?: number
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          cycle_id?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_annuel?: number
+          nb_tranches?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frais_scolarite_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frais_scolarite_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frais_scolarite_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grille_tarifs_niveaux: {
+        Row: {
+          annee_id: string
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_total: number
+          niveau_code: string
+          tranches: Json
+          updated_at: string
+          variant: string | null
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant_total?: number
+          niveau_code: string
+          tranches?: Json
+          updated_at?: string
+          variant?: string | null
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_total?: number
+          niveau_code?: string
+          tranches?: Json
+          updated_at?: string
+          variant?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grille_tarifs_niveaux_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_niveaux_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_niveaux_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grille_tarifs_services: {
+        Row: {
+          actif: boolean
+          annee_id: string
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string
+          id: string
+          jours_alerte_renouvellement: number
+          libelle: string
+          montant_total: number
+          periodicite: string
+          service_type: string
+          tranches: Json
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          annee_id: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id: string
+          id?: string
+          jours_alerte_renouvellement?: number
+          libelle: string
+          montant_total?: number
+          periodicite?: string
+          service_type: string
+          tranches?: Json
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          annee_id?: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string
+          id?: string
+          jours_alerte_renouvellement?: number
+          libelle?: string
+          montant_total?: number
+          periodicite?: string
+          service_type?: string
+          tranches?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grille_tarifs_services_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_services_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grille_tarifs_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groupe_membres: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          groupe_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          groupe_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          groupe_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groupe_membres_groupe_id_fkey"
+            columns: ["groupe_id"]
+            isOneToOne: false
+            referencedRelation: "groupes_pedagogiques"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groupes_pedagogiques: {
+        Row: {
+          annee_id: string | null
+          created_at: string
+          cycle_id: string | null
+          description: string | null
+          ecole_id: string
+          enseignant_id: string | null
+          id: string
+          nom: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          description?: string | null
+          ecole_id: string
+          enseignant_id?: string | null
+          id?: string
+          nom: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          description?: string | null
+          ecole_id?: string
+          enseignant_id?: string | null
+          id?: string
+          nom?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "groupes_pedagogiques_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      incidents_discipline: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_incident: string
+          decision: string | null
+          ecole_id: string
+          eleve_id: string | null
+          enregistre_par: string | null
+          gravite: string | null
+          id: string
+          motif: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_incident?: string
+          decision?: string | null
+          ecole_id: string
+          eleve_id?: string | null
+          enregistre_par?: string | null
+          gravite?: string | null
+          id?: string
+          motif?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_incident?: string
+          decision?: string | null
+          ecole_id?: string
+          eleve_id?: string | null
+          enregistre_par?: string | null
+          gravite?: string | null
+          id?: string
+          motif?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "incidents_discipline_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "incidents_discipline_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
+      }
+      justifications: {
+        Row: {
+          created_at: string
+          date_traitement: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          motif: string
+          piece_jointe: string | null
+          presence_id: string | null
+          statut: string
+          traite_par: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date_traitement?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          motif: string
+          piece_jointe?: string | null
+          presence_id?: string | null
+          statut?: string
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date_traitement?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          motif?: string
+          piece_jointe?: string | null
+          presence_id?: string | null
+          statut?: string
+          traite_par?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lignes_budget: {
+        Row: {
+          annee_id: string
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string
+          id: string
+          libelle: string
+          montant_prevu: number
+          montant_realise: number
+          source: string | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant_prevu?: number
+          montant_realise?: number
+          source?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant_prevu?: number
+          montant_realise?: number
+          source?: string | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lignes_budget_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lignes_transport: {
+        Row: {
+          arrivee: string
+          created_at: string
+          cycle_id: string | null
+          depart: string
+          ecole_id: string
+          heure_arrivee: string | null
+          heure_depart: string | null
+          id: string
+          nom: string
+          tarif_mensuel: number | null
+          vehicule_id: string | null
+        }
+        Insert: {
+          arrivee: string
+          created_at?: string
+          cycle_id?: string | null
+          depart: string
+          ecole_id: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          nom: string
+          tarif_mensuel?: number | null
+          vehicule_id?: string | null
+        }
+        Update: {
+          arrivee?: string
+          created_at?: string
+          cycle_id?: string | null
+          depart?: string
+          ecole_id?: string
+          heure_arrivee?: string | null
+          heure_depart?: string | null
+          id?: string
+          nom?: string
+          tarif_mensuel?: number | null
+          vehicule_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lignes_transport_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_transport_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lignes_transport_vehicule_id_fkey"
+            columns: ["vehicule_id"]
+            isOneToOne: false
+            referencedRelation: "vehicules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      livres: {
+        Row: {
+          auteur: string | null
+          categorie: string | null
+          created_at: string
+          cycle_id: string | null
+          disponible: number
+          ecole_id: string
+          editeur: string | null
+          emplacement: string | null
+          id: string
+          isbn: string | null
+          quantite: number
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          auteur?: string | null
+          categorie?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          disponible?: number
+          ecole_id: string
+          editeur?: string | null
+          emplacement?: string | null
+          id?: string
+          isbn?: string | null
+          quantite?: number
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          auteur?: string | null
+          categorie?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          disponible?: number
+          ecole_id?: string
+          editeur?: string | null
+          emplacement?: string | null
+          id?: string
+          isbn?: string | null
+          quantite?: number
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "livres_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "livres_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      matieres: {
+        Row: {
+          active: boolean
+          categorie: string | null
+          code: string | null
+          coefficient: number
+          couleur: string
+          created_at: string
+          cycle_id: string | null
+          cycles: string[]
+          ecole_id: string
+          id: string
+          nom: string
+          note_passage: number
+          note_sur: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          categorie?: string | null
+          code?: string | null
+          coefficient?: number
+          couleur?: string
+          created_at?: string
+          cycle_id?: string | null
+          cycles?: string[]
+          ecole_id: string
+          id?: string
+          nom: string
+          note_passage?: number
+          note_sur?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          categorie?: string | null
+          code?: string | null
+          coefficient?: number
+          couleur?: string
+          created_at?: string
+          cycle_id?: string | null
+          cycles?: string[]
+          ecole_id?: string
+          id?: string
+          nom?: string
+          note_passage?: number
+          note_sur?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "matieres_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "matieres_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      menus_cantine: {
+        Row: {
+          created_at: string
+          cycle_id: string | null
+          date_menu: string
+          description: string | null
+          ecole_id: string
+          id: string
+          repas: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cycle_id?: string | null
+          date_menu: string
+          description?: string | null
+          ecole_id: string
+          id?: string
+          repas?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cycle_id?: string | null
+          date_menu?: string
+          description?: string | null
+          ecole_id?: string
+          id?: string
+          repas?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menus_cantine_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          contenu: string | null
+          created_at: string
+          destinataire_id: string | null
+          ecole_id: string
+          expediteur_id: string
+          id: string
+          lu: boolean | null
+          sujet: string
+        }
+        Insert: {
+          contenu?: string | null
+          created_at?: string
+          destinataire_id?: string | null
+          ecole_id: string
+          expediteur_id: string
+          id?: string
+          lu?: boolean | null
+          sujet: string
+        }
+        Update: {
+          contenu?: string | null
+          created_at?: string
+          destinataire_id?: string | null
+          ecole_id?: string
+          expediteur_id?: string
+          id?: string
+          lu?: boolean | null
+          sujet?: string
+        }
+        Relationships: []
+      }
+      mfa_backup_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_failed_attempts: {
+        Row: {
+          attempts: number
+          last_attempt_at: string
+          locked_until: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          last_attempt_at?: string
+          locked_until?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mfa_requirements: {
+        Row: {
+          ecole_id: string
+          grace_period_days: number
+          id: string
+          required: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          ecole_id: string
+          grace_period_days?: number
+          id?: string
+          required?: boolean
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          ecole_id?: string
+          grace_period_days?: number
+          id?: string
+          required?: boolean
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mfa_sms_factors: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          ecole_id: string | null
+          friendly_name: string | null
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          phone: string
+          phone_verified_at: string | null
+          updated_at: string
+          user_id: string
+          verified: boolean
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          ecole_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          phone: string
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id: string
+          verified?: boolean
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          ecole_id?: string | null
+          friendly_name?: string | null
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          phone?: string
+          phone_verified_at?: string | null
+          updated_at?: string
+          user_id?: string
+          verified?: boolean
+        }
+        Relationships: []
+      }
+      mfa_sms_otp_codes: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          purpose: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          purpose?: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          purpose?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      modeles_exigences_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          ecole_id: string
+          est_defaut: boolean
+          id: string
+          nom: string
+          types_obligatoires: string[]
+          types_optionnels: string[]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          ecole_id: string
+          est_defaut?: boolean
+          id?: string
+          nom: string
+          types_obligatoires?: string[]
+          types_optionnels?: string[]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          ecole_id?: string
+          est_defaut?: boolean
+          id?: string
+          nom?: string
+          types_obligatoires?: string[]
+          types_optionnels?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      mouvements_tresorerie: {
+        Row: {
+          compte_id: string
+          created_at: string
+          date_mouvement: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant: number
+          reference: string | null
+          type: string
+        }
+        Insert: {
+          compte_id: string
+          created_at?: string
+          date_mouvement?: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant: number
+          reference?: string | null
+          type?: string
+        }
+        Update: {
+          compte_id?: string
+          created_at?: string
+          date_mouvement?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          reference?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mouvements_tresorerie_compte_id_fkey"
+            columns: ["compte_id"]
+            isOneToOne: false
+            referencedRelation: "comptes_tresorerie"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notes: {
+        Row: {
+          absent: boolean | null
+          commentaire: string | null
+          created_at: string
+          ecole_id: string
+          eleve_id: string
+          evaluation_id: string
+          id: string
+          note: number | null
+          updated_at: string
+        }
+        Insert: {
+          absent?: boolean | null
+          commentaire?: string | null
+          created_at?: string
+          ecole_id: string
+          eleve_id: string
+          evaluation_id: string
+          id?: string
+          note?: number | null
+          updated_at?: string
+        }
+        Update: {
+          absent?: boolean | null
+          commentaire?: string | null
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string
+          evaluation_id?: string
+          id?: string
+          note?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notes_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notes_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "notes_evaluation_id_fkey"
+            columns: ["evaluation_id"]
+            isOneToOne: false
+            referencedRelation: "evaluations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications_parents: {
+        Row: {
+          canal: string
+          created_at: string
+          date_envoi: string
+          destinataire: string | null
+          ecole_id: string
+          eleve_id: string
+          envoye_par: string | null
+          id: string
+          message: string | null
+          type: string
+        }
+        Insert: {
+          canal?: string
+          created_at?: string
+          date_envoi?: string
+          destinataire?: string | null
+          ecole_id: string
+          eleve_id: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          type?: string
+        }
+        Update: {
+          canal?: string
+          created_at?: string
+          date_envoi?: string
+          destinataire?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
+      paiements: {
+        Row: {
+          annule_le: string | null
+          annule_par: string | null
+          created_at: string
+          date_paiement: string
+          ecole_id: string
+          eleve_id: string
+          facture_id: string | null
+          id: string
+          mode: Database["public"]["Enums"]["paiement_mode"]
+          montant: number
+          motif: string | null
+          motif_annulation: string | null
+          notes: string | null
+          recu_par: string | null
+          reference: string | null
+          tranche_id: string | null
+        }
+        Insert: {
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id: string
+          eleve_id: string
+          facture_id?: string | null
+          id?: string
+          mode?: Database["public"]["Enums"]["paiement_mode"]
+          montant: number
+          motif?: string | null
+          motif_annulation?: string | null
+          notes?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          tranche_id?: string | null
+        }
+        Update: {
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id?: string
+          eleve_id?: string
+          facture_id?: string | null
+          id?: string
+          mode?: Database["public"]["Enums"]["paiement_mode"]
+          montant?: number
+          motif?: string | null
+          motif_annulation?: string | null
+          notes?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          tranche_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "factures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_facture_id_fkey"
+            columns: ["facture_id"]
+            isOneToOne: false
+            referencedRelation: "v_creances_services"
+            referencedColumns: ["facture_id"]
+          },
+          {
+            foreignKeyName: "paiements_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "tranches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "v_paiements_incoherents"
+            referencedColumns: ["tranche_id"]
+          },
+          {
+            foreignKeyName: "paiements_tranche_id_fkey"
+            columns: ["tranche_id"]
+            isOneToOne: false
+            referencedRelation: "v_tranches_excedent"
+            referencedColumns: ["tranche_id"]
+          },
+        ]
+      }
+      paiements_services: {
+        Row: {
+          bon_reduction_id: string | null
+          created_at: string
+          echeance_id: string
+          ecole_id: string
+          eleve_id: string
+          id: string
+          mode: string
+          montant: number
+          motif: string | null
+          recu_par: string | null
+          reference: string | null
+          service_type: string
+        }
+        Insert: {
+          bon_reduction_id?: string | null
+          created_at?: string
+          echeance_id: string
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          mode?: string
+          montant: number
+          motif?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          service_type: string
+        }
+        Update: {
+          bon_reduction_id?: string | null
+          created_at?: string
+          echeance_id?: string
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          mode?: string
+          montant?: number
+          motif?: string | null
+          recu_par?: string | null
+          reference?: string | null
+          service_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "paiements_services_echeance_id_fkey"
+            columns: ["echeance_id"]
+            isOneToOne: false
+            referencedRelation: "echeances_services"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "paiements_services_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
+      }
+      parametres_classes: {
+        Row: {
+          alerte_classe_pleine: boolean
+          capacite_defaut: number
+          cours_samedi: boolean
+          created_at: string
+          detection_conflits: boolean
+          duree_cours_min: number
+          ecole_id: string
+          effectif_min_alerte: number
+          format_code_classe: string
+          heure_debut_cours: string
+          heure_fin_cours: string
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          alerte_classe_pleine?: boolean
+          capacite_defaut?: number
+          cours_samedi?: boolean
+          created_at?: string
+          detection_conflits?: boolean
+          duree_cours_min?: number
+          ecole_id: string
+          effectif_min_alerte?: number
+          format_code_classe?: string
+          heure_debut_cours?: string
+          heure_fin_cours?: string
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          alerte_classe_pleine?: boolean
+          capacite_defaut?: number
+          cours_samedi?: boolean
+          created_at?: string
+          detection_conflits?: boolean
+          duree_cours_min?: number
+          ecole_id?: string
+          effectif_min_alerte?: number
+          format_code_classe?: string
+          heure_debut_cours?: string
+          heure_fin_cours?: string
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parametres_documents: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          entete: string | null
+          id: string
+          pied_page: string | null
+          prefixe_bulletin: string | null
+          prefixe_certificat: string | null
+          show_cachet: boolean
+          show_logo: boolean
+          signature_url: string | null
+          templates_actifs: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          entete?: string | null
+          id?: string
+          pied_page?: string | null
+          prefixe_bulletin?: string | null
+          prefixe_certificat?: string | null
+          show_cachet?: boolean
+          show_logo?: boolean
+          signature_url?: string | null
+          templates_actifs?: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          entete?: string | null
+          id?: string
+          pied_page?: string | null
+          prefixe_bulletin?: string | null
+          prefixe_certificat?: string | null
+          show_cachet?: boolean
+          show_logo?: boolean
+          signature_url?: string | null
+          templates_actifs?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parametres_emploi_temps: {
+        Row: {
+          auto_generer_remplacements: boolean
+          canal_email: boolean
+          canal_push: boolean
+          canal_sms: boolean
+          created_at: string
+          duree_creneau_min: number
+          duree_recreation_min: number
+          ecole_id: string
+          heure_debut: string
+          heure_fin: string
+          id: string
+          jours_ouvres: string
+          modele_message: string
+          notif_annulations: boolean
+          notif_modifications: boolean
+          notif_remplacements: boolean
+          pause_dej_debut: string
+          pause_dej_fin: string
+          recreation_debut: string
+          updated_at: string
+          verrouiller_apres_publication: boolean
+        }
+        Insert: {
+          auto_generer_remplacements?: boolean
+          canal_email?: boolean
+          canal_push?: boolean
+          canal_sms?: boolean
+          created_at?: string
+          duree_creneau_min?: number
+          duree_recreation_min?: number
+          ecole_id: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jours_ouvres?: string
+          modele_message?: string
+          notif_annulations?: boolean
+          notif_modifications?: boolean
+          notif_remplacements?: boolean
+          pause_dej_debut?: string
+          pause_dej_fin?: string
+          recreation_debut?: string
+          updated_at?: string
+          verrouiller_apres_publication?: boolean
+        }
+        Update: {
+          auto_generer_remplacements?: boolean
+          canal_email?: boolean
+          canal_push?: boolean
+          canal_sms?: boolean
+          created_at?: string
+          duree_creneau_min?: number
+          duree_recreation_min?: number
+          ecole_id?: string
+          heure_debut?: string
+          heure_fin?: string
+          id?: string
+          jours_ouvres?: string
+          modele_message?: string
+          notif_annulations?: boolean
+          notif_modifications?: boolean
+          notif_remplacements?: boolean
+          pause_dej_debut?: string
+          pause_dej_fin?: string
+          recreation_debut?: string
+          updated_at?: string
+          verrouiller_apres_publication?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametres_emploi_temps_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parametres_localisation: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          format_date: string
+          format_heure: string
+          fuseau: string
+          id: string
+          langue: string
+          premier_jour: string
+          separateur_decimal: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          format_date?: string
+          format_heure?: string
+          fuseau?: string
+          id?: string
+          langue?: string
+          premier_jour?: string
+          separateur_decimal?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          format_date?: string
+          format_heure?: string
+          fuseau?: string
+          id?: string
+          langue?: string
+          premier_jour?: string
+          separateur_decimal?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parametres_matieres: {
+        Row: {
+          afficher_appreciation: boolean
+          afficher_code_bulletin: boolean
+          afficher_mentions: boolean
+          afficher_rang: boolean
+          arrondi: string
+          autoriser_notes_hors_bareme: boolean
+          coefficient_defaut: number
+          created_at: string
+          decimales_affichees: number
+          echelle_defaut: number
+          ecole_id: string
+          education_religieuse: boolean
+          id: string
+          matieres_optionnelles: boolean
+          note_passage_defaut: number
+          signature_directeur_url: string | null
+          systeme_notation: string
+          texte_pied_bulletin: string | null
+          updated_at: string
+          verrouiller_coefficients: boolean
+        }
+        Insert: {
+          afficher_appreciation?: boolean
+          afficher_code_bulletin?: boolean
+          afficher_mentions?: boolean
+          afficher_rang?: boolean
+          arrondi?: string
+          autoriser_notes_hors_bareme?: boolean
+          coefficient_defaut?: number
+          created_at?: string
+          decimales_affichees?: number
+          echelle_defaut?: number
+          ecole_id: string
+          education_religieuse?: boolean
+          id?: string
+          matieres_optionnelles?: boolean
+          note_passage_defaut?: number
+          signature_directeur_url?: string | null
+          systeme_notation?: string
+          texte_pied_bulletin?: string | null
+          updated_at?: string
+          verrouiller_coefficients?: boolean
+        }
+        Update: {
+          afficher_appreciation?: boolean
+          afficher_code_bulletin?: boolean
+          afficher_mentions?: boolean
+          afficher_rang?: boolean
+          arrondi?: string
+          autoriser_notes_hors_bareme?: boolean
+          coefficient_defaut?: number
+          created_at?: string
+          decimales_affichees?: number
+          echelle_defaut?: number
+          ecole_id?: string
+          education_religieuse?: boolean
+          id?: string
+          matieres_optionnelles?: boolean
+          note_passage_defaut?: number
+          signature_directeur_url?: string | null
+          systeme_notation?: string
+          texte_pied_bulletin?: string | null
+          updated_at?: string
+          verrouiller_coefficients?: boolean
+        }
+        Relationships: []
+      }
+      parametres_notifications: {
+        Row: {
+          canaux: Json
+          created_at: string
+          ecole_id: string
+          evenements: Json
+          id: string
+          silence_a: string | null
+          silence_de: string | null
+          smtp_from_email: string | null
+          smtp_from_name: string | null
+          smtp_host: string | null
+          smtp_port: number | null
+          smtp_user: string | null
+          updated_at: string
+        }
+        Insert: {
+          canaux?: Json
+          created_at?: string
+          ecole_id: string
+          evenements?: Json
+          id?: string
+          silence_a?: string | null
+          silence_de?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          updated_at?: string
+        }
+        Update: {
+          canaux?: Json
+          created_at?: string
+          ecole_id?: string
+          evenements?: Json
+          id?: string
+          silence_a?: string | null
+          silence_de?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_port?: number | null
+          smtp_user?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parametres_sigfne: {
+        Row: {
+          code_etablissement: string | null
+          created_at: string
+          drena: string | null
+          ecole_id: string
+          id: string
+          regex_matricule: string
+          updated_at: string
+        }
+        Insert: {
+          code_etablissement?: string | null
+          created_at?: string
+          drena?: string | null
+          ecole_id: string
+          id?: string
+          regex_matricule?: string
+          updated_at?: string
+        }
+        Update: {
+          code_etablissement?: string | null
+          created_at?: string
+          drena?: string | null
+          ecole_id?: string
+          id?: string
+          regex_matricule?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parametres_sigfne_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parcours_scolaire: {
+        Row: {
+          annee_id: string
+          classe_destination_id: string | null
+          classe_id: string
+          created_at: string
+          decision: string | null
+          ecole_id: string
+          eleve_id: string
+          id: string
+          moyenne_generale: number | null
+          rang: number | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id: string
+          classe_destination_id?: string | null
+          classe_id: string
+          created_at?: string
+          decision?: string | null
+          ecole_id: string
+          eleve_id: string
+          id?: string
+          moyenne_generale?: number | null
+          rang?: number | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string
+          classe_destination_id?: string | null
+          classe_id?: string
+          created_at?: string
+          decision?: string | null
+          ecole_id?: string
+          eleve_id?: string
+          id?: string
+          moyenne_generale?: number | null
+          rang?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      parents: {
+        Row: {
+          adresse: string | null
+          created_at: string
+          ecole_id: string
+          email: string | null
+          id: string
+          nom: string
+          prenom: string
+          profession: string | null
+          telephone: string
+          telephone2: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          created_at?: string
+          ecole_id: string
+          email?: string | null
+          id?: string
+          nom: string
+          prenom: string
+          profession?: string | null
+          telephone: string
+          telephone2?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          created_at?: string
+          ecole_id?: string
+          email?: string | null
+          id?: string
+          nom?: string
+          prenom?: string
+          profession?: string | null
+          telephone?: string
+          telephone2?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parents_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      passages_classe: {
+        Row: {
+          annee_cible: string
+          annee_source: string
+          annule_le: string | null
+          annule_par: string | null
+          created_at: string
+          ecole_id: string
+          eleves_cibles_ids: string[]
+          execute_le: string
+          execute_par: string | null
+          id: string
+          plan: Json
+          resultat: Json | null
+          updated_at: string
+        }
+        Insert: {
+          annee_cible: string
+          annee_source: string
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          ecole_id: string
+          eleves_cibles_ids?: string[]
+          execute_le?: string
+          execute_par?: string | null
+          id?: string
+          plan: Json
+          resultat?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          annee_cible?: string
+          annee_source?: string
+          annule_le?: string | null
+          annule_par?: string | null
+          created_at?: string
+          ecole_id?: string
+          eleves_cibles_ids?: string[]
+          execute_le?: string
+          execute_par?: string | null
+          id?: string
+          plan?: Json
+          resultat?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      periodes: {
+        Row: {
+          annee_id: string
+          created_at: string
+          debut: string
+          ecole_id: string
+          fin: string
+          id: string
+          nom: string
+          statut: Database["public"]["Enums"]["periode_statut"]
+        }
+        Insert: {
+          annee_id: string
+          created_at?: string
+          debut: string
+          ecole_id: string
+          fin: string
+          id?: string
+          nom: string
+          statut?: Database["public"]["Enums"]["periode_statut"]
+        }
+        Update: {
+          annee_id?: string
+          created_at?: string
+          debut?: string
+          ecole_id?: string
+          fin?: string
+          id?: string
+          nom?: string
+          statut?: Database["public"]["Enums"]["periode_statut"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "periodes_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "periodes_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      presences: {
+        Row: {
+          classe_id: string
+          created_at: string
+          date_presence: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          heure_arrivee: string | null
+          id: string
+          justifie: boolean | null
+          motif_absence: string | null
+          statut: Database["public"]["Enums"]["presence_statut"]
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          date_presence: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          justifie?: boolean | null
+          motif_absence?: string | null
+          statut?: Database["public"]["Enums"]["presence_statut"]
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          date_presence?: string
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          justifie?: boolean | null
+          motif_absence?: string | null
+          statut?: Database["public"]["Enums"]["presence_statut"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "presences_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presences_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presences_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "presences_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string | null
+          fonction: string | null
+          full_name: string | null
+          id: string
+          langue: string | null
+          must_change_password: boolean
+          phone: string | null
+          preferences: Json | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string | null
+          fonction?: string | null
+          full_name?: string | null
+          id: string
+          langue?: string | null
+          must_change_password?: boolean
+          phone?: string | null
+          preferences?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string | null
+          fonction?: string | null
+          full_name?: string | null
+          id?: string
+          langue?: string | null
+          must_change_password?: boolean
+          phone?: string | null
+          preferences?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      progressions_matiere: {
+        Row: {
+          chapitres_faits: number
+          chapitres_total: number
+          classe_id: string | null
+          created_at: string
+          ecole_id: string
+          id: string
+          matiere_id: string
+          notes: string | null
+          periode: string
+          updated_at: string
+        }
+        Insert: {
+          chapitres_faits?: number
+          chapitres_total?: number
+          classe_id?: string | null
+          created_at?: string
+          ecole_id: string
+          id?: string
+          matiere_id: string
+          notes?: string | null
+          periode?: string
+          updated_at?: string
+        }
+        Update: {
+          chapitres_faits?: number
+          chapitres_total?: number
+          classe_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          matiere_id?: string
+          notes?: string | null
+          periode?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      relances: {
+        Row: {
+          created_at: string
+          date_envoi: string
+          ecole_id: string
+          eleve_id: string
+          envoye_par: string | null
+          id: string
+          message: string | null
+          parent_id: string | null
+          type: Database["public"]["Enums"]["relance_type"]
+        }
+        Insert: {
+          created_at?: string
+          date_envoi?: string
+          ecole_id: string
+          eleve_id: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          parent_id?: string | null
+          type?: Database["public"]["Enums"]["relance_type"]
+        }
+        Update: {
+          created_at?: string
+          date_envoi?: string
+          ecole_id?: string
+          eleve_id?: string
+          envoye_par?: string | null
+          id?: string
+          message?: string | null
+          parent_id?: string | null
+          type?: Database["public"]["Enums"]["relance_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relances_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relances_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relances_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "relances_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remplacements: {
+        Row: {
+          absent_enseignant_id: string
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          creneau_id: string | null
+          date: string
+          ecole_id: string
+          heure_debut: string | null
+          heure_fin: string | null
+          id: string
+          matiere_id: string | null
+          motif: string | null
+          notes: string | null
+          remplacant_enseignant_id: string | null
+          statut: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at: string
+        }
+        Insert: {
+          absent_enseignant_id: string
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          date: string
+          ecole_id: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          motif?: string | null
+          notes?: string | null
+          remplacant_enseignant_id?: string | null
+          statut?: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at?: string
+        }
+        Update: {
+          absent_enseignant_id?: string
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          creneau_id?: string | null
+          date?: string
+          ecole_id?: string
+          heure_debut?: string | null
+          heure_fin?: string | null
+          id?: string
+          matiere_id?: string | null
+          motif?: string | null
+          notes?: string | null
+          remplacant_enseignant_id?: string | null
+          statut?: Database["public"]["Enums"]["remplacement_statut"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remplacements_absent_enseignant_id_fkey"
+            columns: ["absent_enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_creneau_id_fkey"
+            columns: ["creneau_id"]
+            isOneToOne: false
+            referencedRelation: "creneaux_emploi_temps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_matiere_id_fkey"
+            columns: ["matiere_id"]
+            isOneToOne: false
+            referencedRelation: "matieres"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "remplacements_remplacant_enseignant_id_fkey"
+            columns: ["remplacant_enseignant_id"]
+            isOneToOne: false
+            referencedRelation: "enseignants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_jobs: {
+        Row: {
+          created_at: string
+          ecole_id: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          label: string
+          params: Json
+          started_at: string | null
+          status: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          ecole_id: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          label: string
+          params?: Json
+          started_at?: string | null
+          status?: string
+          type: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          ecole_id?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          label?: string
+          params?: Json
+          started_at?: string | null
+          status?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_jobs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retards: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_retard: string
+          duree_minutes: number | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          heure_arrivee: string | null
+          id: string
+          motif: string | null
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_retard?: string
+          duree_minutes?: number | null
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_retard?: string
+          duree_minutes?: number | null
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          heure_arrivee?: string | null
+          id?: string
+          motif?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      rh_bareme_anciennete: {
+        Row: {
+          annees_max: number | null
+          annees_min: number
+          ecole_id: string
+          id: string
+          taux: number
+        }
+        Insert: {
+          annees_max?: number | null
+          annees_min: number
+          ecole_id: string
+          id?: string
+          taux: number
+        }
+        Update: {
+          annees_max?: number | null
+          annees_min?: number
+          ecole_id?: string
+          id?: string
+          taux?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bareme_anciennete_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_bareme_irpp: {
+        Row: {
+          ecole_id: string
+          id: string
+          ordre: number
+          taux: number
+          tranche_max: number | null
+          tranche_min: number
+        }
+        Insert: {
+          ecole_id: string
+          id?: string
+          ordre: number
+          taux: number
+          tranche_max?: number | null
+          tranche_min: number
+        }
+        Update: {
+          ecole_id?: string
+          id?: string
+          ordre?: number
+          taux?: number
+          tranche_max?: number | null
+          tranche_min?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bareme_irpp_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_bulletin_lignes: {
+        Row: {
+          base: number
+          bulletin_id: string
+          ecole_id: string
+          id: string
+          libelle: string
+          montant: number
+          ordre: number
+          rubrique_code: string
+          taux: number | null
+          type: string
+        }
+        Insert: {
+          base?: number
+          bulletin_id: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          montant?: number
+          ordre?: number
+          rubrique_code: string
+          taux?: number | null
+          type: string
+        }
+        Update: {
+          base?: number
+          bulletin_id?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          montant?: number
+          ordre?: number
+          rubrique_code?: string
+          taux?: number | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_bulletin_lignes_bulletin_id_fkey"
+            columns: ["bulletin_id"]
+            isOneToOne: false
+            referencedRelation: "bulletins_paie"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rh_bulletin_lignes_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_criteres_evaluation: {
+        Row: {
+          active: boolean
+          code: string
+          ecole_id: string
+          id: string
+          libelle: string
+          note_defaut: number
+          note_max: number
+          ordre: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          note_defaut?: number
+          note_max?: number
+          ordre?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          note_defaut?: number
+          note_max?: number
+          ordre?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_criteres_evaluation_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_departements: {
+        Row: {
+          active: boolean
+          code: string
+          ecole_id: string
+          id: string
+          libelle: string
+          ordre: number
+          prefixe_matricule: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          ordre?: number
+          prefixe_matricule?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          ordre?: number
+          prefixe_matricule?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_departements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_parametres: {
+        Row: {
+          cle: string
+          ecole_id: string
+          groupe: string
+          id: string
+          libelle: string
+          ordre: number
+          unite: string
+          updated_at: string
+          valeur: number
+          valeur_texte: string | null
+        }
+        Insert: {
+          cle: string
+          ecole_id: string
+          groupe: string
+          id?: string
+          libelle: string
+          ordre?: number
+          unite?: string
+          updated_at?: string
+          valeur?: number
+          valeur_texte?: string | null
+        }
+        Update: {
+          cle?: string
+          ecole_id?: string
+          groupe?: string
+          id?: string
+          libelle?: string
+          ordre?: number
+          unite?: string
+          updated_at?: string
+          valeur?: number
+          valeur_texte?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_parametres_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rh_rubriques: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          ecole_id: string
+          id: string
+          imposable: boolean
+          libelle: string
+          ordre: number
+          soumis_cnps: boolean
+          systeme: boolean
+          type: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          ecole_id: string
+          id?: string
+          imposable?: boolean
+          libelle: string
+          ordre?: number
+          soumis_cnps?: boolean
+          systeme?: boolean
+          type: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          imposable?: boolean
+          libelle?: string
+          ordre?: number
+          soumis_cnps?: boolean
+          systeme?: boolean
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rh_rubriques_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_create: boolean
+          can_delete: boolean
+          can_export: boolean
+          can_update: boolean
+          can_view: boolean
+          created_at: string
+          ecole_id: string
+          id: string
+          module_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id: string
+          id?: string
+          module_key: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          can_create?: boolean
+          can_delete?: boolean
+          can_export?: boolean
+          can_update?: boolean
+          can_view?: boolean
+          created_at?: string
+          ecole_id?: string
+          id?: string
+          module_key?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "role_permissions_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "app_modules"
+            referencedColumns: ["key"]
+          },
+        ]
+      }
+      salles: {
+        Row: {
+          batiment: string | null
+          capacite: number
+          code: string
+          created_at: string
+          cycle_id: string | null
+          ecole_id: string
+          equipements: string[] | null
+          etage: string | null
+          id: string
+          nom: string | null
+          notes: string | null
+          statut: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          batiment?: string | null
+          capacite?: number
+          code: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id: string
+          equipements?: string[] | null
+          etage?: string | null
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          batiment?: string | null
+          capacite?: number
+          code?: string
+          created_at?: string
+          cycle_id?: string | null
+          ecole_id?: string
+          equipements?: string[] | null
+          etage?: string | null
+          id?: string
+          nom?: string | null
+          notes?: string | null
+          statut?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salles_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salles_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sanctions_presences: {
+        Row: {
+          annee_id: string | null
+          classe_id: string | null
+          created_at: string
+          date_sanction: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par: string | null
+          id: string
+          motif: string | null
+          nb_absences_declencheur: number | null
+          notifie_parents: boolean | null
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_sanction?: string
+          ecole_id: string
+          eleve_id: string
+          enregistre_par?: string | null
+          id?: string
+          motif?: string | null
+          nb_absences_declencheur?: number | null
+          notifie_parents?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          date_sanction?: string
+          ecole_id?: string
+          eleve_id?: string
+          enregistre_par?: string | null
+          id?: string
+          motif?: string | null
+          nb_absences_declencheur?: number | null
+          notifie_parents?: boolean | null
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      security_audit_logs: {
+        Row: {
+          created_at: string
+          device_fingerprint: string | null
+          ecole_id: string | null
+          event_severity: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_fingerprint?: string | null
+          ecole_id?: string | null
+          event_severity?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_fingerprint?: string | null
+          ecole_id?: string | null
+          event_severity?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      sessions_compositions: {
+        Row: {
+          annee_id: string | null
+          consignes: string | null
+          created_at: string
+          date_debut: string
+          date_fin: string
+          ecole_id: string
+          id: string
+          libelle: string
+          periode_id: string | null
+          statut: string
+          type_session: string
+          updated_at: string
+        }
+        Insert: {
+          annee_id?: string | null
+          consignes?: string | null
+          created_at?: string
+          date_debut: string
+          date_fin: string
+          ecole_id: string
+          id?: string
+          libelle: string
+          periode_id?: string | null
+          statut?: string
+          type_session?: string
+          updated_at?: string
+        }
+        Update: {
+          annee_id?: string | null
+          consignes?: string | null
+          created_at?: string
+          date_debut?: string
+          date_fin?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string
+          periode_id?: string | null
+          statut?: string
+          type_session?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sessions_compositions_annee_id_fkey"
+            columns: ["annee_id"]
+            isOneToOne: false
+            referencedRelation: "annees_scolaires"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_compositions_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_config: {
+        Row: {
+          api_token: string
+          api_token_last4: string | null
+          base_url: string
+          cout_unitaire: number
+          created_at: string
+          ecole_id: string
+          has_api_token: boolean
+          id: string
+          is_active: boolean
+          provider: string
+          sender_id: string
+          updated_at: string
+          whatsapp_cout_unitaire: number
+          whatsapp_enabled: boolean
+          whatsapp_url: string
+        }
+        Insert: {
+          api_token?: string
+          api_token_last4?: string | null
+          base_url?: string
+          cout_unitaire?: number
+          created_at?: string
+          ecole_id: string
+          has_api_token?: boolean
+          id?: string
+          is_active?: boolean
+          provider?: string
+          sender_id?: string
+          updated_at?: string
+          whatsapp_cout_unitaire?: number
+          whatsapp_enabled?: boolean
+          whatsapp_url?: string
+        }
+        Update: {
+          api_token?: string
+          api_token_last4?: string | null
+          base_url?: string
+          cout_unitaire?: number
+          created_at?: string
+          ecole_id?: string
+          has_api_token?: boolean
+          id?: string
+          is_active?: boolean
+          provider?: string
+          sender_id?: string
+          updated_at?: string
+          whatsapp_cout_unitaire?: number
+          whatsapp_enabled?: boolean
+          whatsapp_url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_config_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: true
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sms_logs: {
+        Row: {
+          canal: string
+          cout: number
+          created_at: string
+          destinataire: string
+          ecole_id: string
+          envoye_par: string | null
+          error_code: string | null
+          id: string
+          idempotency_key: string | null
+          message: string
+          provider: string
+          provider_log_id: string | null
+          provider_response: Json | null
+          sender_id: string | null
+          statut: string
+          template_slug: string | null
+        }
+        Insert: {
+          canal?: string
+          cout?: number
+          created_at?: string
+          destinataire: string
+          ecole_id: string
+          envoye_par?: string | null
+          error_code?: string | null
+          id?: string
+          idempotency_key?: string | null
+          message: string
+          provider?: string
+          provider_log_id?: string | null
+          provider_response?: Json | null
+          sender_id?: string | null
+          statut?: string
+          template_slug?: string | null
+        }
+        Update: {
+          canal?: string
+          cout?: number
+          created_at?: string
+          destinataire?: string
+          ecole_id?: string
+          envoye_par?: string | null
+          error_code?: string | null
+          id?: string
+          idempotency_key?: string | null
+          message?: string
+          provider?: string
+          provider_log_id?: string | null
+          provider_response?: Json | null
+          sender_id?: string | null
+          statut?: string
+          template_slug?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sms_logs_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_candidats: {
+        Row: {
+          classe_demandee: string | null
+          classe_demandee_id: string | null
+          converti_eleve_id: string | null
+          created_at: string
+          created_by: string | null
+          date_naissance: string | null
+          date_test: string | null
+          ecole_id: string
+          ecole_origine: string | null
+          id: string
+          moyenne_test: number | null
+          nom: string
+          note_anglais: number | null
+          note_francais: number | null
+          note_maths: number | null
+          numero: string
+          observations: string | null
+          parent: string | null
+          prenom: string
+          session_id: string | null
+          sexe: string | null
+          statut: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone: string | null
+          updated_at: string
+        }
+        Insert: {
+          classe_demandee?: string | null
+          classe_demandee_id?: string | null
+          converti_eleve_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_naissance?: string | null
+          date_test?: string | null
+          ecole_id: string
+          ecole_origine?: string | null
+          id?: string
+          moyenne_test?: number | null
+          nom: string
+          note_anglais?: number | null
+          note_francais?: number | null
+          note_maths?: number | null
+          numero: string
+          observations?: string | null
+          parent?: string | null
+          prenom: string
+          session_id?: string | null
+          sexe?: string | null
+          statut?: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          classe_demandee?: string | null
+          classe_demandee_id?: string | null
+          converti_eleve_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          date_naissance?: string | null
+          date_test?: string | null
+          ecole_id?: string
+          ecole_origine?: string | null
+          id?: string
+          moyenne_test?: number | null
+          nom?: string
+          note_anglais?: number | null
+          note_francais?: number | null
+          note_maths?: number | null
+          numero?: string
+          observations?: string | null
+          parent?: string | null
+          prenom?: string
+          session_id?: string | null
+          sexe?: string | null
+          statut?: Database["public"]["Enums"]["sp_candidat_statut"]
+          telephone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_candidats_classe_demandee_id_fkey"
+            columns: ["classe_demandee_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_candidats_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sp_test_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_paiements: {
+        Row: {
+          annule_le: string | null
+          annule_par: string | null
+          beneficiaire_libre: string | null
+          beneficiaire_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id: string | null
+          candidat_id: string | null
+          created_at: string
+          date_paiement: string
+          ecole_id: string
+          eleve_id: string | null
+          id: string
+          mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du: number
+          montant_paye: number
+          motif_annulation: string | null
+          numero: string
+          observations: string | null
+          remise: number
+          service_id: string
+          updated_at: string
+        }
+        Insert: {
+          annule_le?: string | null
+          annule_par?: string | null
+          beneficiaire_libre?: string | null
+          beneficiaire_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du?: number
+          montant_paye?: number
+          motif_annulation?: string | null
+          numero: string
+          observations?: string | null
+          remise?: number
+          service_id: string
+          updated_at?: string
+        }
+        Update: {
+          annule_le?: string | null
+          annule_par?: string | null
+          beneficiaire_libre?: string | null
+          beneficiaire_type?: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          caissier_id?: string | null
+          candidat_id?: string | null
+          created_at?: string
+          date_paiement?: string
+          ecole_id?: string
+          eleve_id?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_du?: number
+          montant_paye?: number
+          motif_annulation?: string | null
+          numero?: string
+          observations?: string | null
+          remise?: number
+          service_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_paiements_candidat_id_fkey"
+            columns: ["candidat_id"]
+            isOneToOne: false
+            referencedRelation: "sp_candidats"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "eleves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_eleve_id_fkey"
+            columns: ["eleve_id"]
+            isOneToOne: false
+            referencedRelation: "v_conformite_sigfne"
+            referencedColumns: ["eleve_id"]
+          },
+          {
+            foreignKeyName: "sp_paiements_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "sp_services"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_services: {
+        Row: {
+          accepte_partiel: boolean
+          actif: boolean
+          couleur: string
+          created_at: string
+          cycle_id: string | null
+          description: string | null
+          ecole_id: string
+          gere_stock: boolean
+          icone: string
+          id: string
+          nom: string
+          prix: number
+          slug: string
+          stock_actuel: number | null
+          updated_at: string
+        }
+        Insert: {
+          accepte_partiel?: boolean
+          actif?: boolean
+          couleur?: string
+          created_at?: string
+          cycle_id?: string | null
+          description?: string | null
+          ecole_id: string
+          gere_stock?: boolean
+          icone?: string
+          id?: string
+          nom: string
+          prix?: number
+          slug: string
+          stock_actuel?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accepte_partiel?: boolean
+          actif?: boolean
+          couleur?: string
+          created_at?: string
+          cycle_id?: string | null
+          description?: string | null
+          ecole_id?: string
+          gere_stock?: boolean
+          icone?: string
+          id?: string
+          nom?: string
+          prix?: number
+          slug?: string
+          stock_actuel?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_services_cycle_id_fkey"
+            columns: ["cycle_id"]
+            isOneToOne: false
+            referencedRelation: "cycles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_stock_tenues: {
+        Row: {
+          classe_id: string
+          created_at: string
+          ecole_id: string
+          genre: string
+          id: string
+          prix_unitaire: number | null
+          seuil_alerte: number
+          stock_actuel: number
+          updated_at: string
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          ecole_id: string
+          genre: string
+          id?: string
+          prix_unitaire?: number | null
+          seuil_alerte?: number
+          stock_actuel?: number
+          updated_at?: string
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          ecole_id?: string
+          genre?: string
+          id?: string
+          prix_unitaire?: number | null
+          seuil_alerte?: number
+          stock_actuel?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_stock_tenues_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_stock_tenues_mouvements: {
+        Row: {
+          classe_id: string
+          created_at: string
+          ecole_id: string
+          genre: string
+          id: string
+          motif: string | null
+          quantite: number
+          stock_apres: number | null
+          stock_avant: number | null
+          type: string
+          user_id: string | null
+          vente_id: string | null
+        }
+        Insert: {
+          classe_id: string
+          created_at?: string
+          ecole_id: string
+          genre: string
+          id?: string
+          motif?: string | null
+          quantite: number
+          stock_apres?: number | null
+          stock_avant?: number | null
+          type: string
+          user_id?: string | null
+          vente_id?: string | null
+        }
+        Update: {
+          classe_id?: string
+          created_at?: string
+          ecole_id?: string
+          genre?: string
+          id?: string
+          motif?: string | null
+          quantite?: number
+          stock_apres?: number | null
+          stock_avant?: number | null
+          type?: string
+          user_id?: string | null
+          vente_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_stock_tenues_mouvements_vente_id_fkey"
+            columns: ["vente_id"]
+            isOneToOne: false
+            referencedRelation: "sp_ventes_tenues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sp_test_sessions: {
+        Row: {
+          actif: boolean
+          capacite: number | null
+          created_at: string
+          created_by: string | null
+          date_test: string
+          ecole_id: string
+          id: string
+          libelle: string | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          actif?: boolean
+          capacite?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_test: string
+          ecole_id: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actif?: boolean
+          capacite?: number | null
+          created_at?: string
+          created_by?: string | null
+          date_test?: string
+          ecole_id?: string
+          id?: string
+          libelle?: string | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sp_ventes_tenues: {
+        Row: {
+          acheteur_libre: string | null
+          acheteur_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le: string | null
+          annule_par: string | null
+          caissier_id: string | null
+          candidat_id: string | null
+          classe_id: string | null
+          created_at: string
+          ecole_id: string
+          eleve_id: string | null
+          genre: string | null
+          id: string
+          mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total: number
+          motif_annulation: string | null
+          numero: string
+          observations: string | null
+          paiement_id: string | null
+          prix_unitaire: number
+          quantite: number
+          statut: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at: string
+        }
+        Insert: {
+          acheteur_libre?: string | null
+          acheteur_type: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le?: string | null
+          annule_par?: string | null
+          caissier_id?: string | null
+          candidat_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id: string
+          eleve_id?: string | null
+          genre?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total?: number
+          motif_annulation?: string | null
+          numero: string
+          observations?: string | null
+          paiement_id?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          statut?: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at?: string
+        }
+        Update: {
+          acheteur_libre?: string | null
+          acheteur_type?: Database["public"]["Enums"]["sp_beneficiaire_type"]
+          annule_le?: string | null
+          annule_par?: string | null
+          caissier_id?: string | null
+          candidat_id?: string | null
+          classe_id?: string | null
+          created_at?: string
+          ecole_id?: string
+          eleve_id?: string | null
+          genre?: string | null
+          id?: string
+          mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          montant_total?: number
+          motif_annulation?: string | null
+          numero?: string
+          observations?: string | null
+          paiement_id?: string | null
+          prix_unitaire?: number
+          quantite?: number
+          statut?: Database["public"]["Enums"]["sp_vente_statut"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sp_ventes_tenues_classe_id_fkey"
+            columns: ["classe_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sp_ventes_tenues_ecole_id_fkey"
+            columns: ["ecole_id"]
+            isOneToOne: false
+            referencedRelation: "ecoles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "sp_ventes_tenues_eleve_id_fkey"
             columns: ["eleve_id"]
             isOneToOne: false
@@ -3499,7 +8248,6 @@ export type Database = {
       }
       enregistrer_paiement_facture: {
         Args: {
-          _date_paiement?: string
           _facture_id: string
           _mode?: string
           _montant: number

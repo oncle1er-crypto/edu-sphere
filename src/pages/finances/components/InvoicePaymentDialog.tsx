@@ -96,7 +96,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         _reference: reference || null,
         _recu_par: user?.id ?? null,
         _date_paiement: datePaiement,
-      });
+      } as any);
       if (error) throw error;
 
       toast.success("Encaissement enregistré", {
