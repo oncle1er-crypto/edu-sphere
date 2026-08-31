@@ -44,6 +44,22 @@ function assertSupabaseUrlIsLocal() {
 assertSupabaseUrlIsLocal();
 
 /**
+ * Utilise un port dédié aux E2E afin de ne jamais réutiliser par accident un
+ * serveur de développement (ou un conteneur Docker) déjà présent sur 8080.
+ * La réutilisation reste possible, mais uniquement sur demande explicite.
+ */
+const e2ePortValue = process.env.PLAYWRIGHT_PORT ?? '18080';
+if (!/^\d+$/.test(e2ePortValue)) {
+  throw new Error(`PLAYWRIGHT_PORT invalide : "${e2ePortValue}" (nombre attendu).`);
+}
+const e2ePort = Number(e2ePortValue);
+if (e2ePort < 1024 || e2ePort > 65535) {
+  throw new Error(`PLAYWRIGHT_PORT invalide : ${e2ePort} (1024-65535 attendu).`);
+}
+const e2eBaseUrl = `http://127.0.0.1:${e2ePort}`;
+const reuseExistingServer = process.env.PLAYWRIGHT_REUSE_SERVER === '1';
+
+/**
  * See https://playwright.dev/docs/test-configuration.
  */
 export default defineConfig({
@@ -54,8 +70,13 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
   retries: process.env.CI ? 2 : 0,
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI ? 1 : undefined,
+  /*
+   * Les parcours UI partagent le même compte technique. Le test de
+   * déconnexion révoque ses sessions globalement et rend donc une exécution
+   * multi-worker non déterministe (les autres parcours sont déconnectés en
+   * plein test). Un worker unique reproduit localement le comportement CI.
+   */
+  workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -66,7 +87,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:8080',
+    baseURL: e2eBaseUrl,
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
@@ -83,9 +104,9 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:8080',
-    reuseExistingServer: !process.env.CI,
+    command: `npm run dev -- --host 127.0.0.1 --port ${e2ePort} --strictPort`,
+    url: e2eBaseUrl,
+    reuseExistingServer,
     timeout: 120000,
   },
 });
