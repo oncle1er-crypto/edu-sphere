@@ -454,9 +454,53 @@ export default function Receipts() {
     });
   };
 
+  const mergeGroupForItems = (items: PaiementRecu[]): GroupedRow => {
+    const actifs = items.filter((item) => !item.annule_le);
+    if (actifs.length < 2) throw new Error("Sélectionnez au moins deux paiements actifs à fusionner.");
+    const eleveIds = new Set(actifs.map((item) => item.eleve_id));
+    if (eleveIds.size !== 1) throw new Error("Les paiements à fusionner doivent appartenir au même élève.");
+    const jours = new Set(actifs.map((item) => jourKey(item.date_paiement)));
+    if (jours.size !== 1) throw new Error("Les paiements à fusionner doivent avoir la même date.");
+
+    const first = actifs[0];
+    const modes = new Map<string, number>();
+    actifs.forEach((item) => {
+      const label = modeMeta(item.mode).label;
+      modes.set(label, (modes.get(label) ?? 0) + item.montant);
+    });
+    return {
+      key: `${first.eleve_id}|${jourKey(first.date_paiement)}|fusion`,
+      eleve_id: first.eleve_id,
+      eleve_nom: first.eleve_nom,
+      eleve_prenom: first.eleve_prenom,
+      matricule: first.matricule,
+      classe: first.classe,
+      photo_url: first.photo_url,
+      date_paiement: first.date_paiement,
+      tranche_numero: null,
+      items: actifs,
+      montant: actifs.reduce((sum, item) => sum + item.montant, 0),
+      modesLabel: Array.from(modes.entries()).map(([label, total]) => `${label} (${fcfa(total)})`).join(" + "),
+    };
+  };
+
+  const completeDayGroup = (g: GroupedRow) => mergeGroupForItems(
+    sorted.filter((item) =>
+      !item.annule_le
+      && item.eleve_id === g.eleve_id
+      && jourKey(item.date_paiement) === jourKey(g.date_paiement)
+    ),
+  );
+
   const download = async (make: () => Promise<jsPDF>, filename: string) => {
     setBusy(true);
-    try { const pdf = await make(); pdf.save(filename); }
+    try {
+      const pdf = await make();
+      pdf.save(filename);
+      toast.success("Reçu PDF généré");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de générer le reçu.");
+    }
     finally { setBusy(false); }
   };
   const preview = async (make: () => Promise<jsPDF>, title: string) => {
@@ -465,6 +509,8 @@ export default function Receipts() {
       const pdf = await make();
       const url = URL.createObjectURL(pdf.output("blob"));
       setPdfUrl(url);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de prévisualiser le reçu.");
     } finally { setBusy(false); }
   };
   const closePreview = () => { if (pdfUrl) URL.revokeObjectURL(pdfUrl); setPdfUrl(null); setPreviewTitle(""); };
@@ -545,6 +591,19 @@ export default function Receipts() {
       }
       toast.success(`${items.length} reçu(s) téléchargé(s)`);
     } finally { setBusy(false); }
+  };
+
+  const mergeSelected = async () => {
+    const items = sorted.filter((item) => selectedIds.has(item.id));
+    try {
+      const group = mergeGroupForItems(items);
+      await download(
+        () => buildMergedPDF(group),
+        `recu-fusionne-${group.matricule || group.eleve_nom}-${jourKey(group.date_paiement)}.pdf`,
+      );
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible de fusionner les paiements.");
+    }
   };
 
   // ── Reset filtres ──
@@ -821,6 +880,9 @@ export default function Receipts() {
               <Button size="sm" variant="outline" onClick={downloadSelected} disabled={busy}>
                 <Download className="h-4 w-4 mr-1" /> Télécharger les PDF
               </Button>
+              <Button size="sm" onClick={mergeSelected} disabled={busy || selectedIds.size < 2}>
+                <Merge className="h-4 w-4 mr-1" /> Fusionner en un reçu
+              </Button>
               <Button size="sm" variant="ghost" onClick={clearSelection}>
                 <X className="h-4 w-4 mr-1" /> Effacer la sélection
               </Button>
@@ -960,11 +1022,11 @@ export default function Receipts() {
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-1">
                       <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Prévisualiser reçu fusionné"
-                        onClick={() => preview(() => buildMergedPDF(g), `Reçu global — ${g.eleve_nom} ${g.eleve_prenom}`)} disabled={busy}>
+                        onClick={() => preview(() => buildMergedPDF(view === "day_tranche" ? completeDayGroup(g) : g), `Reçu global — ${g.eleve_nom} ${g.eleve_prenom}`)} disabled={busy}>
                         <Eye className="h-4 w-4" />
                       </Button>
                       <Button size="sm" variant="outline" className="gap-1" title="Fusionner en 1 reçu PDF"
-                        onClick={() => download(() => buildMergedPDF(g), `recu-global-${g.eleve_nom}-${jourKey(g.date_paiement)}.pdf`)} disabled={busy}>
+                        onClick={() => download(() => buildMergedPDF(view === "day_tranche" ? completeDayGroup(g) : g), `recu-global-${g.eleve_nom}-${jourKey(g.date_paiement)}.pdf`)} disabled={busy}>
                         <Merge className="h-4 w-4" /> Fusionner
                       </Button>
                     </div>
