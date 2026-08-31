@@ -8248,6 +8248,7 @@ export type Database = {
       }
       enregistrer_paiement_facture: {
         Args: {
+          _date_paiement?: string
           _facture_id: string
           _mode?: string
           _montant: number
