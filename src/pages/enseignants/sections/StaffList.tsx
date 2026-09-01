@@ -10,9 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { FieldRow } from "@/components/settings/SettingsSection";
-import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2, ChevronRight } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2 } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
@@ -96,12 +94,6 @@ export default function StaffList() {
     salaire_brut_base: "",
   });
   const [createAccount, setCreateAccount] = useState(true);
-  // Section "Informations complémentaires" repliée par défaut à la création
-  // (aucun champ obligatoire dedans) pour accélérer la saisie courante ;
-  // dépliée par défaut en modification pour ne rien masquer de ce qui a déjà
-  // été renseigné.
-  const [showMoreNew, setShowMoreNew] = useState(false);
-  const [showMoreEdit, setShowMoreEdit] = useState(true);
   const [invitingId, setInvitingId] = useState<string | null>(null);
   const [editEnseignant, setEditEnseignant] = useState<typeof enseignants[0] | null>(null);
   const [editForm, setEditForm] = useState({
@@ -217,7 +209,6 @@ export default function StaffList() {
         departement: "enseignant", nationalite: "Ivoirienne", situation_matrimoniale: "",
         personne_a_prevenir: "", salaire_brut_base: "",
       });
-      setShowMoreNew(false);
       setOpen(false);
     }
     setSaving(false);
@@ -532,98 +523,111 @@ export default function StaffList() {
 
       {/* Edit Dialog */}
       <Dialog open={!!editEnseignant} onOpenChange={(o) => !o && setEditEnseignant(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Modifier le membre du personnel</DialogTitle></DialogHeader>
-          <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-            <div className="space-y-3">
-              <SectionHeading>Identité</SectionHeading>
-              <FieldRow label="Nom *"><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} /></FieldRow>
-              <FieldRow label="Prénom *"><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FieldRow>
-              <FieldRow label="Sexe">
-                <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="F">Féminin</SelectItem>
-                    <SelectItem value="M">Masculin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldRow>
+        <DialogContent className="w-[96vw] max-w-6xl gap-0 overflow-hidden p-0">
+          <DialogHeader className="border-b bg-gradient-to-r from-primary/10 via-background to-accent/10 px-6 py-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <Briefcase className="h-5 w-5" />
+              </span>
+              Modifier le membre du personnel
+            </DialogTitle>
+            <DialogDescription>Modifiez toute la fiche sur un seul écran, puis enregistrez vos changements.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 py-4 xl:overflow-visible">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+              <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                  <SectionHeading>Identité</SectionHeading>
+                  <FormField label="Nom" required><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} autoFocus /></FormField>
+                  <FormField label="Prénom" required><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FormField>
+                  <FormField label="Sexe">
+                    <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="F">Féminin</SelectItem>
+                        <SelectItem value="M">Masculin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+              </section>
+
+              <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <SectionHeading>Contact</SectionHeading>
+                  <FormField label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FormField>
+                  <FormField label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FormField>
+                </div>
+              </section>
+
+              <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <SectionHeading>Poste &amp; affectation</SectionHeading>
+                  <FormField label="Département">
+                    <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Poste"><Input value={editForm.poste} onChange={(e) => setEditForm({ ...editForm, poste: e.target.value })} placeholder="Ex. Enseignant, Secrétaire" /></FormField>
+                  <FormField label="Fonction"><Input value={editForm.fonction} onChange={(e) => setEditForm({ ...editForm, fonction: e.target.value })} placeholder="Ex. Responsable de niveau" /></FormField>
+                  <FormField label="Service"><Input value={editForm.service} onChange={(e) => setEditForm({ ...editForm, service: e.target.value })} placeholder="Ex. Pédagogie" /></FormField>
+                </div>
+              </section>
+
+              <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <SectionHeading>Contrat, qualification &amp; statut</SectionHeading>
+                  <FormField label="Type de contrat">
+                    <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="CDI">CDI</SelectItem>
+                        <SelectItem value="CDD">CDD</SelectItem>
+                        <SelectItem value="Vacataire">Vacataire</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FormField>
+                  <FormField label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FormField>
+                  <FormField label="Statut">
+                    <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="actif">Actif</SelectItem>
+                        <SelectItem value="inactif">Inactif</SelectItem>
+                        <SelectItem value="conge">En congé</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                </div>
+              </section>
+
+              <section className="rounded-xl border bg-muted/20 p-4 lg:col-span-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <SectionHeading>Informations complémentaires</SectionHeading>
+                  <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FormField>
+                  <FormField label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FormField>
+                  <FormField label="Situation matrimoniale">
+                    <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                      <SelectContent>
+                        {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </FormField>
+                  <FormField label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FormField>
+                </div>
+              </section>
             </div>
-
-            <div className="space-y-3">
-              <SectionHeading>Contact</SectionHeading>
-              <FieldRow label="Email"><Input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} /></FieldRow>
-              <FieldRow label="Téléphone"><Input value={editForm.telephone} onChange={(e) => setEditForm({ ...editForm, telephone: e.target.value })} placeholder="+225" /></FieldRow>
+            <div className="mt-4 flex justify-end gap-3 border-t pt-4">
+              <Button variant="outline" onClick={() => setEditEnseignant(null)} disabled={savingEdit}>Annuler</Button>
+              <Button className="min-w-56" onClick={handleSaveEdit} disabled={savingEdit}>
+                {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />} {savingEdit ? "Enregistrement…" : "Enregistrer les modifications"}
+              </Button>
             </div>
-
-            <div className="space-y-3">
-              <SectionHeading>Poste &amp; affectation</SectionHeading>
-              <FieldRow label="Département">
-                <Select value={editForm.departement} onValueChange={(v) => setEditForm({ ...editForm, departement: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </FieldRow>
-              <FieldRow label="Poste"><Input value={editForm.poste} onChange={(e) => setEditForm({ ...editForm, poste: e.target.value })} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FieldRow>
-              <FieldRow label="Fonction" hint="Facultatif — précision propre à votre organisation (ex. responsabilité particulière).">
-                <Input value={editForm.fonction} onChange={(e) => setEditForm({ ...editForm, fonction: e.target.value })} />
-              </FieldRow>
-              <FieldRow label="Service" hint="Facultatif — unité ou équipe de rattachement.">
-                <Input value={editForm.service} onChange={(e) => setEditForm({ ...editForm, service: e.target.value })} />
-              </FieldRow>
-            </div>
-
-            <div className="space-y-3">
-              <SectionHeading>Contrat &amp; statut</SectionHeading>
-              <FieldRow label="Type de contrat">
-                <Select value={editForm.type_contrat} onValueChange={(v) => setEditForm({ ...editForm, type_contrat: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CDI">CDI</SelectItem>
-                    <SelectItem value="CDD">CDD</SelectItem>
-                    <SelectItem value="Vacataire">Vacataire</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldRow>
-              <FieldRow label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FieldRow>
-              <FieldRow label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FieldRow>
-              <FieldRow label="Statut">
-              <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="actif">Actif</SelectItem>
-                  <SelectItem value="inactif">Inactif</SelectItem>
-                  <SelectItem value="conge">En congé</SelectItem>
-                </SelectContent>
-              </Select>
-              </FieldRow>
-            </div>
-
-            <Collapsible open={showMoreEdit} onOpenChange={setShowMoreEdit}>
-              <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
-                <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showMoreEdit ? "rotate-90" : ""}`} />
-                Informations complémentaires (facultatif)
-              </CollapsibleTrigger>
-              <CollapsibleContent className="space-y-3 pt-3">
-                <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FieldRow>
-                <FieldRow label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FieldRow>
-                <FieldRow label="Situation matrimoniale">
-                  <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
-                    <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                    <SelectContent>
-                      {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </FieldRow>
-                <FieldRow label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FieldRow>
-              </CollapsibleContent>
-            </Collapsible>
-
-            <Button className="w-full" onClick={handleSaveEdit} disabled={savingEdit}>
-              {savingEdit && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer les modifications
-            </Button>
           </div>
         </DialogContent>
       </Dialog>
