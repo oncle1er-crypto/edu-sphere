@@ -360,6 +360,14 @@ export default function StaffPayroll() {
             <Button variant="outline" size="sm" onClick={exporter}>
               <Download className="h-4 w-4" />Tout exporter
             </Button>
+            <Button variant="outline" size="sm" onClick={genererAuto} disabled={autoBusy}>
+              {autoBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Générer automatiquement
+            </Button>
             <Button size="sm" onClick={() => setPrepareOpen(true)}>
               <CalendarClock className="h-4 w-4" />Fiches de paie du mois
             </Button>
