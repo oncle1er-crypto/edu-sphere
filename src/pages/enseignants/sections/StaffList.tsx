@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2 } from "lucide-react";
+import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2, Printer } from "lucide-react";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { toast } from "sonner";
 import { ImportDialog, ImportColumn, DedupMode, ImportResult } from "@/components/ImportDialog";
@@ -20,6 +20,8 @@ import { Label } from "@/components/ui/label";
 import PersonnelDetail from "@/pages/enseignants/components/PersonnelDetail";
 import { useRhReferentiels } from "@/hooks/useRhReferentiels";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { exportRowsCSV, exportRowsPDF, exportRowsXLSX, type ExportPayload } from "@/lib/reports/exporters";
+import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 
 const SITUATIONS = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"];
 
@@ -78,6 +80,7 @@ function FormField({ label, required, hint, children }: {
 
 export default function StaffList() {
   const { departements } = useRhReferentiels();
+  const ecole = useEcoleInfo();
   const { enseignants, loading, addEnseignant, updateEnseignant, deleteEnseignant, fetchEnseignants } = useEnseignants();
   const [search, setSearch] = useState("");
   const [contrat, setContrat] = useState("all");
@@ -104,6 +107,7 @@ export default function StaffList() {
     salaire_brut_base: "",
   });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [exportBusy, setExportBusy] = useState(false);
 
   const openEdit = (s: typeof enseignants[0]) => {
     setEditEnseignant(s);
@@ -155,6 +159,49 @@ export default function StaffList() {
     const mc = contrat === "all" || s.type_contrat === contrat;
     return ms && mc;
   });
+
+  const exportPayload = (): ExportPayload => {
+    const departementParCode = new Map(departements.map((d) => [d.code, d.libelle]));
+    return {
+      title: "Liste du personnel",
+      filename: `liste_personnel_${new Date().toISOString().slice(0, 10)}`,
+      sousTitre: `${filtered.length} membre(s) · ${contrat === "all" ? "Tous les contrats" : contrat}`,
+      orientation: "landscape",
+      ecole,
+      columns: ["Matricule", "Nom et prénoms", "Département", "Poste / fonction", "Spécialité", "Contrat", "Téléphone", "Email", "Statut"],
+      rows: filtered.map((s) => [
+        s.matricule ?? "—",
+        `${s.nom} ${s.prenom}`.trim(),
+        departementParCode.get(s.departement ?? "") ?? s.service ?? s.departement ?? "—",
+        s.poste ?? s.fonction ?? "—",
+        s.specialite ?? "—",
+        s.type_contrat ?? "—",
+        s.telephone ?? "—",
+        s.email ?? "—",
+        s.statut ?? "—",
+      ]),
+    };
+  };
+
+  const handleExport = async (format: "csv" | "xlsx" | "pdf") => {
+    if (filtered.length === 0) {
+      toast.error("Aucun membre du personnel à exporter");
+      return;
+    }
+    setExportBusy(true);
+    try {
+      const payload = exportPayload();
+      if (format === "csv") exportRowsCSV(payload);
+      else if (format === "xlsx") exportRowsXLSX(payload);
+      else await exportRowsPDF(payload);
+      toast.success(format === "pdf" ? "Liste PDF prête à imprimer" : "Export généré");
+    } catch (error) {
+      console.error(error);
+      toast.error("Impossible de générer la liste du personnel");
+    } finally {
+      setExportBusy(false);
+    }
+  };
 
   const handleAdd = async () => {
     if (!form.nom || !form.prenom) { toast.error("Nom et prénom obligatoires"); return; }
@@ -311,7 +358,21 @@ export default function StaffList() {
               <LayoutGrid className="h-4 w-4" />
             </Button>
           </div>
-          <Button variant="outline" size="sm"><Download className="h-4 w-4" />Export</Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" disabled={exportBusy}>
+                {exportBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                Exporter
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onSelect={() => handleExport("csv")}>Exporter en CSV</DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleExport("xlsx")}>Exporter en Excel</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" size="sm" disabled={exportBusy} onClick={() => handleExport("pdf")}>
+            <Printer className="h-4 w-4" />Imprimer / PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setShowImport(true)}><Upload className="h-4 w-4" />Import CSV</Button>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
