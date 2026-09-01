@@ -20,6 +20,16 @@ export interface BulletinPaieSalarie {
   numero_cmu?: string | null;
   parts_fiscales?: number | null;
   anciennete_annees?: number | null;
+  type_contrat?: string | null;
+}
+
+export interface BulletinPaieCumuls {
+  total_gains: number;
+  brut_imposable: number;
+  total_retenues: number;
+  net_a_payer: number;
+  base_cnps: number;
+  total_charges_patronales: number;
 }
 
 export interface BulletinPaieLigne {
@@ -42,6 +52,12 @@ export interface BulletinPaieData {
   net_a_payer: number;
   total_charges_patronales: number;
   cout_employeur: number;
+  brut_imposable: number;
+  base_cnps: number;
+  date_paiement?: string | null;
+  periode_debut: string;
+  periode_fin: string;
+  cumuls_annuels: BulletinPaieCumuls;
 }
 
 const MOIS = [
@@ -60,6 +76,8 @@ const val = (v: string | number | null | undefined) =>
   v === null || v === undefined || v === "" ? DASH : String(v);
 const pct = (t: number | null) =>
   t === null || t === undefined ? DASH : `${String(Number(t)).replace(".", ",")} %`;
+const dateFr = (date?: string | null) =>
+  date ? new Date(`${date.slice(0, 10)}T12:00:00Z`).toLocaleDateString("fr-FR", { timeZone: "UTC" }) : DASH;
 
 async function loadImage(url: string): Promise<{ data: string; w: number; h: number } | null> {
   try {
@@ -129,11 +147,16 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
   pdf.setTextColor(110, 26, 44);
   pdf.text(`${MOIS[data.mois - 1] ?? DASH} ${data.annee}`, W / 2, 46, { align: "center" });
 
+  pdf.setTextColor(90, 90, 90);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.text(`Période du ${dateFr(data.periode_debut)} au ${dateFr(data.periode_fin)}`, W / 2, 50, { align: "center" });
+
   // ---------- Bloc salarié ----------
-  let y = 52;
+  let y = 54;
   pdf.setDrawColor(200, 200, 200);
   pdf.setFillColor(248, 248, 248);
-  pdf.rect(pad, y, innerW, 32, "FD");
+  pdf.rect(pad, y, innerW, 37, "FD");
   pdf.setTextColor(40, 40, 40);
   pdf.setFontSize(8.5);
 
@@ -143,6 +166,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     ["Prénom", val(s.prenom)],
     ["Matricule", val(s.matricule)],
     ["Poste", val(s.poste)],
+    ["Type de contrat", val(s.type_contrat)],
     ["Département", val(s.departement)],
     [
       "Date d'embauche",
@@ -169,120 +193,141 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     pdf.setFont("helvetica", "normal");
     pdf.text(v, x + 30, ly, { maxWidth: colW - 34 });
   });
-  y += 38;
+  y += 42;
 
-  // ---------- Tableaux ----------
-  const cols = [pad + 3, pad + 78, pad + 112, pad + innerW - 3];
-
-  const drawTable = (
-    titre: string,
-    lignes: BulletinPaieLigne[],
-    total: number,
-    totalLabel: string,
-    sousTitre?: string,
-  ) => {
-    if (y > H - 60) {
-      pdf.addPage();
-      y = 20;
-    }
-    pdf.setFillColor(110, 26, 44);
-    pdf.rect(pad, y, innerW, 7, "F");
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(9);
-    pdf.text(titre, pad + 3, y + 4.8);
-    if (sousTitre) {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(7);
-      pdf.text(sousTitre, pad + innerW - 3, y + 4.8, { align: "right" });
-    }
-    y += 7;
-
-    pdf.setTextColor(80, 80, 80);
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(7.5);
-    pdf.text("Libellé", cols[0], y + 4.5);
-    pdf.text("Base", cols[1], y + 4.5, { align: "right" });
-    pdf.text("Taux", cols[2], y + 4.5, { align: "right" });
-    pdf.text("Montant", cols[3], y + 4.5, { align: "right" });
-    y += 6.5;
-    pdf.setDrawColor(220, 220, 220);
-    pdf.line(pad, y, pad + innerW, y);
-
-    pdf.setTextColor(30, 30, 30);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    if (lignes.length === 0) {
-      y += 6;
-      pdf.setTextColor(130, 130, 130);
-      pdf.text("Aucune ligne", cols[0], y);
-      pdf.setTextColor(30, 30, 30);
-      y += 3;
-    }
-    lignes.forEach((l) => {
-      if (y > H - 40) {
-        pdf.addPage();
-        y = 20;
-      }
-      y += 5.6;
-      pdf.text(l.libelle, cols[0], y, { maxWidth: 72 });
-      pdf.text(l.base ? num(l.base) : DASH, cols[1], y, { align: "right" });
-      pdf.text(pct(l.taux), cols[2], y, { align: "right" });
-      pdf.text(num(l.montant), cols[3], y, { align: "right" });
-    });
-
-    y += 4;
-    pdf.setFillColor(240, 240, 240);
-    pdf.rect(pad, y, innerW, 7.5, "F");
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(8.5);
-    pdf.text(totalLabel, cols[0], y + 5);
-    pdf.text(money(total), cols[3], y + 5, { align: "right" });
-    y += 12;
+  // ---------- Détail de la rémunération (présentation inspirée du modèle Excel) ----------
+  const cols = {
+    libelle: pad + 3,
+    base: pad + 87,
+    taux: pad + 112,
+    gain: pad + 139,
+    retenue: pad + 164,
+    patronale: pad + innerW - 3,
   };
+  pdf.setFillColor(110, 26, 44);
+  pdf.rect(pad, y, innerW, 6.5, "F");
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.text("DÉTAIL DE LA RÉMUNÉRATION", pad + 3, y + 4.5);
+  y += 6.5;
 
-  const gains = data.lignes.filter((l) => l.type === "gain");
-  const retenues = data.lignes.filter((l) => l.type === "retenue");
-  const charges = data.lignes.filter((l) => l.type === "charge_patronale");
+  pdf.setFillColor(246, 246, 246);
+  pdf.rect(pad, y, innerW, 6.2, "F");
+  pdf.setTextColor(75, 75, 75);
+  pdf.setFontSize(7);
+  pdf.text("Désignation", cols.libelle, y + 4.2);
+  pdf.text("Base", cols.base, y + 4.2, { align: "right" });
+  pdf.text("Taux", cols.taux, y + 4.2, { align: "right" });
+  pdf.text("Gain", cols.gain, y + 4.2, { align: "right" });
+  pdf.text("Retenue", cols.retenue, y + 4.2, { align: "right" });
+  pdf.text("Employeur", cols.patronale, y + 4.2, { align: "right" });
+  y += 6.2;
 
-  drawTable("GAINS", gains, data.total_gains, "TOTAL DES GAINS");
-  drawTable("RETENUES", retenues, data.total_retenues, "TOTAL DES RETENUES");
+  pdf.setTextColor(35, 35, 35);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.4);
+  data.lignes.forEach((ligne) => {
+    y += 4.7;
+    pdf.setDrawColor(232, 232, 232);
+    pdf.line(pad, y + 1.5, pad + innerW, y + 1.5);
+    pdf.text(ligne.libelle, cols.libelle, y, { maxWidth: 78 });
+    pdf.text(ligne.base ? num(ligne.base) : DASH, cols.base, y, { align: "right" });
+    pdf.text(pct(ligne.taux), cols.taux, y, { align: "right" });
+    pdf.text(ligne.type === "gain" ? num(ligne.montant) : DASH, cols.gain, y, { align: "right" });
+    pdf.text(ligne.type === "retenue" ? num(ligne.montant) : DASH, cols.retenue, y, { align: "right" });
+    pdf.text(ligne.type === "charge_patronale" ? num(ligne.montant) : DASH, cols.patronale, y, { align: "right" });
+  });
+  y += 3;
+  pdf.setFillColor(238, 238, 238);
+  pdf.rect(pad, y, innerW, 7, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7.8);
+  pdf.text("TOTAUX", cols.libelle, y + 4.7);
+  pdf.text(num(data.total_gains), cols.gain, y + 4.7, { align: "right" });
+  pdf.text(num(data.total_retenues), cols.retenue, y + 4.7, { align: "right" });
+  pdf.text(num(data.total_charges_patronales), cols.patronale, y + 4.7, { align: "right" });
+  y += 10;
 
   // ---------- Net à payer ----------
-  if (y > H - 50) {
-    pdf.addPage();
-    y = 20;
-  }
   pdf.setDrawColor(110, 26, 44);
   pdf.setLineWidth(0.8);
   pdf.setFillColor(255, 255, 255);
-  pdf.rect(pad, y, innerW, 16, "FD");
+  pdf.rect(pad, y, innerW, 14, "FD");
   pdf.setLineWidth(0.2);
   pdf.setTextColor(110, 26, 44);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(12);
-  pdf.text("NET À PAYER", pad + 4, y + 10.5);
-  pdf.setFontSize(17);
-  pdf.text(money(data.net_a_payer), pad + innerW - 4, y + 11, { align: "right" });
-  y += 22;
-
-  // ---------- Charges patronales ----------
-  pdf.setTextColor(30, 30, 30);
-  drawTable(
-    "CHARGES PATRONALES",
-    charges,
-    data.total_charges_patronales,
-    "TOTAL CHARGES PATRONALES",
-    "à titre informatif — non déduit du salaire",
-  );
+  pdf.text("NET À PAYER", pad + 4, y + 9.5);
+  pdf.setFontSize(16);
+  pdf.text(money(data.net_a_payer), pad + innerW - 4, y + 9.8, { align: "right" });
+  y += 16;
 
   pdf.setFillColor(248, 248, 248);
-  pdf.rect(pad, y - 6, innerW, 8, "F");
+  pdf.rect(pad, y, innerW, 6.5, "F");
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.setTextColor(60, 60, 60);
+  pdf.text("COÛT EMPLOYEUR (INFORMATIF)", cols.libelle, y + 4.4);
+  pdf.text(money(data.cout_employeur), cols.patronale, y + 4.4, { align: "right" });
+
+  y += 9;
+  if (y > H - 82) {
+    pdf.addPage();
+    y = 20;
+  }
+
+  // ---------- Bases réglementaires et cumuls annuels ----------
+  pdf.setFillColor(110, 26, 44);
+  pdf.rect(pad, y, innerW, 7, "F");
+  pdf.setTextColor(255, 255, 255);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
-  pdf.setTextColor(60, 60, 60);
-  pdf.text("COÛT EMPLOYEUR", cols[0], y - 0.5);
-  pdf.text(money(data.cout_employeur), cols[3], y - 0.5, { align: "right" });
+  pdf.text(`SYNTHÈSE ET CUMULS ${data.annee}`, pad + 3, y + 4.8);
+  y += 7;
+
+  const synthese: [string, number, number][] = [
+    ["Gains bruts", data.total_gains, data.cumuls_annuels.total_gains],
+    ["Brut imposable", data.brut_imposable, data.cumuls_annuels.brut_imposable],
+    ["Base CNPS", data.base_cnps, data.cumuls_annuels.base_cnps],
+    ["Retenues salariales", data.total_retenues, data.cumuls_annuels.total_retenues],
+    ["Net à payer", data.net_a_payer, data.cumuls_annuels.net_a_payer],
+    ["Charges patronales", data.total_charges_patronales, data.cumuls_annuels.total_charges_patronales],
+  ];
+  const sx = [pad + 3, pad + 94, pad + innerW - 3];
+  pdf.setFillColor(246, 246, 246);
+  pdf.rect(pad, y, innerW, 6.5, "F");
+  pdf.setTextColor(80, 80, 80);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7.5);
+  pdf.text("Indicateur", sx[0], y + 4.4);
+  pdf.text("Mois", sx[1], y + 4.4, { align: "right" });
+  pdf.text("Cumul annuel", sx[2], y + 4.4, { align: "right" });
+  y += 6.5;
+  synthese.forEach(([libelle, mensuel, cumul]) => {
+    pdf.setDrawColor(226, 226, 226);
+    pdf.line(pad, y + 5.6, pad + innerW, y + 5.6);
+    pdf.setTextColor(45, 45, 45);
+    pdf.setFont("helvetica", libelle === "Net à payer" ? "bold" : "normal");
+    pdf.setFontSize(7.8);
+    pdf.text(libelle, sx[0], y + 4);
+    pdf.text(num(mensuel), sx[1], y + 4, { align: "right" });
+    pdf.text(num(cumul), sx[2], y + 4, { align: "right" });
+    y += 5.6;
+  });
+
+  // ---------- Paiement et signatures ----------
+  y += 3;
+  pdf.setDrawColor(190, 190, 190);
+  pdf.rect(pad, y, innerW, 23);
+  pdf.line(W / 2, y, W / 2, y + 23);
+  pdf.setTextColor(70, 70, 70);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7.5);
+  pdf.text("SIGNATURE DU SALARIÉ", pad + innerW / 4, y + 5, { align: "center" });
+  pdf.text("CACHET ET SIGNATURE DE L'EMPLOYEUR", W / 2 + innerW / 4, y + 5, { align: "center" });
+  pdf.setFont("helvetica", "normal");
+  pdf.text(`Salaire payé le : ${dateFr(data.date_paiement)}`, W / 2 + 4, y + 11);
 
   // ---------- Filigrane brouillon ----------
   const statut = data.statut === "valide" || data.statut === "paye" ? data.statut : "brouillon";
