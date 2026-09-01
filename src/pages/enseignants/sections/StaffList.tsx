@@ -326,13 +326,20 @@ export default function StaffList() {
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
             </DialogTrigger>
-            <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl p-0 overflow-hidden">
-              <DialogHeader className="border-b px-6 py-5">
-                <DialogTitle>Nouveau membre du personnel</DialogTitle>
-                <DialogDescription>Renseignez d’abord les informations essentielles. Les autres champs restent facultatifs.</DialogDescription>
+            <DialogContent className="w-[96vw] max-w-6xl gap-0 overflow-hidden p-0">
+              <DialogHeader className="border-b bg-gradient-to-r from-primary/10 via-background to-accent/10 px-6 py-4">
+                <DialogTitle className="flex items-center gap-2 text-xl">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                    <UserPlus className="h-5 w-5" />
+                  </span>
+                  Nouveau membre du personnel
+                </DialogTitle>
+                <DialogDescription>Une fiche complète, organisée pour une saisie rapide sur un seul écran.</DialogDescription>
               </DialogHeader>
-              <div className="max-h-[75vh] space-y-6 overflow-y-auto px-6 py-5">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div className="max-h-[calc(100vh-9rem)] overflow-y-auto px-6 py-4 xl:overflow-visible">
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+                <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                   <SectionHeading>Identité</SectionHeading>
                   <FormField label="Nom" required><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} autoFocus /></FormField>
                   <FormField label="Prénom" required><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FormField>
@@ -345,15 +352,19 @@ export default function StaffList() {
                       </SelectContent>
                     </Select>
                   </FormField>
-                </div>
+                  </div>
+                </section>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-2">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <SectionHeading>Contact</SectionHeading>
                   <FormField label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FormField>
                   <FormField label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FormField>
-                </div>
+                  </div>
+                </section>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <SectionHeading>Poste &amp; affectation</SectionHeading>
                   <FormField label="Département">
                     <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
@@ -364,16 +375,18 @@ export default function StaffList() {
                     </Select>
                   </FormField>
                   <FormField label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FormField>
-                  <FormField label="Fonction" hint="Précision propre à votre organisation (ex. responsabilité particulière).">
-                    <Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} />
+                  <FormField label="Fonction">
+                    <Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} placeholder="Ex. Responsable de niveau" />
                   </FormField>
-                  <FormField label="Service" hint="Unité ou équipe de rattachement.">
-                    <Input value={form.service} onChange={(e) => set("service", e.target.value)} />
+                  <FormField label="Service">
+                    <Input value={form.service} onChange={(e) => set("service", e.target.value)} placeholder="Ex. Pédagogie" />
                   </FormField>
-                </div>
+                  </div>
+                </section>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <SectionHeading>Contrat</SectionHeading>
+                <section className="rounded-xl border bg-card p-4 shadow-sm lg:col-span-4">
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <SectionHeading>Contrat &amp; qualification</SectionHeading>
                   <FormField label="Type de contrat">
                     <Select value={form.type_contrat} onValueChange={(v) => set("type_contrat", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -386,15 +399,13 @@ export default function StaffList() {
                   </FormField>
                   <FormField label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FormField>
                   <FormField label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FormField>
-                </div>
+                  <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FormField>
+                  </div>
+                </section>
 
-                <Collapsible open={showMoreNew} onOpenChange={setShowMoreNew}>
-                  <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors">
-                    <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showMoreNew ? "rotate-90" : ""}`} />
-                    Informations complémentaires (facultatif)
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
-                    <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FormField>
+                <section className="rounded-xl border bg-muted/20 p-4 lg:col-span-4">
+                  <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <SectionHeading>Informations complémentaires</SectionHeading>
                     <FormField label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FormField>
                     <FormField label="Situation matrimoniale">
                       <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
@@ -405,24 +416,25 @@ export default function StaffList() {
                     </Select>
                     </FormField>
                     <FormField label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FormField>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <div className="flex items-center justify-between rounded-md border bg-muted/30 p-3">
-                  <div className="flex items-start gap-2">
-                    <UserPlus className="h-4 w-4 text-primary mt-0.5" />
+                    <div className="flex h-10 items-center justify-between rounded-lg border bg-background px-3">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-primary" />
                     <div>
-                      <Label className="cursor-pointer text-sm">Créer un compte utilisateur</Label>
-                      <p className="text-xs text-muted-foreground">
-                        Un lien d'invitation sera envoyé par email + SMS pour qu'il définisse son mot de passe.
-                      </p>
+                        <Label className="cursor-pointer text-sm">Créer un compte</Label>
+                        <p className="text-[11px] text-muted-foreground">Invitation email/SMS</p>
                     </div>
                   </div>
                   <Switch checked={createAccount} onCheckedChange={setCreateAccount} />
                 </div>
-                <Button className="w-full" onClick={handleAdd} disabled={saving}>
+                  </div>
+                </section>
+                </div>
+                <div className="mt-4 flex justify-end gap-3 border-t pt-4">
+                <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>Annuler</Button>
+                <Button className="min-w-56" onClick={handleAdd} disabled={saving}>
                   {saving && <Loader2 className="h-4 w-4 animate-spin" />} {saving ? "Enregistrement…" : "Enregistrer le membre"}
                 </Button>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
