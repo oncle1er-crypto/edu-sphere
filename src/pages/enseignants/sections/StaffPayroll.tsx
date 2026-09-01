@@ -459,7 +459,7 @@ export default function StaffPayroll() {
                                 <ConfirmButton
                                   size="sm"
                                   variant="ghost"
-                                  tone="destructive"
+                                  tone="danger"
                                   confirmTitle="Supprimer ce bulletin ?"
                                   confirmDescription="Le bulletin brouillon et ses lignes de calcul seront définitivement supprimés. Vous pourrez le régénérer ensuite."
                                   confirmLabel="Supprimer"
