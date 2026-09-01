@@ -29,8 +29,8 @@ test.describe('RLS — isolation entre écoles', () => {
       module_key: 'enseignants',
       can_view: true,
       can_create: true,
-      can_update: false,
-      can_delete: false,
+      can_update: true,
+      can_delete: true,
       can_export: false,
     });
 
@@ -43,11 +43,23 @@ test.describe('RLS — isolation entre écoles', () => {
       expect(ownSchool.ok(), `la création autorisée a échoué : ${await ownSchool.text()}`).toBeTruthy();
       enseignantId = (await ownSchool.json())[0]?.id;
 
+      const updateOwn = await request.patch(`${SUPABASE_URL}/rest/v1/enseignants?id=eq.${enseignantId}`, {
+        headers: { apikey: ANON_KEY!, Authorization: `Bearer ${secretaire.jwt}`, 'Content-Type': 'application/json' },
+        data: { poste: 'Enseignante titulaire' },
+      });
+      expect(updateOwn.ok(), `la modification autorisée a échoué : ${await updateOwn.text()}`).toBeTruthy();
+
       const otherSchool = await request.post(`${SUPABASE_URL}/rest/v1/enseignants`, {
         headers: { apikey: ANON_KEY!, Authorization: `Bearer ${secretaire.jwt}`, 'Content-Type': 'application/json' },
         data: { ecole_id: ecoleB.ecoleId, matricule: `ENS-BLOCK-${Date.now()}`, nom: 'INTRUSION', prenom: 'Test', statut: 'actif' },
       });
       expect(otherSchool.ok(), 'la permission ne doit jamais permettre une création dans une autre école').toBeFalsy();
+
+      const deleteOwn = await request.delete(`${SUPABASE_URL}/rest/v1/enseignants?id=eq.${enseignantId}`, {
+        headers: { apikey: ANON_KEY!, Authorization: `Bearer ${secretaire.jwt}` },
+      });
+      expect(deleteOwn.ok(), `la suppression autorisée a échoué : ${await deleteOwn.text()}`).toBeTruthy();
+      enseignantId = undefined;
     } finally {
       if (enseignantId) await adminDelete(request, 'enseignants', 'id', enseignantId);
       await adminDelete(request, 'user_permissions', 'user_id', secretaire.userId);
