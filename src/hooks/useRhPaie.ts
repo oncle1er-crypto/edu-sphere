@@ -88,11 +88,12 @@ export interface BulletinPaieRh {
 }
 
 const ERREURS: Record<string, string> = {
-  not_authorized: "Réservé aux administrateurs et directeurs",
+  not_authorized: "Action non autorisée pour votre rôle",
   bulletin_non_valide: "Validez le bulletin avant de le payer",
   bulletin_deja_paye: "Ce bulletin est déjà payé",
   bulletin_introuvable: "Bulletin introuvable",
   bulletin_deja_valide: "Ce bulletin est déjà validé : impossible de le supprimer",
+  bulletin_non_supprimable: "Seul un bulletin en brouillon peut être supprimé",
   not_authenticated: "Session expirée, reconnectez-vous",
 };
 
