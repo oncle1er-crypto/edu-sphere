@@ -452,9 +452,24 @@ export default function StaffPayroll() {
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-1 flex-wrap">
                             {st === "brouillon" && (
-                              <Button size="sm" variant="ghost" onClick={() => validerBulletin(b.id)}>
-                                <BadgeCheck className="h-4 w-4" />Valider
-                              </Button>
+                              <>
+                                <Button size="sm" variant="ghost" onClick={() => validerBulletin(b.id)}>
+                                  <BadgeCheck className="h-4 w-4" />Valider
+                                </Button>
+                                <ConfirmButton
+                                  size="sm"
+                                  variant="ghost"
+                                  tone="destructive"
+                                  confirmTitle="Supprimer ce bulletin ?"
+                                  confirmDescription="Le bulletin brouillon et ses lignes de calcul seront définitivement supprimés. Vous pourrez le régénérer ensuite."
+                                  confirmLabel="Supprimer"
+                                  onConfirm={async () => {
+                                    await supprimerBulletin(b.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />Supprimer
+                                </ConfirmButton>
+                              </>
                             )}
                             {st === "valide" && (
                               <ConfirmButton
