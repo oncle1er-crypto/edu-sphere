@@ -19,6 +19,44 @@ import {
 test.skip(!SUPABASE_TESTS_READY, SUPABASE_TESTS_SKIP_REASON);
 
 test.describe('RLS — isolation entre écoles', () => {
+  test('une secrétaire autorisée peut créer un enseignant uniquement dans son école', async ({ request }) => {
+    const ecoleA = await createEcoleFixture(request);
+    const ecoleB = await createEcoleFixture(request);
+    const secretaire = await createTestUser(request, ecoleA.ecoleId, 'secretaire');
+    await adminInsert(request, 'user_permissions', {
+      user_id: secretaire.userId,
+      ecole_id: ecoleA.ecoleId,
+      module_key: 'enseignants',
+      can_view: true,
+      can_create: true,
+      can_update: false,
+      can_delete: false,
+      can_export: false,
+    });
+
+    let enseignantId: string | undefined;
+    try {
+      const ownSchool = await request.post(`${SUPABASE_URL}/rest/v1/enseignants`, {
+        headers: { apikey: ANON_KEY!, Authorization: `Bearer ${secretaire.jwt}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+        data: { ecole_id: ecoleA.ecoleId, matricule: `ENS-RLS-${Date.now()}`, nom: 'KONE', prenom: 'Awa', statut: 'actif' },
+      });
+      expect(ownSchool.ok(), `la création autorisée a échoué : ${await ownSchool.text()}`).toBeTruthy();
+      enseignantId = (await ownSchool.json())[0]?.id;
+
+      const otherSchool = await request.post(`${SUPABASE_URL}/rest/v1/enseignants`, {
+        headers: { apikey: ANON_KEY!, Authorization: `Bearer ${secretaire.jwt}`, 'Content-Type': 'application/json' },
+        data: { ecole_id: ecoleB.ecoleId, matricule: `ENS-BLOCK-${Date.now()}`, nom: 'INTRUSION', prenom: 'Test', statut: 'actif' },
+      });
+      expect(otherSchool.ok(), 'la permission ne doit jamais permettre une création dans une autre école').toBeFalsy();
+    } finally {
+      if (enseignantId) await adminDelete(request, 'enseignants', 'id', enseignantId);
+      await adminDelete(request, 'user_permissions', 'user_id', secretaire.userId);
+      await deleteTestUser(request, secretaire.userId);
+      await deleteEcoleFixture(request, ecoleA);
+      await deleteEcoleFixture(request, ecoleB);
+    }
+  });
+
   test('un admin d\'école A ne peut pas LIRE les élèves de l\'école B', async ({ request }) => {
     const ecoleA = await createEcoleFixture(request);
     const ecoleB = await createEcoleFixture(request);
