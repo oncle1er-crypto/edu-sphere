@@ -49,7 +49,7 @@ export default function StaffPayroll() {
   const [annee, setAnnee] = useState(now.getFullYear());
   const {
     bulletins: bulletinsRaw, loading, apercu, genererBrouillons, validerBulletin, payerBulletin,
-    lignesBulletin, refetch,
+    supprimerBulletin, lignesBulletin, refetch,
   } = useRhPaie(mois, annee);
   const { addBulletin } = useBulletinsPaie(mois, annee);
   const { enseignants } = useEnseignants();
