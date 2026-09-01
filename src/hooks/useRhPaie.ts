@@ -238,7 +238,7 @@ export function useRhPaie(mois: number, annee: number) {
         toast.error(traduire(res?.erreur));
         return false;
       }
-      toast.success("Bulletin validé");
+      toast.success("Bulletin validé et pris en compte dans le bilan comptable");
       await fetchBulletins();
       return true;
     },
