@@ -12,7 +12,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import {
   Wallet, Download, Loader2, Plus, CheckCircle2, BadgeCheck, FileText,
-  ChevronDown, ChevronRight, CalendarClock,
+  ChevronDown, ChevronRight, CalendarClock, Trash2, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
