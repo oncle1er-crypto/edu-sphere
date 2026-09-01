@@ -314,6 +314,7 @@ export function useRhPaie(mois: number, annee: number) {
     genererBrouillons,
     validerBulletin,
     payerBulletin,
+    supprimerBulletin,
     lignesBulletin,
   };
 }
