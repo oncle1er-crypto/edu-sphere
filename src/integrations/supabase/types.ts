@@ -8469,6 +8469,7 @@ export type Database = {
         Args: { _bulletin_id: string; _date_paiement?: string }
         Returns: Json
       }
+      rh_supprimer_bulletin: { Args: { _bulletin_id: string }; Returns: Json }
       rh_valider_bulletin: { Args: { _bulletin_id: string }; Returns: Json }
       seed_role_permissions_for_ecole: {
         Args: { _ecole_id: string }

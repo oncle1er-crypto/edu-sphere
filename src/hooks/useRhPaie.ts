@@ -92,6 +92,8 @@ const ERREURS: Record<string, string> = {
   bulletin_non_valide: "Validez le bulletin avant de le payer",
   bulletin_deja_paye: "Ce bulletin est déjà payé",
   bulletin_introuvable: "Bulletin introuvable",
+  bulletin_deja_valide: "Ce bulletin est déjà validé : impossible de le supprimer",
+  not_authenticated: "Session expirée, reconnectez-vous",
 };
 
 function traduire(code?: string | null) {
@@ -264,6 +266,25 @@ export function useRhPaie(mois: number, annee: number) {
     [fetchBulletins],
   );
 
+  const supprimerBulletin = useCallback(
+    async (id: string) => {
+      const { data, error } = await supabase.rpc("rh_supprimer_bulletin", { _bulletin_id: id });
+      if (error) {
+        toast.error(messageErreurBase(error));
+        return false;
+      }
+      const res = data as unknown as { ok: boolean; erreur?: string };
+      if (!res?.ok) {
+        toast.error(traduire(res?.erreur));
+        return false;
+      }
+      toast.success("Bulletin supprimé");
+      await fetchBulletins();
+      return true;
+    },
+    [fetchBulletins],
+  );
+
   const lignesBulletin = useCallback(async (bulletinId: string): Promise<RhBulletinLigne[]> => {
     const { data, error } = await supabase
       .from("rh_bulletin_lignes")
@@ -293,6 +314,7 @@ export function useRhPaie(mois: number, annee: number) {
     genererBrouillons,
     validerBulletin,
     payerBulletin,
+    supprimerBulletin,
     lignesBulletin,
   };
 }

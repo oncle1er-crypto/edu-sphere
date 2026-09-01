@@ -12,7 +12,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import {
   Wallet, Download, Loader2, Plus, CheckCircle2, BadgeCheck, FileText,
-  ChevronDown, ChevronRight, CalendarClock,
+  ChevronDown, ChevronRight, CalendarClock, Trash2, Sparkles,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
@@ -49,7 +49,7 @@ export default function StaffPayroll() {
   const [annee, setAnnee] = useState(now.getFullYear());
   const {
     bulletins: bulletinsRaw, loading, apercu, genererBrouillons, validerBulletin, payerBulletin,
-    lignesBulletin, refetch,
+    supprimerBulletin, lignesBulletin, refetch,
   } = useRhPaie(mois, annee);
   const { addBulletin } = useBulletinsPaie(mois, annee);
   const { enseignants } = useEnseignants();
@@ -66,6 +66,7 @@ export default function StaffPayroll() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lignes, setLignes] = useState<Record<string, RhBulletinLigne[]>>({});
   const [pdfBusy, setPdfBusy] = useState<string | null>(null);
+  const [autoBusy, setAutoBusy] = useState(false);
   const [form, setForm] = useState({ enseignant_id: "", salaire_brut: "", retenues: "" });
 
   const kpis = useMemo(() => ({
@@ -105,6 +106,28 @@ export default function StaffPayroll() {
     setForm({ enseignant_id: "", salaire_brut: "", retenues: "" });
     setOpen(false);
     refetch();
+  };
+
+  // Génération automatique : tous les calculs sont faits côté serveur
+  // (rh_calculer_bulletin) à partir des données du personnel — aucun calcul local.
+  const genererAuto = async () => {
+    setAutoBusy(true);
+    try {
+      const res = await apercu(mois, annee);
+      if (!res) return;
+      if (res.prets === 0) {
+        toast.info(
+          res.deja_crees > 0
+            ? "Tous les bulletins de ce mois sont déjà créés"
+            : "Aucun bulletin à générer : vérifiez les salaires du personnel",
+          { description: res.a_corriger > 0 ? `${res.a_corriger} dossier(s) à corriger` : undefined },
+        );
+        return;
+      }
+      await genererBrouillons(mois, annee);
+    } finally {
+      setAutoBusy(false);
+    }
   };
 
   const exporter = () => {
@@ -337,6 +360,14 @@ export default function StaffPayroll() {
             <Button variant="outline" size="sm" onClick={exporter}>
               <Download className="h-4 w-4" />Tout exporter
             </Button>
+            <Button variant="outline" size="sm" onClick={genererAuto} disabled={autoBusy}>
+              {autoBusy ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="h-4 w-4" />
+              )}
+              Générer automatiquement
+            </Button>
             <Button size="sm" onClick={() => setPrepareOpen(true)}>
               <CalendarClock className="h-4 w-4" />Fiches de paie du mois
             </Button>
@@ -421,9 +452,24 @@ export default function StaffPayroll() {
                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex justify-end gap-1 flex-wrap">
                             {st === "brouillon" && (
-                              <Button size="sm" variant="ghost" onClick={() => validerBulletin(b.id)}>
-                                <BadgeCheck className="h-4 w-4" />Valider
-                              </Button>
+                              <>
+                                <Button size="sm" variant="ghost" onClick={() => validerBulletin(b.id)}>
+                                  <BadgeCheck className="h-4 w-4" />Valider
+                                </Button>
+                                <ConfirmButton
+                                  size="sm"
+                                  variant="ghost"
+                                  tone="destructive"
+                                  confirmTitle="Supprimer ce bulletin ?"
+                                  confirmDescription="Le bulletin brouillon et ses lignes de calcul seront définitivement supprimés. Vous pourrez le régénérer ensuite."
+                                  confirmLabel="Supprimer"
+                                  onConfirm={async () => {
+                                    await supprimerBulletin(b.id);
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />Supprimer
+                                </ConfirmButton>
+                              </>
                             )}
                             {st === "valide" && (
                               <ConfirmButton
