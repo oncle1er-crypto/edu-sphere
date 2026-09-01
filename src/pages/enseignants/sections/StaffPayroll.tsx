@@ -66,6 +66,7 @@ export default function StaffPayroll() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lignes, setLignes] = useState<Record<string, RhBulletinLigne[]>>({});
   const [pdfBusy, setPdfBusy] = useState<string | null>(null);
+  const [autoBusy, setAutoBusy] = useState(false);
   const [form, setForm] = useState({ enseignant_id: "", salaire_brut: "", retenues: "" });
 
   const kpis = useMemo(() => ({
