@@ -78,6 +78,14 @@ const pct = (t: number | null) =>
   t === null || t === undefined ? DASH : `${String(Number(t)).replace(".", ",")} %`;
 const dateFr = (date?: string | null) =>
   date ? new Date(`${date.slice(0, 10)}T12:00:00Z`).toLocaleDateString("fr-FR", { timeZone: "UTC" }) : DASH;
+const libelleDepartement = (departement?: string | null) => {
+  if (!departement) return DASH;
+  const normalise = departement.trim().toLowerCase();
+  if (normalise === "enseignant" || normalise === "enseignement") return "Enseignement";
+  return departement
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\p{L}/gu, (lettre) => lettre.toUpperCase());
+};
 
 async function loadImage(url: string): Promise<{ data: string; w: number; h: number } | null> {
   try {
@@ -167,7 +175,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     ["Matricule", val(s.matricule)],
     ["Poste", val(s.poste)],
     ["Type de contrat", val(s.type_contrat)],
-    ["Département", val(s.departement)],
+    ["Département", libelleDepartement(s.departement)],
     [
       "Date d'embauche",
       s.date_embauche ? new Date(s.date_embauche).toLocaleDateString("fr-FR") : DASH,
@@ -213,21 +221,24 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
   y += 6.5;
 
   pdf.setFillColor(246, 246, 246);
-  pdf.rect(pad, y, innerW, 6.2, "F");
+  pdf.rect(pad, y, innerW, 8, "F");
   pdf.setTextColor(75, 75, 75);
-  pdf.setFontSize(7);
-  pdf.text("Désignation", cols.libelle, y + 4.2);
-  pdf.text("Base", cols.base, y + 4.2, { align: "right" });
-  pdf.text("Taux", cols.taux, y + 4.2, { align: "right" });
-  pdf.text("Gain", cols.gain, y + 4.2, { align: "right" });
-  pdf.text("Retenue", cols.retenue, y + 4.2, { align: "right" });
-  pdf.text("Employeur", cols.patronale, y + 4.2, { align: "right" });
-  y += 6.2;
+  pdf.setFontSize(6.8);
+  pdf.text("Désignation", cols.libelle, y + 4.8);
+  pdf.text("Base", cols.base, y + 4.8, { align: "right" });
+  pdf.text("Taux", cols.taux, y + 4.8, { align: "right" });
+  pdf.text(["Gain", "salarié"], cols.gain, y + 3.1, { align: "right", lineHeightFactor: 0.9 });
+  pdf.text(["Retenue", "salarié"], cols.retenue, y + 3.1, { align: "right", lineHeightFactor: 0.9 });
+  pdf.text(["Charge", "employeur"], cols.patronale, y + 3.1, { align: "right", lineHeightFactor: 0.9 });
+  y += 8;
 
   pdf.setTextColor(35, 35, 35);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(7.4);
-  data.lignes.forEach((ligne) => {
+  const ordreTypes: Record<string, number> = { gain: 0, retenue: 1, charge_patronale: 2 };
+  [...data.lignes]
+    .sort((a, b) => (ordreTypes[a.type] ?? 9) - (ordreTypes[b.type] ?? 9))
+    .forEach((ligne) => {
     y += 4.7;
     pdf.setDrawColor(232, 232, 232);
     pdf.line(pad, y + 1.5, pad + innerW, y + 1.5);
@@ -237,7 +248,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     pdf.text(ligne.type === "gain" ? num(ligne.montant) : DASH, cols.gain, y, { align: "right" });
     pdf.text(ligne.type === "retenue" ? num(ligne.montant) : DASH, cols.retenue, y, { align: "right" });
     pdf.text(ligne.type === "charge_patronale" ? num(ligne.montant) : DASH, cols.patronale, y, { align: "right" });
-  });
+    });
   y += 3;
   pdf.setFillColor(238, 238, 238);
   pdf.rect(pad, y, innerW, 7, "F");

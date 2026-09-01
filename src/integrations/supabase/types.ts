@@ -799,6 +799,7 @@ export type Database = {
           cout_employeur: number
           created_at: string
           date_paiement: string | null
+          depense_charges_id: string | null
           depense_id: string | null
           ecole_id: string
           enseignant_id: string
@@ -823,6 +824,7 @@ export type Database = {
           cout_employeur?: number
           created_at?: string
           date_paiement?: string | null
+          depense_charges_id?: string | null
           depense_id?: string | null
           ecole_id: string
           enseignant_id: string
@@ -847,6 +849,7 @@ export type Database = {
           cout_employeur?: number
           created_at?: string
           date_paiement?: string | null
+          depense_charges_id?: string | null
           depense_id?: string | null
           ecole_id?: string
           enseignant_id?: string
@@ -864,6 +867,20 @@ export type Database = {
           valide_par?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "bulletins_paie_depense_charges_id_fkey"
+            columns: ["depense_charges_id"]
+            isOneToOne: false
+            referencedRelation: "depenses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bulletins_paie_depense_id_fkey"
+            columns: ["depense_id"]
+            isOneToOne: false
+            referencedRelation: "depenses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "bulletins_paie_enseignant_id_fkey"
             columns: ["enseignant_id"]

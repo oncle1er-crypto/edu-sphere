@@ -77,7 +77,7 @@ export default function StaffPayroll() {
   }), [bulletins]);
 
   const anneesOptions = useMemo(() => {
-    const y = now.getFullYear();
+    const y = new Date().getFullYear();
     return [y - 2, y - 1, y, y + 1];
   }, []);
 
@@ -179,7 +179,7 @@ export default function StaffPayroll() {
       }
       const { data: p, error } = await supabase
         .from("enseignants")
-        .select("nom, prenom, matricule, poste, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales, type_contrat")
+        .select("nom, prenom, matricule, poste, fonction, service, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales, type_contrat")
         .eq("id", enseignantId)
         .maybeSingle();
       if (error) { toast.error(messageErreurBase(error)); return; }
@@ -215,8 +215,8 @@ export default function StaffPayroll() {
           nom: p?.nom ?? "—",
           prenom: p?.prenom ?? "—",
           matricule: p?.matricule ?? null,
-          poste: p?.poste ?? p?.specialite ?? null,
-          departement: p?.departement ?? null,
+          poste: p?.poste ?? p?.fonction ?? p?.specialite ?? null,
+          departement: p?.service ?? p?.departement ?? null,
           date_embauche: p?.date_embauche ?? null,
           numero_cnps: p?.numero_cnps ?? null,
           numero_cmu: p?.numero_cmu ?? null,
@@ -477,7 +477,7 @@ export default function StaffPayroll() {
                                 variant="ghost"
                                 tone="warning"
                                 confirmTitle="Marquer ce bulletin comme payé ?"
-                                confirmDescription="Deux dépenses comptables seront automatiquement créées : le net versé et les charges patronales. Cette action est définitive."
+                                confirmDescription="Les écritures ont déjà été créées lors de la validation. Cette action enregistre uniquement la date réelle du paiement et ne double pas les sorties comptables."
                                 confirmLabel="Marquer payé"
                                 onConfirm={async () => {
                                   await payerBulletin(b.id, new Date().toISOString().slice(0, 10));
