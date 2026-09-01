@@ -49,7 +49,7 @@ export async function adminSelect(request: APIRequestContext, table: string, que
 export async function createTestUser(
   request: APIRequestContext,
   ecoleId: string,
-  role: 'admin' | 'directeur' | 'comptable' | 'enseignant' = 'admin'
+  role: 'admin' | 'directeur' | 'comptable' | 'enseignant' | 'secretaire' = 'admin'
 ) {
   const email = `test-${randomUUID()}@test.local`;
   const password = 'TestSupabase2026!';
