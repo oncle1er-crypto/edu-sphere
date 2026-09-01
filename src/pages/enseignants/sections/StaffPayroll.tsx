@@ -22,6 +22,7 @@ import { useNiveau } from "@/context/NiveauContext";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import PreparePaieDialog from "../components/PreparePaieDialog";
 import { downloadBulletinPaiePDF } from "@/lib/generateBulletinPaiePDF";
+import { bornesMois, verifierCoherenceBulletin } from "@/lib/payrollBulletin";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 
@@ -138,12 +139,46 @@ export default function StaffPayroll() {
       if (!b) return;
       const detail = lignes[bulletinId] ?? (await lignesBulletin(bulletinId));
       setLignes((prev) => ({ ...prev, [bulletinId]: detail }));
+      const erreursCoherence = verifierCoherenceBulletin(detail, {
+        total_gains: b.total_gains,
+        total_retenues: b.retenues,
+        net_a_payer: b.net_a_payer,
+        total_charges_patronales: b.total_charges_patronales,
+        cout_employeur: b.cout_employeur,
+        brut_imposable: b.brut_imposable,
+        base_cnps: b.base_cnps,
+      });
+      if (erreursCoherence.length > 0) {
+        toast.error("Bulletin non imprimé : incohérence détectée", {
+          description: erreursCoherence.join(" "),
+        });
+        return;
+      }
       const { data: p, error } = await supabase
         .from("enseignants")
-        .select("nom, prenom, matricule, poste, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales")
+        .select("nom, prenom, matricule, poste, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales, type_contrat")
         .eq("id", enseignantId)
         .maybeSingle();
       if (error) { toast.error(messageErreurBase(error)); return; }
+      const { data: cumulsRows, error: cumulsError } = await supabase
+        .from("bulletins_paie")
+        .select("total_gains, brut_imposable, retenues, net_a_payer, base_cnps, total_charges_patronales")
+        .eq("enseignant_id", enseignantId)
+        .eq("annee", b.annee)
+        .lte("mois", b.mois);
+      if (cumulsError) { toast.error(messageErreurBase(cumulsError)); return; }
+      const cumuls = (cumulsRows ?? []).reduce((acc, row) => ({
+        total_gains: acc.total_gains + Number(row.total_gains ?? 0),
+        brut_imposable: acc.brut_imposable + Number(row.brut_imposable ?? 0),
+        total_retenues: acc.total_retenues + Number(row.retenues ?? 0),
+        net_a_payer: acc.net_a_payer + Number(row.net_a_payer ?? 0),
+        base_cnps: acc.base_cnps + Number(row.base_cnps ?? 0),
+        total_charges_patronales: acc.total_charges_patronales + Number(row.total_charges_patronales ?? 0),
+      }), {
+        total_gains: 0, brut_imposable: 0, total_retenues: 0,
+        net_a_payer: 0, base_cnps: 0, total_charges_patronales: 0,
+      });
+      const periode = bornesMois(b.mois, b.annee);
       await downloadBulletinPaiePDF({
         ecole: {
           nom: ecole?.nom ?? "École",
@@ -164,6 +199,7 @@ export default function StaffPayroll() {
           numero_cmu: p?.numero_cmu ?? null,
           parts_fiscales: p?.parts_fiscales ?? null,
           anciennete_annees: b.anciennete_annees,
+          type_contrat: p?.type_contrat ?? null,
         },
         mois: b.mois,
         annee: b.annee,
@@ -176,6 +212,12 @@ export default function StaffPayroll() {
         net_a_payer: b.net_a_payer,
         total_charges_patronales: b.total_charges_patronales,
         cout_employeur: b.cout_employeur,
+        brut_imposable: b.brut_imposable,
+        base_cnps: b.base_cnps,
+        date_paiement: b.date_paiement,
+        periode_debut: periode.debut,
+        periode_fin: periode.fin,
+        cumuls_annuels: cumuls,
       });
     } finally {
       setPdfBusy(null);
