@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { FieldRow } from "@/components/settings/SettingsSection";
 import { Users, Search, Plus, Download, Upload, MoreHorizontal, Loader2, List, LayoutGrid, Phone, Mail, GraduationCap, Briefcase, UserPlus, Send, CheckCircle2, ChevronRight } from "lucide-react";
@@ -55,9 +55,26 @@ type ViewMode = "list" | "grid";
  * Nouveau / Modifier membre du personnel (identité, contact, poste...). */
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
-    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground pt-1">
+    <p className="col-span-full border-b pb-2 text-xs font-semibold uppercase tracking-wide text-primary">
       {children}
     </p>
+  );
+}
+
+function FormField({ label, required, hint, children }: {
+  label: string;
+  required?: boolean;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label className="text-sm font-medium">
+        {label}{required && <span className="ml-1 text-destructive" aria-hidden="true">*</span>}
+      </Label>
+      {children}
+      {hint && <p className="text-xs leading-relaxed text-muted-foreground">{hint}</p>}
+    </div>
   );
 }
 
@@ -309,14 +326,17 @@ export default function StaffList() {
             <DialogTrigger asChild>
               <Button size="sm"><Plus className="h-4 w-4" />Nouveau</Button>
             </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Nouveau membre du personnel</DialogTitle></DialogHeader>
-              <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-                <div className="space-y-3">
+            <DialogContent className="w-[calc(100vw-2rem)] max-w-3xl p-0 overflow-hidden">
+              <DialogHeader className="border-b px-6 py-5">
+                <DialogTitle>Nouveau membre du personnel</DialogTitle>
+                <DialogDescription>Renseignez d’abord les informations essentielles. Les autres champs restent facultatifs.</DialogDescription>
+              </DialogHeader>
+              <div className="max-h-[75vh] space-y-6 overflow-y-auto px-6 py-5">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <SectionHeading>Identité</SectionHeading>
-                  <FieldRow label="Nom *"><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} autoFocus /></FieldRow>
-                  <FieldRow label="Prénom *"><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FieldRow>
-                  <FieldRow label="Sexe">
+                  <FormField label="Nom" required><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} autoFocus /></FormField>
+                  <FormField label="Prénom" required><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FormField>
+                  <FormField label="Sexe">
                     <Select value={form.sexe} onValueChange={(v) => set("sexe", v)}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                       <SelectContent>
@@ -324,37 +344,37 @@ export default function StaffList() {
                         <SelectItem value="M">Masculin</SelectItem>
                       </SelectContent>
                     </Select>
-                  </FieldRow>
+                  </FormField>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <SectionHeading>Contact</SectionHeading>
-                  <FieldRow label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FieldRow>
-                  <FieldRow label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FieldRow>
+                  <FormField label="Email"><Input type="email" value={form.email} onChange={(e) => set("email", e.target.value)} /></FormField>
+                  <FormField label="Téléphone"><Input value={form.telephone} onChange={(e) => set("telephone", e.target.value)} placeholder="+225" /></FormField>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <SectionHeading>Poste &amp; affectation</SectionHeading>
-                  <FieldRow label="Département">
+                  <FormField label="Département">
                     <Select value={form.departement} onValueChange={(v) => set("departement", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {departements.map((d) => <SelectItem key={d.id} value={d.code}>{d.libelle}</SelectItem>)}
                       </SelectContent>
                     </Select>
-                  </FieldRow>
-                  <FieldRow label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FieldRow>
-                  <FieldRow label="Fonction" hint="Facultatif — précision propre à votre organisation (ex. responsabilité particulière).">
+                  </FormField>
+                  <FormField label="Poste"><Input value={form.poste} onChange={(e) => set("poste", e.target.value)} placeholder="Ex. Enseignant, Secrétaire, Comptable" /></FormField>
+                  <FormField label="Fonction" hint="Précision propre à votre organisation (ex. responsabilité particulière).">
                     <Input value={form.fonction} onChange={(e) => set("fonction", e.target.value)} />
-                  </FieldRow>
-                  <FieldRow label="Service" hint="Facultatif — unité ou équipe de rattachement.">
+                  </FormField>
+                  <FormField label="Service" hint="Unité ou équipe de rattachement.">
                     <Input value={form.service} onChange={(e) => set("service", e.target.value)} />
-                  </FieldRow>
+                  </FormField>
                 </div>
 
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <SectionHeading>Contrat</SectionHeading>
-                  <FieldRow label="Type de contrat">
+                  <FormField label="Type de contrat">
                     <Select value={form.type_contrat} onValueChange={(v) => set("type_contrat", v)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -363,9 +383,9 @@ export default function StaffList() {
                         <SelectItem value="Vacataire">Vacataire</SelectItem>
                       </SelectContent>
                     </Select>
-                  </FieldRow>
-                  <FieldRow label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FieldRow>
-                  <FieldRow label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FieldRow>
+                  </FormField>
+                  <FormField label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FormField>
+                  <FormField label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FormField>
                 </div>
 
                 <Collapsible open={showMoreNew} onOpenChange={setShowMoreNew}>
@@ -373,18 +393,18 @@ export default function StaffList() {
                     <ChevronRight className={`h-3.5 w-3.5 transition-transform ${showMoreNew ? "rotate-90" : ""}`} />
                     Informations complémentaires (facultatif)
                   </CollapsibleTrigger>
-                  <CollapsibleContent className="space-y-3 pt-3">
-                    <FieldRow label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FieldRow>
-                    <FieldRow label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FieldRow>
-                    <FieldRow label="Situation matrimoniale">
+                  <CollapsibleContent className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
+                    <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FormField>
+                    <FormField label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FormField>
+                    <FormField label="Situation matrimoniale">
                       <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
                         <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                         <SelectContent>
                           {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
-                      </Select>
-                    </FieldRow>
-                    <FieldRow label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FieldRow>
+                    </Select>
+                    </FormField>
+                    <FormField label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FormField>
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -401,7 +421,7 @@ export default function StaffList() {
                   <Switch checked={createAccount} onCheckedChange={setCreateAccount} />
                 </div>
                 <Button className="w-full" onClick={handleAdd} disabled={saving}>
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />} Enregistrer
+                  {saving && <Loader2 className="h-4 w-4 animate-spin" />} {saving ? "Enregistrement…" : "Enregistrer le membre"}
                 </Button>
               </div>
             </DialogContent>
