@@ -108,6 +108,28 @@ export default function StaffPayroll() {
     refetch();
   };
 
+  // Génération automatique : tous les calculs sont faits côté serveur
+  // (rh_calculer_bulletin) à partir des données du personnel — aucun calcul local.
+  const genererAuto = async () => {
+    setAutoBusy(true);
+    try {
+      const res = await apercu(mois, annee);
+      if (!res) return;
+      if (res.prets === 0) {
+        toast.info(
+          res.deja_crees > 0
+            ? "Tous les bulletins de ce mois sont déjà créés"
+            : "Aucun bulletin à générer : vérifiez les salaires du personnel",
+          { description: res.a_corriger > 0 ? `${res.a_corriger} dossier(s) à corriger` : undefined },
+        );
+        return;
+      }
+      await genererBrouillons(mois, annee);
+    } finally {
+      setAutoBusy(false);
+    }
+  };
+
   const exporter = () => {
     if (bulletins.length === 0) {
       toast.error("Aucun bulletin à exporter");
