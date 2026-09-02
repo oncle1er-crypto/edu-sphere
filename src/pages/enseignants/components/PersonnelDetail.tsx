@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { calculerPartsFiscales, partsFiscalesValides } from "@/lib/fiscalParts";
 
 type Enseignant = Database["public"]["Tables"]["enseignants"]["Row"];
 type BulletinPaie = Database["public"]["Tables"]["bulletins_paie"]["Row"];
@@ -54,8 +55,10 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
   const [editOpen, setEditOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
+    date_embauche: "",
     numero_cnps: "",
     numero_cmu: "",
+    nombre_enfants_charge: "0",
     parts_fiscales: "1",
     banque: "",
     rib: "",
@@ -94,8 +97,10 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
 
   const openEdit = () => {
     setForm({
+      date_embauche: membre.date_embauche ?? "",
       numero_cnps: membre.numero_cnps ?? "",
       numero_cmu: membre.numero_cmu ?? "",
+      nombre_enfants_charge: String(membre.nombre_enfants_charge ?? 0),
       parts_fiscales: String(membre.parts_fiscales ?? 1),
       banque: membre.banque ?? "",
       rib: membre.rib ?? "",
@@ -105,14 +110,21 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
 
   const handleSave = async () => {
     const parts = Number(form.parts_fiscales.replace(",", "."));
-    if (!Number.isFinite(parts) || parts < 1 || parts > 5) {
-      toast.error("Les parts fiscales doivent être comprises entre 1 et 5");
+    const enfants = Number(form.nombre_enfants_charge);
+    if (!Number.isInteger(enfants) || enfants < 0 || enfants > 20) {
+      toast.error("Le nombre d'enfants à charge doit être un entier entre 0 et 20");
+      return;
+    }
+    if (!partsFiscalesValides(parts)) {
+      toast.error("Les parts fiscales doivent aller de 1 à 5, par pas de 0,5");
       return;
     }
     setSaving(true);
     const patch = {
+      date_embauche: form.date_embauche || null,
       numero_cnps: form.numero_cnps || null,
       numero_cmu: form.numero_cmu || null,
+      nombre_enfants_charge: enfants,
       parts_fiscales: parts,
       banque: form.banque || null,
       rib: form.rib || null,
@@ -128,6 +140,8 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
     setEditOpen(false);
     onUpdated?.();
   };
+
+  const contratActif = contrats.find((c) => c.statut === "actif");
 
   return (
     <div className="space-y-6">
@@ -202,8 +216,10 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
                   }
                 />
                 <InfoLine
-                  label="Salaire brut de base"
-                  value={membre.salaire_brut_base ? fcfa(membre.salaire_brut_base) : "—"}
+                  label="Salaire du contrat actif"
+                  value={contratActif?.salaire_base
+                    ? fcfa(contratActif.salaire_base)
+                    : "—"}
                 />
               </CardContent>
             </Card>
@@ -220,8 +236,10 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 <div>
+                  <InfoLine label="Statut CNPS" value={membre.numero_cnps ? "Numéro renseigné" : "Numéro en attente"} />
                   <InfoLine label="Numéro CNPS" value={dash(membre.numero_cnps)} />
                   <InfoLine label="Numéro CMU" value={dash(membre.numero_cmu)} />
+                  <InfoLine label="Enfants fiscalement à charge" value={dash(membre.nombre_enfants_charge)} />
                   <InfoLine label="Parts fiscales (IRPP)" value={dash(membre.parts_fiscales)} />
                 </div>
                 <div>
@@ -347,12 +365,36 @@ export default function PersonnelDetail({ personnel, onBack, onUpdated }: Props)
           </DialogHeader>
           <div className="space-y-3">
             <div className="space-y-1.5">
+              <Label>Date d'embauche</Label>
+              <Input type="date" value={form.date_embauche} onChange={(e) => setForm({ ...form, date_embauche: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Utilisée pour l'ancienneté affichée et calculée sur le bulletin.</p>
+            </div>
+            <div className="space-y-1.5">
               <Label>Numéro CNPS</Label>
               <Input value={form.numero_cnps} onChange={(e) => setForm({ ...form, numero_cnps: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Laissez vide si le numéro n'est pas encore attribué. Le bulletin restera générable avec une alerte.</p>
             </div>
             <div className="space-y-1.5">
               <Label>Numéro CMU</Label>
               <Input value={form.numero_cmu} onChange={(e) => setForm({ ...form, numero_cmu: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Enfants fiscalement à charge</Label>
+              <Input
+                type="number"
+                min={0}
+                max={20}
+                step={1}
+                value={form.nombre_enfants_charge}
+                onChange={(e) => {
+                  const nombre = e.target.value;
+                  setForm((p) => ({
+                    ...p,
+                    nombre_enfants_charge: nombre,
+                    parts_fiscales: String(calculerPartsFiscales(membre.situation_matrimoniale, membre.sexe, Number(nombre))),
+                  }));
+                }}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>Parts fiscales (IRPP)</Label>

@@ -22,6 +22,7 @@ import { useRhReferentiels } from "@/hooks/useRhReferentiels";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { exportRowsCSV, exportRowsPDF, exportRowsXLSX, type ExportPayload } from "@/lib/reports/exporters";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import { calculerPartsFiscales, partsFiscalesValides } from "@/lib/fiscalParts";
 
 const SITUATIONS = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve"];
 
@@ -94,7 +95,7 @@ export default function StaffList() {
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "",
     poste: "", service: "", fonction: "", departement: "enseignant",
     nationalite: "Ivoirienne", situation_matrimoniale: "", personne_a_prevenir: "",
-    salaire_brut_base: "",
+    date_embauche: "", numero_cnps: "", nombre_enfants_charge: "0", parts_fiscales: "1",
   });
   const [createAccount, setCreateAccount] = useState(true);
   const [invitingId, setInvitingId] = useState<string | null>(null);
@@ -104,7 +105,7 @@ export default function StaffList() {
     email: "", telephone: "", specialite: "", type_contrat: "CDI", diplome: "", statut: "actif",
     poste: "", service: "", fonction: "", departement: "enseignant",
     nationalite: "", situation_matrimoniale: "", personne_a_prevenir: "",
-    salaire_brut_base: "",
+    date_embauche: "", numero_cnps: "", nombre_enfants_charge: "0", parts_fiscales: "1",
   });
   const [savingEdit, setSavingEdit] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
@@ -121,13 +122,25 @@ export default function StaffList() {
       departement: s.departement ?? "enseignant",
       nationalite: s.nationalite ?? "", situation_matrimoniale: s.situation_matrimoniale ?? "",
       personne_a_prevenir: s.personne_a_prevenir ?? "",
-      salaire_brut_base: s.salaire_brut_base ? String(s.salaire_brut_base) : "",
+      date_embauche: s.date_embauche ?? "", numero_cnps: s.numero_cnps ?? "",
+      nombre_enfants_charge: String(s.nombre_enfants_charge ?? 0),
+      parts_fiscales: String(s.parts_fiscales ?? 1),
     });
   };
 
   const handleSaveEdit = async () => {
     if (!editEnseignant) return;
     if (!editForm.nom || !editForm.prenom) { toast.error("Nom et prénom obligatoires"); return; }
+    const parts = Number(editForm.parts_fiscales.replace(",", "."));
+    const enfants = Number(editForm.nombre_enfants_charge);
+    if (!Number.isInteger(enfants) || enfants < 0 || enfants > 20) {
+      toast.error("Le nombre d'enfants à charge doit être un entier entre 0 et 20");
+      return;
+    }
+    if (!partsFiscalesValides(parts)) {
+      toast.error("Les parts fiscales doivent aller de 1 à 5, par pas de 0,5");
+      return;
+    }
     setSavingEdit(true);
     const ok = await updateEnseignant(editEnseignant.id, {
       nom: editForm.nom,
@@ -146,13 +159,26 @@ export default function StaffList() {
       nationalite: editForm.nationalite || null,
       situation_matrimoniale: editForm.situation_matrimoniale || null,
       personne_a_prevenir: editForm.personne_a_prevenir || null,
-      salaire_brut_base: editForm.salaire_brut_base ? Number(editForm.salaire_brut_base) : 0,
+      date_embauche: editForm.date_embauche || null,
+      numero_cnps: editForm.numero_cnps.trim() || null,
+      nombre_enfants_charge: enfants,
+      parts_fiscales: parts,
     });
     setSavingEdit(false);
     if (ok) setEditEnseignant(null);
   };
 
   const set = (k: string, v: string) => setForm((p) => ({ ...p, [k]: v }));
+  const setSituation = (situation: string) => setForm((p) => ({
+    ...p,
+    situation_matrimoniale: situation,
+    parts_fiscales: String(calculerPartsFiscales(situation, p.sexe, Number(p.nombre_enfants_charge))),
+  }));
+  const setEnfants = (nombre: string) => setForm((p) => ({
+    ...p,
+    nombre_enfants_charge: nombre,
+    parts_fiscales: String(calculerPartsFiscales(p.situation_matrimoniale, p.sexe, Number(nombre))),
+  }));
 
   const filtered = enseignants.filter((s) => {
     const ms = `${s.nom} ${s.prenom} ${s.matricule ?? ""} ${s.specialite ?? ""}`.toLowerCase().includes(search.toLowerCase());
@@ -209,6 +235,16 @@ export default function StaffList() {
       toast.error("Email ou téléphone requis pour créer un compte");
       return;
     }
+    const parts = Number(form.parts_fiscales.replace(",", "."));
+    const enfants = Number(form.nombre_enfants_charge);
+    if (!Number.isInteger(enfants) || enfants < 0 || enfants > 20) {
+      toast.error("Le nombre d'enfants à charge doit être un entier entre 0 et 20");
+      return;
+    }
+    if (!partsFiscalesValides(parts)) {
+      toast.error("Les parts fiscales doivent aller de 1 à 5, par pas de 0,5");
+      return;
+    }
     setSaving(true);
     const year = new Date().getFullYear().toString().slice(-2);
     const rand = Math.floor(1000 + Math.random() * 9000);
@@ -229,7 +265,10 @@ export default function StaffList() {
       nationalite: form.nationalite || null,
       situation_matrimoniale: form.situation_matrimoniale || null,
       personne_a_prevenir: form.personne_a_prevenir || null,
-      salaire_brut_base: form.salaire_brut_base ? Number(form.salaire_brut_base) : 0,
+      date_embauche: form.date_embauche || null,
+      numero_cnps: form.numero_cnps.trim() || null,
+      nombre_enfants_charge: enfants,
+      parts_fiscales: parts,
       ecole_id: "",
     });
     // Le formulaire ne doit être réinitialisé et le dialogue fermé que si
@@ -254,7 +293,7 @@ export default function StaffList() {
         nom: "", prenom: "", sexe: "", email: "", telephone: "", specialite: "",
         type_contrat: "CDI", diplome: "", poste: "", service: "", fonction: "",
         departement: "enseignant", nationalite: "Ivoirienne", situation_matrimoniale: "",
-        personne_a_prevenir: "", salaire_brut_base: "",
+        personne_a_prevenir: "", date_embauche: "", numero_cnps: "", nombre_enfants_charge: "0", parts_fiscales: "1",
       });
       setOpen(false);
     }
@@ -396,7 +435,10 @@ export default function StaffList() {
                   <FormField label="Nom" required><Input value={form.nom} onChange={(e) => set("nom", e.target.value)} autoFocus /></FormField>
                   <FormField label="Prénom" required><Input value={form.prenom} onChange={(e) => set("prenom", e.target.value)} /></FormField>
                   <FormField label="Sexe">
-                    <Select value={form.sexe} onValueChange={(v) => set("sexe", v)}>
+                    <Select value={form.sexe} onValueChange={(v) => setForm((p) => ({
+                      ...p, sexe: v as "F" | "M",
+                      parts_fiscales: String(calculerPartsFiscales(p.situation_matrimoniale, v, Number(p.nombre_enfants_charge))),
+                    }))}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="F">Féminin</SelectItem>
@@ -451,21 +493,30 @@ export default function StaffList() {
                   </FormField>
                   <FormField label="Spécialité"><Input value={form.specialite} onChange={(e) => set("specialite", e.target.value)} /></FormField>
                   <FormField label="Diplôme"><Input value={form.diplome} onChange={(e) => set("diplome", e.target.value)} /></FormField>
-                  <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={form.salaire_brut_base} onChange={(e) => set("salaire_brut_base", e.target.value)} /></FormField>
+                  <FormField label="Date d'embauche"><Input type="date" value={form.date_embauche} onChange={(e) => set("date_embauche", e.target.value)} /></FormField>
                   </div>
                 </section>
 
                 <section className="rounded-xl border bg-muted/20 p-4 lg:col-span-4">
-                  <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     <SectionHeading>Informations complémentaires</SectionHeading>
                     <FormField label="Nationalité"><Input value={form.nationalite} onChange={(e) => set("nationalite", e.target.value)} /></FormField>
                     <FormField label="Situation matrimoniale">
-                      <Select value={form.situation_matrimoniale} onValueChange={(v) => set("situation_matrimoniale", v)}>
+                      <Select value={form.situation_matrimoniale} onValueChange={setSituation}>
                         <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                         <SelectContent>
                           {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                     </Select>
+                    </FormField>
+                    <FormField label="Enfants fiscalement à charge">
+                      <Input type="number" min={0} max={20} step={1} value={form.nombre_enfants_charge} onChange={(e) => setEnfants(e.target.value)} />
+                    </FormField>
+                    <FormField label="Parts fiscales" hint="De 1 à 5, par pas de 0,5 selon la situation familiale.">
+                      <Input type="number" min={1} max={5} step={0.5} value={form.parts_fiscales} onChange={(e) => set("parts_fiscales", e.target.value)} />
+                    </FormField>
+                    <FormField label="Numéro CNPS" hint="Laisser vide si le numéro n'est pas encore attribué.">
+                      <Input value={form.numero_cnps} onChange={(e) => set("numero_cnps", e.target.value)} />
                     </FormField>
                     <FormField label="Personne à prévenir"><Input value={form.personne_a_prevenir} onChange={(e) => set("personne_a_prevenir", e.target.value)} /></FormField>
                     <div className="flex h-10 items-center justify-between rounded-lg border bg-background px-3">
@@ -602,7 +653,10 @@ export default function StaffList() {
                   <FormField label="Nom" required><Input value={editForm.nom} onChange={(e) => setEditForm({ ...editForm, nom: e.target.value })} autoFocus /></FormField>
                   <FormField label="Prénom" required><Input value={editForm.prenom} onChange={(e) => setEditForm({ ...editForm, prenom: e.target.value })} /></FormField>
                   <FormField label="Sexe">
-                    <Select value={editForm.sexe} onValueChange={(v) => setEditForm({ ...editForm, sexe: v as any })}>
+                    <Select value={editForm.sexe} onValueChange={(v) => setEditForm((p) => ({
+                      ...p, sexe: v as "F" | "M",
+                      parts_fiscales: String(calculerPartsFiscales(p.situation_matrimoniale, v, Number(p.nombre_enfants_charge))),
+                    }))}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="F">Féminin</SelectItem>
@@ -653,6 +707,7 @@ export default function StaffList() {
                   </FormField>
                   <FormField label="Spécialité"><Input value={editForm.specialite} onChange={(e) => setEditForm({ ...editForm, specialite: e.target.value })} /></FormField>
                   <FormField label="Diplôme"><Input value={editForm.diplome} onChange={(e) => setEditForm({ ...editForm, diplome: e.target.value })} /></FormField>
+                  <FormField label="Date d'embauche"><Input type="date" value={editForm.date_embauche} onChange={(e) => setEditForm({ ...editForm, date_embauche: e.target.value })} /></FormField>
                   <FormField label="Statut">
                     <Select value={editForm.statut} onValueChange={(v) => setEditForm({ ...editForm, statut: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
@@ -667,17 +722,31 @@ export default function StaffList() {
               </section>
 
               <section className="rounded-xl border bg-muted/20 p-4 lg:col-span-4">
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <SectionHeading>Informations complémentaires</SectionHeading>
-                  <FormField label="Salaire brut de base (FCFA)"><Input type="number" min={0} value={editForm.salaire_brut_base} onChange={(e) => setEditForm({ ...editForm, salaire_brut_base: e.target.value })} /></FormField>
                   <FormField label="Nationalité"><Input value={editForm.nationalite} onChange={(e) => setEditForm({ ...editForm, nationalite: e.target.value })} /></FormField>
                   <FormField label="Situation matrimoniale">
-                    <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm({ ...editForm, situation_matrimoniale: v })}>
+                    <Select value={editForm.situation_matrimoniale} onValueChange={(v) => setEditForm((p) => ({
+                      ...p, situation_matrimoniale: v,
+                      parts_fiscales: String(calculerPartsFiscales(v, p.sexe, Number(p.nombre_enfants_charge))),
+                    }))}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                       <SelectContent>
                         {SITUATIONS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>
                     </Select>
+                  </FormField>
+                  <FormField label="Enfants fiscalement à charge">
+                    <Input type="number" min={0} max={20} step={1} value={editForm.nombre_enfants_charge} onChange={(e) => setEditForm((p) => ({
+                      ...p, nombre_enfants_charge: e.target.value,
+                      parts_fiscales: String(calculerPartsFiscales(p.situation_matrimoniale, p.sexe, Number(e.target.value))),
+                    }))} />
+                  </FormField>
+                  <FormField label="Parts fiscales" hint="De 1 à 5, par pas de 0,5.">
+                    <Input type="number" min={1} max={5} step={0.5} value={editForm.parts_fiscales} onChange={(e) => setEditForm({ ...editForm, parts_fiscales: e.target.value })} />
+                  </FormField>
+                  <FormField label="Numéro CNPS" hint="Vide si le numéro n'est pas encore attribué.">
+                    <Input value={editForm.numero_cnps} onChange={(e) => setEditForm({ ...editForm, numero_cnps: e.target.value })} />
                   </FormField>
                   <FormField label="Personne à prévenir"><Input value={editForm.personne_a_prevenir} onChange={(e) => setEditForm({ ...editForm, personne_a_prevenir: e.target.value })} /></FormField>
                 </div>
