@@ -8478,6 +8478,15 @@ export type Database = {
         Args: { _annee: number; _ecole_id: string; _mois: number }
         Returns: Json
       }
+      rh_generer_brouillons_selection: {
+        Args: {
+          _annee: number
+          _ecole_id: string
+          _mois: number
+          _personnel_ids: string[]
+        }
+        Returns: Json
+      }
       rh_masse_salariale_prevue: {
         Args: { _annee_id: string; _ecole_id: string }
         Returns: Json

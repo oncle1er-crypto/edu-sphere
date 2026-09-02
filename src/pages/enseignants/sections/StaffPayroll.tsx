@@ -66,7 +66,6 @@ export default function StaffPayroll() {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lignes, setLignes] = useState<Record<string, RhBulletinLigne[]>>({});
   const [pdfBusy, setPdfBusy] = useState<string | null>(null);
-  const [autoBusy, setAutoBusy] = useState(false);
   const [form, setForm] = useState({ enseignant_id: "", salaire_brut: "", retenues: "" });
 
   const kpis = useMemo(() => ({
@@ -106,28 +105,6 @@ export default function StaffPayroll() {
     setForm({ enseignant_id: "", salaire_brut: "", retenues: "" });
     setOpen(false);
     refetch();
-  };
-
-  // Génération automatique : tous les calculs sont faits côté serveur
-  // (rh_calculer_bulletin) à partir des données du personnel — aucun calcul local.
-  const genererAuto = async () => {
-    setAutoBusy(true);
-    try {
-      const res = await apercu(mois, annee);
-      if (!res) return;
-      if (res.prets === 0) {
-        toast.info(
-          res.deja_crees > 0
-            ? "Tous les bulletins de ce mois sont déjà créés"
-            : "Aucun bulletin à générer : vérifiez les salaires du personnel",
-          { description: res.a_corriger > 0 ? `${res.a_corriger} dossier(s) à corriger` : undefined },
-        );
-        return;
-      }
-      await genererBrouillons(mois, annee);
-    } finally {
-      setAutoBusy(false);
-    }
   };
 
   const exporter = () => {
@@ -360,12 +337,8 @@ export default function StaffPayroll() {
             <Button variant="outline" size="sm" onClick={exporter}>
               <Download className="h-4 w-4" />Tout exporter
             </Button>
-            <Button variant="outline" size="sm" onClick={genererAuto} disabled={autoBusy}>
-              {autoBusy ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Sparkles className="h-4 w-4" />
-              )}
+            <Button variant="outline" size="sm" onClick={() => setPrepareOpen(true)}>
+              <Sparkles className="h-4 w-4" />
               Générer automatiquement
             </Button>
             <Button size="sm" onClick={() => setPrepareOpen(true)}>
@@ -528,6 +501,8 @@ export default function StaffPayroll() {
         onOpenChange={setPrepareOpen}
         apercu={apercu}
         genererBrouillons={genererBrouillons}
+        moisInitial={mois}
+        anneeInitiale={annee}
         onDone={(m, a) => { setMois(m); setAnnee(a); refetch(); }}
       />
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,14 +12,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, RefreshCw, FilePlus2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, RefreshCw, FilePlus2, Users } from "lucide-react";
 import type { ApercuPaie, EtatPersonnel } from "@/hooks/useRhPaie";
 
 interface Props {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   apercu: (mois: number, annee: number) => Promise<ApercuPaie | null>;
-  genererBrouillons: (mois: number, annee: number) => Promise<number | null>;
+  genererBrouillons: (mois: number, annee: number, personnelIds: string[]) => Promise<number | null>;
+  moisInitial: number;
+  anneeInitiale: number;
   onDone?: (mois: number, annee: number) => void;
 }
 
@@ -44,14 +47,39 @@ export default function PreparePaieDialog({
   onOpenChange,
   apercu,
   genererBrouillons,
+  moisInitial,
+  anneeInitiale,
   onDone,
 }: Props) {
-  const now = new Date();
-  const defaultMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const defaultMonth = `${anneeInitiale}-${String(moisInitial).padStart(2, "0")}`;
   const [periode, setPeriode] = useState(defaultMonth);
   const [checking, setChecking] = useState(false);
   const [creating, setCreating] = useState(false);
   const [data, setData] = useState<ApercuPaie | null>(null);
+  const [selection, setSelection] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (!open) return;
+    setPeriode(`${anneeInitiale}-${String(moisInitial).padStart(2, "0")}`);
+    setData(null);
+    setSelection(new Set());
+    setChecking(true);
+    let actif = true;
+    void apercu(moisInitial, anneeInitiale).then((resultat) => {
+      if (!actif) return;
+      setData(resultat);
+      setChecking(false);
+    });
+    return () => {
+      actif = false;
+    };
+  }, [open, moisInitial, anneeInitiale, apercu]);
+
+  const idsPrets = useMemo(
+    () => data?.personnels.filter((p) => p.etat === "pret").map((p) => p.personnel_id) ?? [],
+    [data],
+  );
+  const tousPretsSelectionnes = idsPrets.length > 0 && idsPrets.every((id) => selection.has(id));
 
   const parse = () => {
     const [a, m] = periode.split("-");
@@ -64,13 +92,14 @@ export default function PreparePaieDialog({
     setChecking(true);
     const res = await apercu(mois, annee);
     setData(res);
+    setSelection(new Set());
     setChecking(false);
   };
 
   const creer = async () => {
     const { annee, mois } = parse();
     setCreating(true);
-    const created = await genererBrouillons(mois, annee);
+    const created = await genererBrouillons(mois, annee, [...selection]);
     setCreating(false);
     if (created !== null) {
       onDone?.(mois, annee);
@@ -157,13 +186,43 @@ export default function PreparePaieDialog({
                 </Card>
               </div>
 
-              <div className="border rounded-lg divide-y">
+              <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 px-3 py-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Users className="h-4 w-4 text-primary" />
+                  <span><strong>{selection.size}</strong> employé(s) sélectionné(s)</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={idsPrets.length === 0}
+                  onClick={() => setSelection(new Set(tousPretsSelectionnes ? [] : idsPrets))}
+                >
+                  {tousPretsSelectionnes ? "Tout désélectionner" : `Sélectionner les ${idsPrets.length} prêts`}
+                </Button>
+              </div>
+
+              <div className="border rounded-lg divide-y max-h-[42vh] overflow-y-auto">
                 {data.personnels.map((p) => (
                   <div
                     key={p.personnel_id}
-                    className="p-3 flex flex-col sm:flex-row sm:items-start gap-2 sm:justify-between"
+                    className={`p-3 flex items-start gap-3 ${p.etat !== "pret" ? "bg-muted/30" : "hover:bg-muted/20"}`}
                   >
-                    <div className="min-w-0">
+                    <Checkbox
+                      className="mt-1"
+                      aria-label={`Sélectionner ${p.nom} ${p.prenom}`}
+                      checked={selection.has(p.personnel_id)}
+                      disabled={p.etat !== "pret"}
+                      onCheckedChange={(checked) => {
+                        setSelection((actuelle) => {
+                          const suivante = new Set(actuelle);
+                          if (checked === true) suivante.add(p.personnel_id);
+                          else suivante.delete(p.personnel_id);
+                          return suivante;
+                        });
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold truncate">
                         {p.nom} {p.prenom}
                       </p>
@@ -198,13 +257,13 @@ export default function PreparePaieDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Fermer
           </Button>
-          <Button onClick={creer} disabled={!data || data.prets === 0 || creating}>
+          <Button onClick={creer} disabled={!data || selection.size === 0 || creating}>
             {creating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <FilePlus2 className="h-4 w-4" />
             )}
-            Créer {data?.prets ?? 0} brouillon(s)
+            Créer {selection.size} brouillon(s)
           </Button>
         </DialogFooter>
       </DialogContent>
