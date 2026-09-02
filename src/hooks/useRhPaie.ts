@@ -96,12 +96,19 @@ const ERREURS: Record<string, string> = {
   bulletin_non_supprimable: "Seul un bulletin en brouillon peut être supprimé",
   selection_vide: "Sélectionnez au moins un membre du personnel",
   selection_invalide: "La sélection contient un membre indisponible ou extérieur à votre école",
+  bulletin_existe_deja: "Un bulletin existe déjà pour cet employé et cette période",
+  net_invalide: "Le net à payer doit être un montant entier strictement positif",
+  net_cible_inatteignable: "Ce net exact ne peut pas être obtenu avec les barèmes actuels. Essayez un montant voisin",
+  personnel_introuvable: "Ce membre du personnel est introuvable ou inactif",
+  periode_invalide: "La période choisie est invalide",
+  calcul_impossible: "Le calcul du bulletin est impossible avec les informations actuelles",
   not_authenticated: "Session expirée, reconnectez-vous",
 };
 
 function traduire(code?: string | null) {
   if (!code) return "Une erreur est survenue";
-  return ERREURS[code] ?? code;
+  const cle = Object.keys(ERREURS).find((candidate) => code.includes(candidate));
+  return cle ? ERREURS[cle] : code;
 }
 
 /** Statut normalisé : les anciennes lignes `en_attente` valent `brouillon`. */
@@ -252,6 +259,32 @@ export function useRhPaie(mois: number, annee: number) {
     [fetchBulletins],
   );
 
+  const genererDepuisNet = useCallback(
+    async (personnelId: string, m: number, a: number, netCible: number) => {
+      if (!ecoleId) return false;
+      const { data, error } = await supabase.rpc("rh_bulletin_depuis_net", {
+        _ecole_id: ecoleId,
+        _personnel_id: personnelId,
+        _mois: m,
+        _annee: a,
+        _net_cible: netCible,
+      });
+      if (error) {
+        toast.error(traduire(error.message));
+        return false;
+      }
+      const res = data as unknown as { ok: boolean; erreur?: string };
+      if (!res?.ok) {
+        toast.error(traduire(res?.erreur));
+        return false;
+      }
+      toast.success("Bulletin brouillon créé depuis le net à payer");
+      await fetchBulletins();
+      return true;
+    },
+    [ecoleId, fetchBulletins],
+  );
+
   const payerBulletin = useCallback(
     async (id: string, date: string) => {
       const { data, error } = await supabase.rpc("rh_payer_bulletin", {
@@ -320,6 +353,7 @@ export function useRhPaie(mois: number, annee: number) {
     refetch: fetchBulletins,
     apercu,
     genererBrouillons,
+    genererDepuisNet,
     validerBulletin,
     payerBulletin,
     supprimerBulletin,

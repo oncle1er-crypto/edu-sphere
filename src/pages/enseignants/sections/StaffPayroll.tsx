@@ -12,7 +12,7 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 import { ConfirmButton } from "@/components/ConfirmButton";
 import {
   Wallet, Download, Loader2, Plus, CheckCircle2, BadgeCheck, FileText,
-  ChevronDown, ChevronRight, CalendarClock, Trash2, Sparkles,
+  ChevronDown, ChevronRight, CalendarClock, Trash2, Sparkles, Calculator,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBulletinsPaie } from "@/hooks/useBulletinsPaie";
@@ -21,8 +21,9 @@ import { useEnseignants } from "@/hooks/useEnseignants";
 import { useNiveau } from "@/context/NiveauContext";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import PreparePaieDialog from "../components/PreparePaieDialog";
+import NetPayrollDialog from "../components/NetPayrollDialog";
 import { downloadBulletinPaiePDF } from "@/lib/generateBulletinPaiePDF";
-import { bornesMois, verifierCoherenceBulletin } from "@/lib/payrollBulletin";
+import { bornesMois, choisirDateEmbauche, verifierCoherenceBulletin } from "@/lib/payrollBulletin";
 import { toast } from "sonner";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 
@@ -49,7 +50,7 @@ export default function StaffPayroll() {
   const [annee, setAnnee] = useState(now.getFullYear());
   const {
     bulletins: bulletinsRaw, loading, apercu, genererBrouillons, validerBulletin, payerBulletin,
-    supprimerBulletin, lignesBulletin, refetch,
+    supprimerBulletin, genererDepuisNet, lignesBulletin, refetch,
   } = useRhPaie(mois, annee);
   const { addBulletin } = useBulletinsPaie(mois, annee);
   const { enseignants } = useEnseignants();
@@ -61,8 +62,18 @@ export default function StaffPayroll() {
     () => (isGlobal ? bulletinsRaw : bulletinsRaw.filter((b) => matchesCycle(b.personnel_cycle_id))),
     [bulletinsRaw, isGlobal, matchesCycle],
   );
+  const personnelOptions = useMemo(
+    () => enseignants
+      .filter((enseignant) => enseignant.statut === "actif")
+      .map((enseignant) => ({
+        value: enseignant.id,
+        label: `${enseignant.nom} ${enseignant.prenom}`,
+      })),
+    [enseignants],
+  );
   const [open, setOpen] = useState(false);
   const [prepareOpen, setPrepareOpen] = useState(false);
+  const [netOpen, setNetOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [lignes, setLignes] = useState<Record<string, RhBulletinLigne[]>>({});
   const [pdfBusy, setPdfBusy] = useState<string | null>(null);
@@ -154,18 +165,32 @@ export default function StaffPayroll() {
         });
         return;
       }
-      const { data: p, error } = await supabase
-        .from("enseignants")
-        .select("nom, prenom, matricule, poste, fonction, service, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales, type_contrat")
-        .eq("id", enseignantId)
-        .maybeSingle();
-      if (error) { toast.error(messageErreurBase(error)); return; }
-      const { data: cumulsRows, error: cumulsError } = await supabase
-        .from("bulletins_paie")
-        .select("total_gains, brut_imposable, retenues, net_a_payer, base_cnps, total_charges_patronales")
-        .eq("enseignant_id", enseignantId)
-        .eq("annee", b.annee)
-        .lte("mois", b.mois);
+      const [personnelResult, contratResult, cumulsResult] = await Promise.all([
+        supabase
+          .from("enseignants")
+          .select("nom, prenom, matricule, poste, fonction, service, specialite, departement, date_embauche, numero_cnps, numero_cmu, parts_fiscales, type_contrat")
+          .eq("id", enseignantId)
+          .maybeSingle(),
+        supabase
+          .from("contrats_enseignants")
+          .select("date_debut, type")
+          .eq("enseignant_id", enseignantId)
+          .eq("statut", "actif")
+          .order("date_debut", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("bulletins_paie")
+          .select("total_gains, brut_imposable, retenues, net_a_payer, base_cnps, total_charges_patronales")
+          .eq("enseignant_id", enseignantId)
+          .eq("annee", b.annee)
+          .lte("mois", b.mois),
+      ]);
+      if (personnelResult.error) { toast.error(messageErreurBase(personnelResult.error)); return; }
+      if (contratResult.error) { toast.error(messageErreurBase(contratResult.error)); return; }
+      const p = personnelResult.data;
+      const contrat = contratResult.data;
+      const { data: cumulsRows, error: cumulsError } = cumulsResult;
       if (cumulsError) { toast.error(messageErreurBase(cumulsError)); return; }
       const cumuls = (cumulsRows ?? []).reduce((acc, row) => ({
         total_gains: acc.total_gains + Number(row.total_gains ?? 0),
@@ -194,12 +219,13 @@ export default function StaffPayroll() {
           matricule: p?.matricule ?? null,
           poste: p?.poste ?? p?.fonction ?? p?.specialite ?? null,
           departement: p?.service ?? p?.departement ?? null,
-          date_embauche: p?.date_embauche ?? null,
+          date_embauche: choisirDateEmbauche(p?.date_embauche, contrat?.date_debut),
           numero_cnps: p?.numero_cnps ?? null,
           numero_cmu: p?.numero_cmu ?? null,
           parts_fiscales: p?.parts_fiscales ?? null,
           anciennete_annees: b.anciennete_annees,
-          type_contrat: p?.type_contrat ?? null,
+          type_contrat: p?.type_contrat ?? contrat?.type ?? null,
+          prime_transport: detail.find((ligne) => ligne.rubrique_code === "prime_transport")?.montant ?? 0,
         },
         mois: b.mois,
         annee: b.annee,
@@ -340,6 +366,9 @@ export default function StaffPayroll() {
             <Button variant="outline" size="sm" onClick={() => setPrepareOpen(true)}>
               <Sparkles className="h-4 w-4" />
               Générer automatiquement
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setNetOpen(true)}>
+              <Calculator className="h-4 w-4" />Générer depuis le net à payer
             </Button>
             <Button size="sm" onClick={() => setPrepareOpen(true)}>
               <CalendarClock className="h-4 w-4" />Fiches de paie du mois
@@ -504,6 +533,14 @@ export default function StaffPayroll() {
         moisInitial={mois}
         anneeInitiale={annee}
         onDone={(m, a) => { setMois(m); setAnnee(a); refetch(); }}
+      />
+      <NetPayrollDialog
+        open={netOpen}
+        onOpenChange={setNetOpen}
+        mois={mois}
+        annee={annee}
+        personnel={personnelOptions}
+        onGenerate={genererDepuisNet}
       />
     </div>
   );

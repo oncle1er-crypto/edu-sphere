@@ -82,3 +82,11 @@ export function bornesMois(mois: number, annee: number) {
     fin: fin.toISOString().slice(0, 10),
   };
 }
+
+/** La date de la fiche prime ; le contrat actif sert de repli explicite. */
+export function choisirDateEmbauche(
+  dateFiche?: string | null,
+  dateDebutContrat?: string | null,
+): string | null {
+  return dateFiche || dateDebutContrat || null;
+}

@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, Calculator, Loader2, Percent, Landmark, HeartPulse, Building2, Settings2, Award } from "lucide-react";
+import { AlertTriangle, Calculator, Loader2, Percent, Landmark, HeartPulse, Building2, Settings2, Award, Bus } from "lucide-react";
 import { useRhParametres, type RhParametre } from "@/hooks/useRhParametres";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
@@ -93,6 +93,7 @@ export default function RhPaieSettings() {
   }
 
   const groupes: { key: string; title: string; description: string; icon: JSX.Element }[] = [
+    { key: "primes", title: "Primes", description: "Montants et plafonds des primes, dont la prime de transport.", icon: <Bus className="h-5 w-5" /> },
     { key: "cnps", title: "CNPS", description: "Cotisations sociales (salarié et employeur).", icon: <Landmark className="h-5 w-5" /> },
     { key: "cmu", title: "CMU", description: "Couverture maladie universelle.", icon: <HeartPulse className="h-5 w-5" /> },
     { key: "charges_patronales", title: "Charges patronales", description: "Charges à la charge de l'établissement.", icon: <Building2 className="h-5 w-5" /> },
