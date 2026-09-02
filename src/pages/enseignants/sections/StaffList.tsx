@@ -163,7 +163,7 @@ export default function StaffList() {
       numero_cnps: editForm.numero_cnps.trim() || null,
       nombre_enfants_charge: enfants,
       parts_fiscales: parts,
-    });
+    } as any);
     setSavingEdit(false);
     if (ok) setEditEnseignant(null);
   };
@@ -270,7 +270,7 @@ export default function StaffList() {
       nombre_enfants_charge: enfants,
       parts_fiscales: parts,
       ecole_id: "",
-    });
+    } as any);
     // Le formulaire ne doit être réinitialisé et le dialogue fermé que si
     // l'enregistrement a réellement réussi — sinon l'utilisateur perd sa
     // saisie sans recours (bug identifié le 11/08/2026 : ces deux actions

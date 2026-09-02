@@ -14,7 +14,9 @@ import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { calculerPartsFiscales, partsFiscalesValides } from "@/lib/fiscalParts";
 
-type Enseignant = Database["public"]["Tables"]["enseignants"]["Row"];
+type Enseignant = Database["public"]["Tables"]["enseignants"]["Row"] & {
+  nombre_enfants_charge?: number;
+};
 type BulletinPaie = Database["public"]["Tables"]["bulletins_paie"]["Row"];
 type Contrat = Database["public"]["Tables"]["contrats_enseignants"]["Row"];
 

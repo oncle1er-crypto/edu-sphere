@@ -10,6 +10,7 @@ type EnseignantRow = Database["public"]["Tables"]["enseignants"]["Row"];
 
 export interface Enseignant extends EnseignantRow {
   nb_classes?: number;
+  nombre_enfants_charge?: number;
 }
 
 export function useEnseignants() {
