@@ -94,6 +94,8 @@ const ERREURS: Record<string, string> = {
   bulletin_introuvable: "Bulletin introuvable",
   bulletin_deja_valide: "Ce bulletin est déjà validé : impossible de le supprimer",
   bulletin_non_supprimable: "Seul un bulletin en brouillon peut être supprimé",
+  selection_vide: "Sélectionnez au moins un membre du personnel",
+  selection_invalide: "La sélection contient un membre indisponible ou extérieur à votre école",
   not_authenticated: "Session expirée, reconnectez-vous",
 };
 
@@ -203,12 +205,17 @@ export function useRhPaie(mois: number, annee: number) {
   );
 
   const genererBrouillons = useCallback(
-    async (m: number, a: number): Promise<number | null> => {
+    async (m: number, a: number, personnelIds: string[]): Promise<number | null> => {
       if (!ecoleId) return null;
-      const { data, error } = await supabase.rpc("rh_generer_brouillons", {
+      if (personnelIds.length === 0) {
+        toast.error(ERREURS.selection_vide);
+        return null;
+      }
+      const { data, error } = await supabase.rpc("rh_generer_brouillons_selection", {
         _ecole_id: ecoleId,
         _mois: m,
         _annee: a,
+        _personnel_ids: personnelIds,
       });
       if (error) {
         toast.error(messageErreurBase(error));
