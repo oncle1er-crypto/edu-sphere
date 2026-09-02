@@ -8465,9 +8465,20 @@ export type Database = {
         Args: { _annee: number; _ecole_id: string; _mois: number }
         Returns: Json
       }
+      rh_bulletin_depuis_net: {
+        Args: {
+          _annee: number
+          _ecole_id: string
+          _mois: number
+          _net_cible: number
+          _personnel_id: string
+        }
+        Returns: Json
+      }
       rh_calculer_bulletin: {
         Args: {
           _annee: number
+          _base_override?: number
           _ecole_id: string
           _mois: number
           _personnel_id: string
