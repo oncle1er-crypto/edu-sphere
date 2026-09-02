@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import type { ContratEnseignant, ContratInsert, ContratType } from "@/hooks/useContratsEnseignants";
+import { toast } from "sonner";
 
 interface Enseignant { id: string; nom: string; prenom: string; }
 
@@ -49,7 +50,18 @@ export function ContractFormDialog({ open, onOpenChange, enseignants, initial, o
     setValues((prev) => ({ ...prev, [k]: v }));
 
   const handleSave = async () => {
-    if (!values.enseignant_id) return;
+    if (!values.enseignant_id) {
+      toast.error("Sélectionnez un membre du personnel");
+      return;
+    }
+    if (!values.date_debut) {
+      toast.error("La date de début du contrat est obligatoire");
+      return;
+    }
+    if (values.statut === "actif" && Number(values.salaire_base) <= 0) {
+      toast.error("Le salaire de base du contrat actif doit être supérieur à zéro");
+      return;
+    }
     setSaving(true);
     const r = await onSubmit(values);
     setSaving(false);
@@ -128,8 +140,9 @@ export function ContractFormDialog({ open, onOpenChange, enseignants, initial, o
           </div>
 
           <div>
-            <Label>Salaire de base (FCFA)</Label>
+            <Label>Salaire de base (FCFA) — référence pour la paie</Label>
             <Input type="number" min={0} value={values.salaire_base} onChange={(e) => setField("salaire_base", Number(e.target.value))} />
+            <p className="mt-1 text-xs text-muted-foreground">C'est l'unique salaire utilisé pour calculer les bulletins.</p>
           </div>
 
           <div>
