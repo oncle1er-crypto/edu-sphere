@@ -21,6 +21,7 @@ export interface BulletinPaieSalarie {
   parts_fiscales?: number | null;
   anciennete_annees?: number | null;
   type_contrat?: string | null;
+  prime_transport?: number | null;
 }
 
 export interface BulletinPaieCumuls {
@@ -183,6 +184,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     ["N° CNPS", val(s.numero_cnps)],
     ["N° CMU", val(s.numero_cmu)],
     ["Parts fiscales", val(s.parts_fiscales)],
+    ["Prime de transport", money(s.prime_transport ?? 0)],
     [
       "Ancienneté",
       s.anciennete_annees === null || s.anciennete_annees === undefined

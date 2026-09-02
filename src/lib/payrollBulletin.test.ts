@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bornesMois, verifierCoherenceBulletin } from "./payrollBulletin";
+import { bornesMois, choisirDateEmbauche, verifierCoherenceBulletin } from "./payrollBulletin";
 
 const lignes = [
   { libelle: "Salaire", type: "gain", base: 75_000, taux: null, montant: 75_000 },
@@ -45,5 +45,15 @@ describe("bornesMois", () => {
 
   it("refuse un mois invalide", () => {
     expect(() => bornesMois(13, 2026)).toThrow("Période de paie invalide");
+  });
+});
+
+describe("choisirDateEmbauche", () => {
+  it("privilégie la date renseignée dans la fiche", () => {
+    expect(choisirDateEmbauche("2020-09-01", "2022-09-25")).toBe("2020-09-01");
+  });
+
+  it("utilise le début du contrat actif lorsque la fiche est vide", () => {
+    expect(choisirDateEmbauche(null, "2022-09-25")).toBe("2022-09-25");
   });
 });
