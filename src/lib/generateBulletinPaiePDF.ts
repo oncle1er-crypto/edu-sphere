@@ -119,8 +119,6 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
   const logo = data.ecole.logo_url ? await loadImage(data.ecole.logo_url) : null;
 
   // ---------- En-tête ----------
-  pdf.setFillColor(110, 26, 44);
-  pdf.rect(0, 0, W, 26, "F");
   pdf.setFillColor(252, 227, 77);
   pdf.rect(0, 26, W, 2.5, "F");
 
@@ -137,7 +135,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
   }
   const cx = (W + logoRight) / 2;
   const maxW = W - logoRight - pad;
-  pdf.setTextColor(255, 255, 255);
+  pdf.setTextColor(110, 26, 44);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(14);
   pdf.text(data.ecole.nom.toUpperCase(), cx, 11, { align: "center", maxWidth: maxW });
