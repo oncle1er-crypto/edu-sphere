@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import type { CardData, CardType } from "@/pages/cartes/components/SchoolCard";
 import { sortByEleve } from "@/lib/sortEleves";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export type CardStatut = "active" | "perdue" | "revoquee" | "expiree";
 
@@ -64,7 +65,7 @@ function rowToCard(row: any, ecoleNom: string, ecoleVille?: string): IssuedCard 
 }
 
 /** Mappe IssuedCard vers payload INSERT/UPDATE DB. */
-function cardToRow(c: IssuedCard, ecoleId: string) {
+function cardToRow(c: IssuedCard, ecoleId: string, holder?: { eleveId?: string; enseignantId?: string }) {
   const metadata: Record<string, any> = {
     ecoleNom: c.ecoleNom,
     ecoleVille: c.ecoleVille,
@@ -96,6 +97,8 @@ function cardToRow(c: IssuedCard, ecoleId: string) {
     date_expiration: c.validJusqu || null,
     statut: c.statut as any,
     motif_revocation: c.motifRevocation ?? null,
+    eleve_id: holder?.eleveId ?? null,
+    enseignant_id: holder?.enseignantId ?? null,
     metadata,
   };
 }
@@ -105,6 +108,7 @@ export function CardsProvider({ children }: { children: ReactNode }) {
   const [cards, setCards] = useState<IssuedCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecoleInfo, setEcoleInfo] = useState<{ nom: string; ville?: string }>({ nom: "" });
+  const { isGlobal, keepClasse, matchesCycle } = useNiveauFilters();
 
   const refresh = useCallback(async () => {
     if (!ecoleId) { setCards([]); setLoading(false); return; }
@@ -117,26 +121,40 @@ export function CardsProvider({ children }: { children: ReactNode }) {
     const info = { nom: ecole?.nom ?? "", ville: ecole?.ville ?? undefined };
     setEcoleInfo(info);
 
-    const { data, error } = await supabase
-      .from("cartes")
-      .select("*, eleves(nom, prenom, matricule), enseignants(nom, prenom, matricule), annees_scolaires(libelle)")
-      .eq("ecole_id", ecoleId)
-      .order("created_at", { ascending: false });
+    const [cardRes, eleveRes, enseignantRes] = await Promise.all([
+      supabase
+        .from("cartes")
+        .select("*, eleves(nom, prenom, matricule, classe_id), enseignants(nom, prenom, matricule, cycle_id), annees_scolaires(libelle)")
+        .eq("ecole_id", ecoleId)
+        .order("created_at", { ascending: false }),
+      supabase.from("eleves").select("id, matricule, classe_id").eq("ecole_id", ecoleId),
+      supabase.from("enseignants").select("id, matricule, cycle_id").eq("ecole_id", ecoleId),
+    ]);
+    const { data, error } = cardRes;
 
     if (error) {
       console.error(error);
       toast.error("Erreur chargement cartes");
       setCards([]);
     } else {
+      const elevesByMatricule = new Map((eleveRes.data ?? []).map((e) => [e.matricule, e]));
+      const enseignantsByMatricule = new Map((enseignantRes.data ?? []).filter((e) => e.matricule).map((e) => [e.matricule!, e]));
+      const visibles = isGlobal ? (data ?? []) : (data ?? []).filter((r: any) => {
+        const eleve = r.eleves ?? elevesByMatricule.get(r.numero);
+        const enseignant = r.enseignants ?? enseignantsByMatricule.get(r.numero);
+        if (eleve) return keepClasse(eleve.classe_id);
+        if (enseignant) return matchesCycle(enseignant.cycle_id);
+        return true; // Cartes sans rattachement scolaire explicite = données communes.
+      });
       setCards(
-        sortByEleve((data ?? []) as any[], (r: any) => ({
+        sortByEleve(visibles as any[], (r: any) => ({
           nom: r.eleves?.nom ?? r.enseignants?.nom,
           prenom: r.eleves?.prenom ?? r.enseignants?.prenom,
         })).map((r: any) => rowToCard(r, info.nom, info.ville))
       );
     }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, keepClasse, matchesCycle]);
 
   useEffect(() => {
     if (!ecoleLoading) refresh();
@@ -144,7 +162,24 @@ export function CardsProvider({ children }: { children: ReactNode }) {
 
   const addCards = useCallback(async (newCards: IssuedCard[]) => {
     if (!ecoleId) { toast.error("École non sélectionnée"); return; }
-    const rows = newCards.map((c) => cardToRow({ ...c, ecoleId }, ecoleId));
+    const matricules = [...new Set(newCards.map((c) => c.matricule).filter(Boolean))];
+    const [eleveRes, enseignantRes] = await Promise.all([
+      matricules.length
+        ? supabase.from("eleves").select("id, matricule").eq("ecole_id", ecoleId).in("matricule", matricules)
+        : Promise.resolve({ data: [] }),
+      matricules.length
+        ? supabase.from("enseignants").select("id, matricule").eq("ecole_id", ecoleId).in("matricule", matricules)
+        : Promise.resolve({ data: [] }),
+    ]);
+    const elevesByMatricule = new Map((eleveRes.data ?? []).map((e) => [e.matricule, e.id]));
+    const enseignantsByMatricule = new Map((enseignantRes.data ?? []).filter((e) => e.matricule).map((e) => [e.matricule!, e.id]));
+    const rows = newCards.map((c) => {
+      const estEleve = ["eleve", "cantine", "transport", "bibliotheque"].includes(c.type);
+      return cardToRow({ ...c, ecoleId }, ecoleId, {
+        eleveId: estEleve ? elevesByMatricule.get(c.matricule) : undefined,
+        enseignantId: c.type === "personnel" ? enseignantsByMatricule.get(c.matricule) : undefined,
+      });
+    });
     const { error } = await supabase.from("cartes").insert(rows as any);
     if (error) { toast.error(messageErreurBase(error)); return; }
     await refresh();

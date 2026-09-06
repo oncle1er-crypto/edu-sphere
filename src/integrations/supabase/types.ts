@@ -2620,6 +2620,7 @@ export type Database = {
           matricule: string | null
           nationalite: string | null
           nom: string
+          nombre_enfants_charge: number
           numero_cmu: string | null
           numero_cnps: string | null
           parts_fiscales: number
@@ -2655,6 +2656,7 @@ export type Database = {
           matricule?: string | null
           nationalite?: string | null
           nom: string
+          nombre_enfants_charge?: number
           numero_cmu?: string | null
           numero_cnps?: string | null
           parts_fiscales?: number
@@ -2690,6 +2692,7 @@ export type Database = {
           matricule?: string | null
           nationalite?: string | null
           nom?: string
+          nombre_enfants_charge?: number
           numero_cmu?: string | null
           numero_cnps?: string | null
           parts_fiscales?: number

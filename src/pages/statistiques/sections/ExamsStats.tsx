@@ -4,19 +4,22 @@ import { KpiCard, BarChart } from "../components/StatsPrimitives";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function ExamsStats() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, keepClasse } = useNiveauFilters();
   const [stats, setStats] = useState({ evaluations: 0, notes: 0, moyenne: 0, reussite: 0, parMatiere: [] as { label: string; value: number }[] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     Promise.all([
-      supabase.from("evaluations").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
-      supabase.from("notes").select("note, evaluations(matieres(nom))").eq("ecole_id", ecoleId).not("note", "is", null),
+      supabase.from("evaluations").select("id, classe_id").eq("ecole_id", ecoleId),
+      supabase.from("notes").select("note, evaluations(classe_id, matieres(nom))").eq("ecole_id", ecoleId).not("note", "is", null),
     ]).then(([evRes, nRes]) => {
-      const notes = (nRes.data ?? []).filter((n: any) => n.note !== null);
+      const evaluations = (evRes.data ?? []).filter((e: any) => isGlobal || keepClasse(e.classe_id));
+      const notes = (nRes.data ?? []).filter((n: any) => n.note !== null && (isGlobal || keepClasse(n.evaluations?.classe_id)));
       const avg = notes.length > 0 ? notes.reduce((s: number, n: any) => s + Number(n.note), 0) / notes.length : 0;
 
       const parMat: Record<string, { sum: number; count: number }> = {};
@@ -29,7 +32,7 @@ export default function ExamsStats() {
 
       const reussis = notes.filter((n: any) => Number(n.note) >= 10).length;
       setStats({
-        evaluations: evRes.count ?? 0,
+        evaluations: evaluations.length,
         notes: notes.length,
         moyenne: Math.round(avg * 10) / 10,
         reussite: notes.length > 0 ? Math.round((reussis / notes.length) * 100) : 0,
@@ -37,7 +40,7 @@ export default function ExamsStats() {
       });
       setLoading(false);
     });
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, keepClasse]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

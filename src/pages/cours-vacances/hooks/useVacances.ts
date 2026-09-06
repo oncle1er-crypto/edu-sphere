@@ -5,6 +5,8 @@ import { useAnneeId } from "@/hooks/useAnneeId";
 import { toast } from "sonner";
 import { sortEleves } from "@/lib/sortEleves";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
+import { filterVacationScope } from "@/lib/filterVacationScope";
 
 export type VacClasse = {
   id: string; ecole_id: string; annee_id: string | null;
@@ -45,6 +47,7 @@ export function useVacancesData() {
   const [enseignants, setEnseignants] = useState<VacEnseignant[]>([]);
   const [honoraires, setHonoraires] = useState<VacHonoraire[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isGlobal, matchesCycle } = useNiveauFilters();
 
   const load = useCallback(async () => {
     if (!ecoleId) { setLoading(false); return; }
@@ -56,13 +59,20 @@ export function useVacancesData() {
       supabase.from("vacances_enseignants" as any).select("*").eq("ecole_id", ecoleId).order("nom"),
       supabase.from("vacances_honoraires" as any).select("*").eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }),
     ]);
-    setClasses((c.data ?? []) as any);
-    setEleves(sortEleves((e.data ?? []) as any[]) as any);
-    setPaiements((p.data ?? []) as any);
-    setEnseignants((en.data ?? []) as any);
-    setHonoraires((h.data ?? []) as any);
+    const visible = filterVacationScope({
+      classes: (c.data ?? []) as unknown as VacClasse[],
+      eleves: (e.data ?? []) as unknown as VacEleve[],
+      paiements: (p.data ?? []) as unknown as VacPaiement[],
+      enseignants: (en.data ?? []) as unknown as VacEnseignant[],
+      honoraires: (h.data ?? []) as unknown as VacHonoraire[],
+    }, isGlobal, matchesCycle);
+    setClasses(visible.classes);
+    setEleves(sortEleves(visible.eleves) as VacEleve[]);
+    setPaiements(visible.paiements);
+    setEnseignants(visible.enseignants);
+    setHonoraires(visible.honoraires);
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, matchesCycle]);
 
   useEffect(() => { load(); }, [load]);
 

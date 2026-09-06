@@ -5,16 +5,18 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function StudentsStats() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, keepClasse } = useNiveauFilters();
   const [data, setData] = useState({ total: 0, garcons: 0, filles: 0, parCycle: [] as { label: string; value: number }[], parClasse: [] as { label: string; value: number }[] });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     supabase.from("eleves").select("id, sexe, classe_id, classes(nom, cycles(nom))").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]).then(({ data: eleves }) => {
-      const list = eleves ?? [];
+      const list = isGlobal ? (eleves ?? []) : (eleves ?? []).filter((e) => keepClasse(e.classe_id));
       const garcons = list.filter((e: any) => e.sexe === "M").length;
       const filles = list.filter((e: any) => e.sexe === "F").length;
 
@@ -36,7 +38,7 @@ export default function StudentsStats() {
       });
       setLoading(false);
     });
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, keepClasse]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

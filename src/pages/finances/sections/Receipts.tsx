@@ -30,6 +30,7 @@ import * as XLSX from "xlsx";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import type jsPDF from "jspdf";
 import type { Database } from "@/integrations/supabase/types";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 type PaiementMode = Database["public"]["Enums"]["paiement_mode"];
 
@@ -59,7 +60,7 @@ interface RecapPaiementRow {
   date_paiement: string;
   mode: string;
   tranches: { numero: number } | null;
-  eleves: { nom: string; prenom: string; matricule: string; classes: { nom: string } | null } | null;
+  eleves: { nom: string; prenom: string; matricule: string; classe_id: string | null; classes: { nom: string } | null } | null;
 }
 
 interface PaiementRecu {
@@ -138,6 +139,7 @@ const PAGE_SIZE = 50;
 export default function Receipts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
+  const { isGlobal, keepClasse } = useNiveauFilters();
   const [recus, setRecus] = useState<PaiementRecu[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
@@ -222,7 +224,9 @@ export default function Receipts() {
       .limit(5000)
       .then(({ data }) => {
         setRecus(
-          ((data ?? []) as unknown as PaiementJointRow[]).map((p) => ({
+          ((data ?? []) as unknown as PaiementJointRow[])
+            .filter((p) => isGlobal || keepClasse(p.eleves?.classe_id))
+            .map((p) => ({
             id: p.id,
             reference: p.reference,
             eleve_id: p.eleve_id,
@@ -244,7 +248,7 @@ export default function Receipts() {
       });
   };
 
-  useEffect(fetchRecus, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id]);
+  useEffect(fetchRecus, [ecoleId, ecoleLoading, periodLoading, activeAnnee?.id, isGlobal, keepClasse]);
 
   // Options dérivées pour les filtres
   const classeOptions = useMemo(() => {
@@ -657,7 +661,7 @@ export default function Receipts() {
         .select(
           "id, reference, montant, date_paiement, mode, " +
           "tranches!inner(numero, frais_scolarite!inner(annee_id)), " +
-          "eleves(nom, prenom, matricule, classes(nom))"
+          "eleves(nom, prenom, matricule, classe_id, classes(nom))"
         )
         .eq("ecole_id", ecoleId)
         .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
@@ -667,7 +671,9 @@ export default function Receipts() {
         .order("date_paiement", { ascending: true });
       if (error) throw error;
 
-      const paiements = ((data ?? []) as unknown as RecapPaiementRow[]).map((p) => {
+      const paiements = ((data ?? []) as unknown as RecapPaiementRow[])
+        .filter((p) => isGlobal || keepClasse(p.eleves?.classe_id))
+        .map((p) => {
         const d = new Date(p.date_paiement);
         return {
           heure: `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`,
@@ -679,7 +685,7 @@ export default function Receipts() {
           mode: modeMeta(p.mode).label,
           montant: Number(p.montant),
         };
-      });
+        });
       if (paiements.length === 0) { toast.info("Aucun paiement enregistré ce jour-là."); return; }
       const modeMap = new Map<string, { total: number; nb: number }>();
       const classeMap = new Map<string, { total: number; nb: number }>();

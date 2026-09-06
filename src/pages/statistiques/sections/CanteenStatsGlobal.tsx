@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoles } from "@/context/EcoleContext";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function CanteenStats() {
   const { ecoles } = useEcoles();
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, keepEleve } = useNiveauFilters();
   const [state, setState] = useState({
     abonnes: 0,
     repasServis: 0,
@@ -25,11 +27,11 @@ export default function CanteenStats() {
     const debutISO = debut.toISOString().slice(0, 10);
 
     Promise.all([
-      supabase.from("abonnements_cantine").select("ecole_id, statut"),
-      supabase.from("cantine_planning").select("effectif_realise, effectif_inscrits, capacite_prevue").gte("date_service", debutISO),
-      supabase.from("cantine_incidents").select("id", { count: "exact", head: true }).gte("date_incident", debutISO),
+      supabase.from("abonnements_cantine").select("ecole_id, eleve_id, statut").eq("ecole_id", ecoleId),
+      supabase.from("cantine_planning").select("effectif_realise, effectif_inscrits, capacite_prevue").eq("ecole_id", ecoleId).gte("date_service", debutISO),
+      supabase.from("cantine_incidents").select("id, eleve_id").eq("ecole_id", ecoleId).gte("date_incident", debutISO),
     ]).then(([abRes, plRes, incRes]) => {
-      const abList = (abRes.data ?? []).filter((a: any) => a.statut === "actif");
+      const abList = (abRes.data ?? []).filter((a: any) => a.statut === "actif" && (isGlobal || keepEleve(a.eleve_id)));
       const abonnes = abList.length;
       const parEcoleMap: Record<string, number> = {};
       abList.forEach((a: any) => { parEcoleMap[a.ecole_id] = (parEcoleMap[a.ecole_id] ?? 0) + 1; });
@@ -41,10 +43,11 @@ export default function CanteenStats() {
 
       const parEcole = ecoles.map((e) => ({ label: e.nom, value: parEcoleMap[e.ecole_id] ?? 0 })).filter((r) => r.value > 0);
 
-      setState({ abonnes, repasServis, incidents: incRes.count ?? 0, tauxFreq, parEcole });
+      const incidents = (incRes.data ?? []).filter((i: any) => !i.eleve_id || isGlobal || keepEleve(i.eleve_id)).length;
+      setState({ abonnes, repasServis, incidents, tauxFreq, parEcole });
       setLoading(false);
     });
-  }, [ecoleId, ecoles]);
+  }, [ecoleId, ecoles, isGlobal, keepEleve]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

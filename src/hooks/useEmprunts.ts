@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { useNiveauFilters } from "./useNiveauFilters";
 
 type EmpruntRow = Database["public"]["Tables"]["emprunts"]["Row"];
 
@@ -17,19 +18,25 @@ export function useEmprunts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [emprunts, setEmprunts] = useState<Emprunt[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isGlobal, keepClasse, matchesCycle } = useNiveauFilters();
 
   const fetchEmprunts = useCallback(async () => {
     if (!ecoleId) return;
     setLoading(true);
     const { data, error } = await supabase
       .from("emprunts")
-      .select("*, livres(titre), eleves(nom, prenom), enseignants(nom, prenom)")
+      .select("*, livres(titre, cycle_id), eleves(nom, prenom, classe_id), enseignants(nom, prenom, cycle_id)")
       .eq("ecole_id", ecoleId)
       .order("date_emprunt", { ascending: false });
 
     if (error) { console.error(error); toast.error("Erreur chargement emprunts"); }
     else {
-      setEmprunts((data ?? []).map((e: any) => ({
+      const visibles = isGlobal ? (data ?? []) : (data ?? []).filter((e: any) => {
+        if (e.eleve_id) return keepClasse(e.eleves?.classe_id);
+        if (e.enseignant_id) return matchesCycle(e.enseignants?.cycle_id);
+        return matchesCycle(e.livres?.cycle_id);
+      });
+      setEmprunts(visibles.map((e: any) => ({
         ...e,
         livre_titre: e.livres?.titre ?? "",
         eleve_nom: e.eleves ? `${e.eleves.nom} ${e.eleves.prenom}` : "",
@@ -37,7 +44,7 @@ export function useEmprunts() {
       })));
     }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, keepClasse, matchesCycle]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchEmprunts();
