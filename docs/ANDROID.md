@@ -19,6 +19,7 @@ cd android
 ```
 
 L'APK de test est créé dans `android/app/build/outputs/apk/debug/`.
+Les icônes et écrans de démarrage sont régénérés automatiquement depuis `public/logo-gsp.png` à chaque synchronisation.
 
 ## Activer les notifications Android
 

@@ -46,3 +46,6 @@ android/app/release/
 android/app/build/
 android/build/
 .gradle/
+/assets/*.png
+android/app/src/main/res/drawable*/splash.png
+android/app/src/main/res/mipmap*/ic_launcher*.png

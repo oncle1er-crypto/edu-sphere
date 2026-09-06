@@ -8,16 +8,18 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="false">
-
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"
-            android:resource="@drawable/ic_stat_providence" />
+            android:resource="@drawable/ic_stat_providence"
+        />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_color"
-            android:resource="@color/notificationAccent" />
+            android:resource="@color/notificationAccent"
+        />
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
-            android:value="providence_generales" />
+            android:value="providence_generales"
+        />
         <activity
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
