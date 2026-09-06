@@ -9,6 +9,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { RequirePerm } from "@/components/auth/RequirePerm";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { AppLoader, NavigationProgress } from "@/components/loading";
+import { NativePushNotifications } from "@/components/native/NativePushNotifications";
 // Import statique : la page hors-ligne ne doit jamais dépendre du réseau.
 import OfflinePage from "@/pages/Offline";
 const LoginPage = lazy(() => import("@/pages/auth/LoginPage"));
@@ -301,6 +302,7 @@ const App = () => (
         <EcoleProvider>
         <AcademicPeriodProvider>
         <NiveauProvider>
+          <NativePushNotifications />
           <Routes>
             <Route path="/offline" element={<OfflinePage />} />
             <Route path="/connexion" element={<LoginPage />} />
