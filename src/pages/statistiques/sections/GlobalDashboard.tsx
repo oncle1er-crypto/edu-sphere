@@ -6,10 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function GlobalDashboard() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee } = useAcademicPeriod();
+  const { isGlobal, keepClasse, matchesCycle } = useNiveauFilters();
   const [stats, setStats] = useState({ eleves: 0, enseignants: 0, classes: 0, garcons: 0, filles: 0, totalAttendu: 0, totalPaye: 0, totalEncaisse: 0, totalRemises: 0 });
   const [classeData, setClasseData] = useState<{ label: string; value: number }[]>([]);
   const [loading, setLoading] = useState(true);
@@ -19,22 +21,22 @@ export default function GlobalDashboard() {
     // Récupérer les frais_scolarite de l'année active, puis les tranches qui en découlent
     const anneeId = activeAnnee?.id;
     const fraisPromise = anneeId
-      ? supabase.from("frais_scolarite").select("id").eq("ecole_id", ecoleId).eq("annee_id", anneeId)
+      ? supabase.from("frais_scolarite").select("id, cycle_id").eq("ecole_id", ecoleId).eq("annee_id", anneeId)
       : Promise.resolve({ data: [] as any[] });
 
     Promise.all([
-      supabase.from("eleves").select("id, sexe", { count: "exact", head: false }).eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]),
-      supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
-      supabase.from("classes").select("id, nom", { count: "exact", head: false }).eq("ecole_id", ecoleId),
+      supabase.from("eleves").select("id, sexe, classe_id, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]),
+      supabase.from("enseignants").select("id, cycle_id").eq("ecole_id", ecoleId).eq("statut", "actif"),
+      supabase.from("classes").select("id, nom, cycle_id").eq("ecole_id", ecoleId),
       fraisPromise,
     ]).then(async ([eRes, ensRes, cRes, fRes]) => {
-      const fraisIds = (fRes.data ?? []).map((f: any) => f.id);
+      const fraisIds = (fRes.data ?? []).filter((f: any) => isGlobal || matchesCycle(f.cycle_id)).map((f: any) => f.id);
       let tranchesData: any[] = [];
       let trancheIds: string[] = [];
       if (fraisIds.length > 0) {
         const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId).in("frais_id", fraisIds);
         tranchesData = data ?? [];
-      } else {
+      } else if (!anneeId) {
         const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId);
         tranchesData = data ?? [];
       }
@@ -60,7 +62,9 @@ export default function GlobalDashboard() {
         }
       }
 
-      const elevesData = eRes.data ?? [];
+      const elevesData = (eRes.data ?? []).filter((e: any) => isGlobal || keepClasse(e.classe_id));
+      const enseignantsData = (ensRes.data ?? []).filter((e: any) => isGlobal || matchesCycle(e.cycle_id));
+      const classesData = (cRes.data ?? []).filter((c: any) => isGlobal || matchesCycle(c.cycle_id));
       const garcons = elevesData.filter((e: any) => e.sexe === "M").length;
       const filles = elevesData.filter((e: any) => e.sexe === "F").length;
       const totalAttendu = tranchesData.reduce((s: number, t: any) => s + Number(t.montant), 0);
@@ -68,26 +72,26 @@ export default function GlobalDashboard() {
       const totalEncaisse = Math.max(0, totalPaye - totalRemises);
 
       setStats({
-        eleves: eRes.count ?? elevesData.length,
-        enseignants: ensRes.count ?? 0,
-        classes: cRes.count ?? 0,
+        eleves: elevesData.length,
+        enseignants: enseignantsData.length,
+        classes: classesData.length,
         garcons, filles, totalAttendu, totalPaye, totalEncaisse, totalRemises,
       });
 
       // Effectifs par classe
-      if (cRes.data && elevesData.length > 0) {
+      if (classesData.length > 0 && elevesData.length > 0) {
         const classeCount: Record<string, number> = {};
-        supabase.from("eleves").select("classe_id, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]).then(({ data: ed }) => {
-          (ed ?? []).forEach((e: any) => {
+        elevesData.forEach((e: any) => {
             const nom = e.classes?.nom ?? "Non affecté";
             classeCount[nom] = (classeCount[nom] ?? 0) + 1;
-          });
-          setClasseData(Object.entries(classeCount).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value));
         });
+        setClasseData(Object.entries(classeCount).map(([label, value]) => ({ label, value })).sort((a, b) => b.value - a.value));
+      } else {
+        setClasseData([]);
       }
       setLoading(false);
     });
-  }, [ecoleId, activeAnnee?.id]);
+  }, [ecoleId, activeAnnee?.id, isGlobal, keepClasse, matchesCycle]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

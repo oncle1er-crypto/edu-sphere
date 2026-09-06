@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { useNiveauFilters } from "./useNiveauFilters";
 
 type LivreRow = Database["public"]["Tables"]["livres"]["Row"];
 
@@ -11,6 +12,7 @@ export function useLivres() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [livres, setLivres] = useState<LivreRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isGlobal, matchesCycle } = useNiveauFilters();
 
   const fetchLivres = useCallback(async () => {
     if (!ecoleId) return;
@@ -21,9 +23,9 @@ export function useLivres() {
       .eq("ecole_id", ecoleId)
       .order("titre");
     if (error) { console.error(error); toast.error("Erreur chargement livres"); }
-    else { setLivres(data ?? []); }
+    else { setLivres(isGlobal ? (data ?? []) : (data ?? []).filter((livre) => matchesCycle(livre.cycle_id))); }
     setLoading(false);
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, matchesCycle]);
 
   useEffect(() => {
     if (!ecoleLoading && ecoleId) fetchLivres();

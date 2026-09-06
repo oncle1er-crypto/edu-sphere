@@ -5,10 +5,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoles } from "@/context/EcoleContext";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function TransportStats() {
   const { ecoles } = useEcoles();
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, keepEleve, matchesCycle } = useNiveauFilters();
   const [state, setState] = useState({
     vehicules: 0,
     lignes: 0,
@@ -21,13 +23,14 @@ export default function TransportStats() {
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
     Promise.all([
-      supabase.from("vehicules").select("ecole_id, capacite, statut"),
-      supabase.from("lignes_transport").select("id", { count: "exact", head: true }),
-      supabase.from("abonnements_transport").select("ecole_id, statut"),
+      supabase.from("vehicules").select("ecole_id, capacite, statut, cycle_id").eq("ecole_id", ecoleId),
+      supabase.from("lignes_transport").select("id, cycle_id").eq("ecole_id", ecoleId),
+      supabase.from("abonnements_transport").select("ecole_id, eleve_id, statut").eq("ecole_id", ecoleId),
     ]).then(([vRes, lRes, abRes]) => {
-      const veh = (vRes.data ?? []).filter((v: any) => v.statut === "actif");
+      const veh = (vRes.data ?? []).filter((v: any) => v.statut === "actif" && (isGlobal || matchesCycle(v.cycle_id)));
+      const lignes = (lRes.data ?? []).filter((l: any) => isGlobal || matchesCycle(l.cycle_id));
       const capaciteTotale = veh.reduce((s: number, v: any) => s + (Number(v.capacite) || 0), 0);
-      const abActifs = (abRes.data ?? []).filter((a: any) => a.statut === "actif");
+      const abActifs = (abRes.data ?? []).filter((a: any) => a.statut === "actif" && (isGlobal || keepEleve(a.eleve_id)));
       const transportes = abActifs.length;
       const remplissage = capaciteTotale > 0 ? Math.min(100, Math.round((transportes / capaciteTotale) * 100)) : 0;
 
@@ -35,10 +38,10 @@ export default function TransportStats() {
       abActifs.forEach((a: any) => { parEcoleMap[a.ecole_id] = (parEcoleMap[a.ecole_id] ?? 0) + 1; });
       const parEcole = ecoles.map((e) => ({ label: e.nom, value: parEcoleMap[e.ecole_id] ?? 0 })).filter((r) => r.value > 0);
 
-      setState({ vehicules: veh.length, lignes: lRes.count ?? 0, transportes, remplissage, parEcole });
+      setState({ vehicules: veh.length, lignes: lignes.length, transportes, remplissage, parEcole });
       setLoading(false);
     });
-  }, [ecoleId, ecoles]);
+  }, [ecoleId, ecoles, isGlobal, keepEleve, matchesCycle]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 

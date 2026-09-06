@@ -1,20 +1,21 @@
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { BookOpen, Loader2 } from "lucide-react";
 import { KpiCard, BarChart } from "../components/StatsPrimitives";
-import { usePresences } from "@/hooks/usePresences";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function AttendanceStats() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
+  const { isGlobal, keepClasse } = useNiveauFilters();
   const [stats, setStats] = useState({ total: 0, presents: 0, absents: 0, retards: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!ecoleId) { setLoading(false); return; }
-    supabase.from("presences").select("statut").eq("ecole_id", ecoleId).then(({ data }) => {
-      const list = data ?? [];
+    supabase.from("presences").select("statut, classe_id").eq("ecole_id", ecoleId).then(({ data }) => {
+      const list = isGlobal ? (data ?? []) : (data ?? []).filter((p) => keepClasse(p.classe_id));
       setStats({
         total: list.length,
         presents: list.filter((p: any) => p.statut === "present").length,
@@ -23,7 +24,7 @@ export default function AttendanceStats() {
       });
       setLoading(false);
     });
-  }, [ecoleId]);
+  }, [ecoleId, isGlobal, keepClasse]);
 
   if (loading || ecoleLoading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
