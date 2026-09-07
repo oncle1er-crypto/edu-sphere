@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
+import { isStatutActif } from "@/lib/eleveStatus";
 import type {
   EleveScolarite, Tranche, TrancheStatut, Cycle, PaiementHistorique,
 } from "./scolarite-data";
@@ -53,6 +54,8 @@ interface EleveJoint {
   sexe?: string | null;
   photo_url?: string | null;
   classe_id: string | null;
+  /** Statut d'inscription (pre_inscrit/inscrit/actif/sorti/exclu/transfere) — cf. isStatutActif. */
+  statut?: string | null;
   classes: { nom: string; cycles: { nom: string } | null } | null;
 }
 
@@ -123,8 +126,8 @@ export function useFinanceData(scopedAnneeId?: string) {
     let tranchesQuery = supabase
       .from("tranches")
       .select(scopedAnneeId
-        ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))"
-        : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, classes(nom, cycles(nom)))")
+        ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))"
+        : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))")
       .eq("ecole_id", ecoleId)
       .order("numero");
 
@@ -240,6 +243,12 @@ export function useFinanceData(scopedAnneeId?: string) {
 
     for (const t of tranchesData as unknown as TrancheJointRow[]) {
       if (!t.eleves) continue;
+      // Un élève sorti/exclu/transféré ne doit plus compter dans les KPI et
+      // listes Finances (Frais attendus, Impayés, Avis de retard, etc.) —
+      // cohérent avec StudentsList.tsx qui l'exclut déjà de l'effectif.
+      // Cf. `isStatutActif` : seul filtre reconnu pour "élève réellement dans
+      // l'école" (effectifs, statistiques, listes, finances/créances).
+      if (!isStatutActif(t.eleves.statut)) continue;
       const eleveId = t.eleves.id;
 
       if (!eleveMap.has(eleveId)) {
