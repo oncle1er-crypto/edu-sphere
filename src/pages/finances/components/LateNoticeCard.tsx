@@ -1,45 +1,109 @@
 import type { EcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import {
+  CATEGORIE_LABEL_COURT, categoriesEnRetard, categoriesPhrase, earliestEcheance, fcfa, formatDateFr, totalDu,
+  type AvisTextOptions, type CategorieAvis, type EleveAvisData,
+} from "../lateNotices";
 
 interface Props {
   ecole: EcoleInfo | null;
-  nomEleve: string;
-  classe: string;
-  texte: string;
+  row: EleveAvisData;
+  categoriesActives: CategorieAvis[];
+  options: AvisTextOptions;
+  /**
+   * Texte personnalisé (cf. "Personnaliser l'avis" dans LateNotices.tsx).
+   * S'il est fourni, il remplace entièrement le rendu structuré ci-dessous
+   * — on ne peut pas deviner quoi mettre en gras dans un texte librement
+   * édité par l'utilisateur.
+   */
+  overrideTexte?: string;
   className?: string;
 }
 
 /**
- * Un avis individuel — utilisé à la fois pour l'aperçu à l'écran (une
- * carte) et pour la grille d'impression A4 (plusieurs cartes/page, cf.
- * LateNoticesPrintSheet.tsx qui reprend le pattern de CardsPrintQueue.tsx).
+ * Un avis individuel — format "plein format" en corps de texte lisible
+ * (remplace l'ancien format carte compacte en grille 2 colonnes, changement
+ * demandé le 2026-09-07). En-tête établissement + logo répétés sur chaque
+ * avis. Le nom, la classe et les catégories concernées sont mis en gras
+ * dans le corps du texte par défaut (non personnalisé).
  *
- * Confidentialité : ne jamais ajouter ici de téléphone, d'historique de
- * paiement ou de données d'un autre élève — uniquement nom/prénom, classe
- * et le texte de l'avis déjà filtré en amont.
+ * Confidentialité inchangée : ne jamais ajouter ici de téléphone,
+ * d'historique de paiement ou de données d'un autre élève — uniquement
+ * nom/prénom, classe et les informations déjà filtrées en amont.
  */
-export function LateNoticeCard({ ecole, nomEleve, classe, texte, className }: Props) {
+export function LateNoticeCard({ ecole, row, categoriesActives, options, overrideTexte, className }: Props) {
+  const nomComplet = `${row.prenom} ${row.nom}`.trim();
+  const enRetard = categoriesEnRetard(row, categoriesActives);
+
   return (
-    <div className={`flex h-full w-full flex-col overflow-hidden bg-white p-[3mm] text-slate-800 ${className ?? ""}`}>
-      <div className="flex items-center gap-[2mm] border-b border-slate-300 pb-[1.5mm]">
+    <div className={`text-slate-900 ${className ?? ""}`}>
+      {/*
+        En-tête identique à celui des reçus de paiement (cf. `drawCopy` dans
+        src/lib/generateDocumentsPDF.ts) : logo à gauche (~16mm de haut),
+        nom en gras/majuscules bordeaux, devise en italique entre guillemets,
+        puis adresse • téléphone • email — même hiérarchie et mêmes couleurs
+        (#6E1A2C / #787880), reprises ici en HTML/CSS. Changement demandé le
+        2026-09-07 pour unifier l'en-tête des documents imprimés.
+      */}
+      <div className="flex items-start gap-3 mb-3">
         {ecole?.logo_url && (
-          <img src={ecole.logo_url} alt="" className="h-[7mm] w-[7mm] shrink-0 object-contain" />
+          <img src={ecole.logo_url} alt="" style={{ height: "16mm", width: "auto" }} className="shrink-0 object-contain" />
         )}
         <div className="min-w-0">
-          <p className="truncate text-[7px] font-bold uppercase tracking-wide text-slate-600">
+          <p className="font-serif font-bold uppercase leading-tight" style={{ fontSize: "15px", color: "#6E1A2C" }}>
             {ecole?.nom ?? "Établissement"}
           </p>
-          <p className="text-[9px] font-extrabold uppercase tracking-wider text-primary">Avis aux parents</p>
+          {ecole?.devise && (
+            <p className="font-serif italic leading-tight" style={{ fontSize: "11px", color: "#787880" }}>
+              « {ecole.devise} »
+            </p>
+          )}
+          {(ecole?.adresse || ecole?.telephone || ecole?.email) && (
+            <p className="leading-tight" style={{ fontSize: "10px", color: "#787880" }}>
+              {[ecole?.adresse, ecole?.telephone && `Tél : ${ecole.telephone}`, ecole?.email]
+                .filter(Boolean)
+                .join(" • ")}
+            </p>
+          )}
         </div>
       </div>
+      <div className="border-t border-slate-300 mb-4" />
 
-      <div className="mt-[1.5mm]">
-        <p className="text-[9px] font-bold leading-tight">{nomEleve}</p>
-        <p className="text-[7.5px] text-slate-500">Classe : {classe}</p>
-      </div>
+      <h3 className="text-center text-lg font-bold uppercase tracking-wide mb-4">Avis aux parents</h3>
 
-      <p className="mt-[1.5mm] flex-1 whitespace-pre-line text-[7.5px] leading-[1.35] text-slate-700">
-        {texte}
-      </p>
+      {overrideTexte ? (
+        <p className="whitespace-pre-line text-[13px] leading-relaxed">{overrideTexte}</p>
+      ) : (
+        <>
+          <p className="text-[13px] leading-relaxed mb-3">
+            Madame, Monsieur, nous vous informons que la situation de paiement de votre enfant{" "}
+            <strong>{nomComplet}</strong>, en classe de <strong>{row.classe}</strong>, présente un retard
+            concernant : <strong>{categoriesPhrase(row, categoriesActives)}</strong>.
+          </p>
+          <p className="text-[13px] leading-relaxed">
+            Nous vous prions de bien vouloir vous rapprocher de l'administration afin de régulariser la situation
+            dans les meilleurs délais. Merci de votre compréhension et de votre collaboration.
+          </p>
+
+          {options.includeMontant && enRetard.length > 0 && (
+            <div className="mt-3 text-[13px] leading-relaxed">
+              {enRetard.map((c) => (
+                <p key={c}>
+                  {CATEGORIE_LABEL_COURT[c]} : {fcfa(row.retards[c]!.montantDu)} F CFA
+                </p>
+              ))}
+              {enRetard.length > 1 && (
+                <p className="font-semibold">Total restant : {fcfa(totalDu(row, categoriesActives))} F CFA</p>
+              )}
+            </div>
+          )}
+
+          {options.includeEcheance && earliestEcheance(row, categoriesActives) && (
+            <p className="mt-3 text-[13px] leading-relaxed">
+              Échéance dépassée depuis le <strong>{formatDateFr(earliestEcheance(row, categoriesActives)!)}</strong>.
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

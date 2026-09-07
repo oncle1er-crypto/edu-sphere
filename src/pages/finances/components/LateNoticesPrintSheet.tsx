@@ -1,65 +1,54 @@
 import type { EcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
 import { LateNoticeCard } from "./LateNoticeCard";
+import type { AvisTextOptions, CategorieAvis, EleveAvisData } from "../lateNotices";
 
 export interface PrintableNotice {
   eleveId: string;
-  nomEleve: string;
-  classe: string;
-  texte: string;
+  row: EleveAvisData;
+  /** Texte personnalisé pour cet élève, s'il a été édité — cf. LateNotices.tsx. */
+  overrideTexte?: string;
 }
 
 interface Props {
   ecole: EcoleInfo | null;
   notices: PrintableNotice[];
-  /** Avis par page A4 (2 colonnes fixes) — 6 par défaut (dans la fourchette 4–8 demandée). */
-  parPage?: 4 | 6 | 8;
+  categoriesActives: CategorieAvis[];
+  options: AvisTextOptions;
 }
 
-const GRID_ROWS: Record<number, number> = { 4: 2, 6: 3, 8: 4 };
-
 /**
- * Grille d'impression A4 — reprend exactement le pattern déjà éprouvé dans
- * `src/pages/cartes/sections/CardsPrintQueue.tsx` (planche 210×297mm,
- * `print:break-after-page` entre planches, bordure pointillée de découpe,
- * `#print-area` + `@media print` masquant tout le reste de l'UI). On ne
- * réinvente pas de mécanisme d'impression parallèle.
+ * Feuille d'impression — un avis par section, pleine largeur, texte en
+ * corps lisible (~13px), en-tête établissement + logo répétés sur chaque
+ * avis, séparés par un trait pointillé (ligne de découpe aux ciseaux).
+ *
+ * Remplace l'ancien format "carte" compacte en grille 2 colonnes (changement
+ * demandé le 2026-09-07 — l'ancien format était jugé peu lisible). On garde
+ * le même mécanisme d'impression que `CardsPrintQueue.tsx`
+ * (`#print-area` + `@media print` masquant le reste de l'UI, `@page A4`),
+ * mais la pagination n'est plus calculée manuellement en "planches" : chaque
+ * avis a `break-inside: avoid` pour ne jamais être coupé entre deux pages, et
+ * le navigateur enchaîne naturellement autant d'avis que la place le permet
+ * sur chaque feuille A4 (généralement 2 à 4, selon la longueur du texte).
  */
-export function LateNoticesPrintSheet({ ecole, notices, parPage = 6 }: Props) {
-  const rows = GRID_ROWS[parPage] ?? 3;
-  const sheets = Math.ceil(notices.length / parPage) || 0;
-
+export function LateNoticesPrintSheet({ ecole, notices, categoriesActives, options }: Props) {
   return (
     <>
-      <div id="print-area" className="space-y-6 print:space-y-0">
-        {Array.from({ length: sheets }).map((_, sheetIdx) => {
-          const slice = notices.slice(sheetIdx * parPage, sheetIdx * parPage + parPage);
-          return (
-            <div
-              key={sheetIdx}
-              className="bg-white mx-auto shadow-md print:shadow-none print:break-after-page"
-              style={{ width: "210mm", minHeight: "297mm", padding: "10mm" }}
-            >
-              <p className="text-[10px] text-slate-400 mb-2 print:hidden">
-                Planche {sheetIdx + 1} / {sheets}
-              </p>
-              <div
-                className="grid"
-                style={{
-                  gridTemplateColumns: "repeat(2, 92mm)",
-                  gridTemplateRows: `repeat(${rows}, 88mm)`,
-                  gap: "5mm",
-                  justifyContent: "center",
-                }}
-              >
-                {slice.map((n) => (
-                  <div key={n.eleveId} className="border border-dashed border-slate-300">
-                    <LateNoticeCard ecole={ecole} nomEleve={n.nomEleve} classe={n.classe} texte={n.texte} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      <div id="print-area" className="bg-white mx-auto shadow-md print:shadow-none" style={{ width: "210mm", padding: "15mm" }}>
+        {notices.map((n) => (
+          <div
+            key={n.eleveId}
+            className="pb-6 mb-6 border-b border-dashed border-slate-400 last:border-b-0"
+            style={{ breakInside: "avoid" }}
+          >
+            <LateNoticeCard
+              ecole={ecole}
+              row={n.row}
+              categoriesActives={categoriesActives}
+              options={options}
+              overrideTexte={n.overrideTexte}
+            />
+          </div>
+        ))}
       </div>
 
       <style>{`

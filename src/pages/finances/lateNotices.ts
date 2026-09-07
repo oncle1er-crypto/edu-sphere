@@ -98,6 +98,24 @@ export interface AvisTextOptions {
 }
 
 /**
+ * Phrase française listant les catégories en retard, ex. "la scolarité, la
+ * cantine et le transport". Exportée séparément de `buildAvisText` pour être
+ * réutilisée telle quelle par le rendu "gras" de `LateNoticeCard.tsx`
+ * (affichage plein format, cf. changement du 2026-09-07) sans dupliquer la
+ * logique de jointure française.
+ */
+export function categoriesPhrase(row: EleveAvisData, categoriesActives: CategorieAvis[]): string {
+  return joinFrench(categoriesEnRetard(row, categoriesActives).map((c) => CATEGORIE_LABEL_LONG[c]));
+}
+
+/** Échéance la plus ancienne (YYYY-MM-DD) parmi les catégories en retard, ou `null` si aucune. */
+export function earliestEcheance(row: EleveAvisData, categoriesActives: CategorieAvis[]): string | null {
+  const enRetard = categoriesEnRetard(row, categoriesActives);
+  if (enRetard.length === 0) return null;
+  return enRetard.map((c) => row.retards[c]!.echeance).sort()[0];
+}
+
+/**
  * Génère le texte par défaut de l'avis (2 paragraphes), adapté aux catégories
  * réellement en retard de cet élève. Le montant/l'échéance, s'ils sont
  * activés, sont ajoutés en bloc distinct après le corps du message (comme
@@ -105,7 +123,7 @@ export interface AvisTextOptions {
  */
 export function buildAvisText(row: EleveAvisData, categoriesActives: CategorieAvis[], opts: AvisTextOptions): string {
   const enRetard = categoriesEnRetard(row, categoriesActives);
-  const phrase = joinFrench(enRetard.map((c) => CATEGORIE_LABEL_LONG[c]));
+  const phrase = categoriesPhrase(row, categoriesActives);
   const nomComplet = `${row.prenom} ${row.nom}`.trim();
 
   let texte =
@@ -122,10 +140,8 @@ export function buildAvisText(row: EleveAvisData, categoriesActives: CategorieAv
     }
   }
 
-  if (opts.includeEcheance && enRetard.length > 0) {
-    const plusAncienne = enRetard
-      .map((c) => row.retards[c]!.echeance)
-      .sort()[0];
+  if (opts.includeEcheance) {
+    const plusAncienne = earliestEcheance(row, categoriesActives);
     if (plusAncienne) {
       texte += `\n\nÉchéance dépassée depuis le ${formatDateFr(plusAncienne)}.`;
     }

@@ -197,13 +197,10 @@ export default function LateNotices() {
         .filter((r) => selected[r.eleveId])
         .map((r) => ({
           eleveId: r.eleveId,
-          nomEleve: `${r.prenom} ${r.nom}`,
-          classe: r.classe,
-          texte: textFor(r),
+          row: r,
+          overrideTexte: textOverrides[r.eleveId],
         })),
-    // textFor dépend de textOverrides/categoriesActives/includeMontant/includeEcheance — inclus explicitement.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [lateRows, selected, textOverrides, categoriesActives, includeMontant, includeEcheance],
+    [lateRows, selected, textOverrides],
   );
 
   const loading = periodLoading || classesLoading || elevesLoading || finLoading;
@@ -346,7 +343,7 @@ export default function LateNotices() {
                   {visibleRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-sm">
-                        Aucun élève {showOnlyLate ? "en retard" : ""} dans cette classe pour les catégories sélectionnées 🎉
+                        Aucun élève{showOnlyLate ? " en retard" : ""} dans cette classe pour les catégories sélectionnées.
                       </TableCell>
                     </TableRow>
                   )}
@@ -388,7 +385,12 @@ export default function LateNotices() {
             </Button>
           </div>
 
-          <LateNoticesPrintSheet ecole={ecole} notices={notices} parPage={6} />
+          <LateNoticesPrintSheet
+            ecole={ecole}
+            notices={notices}
+            categoriesActives={categoriesActives}
+            options={{ includeMontant, includeEcheance }}
+          />
         </SettingsSection>
       )}
 
