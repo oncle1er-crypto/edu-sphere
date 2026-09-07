@@ -5,6 +5,8 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 export interface EcoleInfo {
   nom: string;
   sigle?: string | null;
+  /** Devise/motto de l'école (ex. « Foi, Savoir, Excellence ») — affichée dans l'en-tête, cf. reçus. */
+  devise?: string | null;
   adresse?: string | null;
   telephone?: string | null;
   email?: string | null;
@@ -36,7 +38,7 @@ export function useEcoleInfo() {
     (async () => {
       const { data } = await supabase
         .from("ecoles")
-        .select("nom, sigle, adresse, telephone, email, logo_url, ville, directeur, ministere, drenet, ddenet, devise_nationale, armoiries_url")
+        .select("nom, sigle, devise, adresse, telephone, email, logo_url, ville, directeur, ministere, drenet, ddenet, devise_nationale, armoiries_url")
         .eq("id", ecoleId)
         .maybeSingle();
       if (!cancelled) setEcole((data as EcoleInfo) ?? null);

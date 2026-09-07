@@ -104,6 +104,7 @@ const StudentSummary = lazy(() => import("@/pages/finances/sections/StudentSumma
 const ClassSummary = lazy(() => import("@/pages/finances/sections/ClassSummary"));
 const Receipts = lazy(() => import("@/pages/finances/sections/Receipts"));
 const Unpaid = lazy(() => import("@/pages/finances/sections/Unpaid"));
+const LateNotices = lazy(() => import("@/pages/finances/sections/LateNotices"));
 const Expenses = lazy(() => import("@/pages/finances/sections/Expenses"));
 const Payroll = lazy(() => import("@/pages/finances/sections/Payroll"));
 const Suppliers = lazy(() => import("@/pages/finances/sections/Suppliers"));
@@ -424,6 +425,7 @@ const App = () => (
               <Route path="synthese-classe" element={<RequirePerm module="finances"><ClassSummary /></RequirePerm>} />
               <Route path="recus" element={<RequirePerm module="finances"><Receipts /></RequirePerm>} />
               <Route path="impayes" element={<RequirePerm module="finances"><Unpaid /></RequirePerm>} />
+              <Route path="avis-retard" element={<RequirePerm module="finances"><LateNotices /></RequirePerm>} />
               <Route path="depenses" element={<RequirePerm module={["finances", "finances.depenses"]}><Expenses /></RequirePerm>} />
               <Route path="salaires" element={<RequirePerm module="finances"><Payroll /></RequirePerm>} />
               <Route path="fournisseurs" element={<RequirePerm module="finances"><Suppliers /></RequirePerm>} />
