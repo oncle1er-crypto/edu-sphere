@@ -39,12 +39,36 @@ export interface Depense {
    * scanné signé, téléversé après impression + signature manuscrite. */
   fiche_piece_jointe_chemin: string | null;
   fiche_piece_jointe_nom: string | null;
+  /** Justificatif général (facture, reçu, ticket…) — distinct de
+   * fiche_piece_jointe_* : une dépense peut avoir les deux à la fois.
+   * Joignable à la création ou tant que la dépense est "en_attente". */
+  justificatif_chemin: string | null;
+  justificatif_nom: string | null;
 }
 
 /** Génère une référence de pièce comptable, même convention que les autres
  * modules (PAY-/TRP-/CTN-… : préfixe + fragment temporel en base36). */
 function genererReference(): string {
   return `DEP-${Date.now().toString(36).toUpperCase()}`;
+}
+
+/**
+ * Téléverse un justificatif général (facture/reçu) vers le bucket privé
+ * justificatifs-depenses et référence son chemin sur la dépense. Fonction
+ * de module (pas de dépendance à l'état du hook) : réutilisée à la fois
+ * juste après la création d'une dépense (addDepense) et par l'attache
+ * ultérieure (uploadJustificatif, qui vérifie en plus le statut avant
+ * d'appeler ceci). Même bucket et même convention de chemin que
+ * fiche_piece_jointe_* (ecole_id/depense_id/…), fichier distinct.
+ */
+async function uploadJustificatifStorage(id: string, ecoleId: string, file: File): Promise<boolean> {
+  const ext = file.name.split(".").pop();
+  const path = `${ecoleId}/${id}/justificatif-${Date.now()}.${ext}`;
+  const { error: upErr } = await supabase.storage.from("justificatifs-depenses").upload(path, file, { upsert: true });
+  if (upErr) { toast.error("Erreur de téléversement : " + messageErreurBase(upErr)); return false; }
+  const { error } = await supabase.from("depenses").update({ justificatif_chemin: path, justificatif_nom: file.name }).eq("id", id);
+  if (error) { toast.error("Erreur : " + messageErreurBase(error)); return false; }
+  return true;
 }
 
 /** Champs saisis par l'utilisateur à la création — le reste (id, audit, statut initial, référence) est géré par le hook. */
@@ -113,18 +137,28 @@ export function useDepenses(range?: { from?: string; to?: string }) {
 
   useEffect(() => { if (!ecoleLoading && ecoleId) fetch(); if (!ecoleLoading && !ecoleId) setLoading(false); }, [ecoleLoading, ecoleId, fetch]);
 
-  const addDepense = async (d: NouvelleDepense) => {
+  /**
+   * Crée la dépense puis, si un fichier est fourni, téléverse immédiatement
+   * le justificatif général sur la ligne créée (nécessite l'id retourné par
+   * l'insert). En cas d'échec du téléversement, la dépense reste créée sans
+   * justificatif — l'utilisateur peut le joindre ensuite tant qu'elle est
+   * "en_attente" (cf. uploadJustificatif), pas de rollback de la dépense.
+   */
+  const addDepense = async (d: NouvelleDepense, justificatifFile?: File) => {
     if (!ecoleId) return;
     if (!(d.montant > 0)) { toast.error("Le montant doit être supérieur à zéro."); return; }
-    const { error } = await supabase.from("depenses").insert({
+    const { data: inserted, error } = await supabase.from("depenses").insert({
       ...d,
       ecole_id: ecoleId,
       reference: genererReference(),
       statut: "en_attente",
       enregistre_par: user?.id ?? null,
-    });
+    }).select("id").single();
     if (error) { toast.error("Erreur : " + messageErreurBase(error)); return; }
     toast.success("Dépense enregistrée");
+    if (justificatifFile && inserted?.id) {
+      await uploadJustificatifStorage(inserted.id, ecoleId, justificatifFile);
+    }
     fetch();
   };
 
@@ -246,6 +280,42 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     URL.revokeObjectURL(url);
   };
 
+  /**
+   * Joint (ou remplace) le justificatif général d'une dépense déjà créée —
+   * réservé aux dépenses "en_attente", comme les autres modifications
+   * (cf. updateDepense). Pour joindre un justificatif à la création, passer
+   * le fichier directement à addDepense.
+   */
+  const uploadJustificatif = async (id: string, file: File) => {
+    if (!ecoleId) return false;
+    const cible = trouver(id);
+    if (!cible) return false;
+    if (cible.statut !== "en_attente") {
+      toast.error("Seules les dépenses en attente peuvent recevoir un justificatif.");
+      return false;
+    }
+    const ok = await uploadJustificatifStorage(id, ecoleId, file);
+    if (!ok) return false;
+    toast.success("Justificatif joint à la dépense");
+    fetch();
+    return true;
+  };
+
+  /**
+   * Ouvre le justificatif dans un nouvel onglet via une URL signée temporaire
+   * (bucket privé) — même mécanisme que StudentDetailDrawer/StudentsDocuments
+   * pour les autres documents stockés en privé. Fonctionne pour n'importe
+   * quel chemin du bucket justificatifs-depenses (justificatif général ou
+   * fiche signée), quel que soit le statut de la dépense : consulter une
+   * pièce déjà jointe reste possible après validation, seule l'ajout/le
+   * remplacement est bloqué (cf. uploadJustificatif ci-dessus).
+   */
+  const previewJustificatif = async (chemin: string) => {
+    const { data, error } = await supabase.storage.from("justificatifs-depenses").createSignedUrl(chemin, 300);
+    if (error || !data?.signedUrl) { toast.error("Impossible d'ouvrir le fichier : " + (error ? messageErreurBase(error) : "")); return; }
+    window.open(data.signedUrl, "_blank", "noopener");
+  };
+
   return {
     depenses,
     loading: loading || ecoleLoading,
@@ -258,6 +328,8 @@ export function useDepenses(range?: { from?: string; to?: string }) {
     reouvrirDepense,
     uploadJustificatifFiche,
     telechargerJustificatifFiche,
+    uploadJustificatif,
+    previewJustificatif,
     refetch: fetch,
     ecoleId,
   };
