@@ -8,7 +8,7 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "android:assets": "node scripts/generate-android-assets.mjs && capacitor-assets generate --android --iconBackgroundColor '#fffaf0' --iconBackgroundColorDark '#fffaf0' --splashBackgroundColor '#fffaf0' --splashBackgroundColorDark '#fffaf0'",
-    "android:sync": "npm run build && npm run android:assets && cap sync android",
+    "android:sync": "npm run build && node scripts/prepare-android-web.mjs && npm run android:assets && cap sync android",
     "android:open": "cap open android",
     "android:apk": "npm run android:sync && cd android && ./gradlew assembleRelease",
     "android:aab": "npm run android:sync && cd android && ./gradlew bundleRelease",
