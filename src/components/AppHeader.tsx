@@ -25,6 +25,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent } from "@/components/
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { AndroidUpdateMenuItem } from "@/components/native/AndroidUpdateMenuItem";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
 import { NiveauSwitcher } from "@/components/NiveauSwitcher";
@@ -193,6 +194,7 @@ export function AppHeader({ userName = "Administrateur" }: AppHeaderProps) {
                 Paramètres du compte
               </DropdownMenuItem>
               <InstallPWAMenuItem />
+              <AndroidUpdateMenuItem />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"

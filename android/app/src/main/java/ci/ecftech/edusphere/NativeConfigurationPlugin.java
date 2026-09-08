@@ -1,6 +1,8 @@
 package ci.ecftech.edusphere;
 
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -23,5 +25,19 @@ public class NativeConfigurationPlugin extends Plugin {
         JSObject result = new JSObject();
         result.put("pushConfigured", hasPushConfiguration(getContext()));
         call.resolve(result);
+    }
+    @PluginMethod
+    public void openUpdateDownload(PluginCall call) {
+        String url = call.getString("url", "");
+        if (!url.matches("https://gs-laprovidence\\.lovable\\.app/android/releases/la-providence-[0-9]+\\.[0-9]+\\.[0-9]+-[0-9]+\\.apk")) {
+            call.reject("Adresse de téléchargement non autorisée.");
+            return;
+        }
+        try {
+            getActivity().startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+            call.resolve();
+        } catch (RuntimeException error) {
+            call.reject("Aucun navigateur disponible pour télécharger la mise à jour.");
+        }
     }
 }
