@@ -2,6 +2,8 @@ name: Android — APK et AAB
 
 on:
   workflow_dispatch:
+  push:
+    branches: [feat/android-apk-aab]
   pull_request:
     branches: [main]
     paths:
@@ -63,6 +65,20 @@ jobs:
       - name: Tests natifs et APK de vérification
         working-directory: android
         run: ./gradlew test lint assembleDebug bundleRelease
+
+      - name: Activer KVM pour le test Android
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Vérifier le pont natif sur émulateur Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: cd android && ./gradlew connectedDebugAndroidTest
 
       - name: Préparer les fichiers téléchargeables
         run: |
