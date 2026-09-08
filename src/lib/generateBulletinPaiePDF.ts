@@ -177,7 +177,7 @@ export async function generateBulletinPaiePDF(data: BulletinPaieData): Promise<j
     ["Département", libelleDepartement(s.departement)],
     [
       "Date d'embauche",
-      s.date_embauche ? new Date(s.date_embauche).toLocaleDateString("fr-FR") : DASH,
+      dateFr(s.date_embauche),
     ],
     ["N° CNPS", val(s.numero_cnps)],
     ["N° CMU", val(s.numero_cmu)],
