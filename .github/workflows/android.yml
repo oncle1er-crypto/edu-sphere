@@ -2,8 +2,6 @@ name: Android — APK et AAB
 
 on:
   workflow_dispatch:
-  push:
-    branches: [feat/android-apk-aab]
   pull_request:
     branches: [main]
     paths:
@@ -78,7 +76,7 @@ jobs:
           api-level: 35
           arch: x86_64
           disable-animations: true
-          script: cd android && ./gradlew connectedDebugAndroidTest
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest
 
       - name: Préparer les fichiers téléchargeables
         run: |
