@@ -31,6 +31,10 @@ ALTER TABLE public.depenses
 -- en place, n'élargit rien au-delà de ce que ce rôle peut déjà faire sur la
 -- ligne depenses correspondante.
 
+-- Certaines bases locales ont déjà reçu ces policies manuellement.
+DO $$ BEGIN
+IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'storage'
+ AND tablename = 'objects' AND policyname = 'depenses_justificatifs_insert_secretaire') THEN
 CREATE POLICY "depenses_justificatifs_insert_secretaire"
 ON storage.objects FOR INSERT
 TO authenticated
@@ -44,7 +48,10 @@ WITH CHECK (
       AND d.statut = 'en_attente'
   )
 );
+END IF;
 
+IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE schemaname = 'storage'
+ AND tablename = 'objects' AND policyname = 'depenses_justificatifs_update_secretaire') THEN
 CREATE POLICY "depenses_justificatifs_update_secretaire"
 ON storage.objects FOR UPDATE
 TO authenticated
@@ -58,3 +65,5 @@ USING (
       AND d.statut = 'en_attente'
   )
 );
+END IF;
+END $$;

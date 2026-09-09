@@ -1,5 +1,25 @@
 import { test, expect } from '@playwright/test';
 
+test.beforeEach(async ({ context, page }) => {
+  const failures: string[] = [];
+  await context.route('**/*', async route => {
+    const url = new URL(route.request().url());
+    if (url.hostname.endsWith('.supabase.co')) {
+      failures.push(`Supabase distant : ${url.origin}`);
+      await route.abort();
+    } else await route.continue();
+  });
+  page.on('console', msg => { if (msg.type() === 'error') failures.push(msg.text()); });
+  page.on('pageerror', error => failures.push(error.message));
+  page.on('requestfailed', request => failures.push(`Réseau : ${request.url()}`));
+  page.on('response', response => { if (response.status() >= 400) failures.push(`HTTP ${response.status()} : ${response.url()}`); });
+  test.info().annotations.push({ type: 'network-audit', description: 'Écoute installée avant navigation' });
+  // Vérification dans afterEach, y compris en cas d'erreur de navigation.
+  audits.set(page, failures);
+});
+const audits = new WeakMap<object, string[]>();
+test.afterEach(async ({ page }) => { expect(audits.get(page)).toEqual([]); });
+
 test.describe('Smoke Tests - Application Launch', () => {
   test('should load the application successfully', async ({ page }) => {
     // Navigate to the home page and check the real HTTP status
