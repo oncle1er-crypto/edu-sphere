@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { GraduationCap, Users, DollarSign, TrendingUp, Loader2 } from "lucide-react";
+import { GraduationCap, Users, DollarSign, TrendingUp, Loader2, RefreshCw } from "lucide-react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line,
@@ -30,6 +31,7 @@ export default function Dashboard() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (ecoleLoading) return;
@@ -111,7 +113,12 @@ export default function Dashboard() {
       });
       setLoading(false);
     })();
-  }, [ecoleId, ecoleLoading]);
+  }, [ecoleId, ecoleLoading, refreshKey]);
+
+  const refreshDashboard = () => {
+    setLoading(true);
+    setRefreshKey((key) => key + 1);
+  };
 
   if (loading || ecoleLoading) {
     return <div className="flex items-center justify-center py-32"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
@@ -124,9 +131,21 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold font-display text-foreground">Tableau de bord</h1>
-        <p className="text-muted-foreground text-sm mt-1">Vue d'ensemble de votre établissement</p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold font-display text-foreground">Tableau de bord</h1>
+          <p className="text-muted-foreground text-sm mt-1">Vue d'ensemble de votre établissement</p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={refreshDashboard}
+          aria-label="Actualiser le tableau de bord"
+          className="h-11 w-full gap-2 sm:h-10 sm:w-auto"
+        >
+          <RefreshCw className="h-4 w-4" aria-hidden="true" />
+          Actualiser
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
