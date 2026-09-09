@@ -1,0 +1,8 @@
+{
+  "applicationId": "ci.ecftech.edusphere",
+  "versionCode": 4,
+  "versionName": "1.0.3",
+  "apkUrl": "https://gs-laprovidence.lovable.app/android/releases/la-providence-1.0.3-4.apk",
+  "sha256": "e05b6cda5e56ead4f1eaac61ef961d9eaa1b0f8514c6843ed62d0be69fd27d77",
+  "signingCertificateSha256": "39c736d549743f1be232f8260a1242211f33ca30624e74b29a337a9133c7baad"
+}
