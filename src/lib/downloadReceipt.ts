@@ -29,6 +29,7 @@ interface PaiementReceiptRow {
   tranche_id: string | null;
   annule_le: string | null;
   motif_annulation: string | null;
+  rembourse: boolean;
   tranches: { numero: number; label: string } | null;
 }
 
@@ -70,7 +71,7 @@ async function buildReceiptPdfForPayments({
   const [{ data: paiementsSelectionnes }, { data: ecole }, { data: eleve }, { data: tranches }] =
     await Promise.all([
       supabase.from("paiements")
-        .select("id, reference, montant, mode, motif, date_paiement, created_at, tranche_id, annule_le, motif_annulation, tranches(numero,label)")
+        .select("id, reference, montant, mode, motif, date_paiement, created_at, tranche_id, annule_le, motif_annulation, rembourse, tranches(numero,label)")
         .eq("ecole_id", ecoleId)
         .eq("eleve_id", eleveId)
         .in("id", ids)
@@ -159,9 +160,14 @@ async function buildReceiptPdfForPayments({
     hideVersementLine,
   });
 
-  // Reçu d'un paiement annulé : on imprime un filigrane « ANNULÉ » rouge.
+  // Reçu d'un paiement annulé/remboursé : on imprime un filigrane rouge.
+  // Un remboursement n'a de sens qu'unitaire (un seul paiement à la fois,
+  // cf. RefundPaymentDialog) — `every(...rembourse)` reste correct même
+  // lorsque `lignes` contient plusieurs lignes issues d'une opération groupée
+  // de simples annulations.
   if (lignes.every((item) => item.annule_le)) {
-    stampCancelled(pdf, lignes[lignes.length - 1].annule_le);
+    const variant = lignes.every((item) => item.rembourse) ? "rembourse" : "annule";
+    stampCancelled(pdf, lignes[lignes.length - 1].annule_le, variant);
   }
 
   return {

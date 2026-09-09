@@ -4415,6 +4415,7 @@ export type Database = {
           notes: string | null
           recu_par: string | null
           reference: string | null
+          rembourse: boolean
           tranche_id: string | null
         }
         Insert: {
@@ -4433,6 +4434,7 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
+          rembourse?: boolean
           tranche_id?: string | null
         }
         Update: {
@@ -4451,6 +4453,7 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
+          rembourse?: boolean
           tranche_id?: string | null
         }
         Relationships: [
@@ -8131,7 +8134,7 @@ export type Database = {
         Returns: Json
       }
       annuler_paiement_scolarite: {
-        Args: { _motif: string; _paiement_id: string }
+        Args: { _motif: string; _paiement_id: string; _rembourse?: boolean }
         Returns: Json
       }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
@@ -8441,6 +8444,10 @@ export type Database = {
         Returns: number
       }
       register_failed_mfa: { Args: never; Returns: Json }
+      rembourser_paiement_scolarite: {
+        Args: { _motif: string; _paiement_id: string }
+        Returns: Json
+      }
       renouveler_abonnements: {
         Args: {
           _annee_cible: string
