@@ -1,5 +1,8 @@
 name: Android — Publication signée
 on:
+  push:
+    branches: [main]
+    paths: ["android/release.json"]
   workflow_dispatch:
     inputs:
       version_name:
@@ -31,10 +34,17 @@ jobs:
       - name: Valider la version
         run: |
           python3 - <<'PY'
-          import os,re
+          import os,re,json,pathlib
+          release=json.loads(pathlib.Path('android/release.json').read_text())
+          version=os.environ['ANDROID_VERSION_NAME'] or release['versionName']
+          code=os.environ['ANDROID_VERSION_CODE'] or str(release['versionCode'])
+          os.environ['ANDROID_VERSION_NAME']=version
+          os.environ['ANDROID_VERSION_CODE']=code
           assert re.fullmatch(r'\d+\.\d+\.\d+',os.environ['ANDROID_VERSION_NAME'])
           assert re.fullmatch(r'\d+',os.environ['ANDROID_VERSION_CODE'])
           assert 4 <= int(os.environ['ANDROID_VERSION_CODE']) <= 2100000000
+          with open(os.environ['GITHUB_ENV'],'a') as output:
+              output.write(f'ANDROID_VERSION_NAME={version}\nANDROID_VERSION_CODE={code}\n')
           PY
       - uses: actions/setup-java@v4
         with:
@@ -85,7 +95,7 @@ jobs:
         run: node scripts/prepare-android-release.mjs android/app/build/outputs/apk/release/app-release.apk "$ANDROID_VERSION_CODE" "$ANDROID_VERSION_NAME"
       - uses: actions/upload-artifact@v4
         with:
-          name: la-providence-release-${{ inputs.version_code }}
+          name: la-providence-release-${{ env.ANDROID_VERSION_CODE }}
           path: |
             public/android/
             android/app/build/outputs/bundle/release/app-release.aab
