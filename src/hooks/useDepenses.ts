@@ -63,11 +63,29 @@ function genererReference(): string {
  */
 async function uploadJustificatifStorage(id: string, ecoleId: string, file: File): Promise<boolean> {
   const ext = file.name.split(".").pop();
-  const path = `${ecoleId}/${id}/justificatif-${Date.now()}.${ext}`;
-  const { error: upErr } = await supabase.storage.from("justificatifs-depenses").upload(path, file, { upsert: true });
+  const path = `${ecoleId}/${id}/justificatif-${crypto.randomUUID()}.${ext}`;
+  const { data: previous, error: readError } = await supabase.from("depenses")
+    .select("justificatif_chemin").eq("id", id).eq("ecole_id", ecoleId).eq("statut", "en_attente").single();
+  if (readError) { toast.error("La dépense n'est plus un brouillon accessible."); return false; }
+  const { error: upErr } = await supabase.storage.from("justificatifs-depenses").upload(path, file, { upsert: false });
   if (upErr) { toast.error("Erreur de téléversement : " + messageErreurBase(upErr)); return false; }
-  const { error } = await supabase.from("depenses").update({ justificatif_chemin: path, justificatif_nom: file.name }).eq("id", id);
-  if (error) { toast.error("Erreur : " + messageErreurBase(error)); return false; }
+  let update = supabase.from("depenses").update({ justificatif_chemin: path, justificatif_nom: file.name })
+    .eq("id", id).eq("ecole_id", ecoleId).eq("statut", "en_attente");
+  // Comparaison optimiste : ne pas écraser un remplacement concurrent.
+  update = previous.justificatif_chemin === null
+    ? update.is("justificatif_chemin", null)
+    : update.eq("justificatif_chemin", previous.justificatif_chemin);
+  const { error } = await update.select("id").single();
+  if (error) {
+    const cleanup = await supabase.storage.from("justificatifs-depenses").remove([path]);
+    toast.error("Justificatif non associé : " + messageErreurBase(error));
+    if (cleanup.error) toast.warning("Le fichier téléversé n'a pas pu être nettoyé.");
+    return false;
+  }
+  if (previous.justificatif_chemin && previous.justificatif_chemin.startsWith(`${ecoleId}/${id}/justificatif-`)) {
+    const cleanup = await supabase.storage.from("justificatifs-depenses").remove([previous.justificatif_chemin]);
+    if (cleanup.error) toast.warning("Justificatif remplacé, mais l'ancien fichier n'a pas pu être nettoyé.");
+  }
   return true;
 }
 

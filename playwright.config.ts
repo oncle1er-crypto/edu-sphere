@@ -31,7 +31,7 @@ loadEnvLocal('.env.local');
  */
 function assertSupabaseUrlIsLocal() {
   const url = process.env.VITE_SUPABASE_URL;
-  if (!url) return; // pas de config Supabase : rien à vérifier ici.
+  if (!url) throw new Error('VITE_SUPABASE_URL locale obligatoire pour les tests E2E.');
   const isLocal = /^https?:\/\/(127\.0\.0\.1|localhost|\[::1\])(:|\/|$)/i.test(url);
   if (!isLocal) {
     throw new Error(
