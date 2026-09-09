@@ -1,6 +1,6 @@
 import {
   Receipt, Loader2, Download, Eye, MoreVertical, Pencil, Merge, Wallet, Printer, FileText,
-  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw, Ban,
+  Search, X, ArrowUp, ArrowDown, ArrowUpDown, FileSpreadsheet, RotateCcw, Ban, HandCoins,
 } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -17,6 +17,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { fcfa } from "../useFinanceData";
 import { CancelPaymentDialog, type CancelPaymentTarget } from "../components/CancelPaymentDialog";
+import { RefundPaymentDialog, type RefundPaymentTarget } from "../components/RefundPaymentDialog";
 import { PAIEMENT_MODE_META, modeMeta } from "../scolarite-data";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +46,7 @@ interface PaiementJointRow {
   tranche_id: string | null;
   annule_le: string | null;
   motif_annulation: string | null;
+  rembourse: boolean;
   tranches: { numero: number } | null;
   eleves: { nom: string; prenom: string; matricule: string; photo_url: string | null; classe_id: string | null; classes: { nom: string } | null } | null;
 }
@@ -79,6 +81,7 @@ interface PaiementRecu {
   tranche_numero: number | null;
   annule_le: string | null;
   motif_annulation: string | null;
+  rembourse: boolean;
 }
 
 interface EcoleInfo {
@@ -214,7 +217,7 @@ export default function Receipts() {
     supabase
       .from("paiements")
       .select(
-        "id, reference, montant, date_paiement, mode, eleve_id, tranche_id, annule_le, motif_annulation, " +
+        "id, reference, montant, date_paiement, mode, eleve_id, tranche_id, annule_le, motif_annulation, rembourse, " +
         "tranches!inner(numero, frais_scolarite!inner(annee_id)), " +
         "eleves(nom, prenom, matricule, photo_url, classe_id, classes(nom))"
       )
@@ -242,6 +245,7 @@ export default function Receipts() {
             tranche_numero: p.tranches?.numero ?? null,
             annule_le: p.annule_le ?? null,
             motif_annulation: p.motif_annulation ?? null,
+            rembourse: p.rembourse ?? false,
           }))
         );
         setLoading(false);
@@ -521,6 +525,17 @@ export default function Receipts() {
 
   const [cancelTarget, setCancelTarget] = useState<CancelPaymentTarget | null>(null);
   const openCancel = (r: PaiementRecu) => setCancelTarget({
+    id: r.id,
+    date: r.date_paiement,
+    montant: r.montant,
+    modeLabel: modeMeta(r.mode).label,
+    reference: r.reference,
+    trancheNum: r.tranche_numero,
+    eleveLabel: `${r.eleve_nom} ${r.eleve_prenom}`,
+  });
+
+  const [refundTarget, setRefundTarget] = useState<RefundPaymentTarget | null>(null);
+  const openRefund = (r: PaiementRecu) => setRefundTarget({
     id: r.id,
     date: r.date_paiement,
     montant: r.montant,
@@ -962,7 +977,9 @@ export default function Receipts() {
                   <TableCell className="text-xs">
                     {r.tranche_numero != null ? `T${r.tranche_numero}` : "—"}
                     {r.annule_le && (
-                      <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground border-border text-[9px] no-underline">ANNULÉ</Badge>
+                      <Badge variant="outline" className="ml-2 bg-muted text-muted-foreground border-border text-[9px] no-underline">
+                        {r.rembourse ? "REMBOURSÉ" : "ANNULÉ"}
+                      </Badge>
                     )}
                   </TableCell>
                   <TableCell>
@@ -995,6 +1012,11 @@ export default function Receipts() {
                           {!r.annule_le && (
                             <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openCancel(r)}>
                               <Ban className="h-4 w-4 mr-2" /> Annuler cet encaissement
+                            </DropdownMenuItem>
+                          )}
+                          {!r.annule_le && (
+                            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => openRefund(r)}>
+                              <HandCoins className="h-4 w-4 mr-2" /> Rembourser cet encaissement
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
@@ -1093,6 +1115,13 @@ export default function Receipts() {
         open={!!cancelTarget}
         onOpenChange={(o) => { if (!o) setCancelTarget(null); }}
         onCancelled={fetchRecus}
+      />
+
+      <RefundPaymentDialog
+        paiement={refundTarget}
+        open={!!refundTarget}
+        onOpenChange={(o) => { if (!o) setRefundTarget(null); }}
+        onRefunded={fetchRecus}
       />
 
       {/* Édition mode */}

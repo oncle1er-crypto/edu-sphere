@@ -28,6 +28,9 @@ import DuplicatesDialog from "@/pages/eleves/components/DuplicatesDialog";
 import { isStatutActif } from "@/lib/eleveStatus";
 import { useAnciensMatricules } from "@/hooks/useAnciensMatricules";
 import { generateListeElevesPDF, type RosterClasse, type RosterData } from "@/lib/generateStudentRosterPDF";
+import { RefundPaymentDialog, type RefundPaymentTarget } from "@/pages/finances/components/RefundPaymentDialog";
+import { fcfa, modeMeta } from "@/pages/finances/scolarite-data";
+import { HandCoins } from "lucide-react";
 
 const initials = (n: string, p: string) => `${(p?.[0] ?? "")}${(n?.[0] ?? "")}`.toUpperCase();
 
@@ -82,6 +85,14 @@ export default function StudentsList() {
   const [transferClasseId, setTransferClasseId] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<typeof eleves[0] | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  // Paiements actifs (non annulés) de l'élève qu'on s'apprête à désinscrire —
+  // affichés dans le dialogue pour permettre un remboursement immédiat sans
+  // avoir à aller chercher le paiement dans Finances → Reçus après coup.
+  const [paiementsDesinscription, setPaiementsDesinscription] = useState<
+    { id: string; date_paiement: string; montant: number; mode: string; reference: string | null; tranche_numero: number | null }[]
+  >([]);
+  const [loadingPaiementsDesinscription, setLoadingPaiementsDesinscription] = useState(false);
+  const [refundTarget, setRefundTarget] = useState<RefundPaymentTarget | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [duplicatesOpen, setDuplicatesOpen] = useState(false);
   const [purgeTarget, setPurgeTarget] = useState<typeof eleves[0] | null>(null);
@@ -186,6 +197,33 @@ export default function StudentsList() {
     setDeleteTarget(null);
     setActionLoading(false);
   };
+
+  // Charge les paiements actifs de l'élève ciblé par la désinscription, pour
+  // affichage/remboursement immédiat dans le dialogue. Rejoué après chaque
+  // remboursement (onRefunded) pour que la liste reste à jour sans fermer
+  // le dialogue de désinscription.
+  const fetchPaiementsDesinscription = async (eleveId: string) => {
+    setLoadingPaiementsDesinscription(true);
+    const { data } = await supabase
+      .from("paiements")
+      .select("id, date_paiement, montant, mode, reference, tranches(numero)")
+      .eq("eleve_id", eleveId)
+      .is("annule_le", null)
+      .order("date_paiement", { ascending: false });
+    setPaiementsDesinscription(
+      ((data ?? []) as unknown as { id: string; date_paiement: string; montant: number; mode: string; reference: string | null; tranches: { numero: number } | null }[])
+        .map((p) => ({
+          id: p.id, date_paiement: p.date_paiement, montant: Number(p.montant), mode: p.mode,
+          reference: p.reference, tranche_numero: p.tranches?.numero ?? null,
+        }))
+    );
+    setLoadingPaiementsDesinscription(false);
+  };
+
+  useEffect(() => {
+    if (!deleteTarget) { setPaiementsDesinscription([]); return; }
+    fetchPaiementsDesinscription(deleteTarget.id);
+  }, [deleteTarget?.id]);
 
   const handlePurge = async () => {
     if (!purgeTarget || !isAdmin) return;
@@ -725,6 +763,46 @@ export default function StudentsList() {
               L'élève sera marqué comme « sorti ».
             </p>
           )}
+
+          {loadingPaiementsDesinscription && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <Loader2 className="h-4 w-4 animate-spin" /> Vérification des paiements…
+            </div>
+          )}
+
+          {!loadingPaiementsDesinscription && paiementsDesinscription.length > 0 && deleteTarget && (
+            <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 space-y-2">
+              <p className="text-xs text-amber-900 flex items-start gap-1.5">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                Cet élève a {paiementsDesinscription.length} paiement(s) actif(s) pour un total de{" "}
+                <strong>{fcfa(paiementsDesinscription.reduce((s, p) => s + p.montant, 0))} FCFA</strong>.
+                Une fois désinscrit, cette somme ne sera plus visible dans les KPI Finances — remboursez
+                dès maintenant si l'école a accordé un remboursement, sinon fermez ce message et désinscrivez normalement.
+              </p>
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {paiementsDesinscription.map((p) => (
+                  <div key={p.id} className="flex items-center justify-between gap-2 text-xs bg-white/60 rounded px-2 py-1.5">
+                    <span className="truncate">
+                      {formatDate(p.date_paiement)} · {modeMeta(p.mode).label}
+                      {p.tranche_numero != null ? ` · T${p.tranche_numero}` : ""}
+                      {" — "}<strong>{fcfa(p.montant)} FCFA</strong>
+                    </span>
+                    <Button
+                      size="sm" variant="outline" className="h-7 shrink-0"
+                      onClick={() => setRefundTarget({
+                        id: p.id, date: p.date_paiement, montant: p.montant,
+                        modeLabel: modeMeta(p.mode).label, reference: p.reference,
+                        trancheNum: p.tranche_numero, eleveLabel: `${deleteTarget.nom} ${deleteTarget.prenom}`,
+                      })}
+                    >
+                      <HandCoins className="h-3.5 w-3.5 mr-1" /> Rembourser
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
             <Button variant="destructive" onClick={handleDesinscrire} disabled={actionLoading}>
@@ -733,6 +811,13 @@ export default function StudentsList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RefundPaymentDialog
+        paiement={refundTarget}
+        open={!!refundTarget}
+        onOpenChange={(o) => { if (!o) setRefundTarget(null); }}
+        onRefunded={() => { if (deleteTarget) fetchPaiementsDesinscription(deleteTarget.id); }}
+      />
 
       {/* Suppression définitive (admin) */}
       <Dialog open={!!purgeTarget} onOpenChange={() => setPurgeTarget(null)}>

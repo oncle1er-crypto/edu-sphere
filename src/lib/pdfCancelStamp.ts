@@ -1,16 +1,26 @@
 import type jsPDF from "jspdf";
 
 /**
- * Imprime un filigrane « ANNULÉ » rouge en diagonale sur toutes les pages
- * du document, ainsi qu'un bandeau rappelant la date d'annulation.
+ * Imprime un filigrane rouge en diagonale sur toutes les pages du document,
+ * ainsi qu'un bandeau rappelant la date de l'opération. `variant` distingue
+ * une simple annulation (comportement historique, inchangé) d'un
+ * remboursement effectif — même mécanisme visuel, texte différent, pour que
+ * le justificatif imprimé ne prête pas à confusion entre "erreur corrigée"
+ * et "argent rendu à la famille".
  */
-export function stampCancelled(doc: jsPDF, dateAnnulation?: string | null): void {
+export function stampCancelled(
+  doc: jsPDF,
+  dateAnnulation?: string | null,
+  variant: "annule" | "rembourse" = "annule",
+): void {
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
   const pages = doc.getNumberOfPages();
   const dateLabel = dateAnnulation
     ? new Date(dateAnnulation).toLocaleDateString("fr-FR")
     : null;
+  const label = variant === "rembourse" ? "REMBOURSÉ" : "ANNULÉ";
+  const bandeau = variant === "rembourse" ? "REÇU REMBOURSÉ" : "REÇU ANNULÉ";
 
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
@@ -21,7 +31,7 @@ export function stampCancelled(doc: jsPDF, dateAnnulation?: string | null): void
     doc.setTextColor(200, 30, 30);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(70);
-    doc.text("ANNULÉ", W / 2, H / 2, { align: "center", angle: 30 } as any);
+    doc.text(label, W / 2, H / 2, { align: "center", angle: 30 } as any);
     if (gs && (doc as any).GState) (doc as any).setGState(new (doc as any).GState({ opacity: 1 }));
 
     // Bandeau haut
@@ -31,7 +41,7 @@ export function stampCancelled(doc: jsPDF, dateAnnulation?: string | null): void
     doc.setFontSize(11);
     doc.setFont("helvetica", "bold");
     doc.text(
-      dateLabel ? `REÇU ANNULÉ — le ${dateLabel}` : "REÇU ANNULÉ",
+      dateLabel ? `${bandeau} — le ${dateLabel}` : bandeau,
       W / 2,
       H / 2 + 2.5,
       { align: "center" },
