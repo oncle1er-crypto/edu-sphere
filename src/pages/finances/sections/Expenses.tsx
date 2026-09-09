@@ -1,4 +1,4 @@
-import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download, Printer, FileSignature, Paperclip, Eye } from "lucide-react";
+import { Wallet, Plus, Loader2, Search, ArrowUp, ArrowDown, ArrowUpDown, MoreVertical, Pencil, Trash2, Check, X, RotateCcw, Download, Printer, FileSignature, Paperclip, Eye, Receipt } from "lucide-react";
 import { SettingsSection } from "@/components/settings/SettingsSection";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -59,6 +59,7 @@ export default function Expenses() {
   const {
     depenses, loading, addDepense, updateDepense, deleteDepense, validerDepense, validerPlusieurs,
     rejeterDepense, reouvrirDepense, uploadJustificatifFiche, telechargerJustificatifFiche,
+    uploadJustificatif, previewJustificatif,
   } = useDepenses(range);
   const { fournisseurs } = useFournisseurs();
   const { cycles, niveau, isGlobal, cycleIds, label } = useNiveau();
@@ -90,6 +91,11 @@ export default function Expenses() {
     fichePeriodeService: "",
   };
   const [form, setForm] = useState(emptyForm);
+  // Justificatif général (facture/reçu) à joindre à la création — distinct de
+  // la fiche de paiement à faire signer (avecFiche ci-dessus). Un File ne se
+  // range pas dans `form`/emptyForm (pas de valeur "vide" représentable de la
+  // même façon), état séparé réinitialisé à l'ouverture/fermeture du dialogue.
+  const [justificatifFile, setJustificatifFile] = useState<File | null>(null);
 
   const cycleName = useCallback((id?: string | null) => cycles.find((c) => c.id === id)?.nom ?? null, [cycles]);
 
@@ -97,6 +103,7 @@ export default function Expenses() {
   useEffect(() => {
     if (!open) return;
     setForm((f) => ({ ...f, cycle_id: isGlobal ? COMMUN : cycleIds[0] ?? COMMUN }));
+    setJustificatifFile(null);
   }, [open, isGlobal, cycleIds.join(",")]);
 
   // ── Filtres / recherche ──
@@ -122,6 +129,11 @@ export default function Expenses() {
     avecFiche: false, ficheObjet: "Fiche de paiement de salaire", ficheBeneficiaireNom: "", ficheBeneficiaireFonction: "", fichePeriodeService: "",
   });
   const [saving, setSaving] = useState(false);
+  // Version à jour de la dépense en édition (justificatif_chemin/nom évoluent
+  // suite à un upload pendant que le dialogue est ouvert, alors que `editing`
+  // est une copie figée prise à l'ouverture) — seul l'affichage du
+  // justificatif s'appuie dessus, les champs du formulaire restent dans editForm.
+  const liveEditing = editing ? depenses.find((d) => d.id === editing.id) ?? editing : null;
 
   // ── Rejet (motif requis) ──
   const [rejectTarget, setRejectTarget] = useState<Depense | null>(null);
@@ -285,8 +297,9 @@ export default function Expenses() {
       fiche_beneficiaire_nom: form.avecFiche ? form.ficheBeneficiaireNom.trim() : null,
       fiche_beneficiaire_fonction: form.avecFiche ? form.ficheBeneficiaireFonction.trim() : null,
       fiche_periode_service: form.avecFiche ? form.fichePeriodeService.trim() : null,
-    });
+    }, justificatifFile ?? undefined);
     setForm(emptyForm);
+    setJustificatifFile(null);
     setOpen(false);
   };
 
@@ -461,6 +474,30 @@ export default function Expenses() {
     setJustificatifTargetId(null);
   };
 
+  // ── Justificatif général (facture/reçu) — indépendant de la fiche de
+  // paiement ci-dessus : disponible sur toute dépense en attente, pas
+  // seulement celles avec fiche_objet. Même mécanisme (input fichier caché +
+  // upload immédiat au choix du fichier), ref et cible séparées pour ne pas
+  // interférer avec le picker de la fiche signée.
+  const [uploadingReceiptId, setUploadingReceiptId] = useState<string | null>(null);
+  const [receiptTargetId, setReceiptTargetId] = useState<string | null>(null);
+  const receiptInputRef = useRef<HTMLInputElement>(null);
+
+  const openReceiptPicker = (d: Depense) => {
+    setReceiptTargetId(d.id);
+    receiptInputRef.current?.click();
+  };
+
+  const handleReceiptFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !receiptTargetId) return;
+    setUploadingReceiptId(receiptTargetId);
+    await uploadJustificatif(receiptTargetId, file);
+    setUploadingReceiptId(null);
+    setReceiptTargetId(null);
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="h-9 w-9 sm:h-8 sm:w-8 animate-spin text-primary" /></div>;
 
   return (
@@ -471,6 +508,13 @@ export default function Expenses() {
         accept="application/pdf,image/*"
         className="hidden"
         onChange={handleJustificatifFileSelected}
+      />
+      <input
+        ref={receiptInputRef}
+        type="file"
+        accept="application/pdf,image/*"
+        className="hidden"
+        onChange={handleReceiptFileSelected}
       />
       {parCategorie.length > 0 && (
         <SettingsSection title="Répartition par catégorie" description="Dépenses validées par poste." icon={<Wallet className="h-5 w-5" />} hideSave>
@@ -592,6 +636,22 @@ export default function Expenses() {
                   )}
                   <div><Label>Notes</Label><Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optionnel" /></div>
 
+                  <div>
+                    <Label>Justificatif (facture, reçu…)</Label>
+                    <Input
+                      type="file"
+                      accept="application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={(e) => setJustificatifFile(e.target.files?.[0] ?? null)}
+                    />
+                    {justificatifFile ? (
+                      <p className="text-[11px] text-muted-foreground mt-1">« {justificatifFile.name} » sera joint à l'enregistrement.</p>
+                    ) : (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Optionnel — PDF, JPEG, PNG ou WebP (10 Mo max). Peut aussi être ajouté plus tard tant que la dépense est en attente.
+                      </p>
+                    )}
+                  </div>
+
                   <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
                     <label className="flex items-start gap-2 cursor-pointer">
                       <Checkbox
@@ -666,6 +726,9 @@ export default function Expenses() {
                           aria-label={e.fiche_piece_jointe_chemin ? "Justificatif signé joint" : "Fiche de paiement à faire signer, pas encore jointe"}
                         />
                       )}
+                      {!!e.justificatif_chemin && (
+                        <Receipt className="h-3 w-3 shrink-0 text-primary" aria-label="Justificatif (facture/reçu) joint" />
+                      )}
                     </span>
                   </TableCell>
                   <TableCell className="text-muted-foreground">{e.categorie ?? "—"}</TableCell>
@@ -699,6 +762,10 @@ export default function Expenses() {
                         {e.statut === "en_attente" && (
                           <>
                             <DropdownMenuItem onClick={() => openEdit(e)}><Pencil className="h-3.5 w-3.5" />Modifier</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openReceiptPicker(e)} disabled={uploadingReceiptId === e.id}>
+                              {uploadingReceiptId === e.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Receipt className="h-3.5 w-3.5" />}
+                              {e.justificatif_chemin ? "Remplacer le justificatif" : "Joindre un justificatif"}
+                            </DropdownMenuItem>
                             {hasFullFinanceAccess && (
                               <>
                                 <DropdownMenuItem onClick={() => setConfirmAction({ type: "valider", depense: e })}><Check className="h-3.5 w-3.5" />Valider</DropdownMenuItem>
@@ -731,7 +798,12 @@ export default function Expenses() {
                         )}
                         {!!e.fiche_piece_jointe_chemin && (
                           <DropdownMenuItem onClick={() => telechargerJustificatifFiche(e)}>
-                            <Eye className="h-3.5 w-3.5" />Voir le justificatif
+                            <Eye className="h-3.5 w-3.5" />Voir le justificatif signé
+                          </DropdownMenuItem>
+                        )}
+                        {!!e.justificatif_chemin && (
+                          <DropdownMenuItem onClick={() => previewJustificatif(e.justificatif_chemin!)}>
+                            <Eye className="h-3.5 w-3.5" />Prévisualiser le justificatif
                           </DropdownMenuItem>
                         )}
                         {hasFullFinanceAccess && (e.statut === "validee" || e.statut === "rejetee") && (
@@ -797,6 +869,38 @@ export default function Expenses() {
               </div>
             )}
             <div><Label>Notes</Label><Textarea rows={2} value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} /></div>
+
+            <div>
+              <Label>Justificatif (facture, reçu…)</Label>
+              {liveEditing?.justificatif_chemin ? (
+                <div className="flex items-center gap-2 mt-1">
+                  <Receipt className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <span className="text-sm truncate flex-1">{liveEditing.justificatif_nom || "Justificatif joint"}</span>
+                  <Button type="button" variant="outline" size="sm" onClick={() => previewJustificatif(liveEditing.justificatif_chemin!)}>
+                    <Eye className="h-3.5 w-3.5" />Voir
+                  </Button>
+                  <Button
+                    type="button" variant="outline" size="sm"
+                    disabled={uploadingReceiptId === editing?.id}
+                    onClick={() => editing && openReceiptPicker(editing)}
+                  >
+                    {uploadingReceiptId === editing?.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Remplacer"}
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  disabled={uploadingReceiptId === editing?.id}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file && editing) { setUploadingReceiptId(editing.id); uploadJustificatif(editing.id, file).finally(() => setUploadingReceiptId(null)); }
+                  }}
+                />
+              )}
+              <p className="text-[11px] text-muted-foreground mt-1">Optionnel — PDF, JPEG, PNG ou WebP (10 Mo max).</p>
+            </div>
 
             <div className="rounded-lg border p-3 space-y-3 bg-muted/20">
               <label className="flex items-start gap-2 cursor-pointer">
