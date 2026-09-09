@@ -4,7 +4,6 @@ import {
   User,
   LogOut,
   Settings,
-  Menu,
   ArrowLeft,
   Calendar,
   Check,
@@ -26,6 +25,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent } from "@/components/
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { AndroidUpdateMenuItem } from "@/components/native/AndroidUpdateMenuItem";
 import { InstallPWAMenuItem } from "@/components/pwa/InstallPWAMenuItem";
 import { InstallPWAButton } from "@/components/pwa/InstallPWAButton";
 import { NiveauSwitcher } from "@/components/NiveauSwitcher";
@@ -47,10 +47,9 @@ const statutBadgeClass: Record<string, string> = {
 
 interface AppHeaderProps {
   userName?: string;
-  onToggleMobileNav?: () => void;
 }
 
-export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: AppHeaderProps) {
+export function AppHeader({ userName = "Administrateur" }: AppHeaderProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const canGoBack = location.pathname !== "/" && location.pathname !== "/index";
@@ -64,110 +63,104 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
 
   return (
     <header className="sticky top-0 z-40 bg-card border-b shadow-[var(--shadow-soft)]">
-      <div className="flex items-center justify-between px-4 md:px-6 h-16 md:h-20">
-        <div className="flex items-center gap-3 md:gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="md:hidden"
-            onClick={onToggleMobileNav}
-            aria-label="Ouvrir le menu"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:px-4 xl:flex xl:justify-between xl:px-6 xl:h-20 xl:py-0">
+        <div className="order-1 flex min-w-0 items-center gap-2 xl:gap-4">
           {canGoBack && (
             <Button
               variant="ghost"
               size="icon"
               onClick={() => (window.history.length > 1 ? navigate(-1) : navigate("/"))}
               aria-label="Retour"
-              className="rounded-full hover:bg-muted"
+              className="h-11 w-11 shrink-0 rounded-full hover:bg-muted"
             >
               <ArrowLeft className="h-5 w-5 text-primary" />
             </Button>
           )}
-          <div className="flex h-11 w-11 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-card)]">
+          <div className="flex h-9 w-9 sm:h-11 sm:w-11 xl:h-14 xl:w-14 shrink-0 items-center justify-center rounded-xl bg-primary shadow-[var(--shadow-card)]">
             <GraduationCap className="h-6 w-6 md:h-8 md:w-8 text-primary-foreground" />
           </div>
-          <div className="flex flex-col">
-            <h1 className="font-display font-extrabold text-base md:text-2xl text-primary leading-tight tracking-tight">
+          <div className="flex min-w-0 flex-col">
+            <h1 className="font-display font-extrabold text-sm sm:text-base xl:text-2xl text-primary leading-tight tracking-tight">
               GESTION SCOLAIRE
             </h1>
-            <p className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-widest hidden sm:block">
+            <p className="text-[10px] xl:text-xs text-muted-foreground uppercase tracking-widest hidden xl:block">
               Plateforme de gestion scolaire
             </p>
           </div>
         </div>
 
-        {!loading && annees.length > 0 && (
-          <div className="flex flex-col items-center justify-center">
-            <Select value={activeAnneeId} onValueChange={setActiveAnneeId}>
-              <SelectTrigger
-                className={cn(
-                  "h-8 w-auto gap-1.5 px-2 text-xs font-medium bg-background",
-                  isConsultation ? "border-amber-500 border-2" : "border"
-                )}
-              >
-                <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
-                <SelectValue asChild>
-                  <span className="flex items-center gap-1">
-                    <span className="truncate max-w-[80px] sm:max-w-[140px]">
-                      {activeAnnee.libelle || "—"}
+        <div className="order-3 col-span-2 grid min-w-0 grid-cols-2 gap-2 xl:order-2 xl:flex xl:items-center xl:gap-3">
+          {!loading && annees.length > 0 && (
+            <div className="flex min-w-0 flex-col items-center justify-center">
+              <Select value={activeAnneeId} onValueChange={setActiveAnneeId}>
+                <SelectTrigger
+                  aria-label="Année scolaire"
+                  className={cn(
+                    "h-11 w-full min-w-0 gap-1.5 px-2 text-xs font-medium bg-background xl:h-8 xl:w-auto",
+                    isConsultation ? "border-amber-500 border-2" : "border"
+                  )}
+                >
+                  <Calendar className="h-3.5 w-3.5 shrink-0 opacity-70" />
+                  <SelectValue asChild>
+                    <span className="flex items-center gap-1">
+                      <span className="truncate max-w-[100px] sm:max-w-[140px]">
+                        {activeAnnee.libelle || "—"}
+                      </span>
                     </span>
-                  </span>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {sortedAnnees.map((a) => (
-                  <SelectPrimitive.Item
-                    key={a.id}
-                    value={a.id}
-                    className={cn(
-                      "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground",
-                      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-                    )}
-                  >
-                    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-                      <SelectPrimitive.ItemIndicator>
-                        <Check className="h-4 w-4" />
-                      </SelectPrimitive.ItemIndicator>
-                    </span>
-                    <SelectPrimitive.ItemText className="flex-1 truncate pr-2">
-                      {a.libelle}
-                    </SelectPrimitive.ItemText>
-                    <Badge
-                      variant="outline"
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {sortedAnnees.map((a) => (
+                    <SelectPrimitive.Item
+                      key={a.id}
+                      value={a.id}
                       className={cn(
-                        "text-[10px] px-1.5 py-0 h-auto font-normal whitespace-nowrap",
-                        statutBadgeClass[a.statut]
+                        "relative flex min-h-11 xl:min-h-0 w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground",
+                        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
                       )}
                     >
-                      {statutLabels[a.statut]}
-                    </Badge>
-                  </SelectPrimitive.Item>
-                ))}
-              </SelectContent>
-            </Select>
-            {isConsultation && (
-              <span className="text-[10px] text-amber-600 font-medium leading-none mt-0.5">
-                Consultation
-              </span>
-            )}
+                      <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+                        <SelectPrimitive.ItemIndicator>
+                          <Check className="h-4 w-4" />
+                        </SelectPrimitive.ItemIndicator>
+                      </span>
+                      <SelectPrimitive.ItemText className="flex-1 truncate pr-2">
+                        {a.libelle}
+                      </SelectPrimitive.ItemText>
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "text-[10px] px-1.5 py-0 h-auto font-normal whitespace-nowrap",
+                          statutBadgeClass[a.statut]
+                        )}
+                      >
+                        {statutLabels[a.statut]}
+                      </Badge>
+                    </SelectPrimitive.Item>
+                  ))}
+                </SelectContent>
+              </Select>
+              {isConsultation && (
+                <span className="text-[10px] text-amber-600 font-medium leading-none mt-0.5">
+                  Consultation
+                </span>
+              )}
+            </div>
+          )}
+
+          {!isSettingsScope && <NiveauSwitcher />}
+        </div>
+
+        <div className="order-2 flex shrink-0 items-center gap-2 xl:order-3 xl:gap-3">
+          <div className="hidden xl:block">
+            <InstallPWAButton
+              size="sm"
+              variant="secondary"
+              hideWhenUnsupported
+              label="Installer l'app"
+            />
           </div>
-        )}
-
-        {!isSettingsScope && <NiveauSwitcher />}
-
-
-
-        <div className="flex items-center gap-3">
-          <InstallPWAButton
-            size="sm"
-            variant="secondary"
-            hideWhenUnsupported
-            label="Installer l'app"
-          />
-          <div className="hidden sm:flex flex-col items-end leading-tight">
+          <div className="hidden xl:flex flex-col items-end leading-tight">
             <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
               Bienvenue
             </span>
@@ -180,7 +173,8 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="h-10 px-2 gap-1.5 rounded-full hover:bg-muted"
+                aria-label="Menu du compte"
+                className="h-11 min-w-11 px-1 gap-1 rounded-full hover:bg-muted"
               >
                 <div className="h-9 w-9 rounded-full border-2 border-accent flex items-center justify-center bg-card">
                   <User className="h-4 w-4 text-primary" />
@@ -200,6 +194,7 @@ export function AppHeader({ userName = "Administrateur", onToggleMobileNav }: Ap
                 Paramètres du compte
               </DropdownMenuItem>
               <InstallPWAMenuItem />
+              <AndroidUpdateMenuItem />
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-destructive focus:text-destructive"

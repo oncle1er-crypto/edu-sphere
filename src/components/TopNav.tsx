@@ -55,11 +55,11 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[85vw] max-w-xs p-0">
-                <SheetHeader className="p-4 border-b">
+              <SheetContent side="left" className="flex h-[100dvh] max-h-[100dvh] w-[85vw] max-w-xs flex-col overflow-hidden p-0">
+                <SheetHeader className="shrink-0 p-4 pr-16 border-b">
                   <SheetTitle className="text-left text-sm">{schoolName}</SheetTitle>
                 </SheetHeader>
-                <div className="p-2">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2">
                   {visibleItems.map((item) => (
                     <NavLink
                       key={item.to}
@@ -85,7 +85,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
           </div>
 
           {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-1 md:gap-2 overflow-x-auto">
+          <div className="hidden md:flex min-w-0 flex-1 items-center gap-1 md:gap-2 overflow-x-auto">
             {visibleItems.map((item) => (
               <NavLink
                 key={item.to}
@@ -121,7 +121,7 @@ export function TopNav({ schoolName = "COMPLEXE SCOLAIRE LA PROVIDENCE DE DON OR
           </div>
 
           {/* Desktop: titre école complet */}
-          <div className="hidden md:block py-3 pr-2 text-xs font-bold uppercase tracking-widest text-primary-foreground/95 drop-shadow truncate max-w-[45%]">
+          <div className="hidden xl:block py-3 pr-2 text-xs font-bold uppercase tracking-widest text-primary-foreground/95 drop-shadow truncate max-w-[45%]">
             {schoolName}
           </div>
         </div>

@@ -19,11 +19,11 @@ export function NiveauSwitcher() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="flex min-w-0 flex-col items-center justify-center">
       <Select value={niveau} onValueChange={(v) => setNiveau(v as Niveau)} disabled={forced}>
         <SelectTrigger
           className={cn(
-            "h-8 w-auto gap-1.5 px-2 text-xs font-medium bg-background",
+            "h-11 w-full min-w-0 xl:h-8 xl:w-auto gap-1.5 px-2 text-xs font-medium bg-background",
             isGlobal ? "border" : "border-2 border-primary",
           )}
           aria-label="Niveau"
@@ -39,7 +39,7 @@ export function NiveauSwitcher() {
         </SelectTrigger>
         <SelectContent>
           {(["all", "primaire", "secondaire"] as Niveau[]).map((n) => (
-            <SelectItem key={n} value={n}>
+            <SelectItem key={n} value={n} className="min-h-11 xl:min-h-0">
               <span className="flex items-center gap-2">
                 <span>{NIVEAU_LABELS[n]}</span>
                 <span className="text-[10px] text-muted-foreground">{counts[n]} élèves</span>

@@ -1,6 +1,6 @@
 {
-  "name": "GSP La Providence — Gestion Scolaire",
-  "short_name": "GSP La Providence",
+  "name": "La Providence",
+  "short_name": "La Providence",
   "description": "Plateforme officielle de gestion scolaire du Complexe Scolaire La Providence de Don Orione — Abidjan, Côte d'Ivoire.",
   "start_url": "/",
   "display": "standalone",

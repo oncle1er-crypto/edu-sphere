@@ -1,0 +1,112 @@
+name: Android — APK et AAB
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "android/**"
+      - "assets/**"
+      - "src/**"
+      - "public/**"
+      - "capacitor.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/android.yml"
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Installer Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Installer Android API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Installer les dépendances
+        run: npm ci
+
+      - name: Ajouter Firebase si configuré
+        env:
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          else
+            echo "Firebase non configuré : l'APK sera compilé, mais les notifications distantes resteront inactives."
+          fi
+
+      - name: Synchroniser l'application Android
+        run: npm run android:sync
+
+      - name: Tests natifs et APK de vérification
+        working-directory: android
+        run: ./gradlew test lint assembleDebug bundleRelease
+
+      - name: Activer KVM pour le test Android
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Vérifier le pont natif sur émulateur Android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          disable-animations: true
+          script: cd android && ./gradlew :app:connectedDebugAndroidTest
+
+      - name: Préparer les fichiers téléchargeables
+        run: |
+          mkdir -p android-artifacts
+          cp android/app/build/outputs/apk/debug/app-debug.apk android-artifacts/la-providence-debug.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab android-artifacts/la-providence-release-non-signe.aab
+
+      - name: Compiler la version de production signée si la clé existe
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_BASE64" ] && [ -n "$ANDROID_KEYSTORE_PASSWORD" ] && [ -n "$ANDROID_KEY_ALIAS" ] && [ -n "$ANDROID_KEY_PASSWORD" ]; then
+            printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > /tmp/la-providence-upload.jks
+            export ANDROID_KEYSTORE_PATH=/tmp/la-providence-upload.jks
+            cd android
+            ./gradlew assembleRelease bundleRelease
+            cd ..
+            cp android/app/build/outputs/apk/release/app-release.apk android-artifacts/la-providence-release.apk
+            cp android/app/build/outputs/bundle/release/app-release.aab android-artifacts/la-providence-release.aab
+          else
+            echo "Clé Google Play absente : production signée non générée."
+          fi
+
+      - name: Publier les APK et AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: la-providence-android
+          path: android-artifacts/*
+          if-no-files-found: error
+          retention-days: 30

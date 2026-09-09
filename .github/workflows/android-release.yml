@@ -1,0 +1,122 @@
+name: Android — Publication signée
+on:
+  push:
+    branches: [main]
+    paths: ["android/release.json"]
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'Version publique (exemple : 1.0.3)'
+        required: true
+        type: string
+      version_code:
+        description: 'Numéro croissant, supérieur au dernier publié (minimum 4)'
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write
+      pull-requests: write
+    env:
+      ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+      ANDROID_VERSION_CODE: ${{ inputs.version_code }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider la version
+        run: |
+          python3 - <<'PY'
+          import os,re,json,pathlib
+          release=json.loads(pathlib.Path('android/release.json').read_text())
+          version=os.environ['ANDROID_VERSION_NAME'] or release['versionName']
+          code=os.environ['ANDROID_VERSION_CODE'] or str(release['versionCode'])
+          os.environ['ANDROID_VERSION_NAME']=version
+          os.environ['ANDROID_VERSION_CODE']=code
+          assert re.fullmatch(r'\d+\.\d+\.\d+',os.environ['ANDROID_VERSION_NAME'])
+          assert re.fullmatch(r'\d+',os.environ['ANDROID_VERSION_CODE'])
+          assert 4 <= int(os.environ['ANDROID_VERSION_CODE']) <= 2100000000
+          with open(os.environ['GITHUB_ENV'],'a') as output:
+              output.write(f'ANDROID_VERSION_NAME={version}\nANDROID_VERSION_CODE={code}\n')
+          PY
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+      - uses: android-actions/setup-android@v3
+      - run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Restaurer la signature permanente
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64" && test -n "$ANDROID_KEYSTORE_PASSWORD" && test -n "$ANDROID_KEY_ALIAS" && test -n "$ANDROID_KEY_PASSWORD" || { echo 'Signature permanente absente : publication arrêtée.'; exit 1; }
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/providence.jks"
+          if [ -n "$GOOGLE_SERVICES_JSON_BASE64" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | base64 --decode > android/app/google-services.json
+          fi
+      - run: npm ci
+      - run: npm run typecheck && npm run test:unit && npm run android:sync
+      - name: Compiler et vérifier la signature
+        env:
+          ANDROID_KEYSTORE_PATH: ${{ runner.temp }}/providence.jks
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd android
+          ./gradlew test lint assembleRelease bundleRelease
+          cd ..
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify --verbose --print-certs android/app/build/outputs/apk/release/app-release.apk > "$RUNNER_TEMP/signature.txt"
+          python3 - <<'PY'
+          import pathlib,re,os
+          config=pathlib.Path('src/lib/androidUpdates.ts').read_text()
+          expected=re.search("ANDROID_SIGNING_SHA256 = '([a-f0-9]{64})'",config).group(1)
+          actual=pathlib.Path(os.environ['RUNNER_TEMP'],'signature.txt').read_text()
+          assert 'Signer #1 certificate SHA-256 digest: '+expected in actual, 'La signature ne correspond pas à la clé permanente.'
+          PY
+      - name: Préparer les fichiers de mise à jour
+        run: node scripts/prepare-android-release.mjs android/app/build/outputs/apk/release/app-release.apk "$ANDROID_VERSION_CODE" "$ANDROID_VERSION_NAME"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: la-providence-release-${{ env.ANDROID_VERSION_CODE }}
+          path: |
+            public/android/
+            android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 90
+      - name: Proposer la publication sur le site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          branch="release/android-$ANDROID_VERSION_CODE"
+          git switch -c "$branch"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add public/android
+          git commit -m "release(android): version $ANDROID_VERSION_NAME ($ANDROID_VERSION_CODE)"
+          git push origin "$branch"
+          cat > "$RUNNER_TEMP/release-body.md" <<'BODY'
+          Publie l’APK signé et son manifeste de mise à jour dans public/android.
+          La signature est vérifiée contre l’empreinte permanente, et le numéro Android est croissant.
+          Après fusion, publier le site Lovable La Providence et vérifier /android/latest.json ainsi que le téléchargement APK avant d’annoncer la disponibilité.
+          BODY
+          gh pr create --base main --head "$branch" --title "Publication Android $ANDROID_VERSION_NAME" --body-file "$RUNNER_TEMP/release-body.md"
+      - name: Effacer la copie temporaire de signature
+        if: always()
+        run: rm -f "$RUNNER_TEMP/providence.jks"

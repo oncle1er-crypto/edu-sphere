@@ -36,3 +36,16 @@ scripts/db-sync/sync_batches/
 # Fichiers temporaires générés par Vite/Vitest lors d'un arrêt non gracieux
 vite.config.ts.timestamp-*.mjs
 vitest.config.ts.timestamp-*.mjs
+
+# Android : secrets et sorties de compilation
+android/app/google-services.json
+android/keystore.properties
+android/*.jks
+android/*.keystore
+android/app/release/
+android/app/build/
+android/build/
+.gradle/
+/assets/*.png
+android/app/src/main/res/drawable*/splash.png
+android/app/src/main/res/mipmap*/ic_launcher*.png
