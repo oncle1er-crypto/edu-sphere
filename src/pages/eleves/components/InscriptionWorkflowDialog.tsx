@@ -32,6 +32,9 @@ const REQUIRED_DOCS = [
   { key: "certificat_scolarite", label: "Certificat de scolarité" },
 ];
 
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { paymentParts, libelleRepartition, validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
+
 const MOYENS = [
   { value: "especes", label: "Espèces" },
   { value: "wave", label: "Wave" },
