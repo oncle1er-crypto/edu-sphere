@@ -262,38 +262,50 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       return;
     }
 
-    let restant = montantSaisi;
     const reference = payRef || `PAY-${Date.now().toString(36).toUpperCase()}`;
     const repartition: { numero: number; label: string; montant: number }[] = [];
     let totalEncaisse = 0;
 
-    for (const tr of unpaid) {
-      if (restant <= 0) break;
-      const resteTranche = Number(tr.montant) - Number(tr.paye);
-      if (resteTranche <= 0) continue;
-      const part = Math.min(restant, resteTranche);
-      const { error } = await supabase.rpc("enregistrer_paiement", {
-        _ecole_id: ecoleId,
-        _eleve_id: eleve.id,
-        _tranche_id: tr.id,
-        _montant: part,
-        _mode: payMode,
-        _reference: reference,
-        _recu_par: user?.id ?? null,
-      });
-      if (error) {
-        setPayLoading(false);
-        toast.error(`Encaissement refusé sur T${tr.numero}`, { description: messageErreurBase(error) });
-        if (totalEncaisse > 0) {
-          toast.warning(`${totalEncaisse.toLocaleString("fr-FR")} FCFA déjà encaissés sur les tranches précédentes.`);
+    // Règlement scindé : chaque moyen de paiement est encaissé à la suite,
+    // avec la même référence, sur les tranches restantes.
+    const parts = paymentParts(montantSaisi, payMode, split);
+    const dejaPaye = new Map(unpaid.map((t) => [t.id, Number(t.paye)]));
+
+    for (const part of parts) {
+      let restantPart = part.montant;
+      for (const tr of unpaid) {
+        if (restantPart <= 0) break;
+        const paye = dejaPaye.get(tr.id) ?? 0;
+        const resteTranche = Number(tr.montant) - paye;
+        if (resteTranche <= 0) continue;
+        const montantLigne = Math.min(restantPart, resteTranche);
+        const { error } = await supabase.rpc("enregistrer_paiement", {
+          _ecole_id: ecoleId,
+          _eleve_id: eleve.id,
+          _tranche_id: tr.id,
+          _montant: montantLigne,
+          _mode: part.mode,
+          _reference: reference,
+          _recu_par: user?.id ?? null,
+        });
+        if (error) {
+          setPayLoading(false);
+          toast.error(`Encaissement refusé sur T${tr.numero}`, { description: messageErreurBase(error) });
+          if (totalEncaisse > 0) {
+            toast.warning(`${totalEncaisse.toLocaleString("fr-FR")} FCFA déjà encaissés sur les tranches précédentes.`);
+          }
+          return;
         }
-        return;
+        dejaPaye.set(tr.id, paye + montantLigne);
+        const ligne = repartition.find((r) => r.numero === tr.numero);
+        if (ligne) ligne.montant += montantLigne;
+        else repartition.push({ numero: tr.numero, label: tr.label, montant: montantLigne });
+        totalEncaisse += montantLigne;
+        restantPart -= montantLigne;
       }
-      repartition.push({ numero: tr.numero, label: tr.label, montant: part });
-      totalEncaisse += part;
-      restant -= part;
     }
 
+    const restant = montantSaisi - totalEncaisse;
     if (restant > 0) {
       toast.info(`${restant.toLocaleString("fr-FR")} FCFA non affectés (échéancier soldé).`);
     }
@@ -302,6 +314,10 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     await notifyParentsPayment(totalEncaisse);
     const totalDu = currentTranches.reduce((s, t) => s + Number(t.montant), 0);
     const totalPayeAvant = currentTranches.reduce((s, t) => s + Number(t.paye), 0);
+    const modeRecu = parts.length > 1 ? "mixte" : payMode;
+    const detailModes = parts.length > 1
+      ? `Règlement en ${parts.length} moyens : ${libelleRepartition(parts)}`
+      : null;
 
     if (receiptMode === "tranche" && repartition.length > 0) {
       let cumule = totalPayeAvant;
@@ -315,7 +331,8 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
         await printGlobalReceipt({
           reference: `${reference}-T${r.numero}`,
           montantTotal: r.montant,
-          mode: payMode,
+          mode: modeRecu,
+          detailModes,
           repartition: [r],
           totalDu,
           totalPayeApres: cumule,
@@ -326,12 +343,14 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       await printGlobalReceipt({
         reference,
         montantTotal: totalEncaisse,
-        mode: payMode,
+        mode: modeRecu,
+        detailModes,
         repartition,
         totalDu,
         totalPayeApres: totalPayeAvant + totalEncaisse,
       });
     }
+
 
 
     setPayLoading(false);
