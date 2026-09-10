@@ -1,4 +1,13 @@
 import { useMemo, useState } from "react";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
+
+const MOYENS_VAC = [
+  { value: "especes", label: "Espèces" },
+  { value: "mobile_money", label: "Mobile money" },
+  { value: "virement", label: "Virement" },
+  { value: "autre", label: "Autre" },
+];
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
