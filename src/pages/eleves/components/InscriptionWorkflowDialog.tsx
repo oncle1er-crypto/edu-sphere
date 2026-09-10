@@ -192,7 +192,8 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
       ]);
       if (!ecole || !eleveFull) return;
       const motif = "Répartition automatique : " +
-        opts.repartition.map(r => `T${r.numero} = ${r.montant.toLocaleString("fr-FR")} FCFA`).join(" • ");
+        opts.repartition.map(r => `T${r.numero} = ${r.montant.toLocaleString("fr-FR")} FCFA`).join(" • ")
+        + (opts.detailModes ? ` — ${opts.detailModes}` : "");
       const pdf = await generateRecuPDF({
         ecole: {
           nom: ecole.nom || "École", sigle: ecole.sigle || "",
