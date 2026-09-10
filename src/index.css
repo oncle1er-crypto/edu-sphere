@@ -202,10 +202,7 @@
 
   /* Colored sidebar menu — theme-aware (light + dark) */
   .menu-aside {
-    position: sticky;
-    top: calc(var(--app-header-h, 7.25rem) + var(--module-head-h, 0px) + 0.75rem);
-    align-self: start;
-    max-height: calc(100dvh - var(--app-header-h, 7.25rem) - var(--module-head-h, 0px) - 1.5rem);
+    position: relative;
     overflow-y: auto;
     overscroll-behavior: contain;
     isolation: isolate;
