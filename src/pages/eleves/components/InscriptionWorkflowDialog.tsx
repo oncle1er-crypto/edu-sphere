@@ -175,6 +175,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     reference: string;
     montantTotal: number;
     mode: string;
+    detailModes?: string | null;
     repartition: { numero: number; label: string; montant: number }[];
     totalDu: number;
     totalPayeApres: number;
