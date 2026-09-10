@@ -9,6 +9,8 @@ import { useSpServices } from "../hooks/useSpServices";
 import { useSpPaiements, type SpPaiement } from "../hooks/useSpPaiements";
 import type { SpModePaiement } from "../hooks/useSpVentes";
 import { toast } from "sonner";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
 
 const MODES: SpModePaiement[] = ["especes", "wave", "orange_money", "mtn_money", "moov_money", "virement", "cheque"];
 const MODE_LABEL: Record<SpModePaiement, string> = {
@@ -41,6 +43,7 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
   const [remise, setRemise] = useState(0);
   const [mode, setMode] = useState<SpModePaiement>("especes");
   const [obs, setObs] = useState("");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
   const [saving, setSaving] = useState(false);
 
   const service = services.find((s) => s.id === serviceId);
@@ -54,6 +57,7 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
     setQte(1);
     setRemise(0);
     setObs("");
+    setSplit(null);
   }, [open, preset]);
 
   useEffect(() => {
@@ -77,6 +81,8 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
       return toast.error("Ce service n'accepte pas les paiements partiels");
     }
     if (type === "libre" && !libre.trim()) return toast.error("Nom du bénéficiaire requis");
+    const erreurSplit = validerSplit(montantPaye, mode, split);
+    if (erreurSplit) return toast.error(erreurSplit);
     setSaving(true);
     const p = await save({
       service_id: serviceId,
@@ -88,11 +94,14 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
       montant_paye: montantPaye,
       remise,
       mode_paiement: mode,
+      mode_paiement_2: (split?.mode as SpModePaiement) ?? null,
+      montant_2: split ? Math.round(split.montant) : null,
       observations: [
         qte > 1 ? `Quantité : ${qte} × ${prixUnitaire.toLocaleString("fr-FR")} FCFA` : null,
         obs.trim() || null,
       ].filter(Boolean).join(" — ") || null,
     });
+
     setSaving(false);
     if (p) { onSuccess?.(p); onOpenChange(false); }
   };
@@ -132,13 +141,16 @@ export function ServicePaymentDialog({ open, onOpenChange, preset, onSuccess }: 
           </div>
           <p className="text-xs text-muted-foreground">Reste : {reste.toLocaleString("fr-FR")} FCFA</p>
 
-          <div>
-            <Label>Mode de paiement</Label>
-            <Select value={mode} onValueChange={(v) => setMode(v as SpModePaiement)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{MODES.map((m) => <SelectItem key={m} value={m}>{MODE_LABEL[m]}</SelectItem>)}</SelectContent>
-            </Select>
-          </div>
+          <PaymentModeSplitField
+            total={montantPaye}
+            mode={mode}
+            onModeChange={(v) => setMode(v as SpModePaiement)}
+            split={split}
+            onSplitChange={setSplit}
+            moyens={MODES.map((m) => ({ value: m, label: MODE_LABEL[m] }))}
+            disabled={saving}
+          />
+
 
           <div><Label>Observations</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
         </div>

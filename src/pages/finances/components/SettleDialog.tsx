@@ -52,10 +52,13 @@ function friendlySolde(err: unknown): string {
 import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
 import { useParentContactGuard } from "@/hooks/useParentContactGuard";
 import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { paymentParts, validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
 
 export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, contexteLabel, onCompleted }: Props) {
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0, current: "" });
   const submittingRef = useRef(false);
@@ -78,11 +81,14 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
     submittingRef.current = false;
     setMoyen("especes");
     setReference("");
+    setSplit(null);
     setProgress({ done: 0, total: cibles.length, current: "" });
   }, [open, cibles.length]);
 
+  const splitError = cibles.length === 1 ? validerSplit(totalReste, moyen, split) : null;
+
   const handleSubmit = () => {
-    if (!ecoleId || cibles.length === 0) return;
+    if (!ecoleId || cibles.length === 0 || splitError) return;
     // Encaissement individuel : coordonnées parent obligatoires
     if (cibles.length === 1) {
       const el = cibles[0];
@@ -110,25 +116,39 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
       for (const el of cibles) {
         setProgress({ done: processed, total: cibles.length, current: `${el.nom} ${el.prenom}` });
 
-        const { data, error } = await supabase.rpc("solder_scolarite", {
-          _ecole_id: ecoleId,
-          _eleve_id: el.id,
-          _montant: el.resteDu,
-          _mode: moyen,
-          _reference: reference || `SOLDE-${el.matricule}`,
-        });
+        const ref = reference || `SOLDE-${el.matricule}`;
+        // Paiement scindé (uniquement pour un solde individuel) : une opération
+        // par moyen de paiement, avec la même référence.
+        const parts = paymentParts(el.resteDu, moyen, cibles.length === 1 ? split : null);
+        const ventilation: { paiement_id: string }[] = [];
+        let nbTranches = 0;
+        let error: unknown = null;
+
+        for (const part of parts) {
+          const { data, error: partError } = await supabase.rpc("solder_scolarite", {
+            _ecole_id: ecoleId,
+            _eleve_id: el.id,
+            _montant: part.montant,
+            _mode: part.mode,
+            _reference: ref,
+          });
+          if (partError) { error = partError; break; }
+          const result = data as unknown as SolderScolariteResult | null;
+          nbTranches += Number(result?.nb_tranches ?? 0);
+          ventilation.push(...(result?.ventilation ?? []));
+        }
         processed++;
 
         if (error) {
           errors.push(`${el.nom} ${el.prenom} : ${friendlySolde(error)}`);
         } else {
           okCount++;
-          const result = data as unknown as SolderScolariteResult | null;
-          tranchesCount += Number(result?.nb_tranches ?? 0);
+          tranchesCount += nbTranches;
 
           // Envoi automatique du reçu au parent (WhatsApp, repli SMS)
-          const paiementIds = (result?.ventilation ?? []).map((ligne) => ligne.paiement_id);
+          const paiementIds = ventilation.map((ligne) => ligne.paiement_id);
           const paiementId = paiementIds[0];
+
           const parentNom = contact?.nomComplet ?? el.parent;
           const parentTel = contact?.telephone ?? el.telephone;
           if (paiementId && parentNom && parentTel) {
@@ -216,21 +236,37 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Moyen de paiement</Label>
-              <Select value={moyen} onValueChange={setMoyen} disabled={saving}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
+          {cibles.length === 1 ? (
+            <PaymentModeSplitField
+              total={totalReste}
+              mode={moyen}
+              onModeChange={setMoyen}
+              split={split}
+              onSplitChange={setSplit}
+              reference={reference}
+              onReferenceChange={setReference}
+              moyens={MOYENS}
+              disabled={saving}
+              referenceLabel="Référence (facultative)"
+            />
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Moyen de paiement</Label>
+                <Select value={moyen} onValueChange={setMoyen} disabled={saving}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Référence (facultative)</Label>
+                <Input placeholder="Bordereau / N° lot" value={reference} onChange={(e) => setReference(e.target.value)} disabled={saving} />
+              </div>
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Référence (facultative)</Label>
-              <Input placeholder="Bordereau / N° lot" value={reference} onChange={(e) => setReference(e.target.value)} disabled={saving} />
-            </div>
-          </div>
+          )}
+
 
           {saving && (
             <div className="space-y-2">
@@ -244,7 +280,7 @@ export function SettleDialog({ open, onOpenChange, ecoleId, eleve, eleves, conte
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Annuler</Button>
-          <Button onClick={handleSubmit} disabled={saving}>
+          <Button onClick={handleSubmit} disabled={saving || !!splitError}>
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
             Solder {fcfa(totalReste)} FCFA
           </Button>

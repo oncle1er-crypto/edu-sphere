@@ -1,4 +1,13 @@
 import { useMemo, useState } from "react";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
+
+const MOYENS_VAC = [
+  { value: "especes", label: "Espèces" },
+  { value: "mobile_money", label: "Mobile money" },
+  { value: "virement", label: "Virement" },
+  { value: "autre", label: "Autre" },
+];
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,6 +62,7 @@ export default function VacancesPaiements() {
   const [fClasse, setFClasse] = useState<string>("all");
   const [fStatut, setFStatut] = useState<string>("all");
   const [form, setForm] = useState<Partial<VacPaiement>>({});
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
 
   const openNew = () => {
     const first = eleves[0];
@@ -63,6 +73,7 @@ export default function VacancesPaiements() {
       montant_attendu: Number(cl?.montant ?? 0), montant_paye: Number(cl?.montant ?? 0),
       mode: "especes", date_paiement: new Date().toISOString().slice(0, 10), observation: "",
     });
+    setSplit(null);
     setOpen(true);
   };
   const onEleveChange = (id: string) => {
@@ -74,15 +85,20 @@ export default function VacancesPaiements() {
     if (!form.eleve_id || !form.classe_id) return;
     const paye = Number(form.montant_paye);
     const attendu = Number(form.montant_attendu);
+    const erreurSplit = validerSplit(paye, form.mode || "especes", split);
+    if (erreurSplit) { toast.error(erreurSplit); return; }
     const statut = paye <= 0 ? "non_paye" : paye >= attendu ? "paye" : "partiel";
     await save("vacances_paiements", {
       eleve_id: form.eleve_id, classe_id: form.classe_id,
       montant_attendu: attendu, montant_paye: paye,
       date_paiement: form.date_paiement, mode: form.mode, statut,
+      mode_2: split?.mode ?? null,
+      montant_2: split ? Math.round(split.montant) : null,
       observation: form.observation || null,
     });
     setOpen(false);
   };
+
 
   const filtered = useMemo(() => paiements.filter((p) => {
     if (fClasse !== "all" && p.classe_id !== fClasse) return false;
@@ -122,18 +138,17 @@ export default function VacancesPaiements() {
               <div><Label>Montant attendu</Label><Input type="number" value={form.montant_attendu ?? 0} onChange={(e) => setForm({ ...form, montant_attendu: Number(e.target.value) })} /></div>
               <div><Label>Montant payé *</Label><Input type="number" value={form.montant_paye ?? 0} onChange={(e) => setForm({ ...form, montant_paye: Number(e.target.value) })} /></div>
               <div><Label>Date</Label><Input type="date" value={form.date_paiement || ""} onChange={(e) => setForm({ ...form, date_paiement: e.target.value })} /></div>
-              <div>
-                <Label>Mode</Label>
-                <Select value={form.mode || "especes"} onValueChange={(v) => setForm({ ...form, mode: v as VacPaiement["mode"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="especes">Espèces</SelectItem>
-                    <SelectItem value="mobile_money">Mobile money</SelectItem>
-                    <SelectItem value="virement">Virement</SelectItem>
-                    <SelectItem value="autre">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="col-span-2">
+                <PaymentModeSplitField
+                  total={Number(form.montant_paye ?? 0)}
+                  mode={form.mode || "especes"}
+                  onModeChange={(v) => setForm((f) => ({ ...f, mode: v as VacPaiement["mode"] }))}
+                  split={split}
+                  onSplitChange={setSplit}
+                  moyens={MOYENS_VAC}
+                />
               </div>
+
               <div className="col-span-2"><Label>Observation</Label><Textarea value={form.observation || ""} onChange={(e) => setForm({ ...form, observation: e.target.value })} rows={2} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button onClick={submit}>Enregistrer</Button></DialogFooter>

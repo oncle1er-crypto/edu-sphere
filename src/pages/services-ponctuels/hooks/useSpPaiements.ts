@@ -19,6 +19,9 @@ export interface SpPaiement {
   montant_paye: number;
   remise: number;
   mode_paiement: SpModePaiement;
+  /** Second moyen de paiement lorsque le règlement a été scindé. */
+  mode_paiement_2?: SpModePaiement | null;
+  montant_2?: number | null;
   caissier_id: string | null;
   date_paiement: string;
   observations: string | null;

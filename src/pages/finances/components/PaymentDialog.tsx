@@ -10,6 +10,8 @@ import { fcfa, friendlyRpcError, type EleveScolarite } from "../scolarite-data";
 import { supabase } from "@/integrations/supabase/client";
 import { downloadReceiptOperationFor } from "@/lib/downloadReceipt";
 import { initialPaymentAmount } from "@/lib/receiptOperation";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { paymentParts, validerSplit, libelleRepartition, type PaymentSplit } from "@/lib/paymentSplit";
 
 import { sendPaymentConfirmationSms } from "@/lib/sendPaymentSms";
 import { envoyerRecuWhatsApp } from "@/lib/sendReceiptWhatsApp";
@@ -52,6 +54,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
   const [montant, setMontant] = useState<string>("");
   const [moyen, setMoyen] = useState<string>("wave");
   const [reference, setReference] = useState<string>("");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
 
   useEffect(() => {
     if (!open || !eleve) return;
@@ -59,6 +62,7 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
     setMontant(String(initialPaymentAmount(eleve.tranches, defaultTrancheNum, eleve.resteDu)));
     setMoyen("wave");
     setReference("");
+    setSplit(null);
   }, [open, eleve, defaultTrancheNum]);
 
   const montantNum = Number(montant) || 0;
@@ -89,7 +93,8 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
 
   if (!eleve) return null;
 
-  const valid = montantNum > 0 && montantNum <= resteDu && !!ecoleId;
+  const valid = montantNum > 0 && montantNum <= resteDu && !!ecoleId
+    && validerSplit(montantNum, moyen, split) === null;
 
   const handleSubmit = () => {
     if (!valid || !ecoleId || !eleve) return;
@@ -106,30 +111,37 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
     setSaving(true);
 
     try {
-      const { data, error } = await supabase.rpc("solder_scolarite", {
-        _ecole_id: ecoleId,
-        _eleve_id: eleve.id,
-        _montant: montantNum,
-        _mode: moyen,
-        _reference: reference || undefined,
-      });
-      if (error) throw error;
+      // Paiement scindé : une opération par moyen de paiement, même référence,
+      // fusionnées ensuite en un seul reçu.
+      const parts = paymentParts(montantNum, moyen, split);
+      let ref: string | null = reference || null;
+      const lignes: { paiement_id: string }[] = [];
+      let resteApres = Math.max(0, resteDu - montantNum);
 
-      const res = (data ?? {}) as {
-        reference?: string;
-        montant_total?: number;
-        nb_tranches?: number;
-        reste_du_apres?: number;
-        ventilation?: { paiement_id: string; tranche_id: string; tranche_numero: number; tranche_label: string; montant: number }[];
-      };
-      const ref = res.reference ?? reference ?? null;
-      const lignes = res.ventilation ?? [];
-      const resteApres = Number(res.reste_du_apres ?? Math.max(0, resteDu - montantNum));
+      for (const part of parts) {
+        const { data, error } = await supabase.rpc("solder_scolarite", {
+          _ecole_id: ecoleId,
+          _eleve_id: eleve.id,
+          _montant: part.montant,
+          _mode: part.mode,
+          _reference: ref ?? undefined,
+        });
+        if (error) throw error;
+        const res = (data ?? {}) as {
+          reference?: string;
+          reste_du_apres?: number;
+          ventilation?: { paiement_id: string; montant: number }[];
+        };
+        ref = res.reference ?? ref;
+        lignes.push(...(res.ventilation ?? []));
+        if (res.reste_du_apres != null) resteApres = Number(res.reste_du_apres);
+      }
 
       toast.success("Encaissement enregistré", {
-        description: `${fcfa(montantNum)} FCFA · ${MOYENS.find((m) => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom}` +
-          (lignes.length > 1 ? ` (${lignes.length} tranches)` : ""),
+        description: `${fcfa(montantNum)} FCFA · ${parts.length > 1 ? libelleRepartition(parts) : MOYENS.find((m) => m.value === moyen)?.label} · ${eleve.nom} ${eleve.prenom}` +
+          (lignes.length > 1 ? ` (${lignes.length} ligne(s))` : ""),
       });
+
 
       // Un reçu de l'opération : une seule ligne si une tranche est concernée,
       // ou un reçu global détaillé si l'encaissement couvre plusieurs tranches.
@@ -255,21 +267,18 @@ export function PaymentDialog({ eleve, defaultTrancheNum, open, onOpenChange, on
             </Card>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Moyen de paiement</Label>
-              <Select value={moyen} onValueChange={setMoyen}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Référence</Label>
-              <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
-          </div>
+          <PaymentModeSplitField
+            total={montantNum}
+            mode={moyen}
+            onModeChange={setMoyen}
+            split={split}
+            onSplitChange={setSplit}
+            reference={reference}
+            onReferenceChange={setReference}
+            moyens={MOYENS}
+            disabled={saving}
+          />
+
         </div>
 
         <DialogFooter>

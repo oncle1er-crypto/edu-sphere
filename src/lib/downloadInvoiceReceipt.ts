@@ -18,6 +18,8 @@ export interface Params {
   motifAnnulation?: string | null;
   /** Date d'opération à afficher (par défaut aujourd'hui). */
   datePaiement?: string;
+  /** Détail de la répartition quand le règlement a été scindé en deux moyens. */
+  detailModes?: string | null;
 }
 
 /**
@@ -28,7 +30,7 @@ export async function buildInvoiceReceiptPdf(params: Params) {
   {
     const {
       ecoleId, factureId, paiementId, montant, mode, souche = true,
-      annulation = false, motifAnnulation, datePaiement,
+      annulation = false, motifAnnulation, datePaiement, detailModes,
     } = params;
 
     let paiementQuery = supabase
@@ -122,10 +124,11 @@ export async function buildInvoiceReceiptPdf(params: Params) {
         ? `Encaissement ${catLabel.toLowerCase()}`
         : undefined;
 
-    const motifLine = annulation
+    const motifBase = annulation
       ? `ANNULATION — ${catLabel} — ${facture.libelle} (Facture ${facture.numero})`
         + (motifAnnulation ? ` · Motif : ${motifAnnulation}` : "")
       : `${catLabel} — ${facture.libelle} (Facture ${facture.numero})`;
+    const motifLine = detailModes ? `${motifBase} — ${detailModes}` : motifBase;
 
     const pdf = await generateRecuPDF({
       ecole: {

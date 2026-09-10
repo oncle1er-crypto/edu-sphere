@@ -26,12 +26,20 @@ describe("summarizeReceiptOperation", () => {
     ])).toThrow("operation_dates_incoherentes");
   });
 
-  it("refuse de fusionner des moyens de paiement différents", () => {
-    expect(() => summarizeReceiptOperation([
+  it("fusionne deux moyens de paiement en un reçu mixte", () => {
+    const summary = summarizeReceiptOperation([
       { id: "p1", montant: 20_000, mode: "wave", reference: "A", date_paiement: "2026-08-24", tranche_numero: 1 },
       { id: "p2", montant: 25_000, mode: "especes", reference: "A", date_paiement: "2026-08-24", tranche_numero: 2 },
-    ])).toThrow("operation_modes_incoherents");
+    ]);
+    expect(summary.mode).toBe("mixte");
+    expect(summary.montant).toBe(45_000);
+    expect(summary.repartitionModes).toEqual([
+      { mode: "wave", montant: 20_000 },
+      { mode: "especes", montant: 25_000 },
+    ]);
+    expect(summary.motif).toContain("Espèces");
   });
+
 
   it("refuse de fusionner des références différentes, même si l'une est vide", () => {
     expect(() => summarizeReceiptOperation([
