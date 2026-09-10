@@ -62,6 +62,7 @@ export default function VacancesPaiements() {
   const [fClasse, setFClasse] = useState<string>("all");
   const [fStatut, setFStatut] = useState<string>("all");
   const [form, setForm] = useState<Partial<VacPaiement>>({});
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
 
   const openNew = () => {
     const first = eleves[0];
@@ -72,6 +73,7 @@ export default function VacancesPaiements() {
       montant_attendu: Number(cl?.montant ?? 0), montant_paye: Number(cl?.montant ?? 0),
       mode: "especes", date_paiement: new Date().toISOString().slice(0, 10), observation: "",
     });
+    setSplit(null);
     setOpen(true);
   };
   const onEleveChange = (id: string) => {
@@ -83,15 +85,20 @@ export default function VacancesPaiements() {
     if (!form.eleve_id || !form.classe_id) return;
     const paye = Number(form.montant_paye);
     const attendu = Number(form.montant_attendu);
+    const erreurSplit = validerSplit(paye, form.mode || "especes", split);
+    if (erreurSplit) { toast.error(erreurSplit); return; }
     const statut = paye <= 0 ? "non_paye" : paye >= attendu ? "paye" : "partiel";
     await save("vacances_paiements", {
       eleve_id: form.eleve_id, classe_id: form.classe_id,
       montant_attendu: attendu, montant_paye: paye,
       date_paiement: form.date_paiement, mode: form.mode, statut,
+      mode_2: split?.mode ?? null,
+      montant_2: split ? Math.round(split.montant) : null,
       observation: form.observation || null,
     });
     setOpen(false);
   };
+
 
   const filtered = useMemo(() => paiements.filter((p) => {
     if (fClasse !== "all" && p.classe_id !== fClasse) return false;
