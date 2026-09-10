@@ -1,4 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useEcoleId } from "./useEcoleId";
@@ -41,31 +42,50 @@ export function computeCan(
 export function usePermissions() {
   const { user } = useAuth();
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
-  const [perms, setPerms] = useState<UserPermission[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
 
-  const load = useCallback(async () => {
-    // Attendre que l'école soit hydratée : sinon RequirePerm voit loading=false
-    // avec perms=[] et redirige vers "/" avant même que la RPC ne s'exécute.
-    if (ecoleLoading) { setLoading(true); return; }
-    if (!user?.id || !ecoleId) { setPerms([]); setIsAdmin(false); setLoading(false); return; }
-    setLoading(true);
-    const [{ data: roles }, { data: p }] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", user.id).eq("ecole_id", ecoleId),
-      supabase.rpc("get_effective_permissions", { _user_id: user.id, _ecole_id: ecoleId }),
-    ]);
-    setIsAdmin((roles ?? []).some(r => r.role === "admin"));
-    setPerms((p ?? []) as UserPermission[]);
-    setLoading(false);
-  }, [user?.id, ecoleId, ecoleLoading]);
+  // Les permissions sont mises en cache et PARTAGÉES par toute l'application :
+  // chaque garde de route (RequirePerm) et chaque layout réutilise le même
+  // résultat au lieu de relancer les requêtes à chaque changement de page —
+  // sinon l'écran « Vérification des permissions… » remplaçait la page à
+  // chaque clic du menu latéral, donnant l'impression d'un double clic requis.
+  const enabled = !ecoleLoading && !!user?.id && !!ecoleId;
 
-  useEffect(() => { load(); }, [load]);
+  const { data, isPending } = useQuery({
+    queryKey: ["effective-permissions", user?.id ?? null, ecoleId ?? null],
+    enabled,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const [{ data: roles }, { data: p }] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", user!.id).eq("ecole_id", ecoleId!),
+        supabase.rpc("get_effective_permissions", { _user_id: user!.id, _ecole_id: ecoleId! }),
+      ]);
+      return {
+        isAdmin: (roles ?? []).some((r) => r.role === "admin"),
+        perms: (p ?? []) as UserPermission[],
+      };
+    },
+  });
+
+  const perms = data?.perms ?? [];
+  const isAdmin = data?.isAdmin ?? false;
+
+  // Utilisateur/école non résolus : on reste en chargement (comportement
+  // historique) pour éviter une redirection prématurée vers "/".
+  const loading = enabled ? isPending : ecoleLoading;
 
   const can = useCallback(
     (module: string, action: PermAction = "view") => computeCan(perms, isAdmin, module, action),
     [perms, isAdmin]
   );
 
-  return { perms, isAdmin, can, loading, reload: load };
+  const reload = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["effective-permissions", user?.id ?? null, ecoleId ?? null],
+    });
+  }, [queryClient, user?.id, ecoleId]);
+
+  return { perms, isAdmin, can, loading, reload };
 }
