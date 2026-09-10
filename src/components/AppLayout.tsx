@@ -41,16 +41,33 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   // au lieu de passer derrière.
   useEffect(() => {
     const root = document.documentElement;
-    const el = document.querySelector<HTMLElement>(".module-sticky-head");
-    if (!el) {
-      root.style.setProperty("--module-head-h", "0px");
-      return;
-    }
-    const apply = () => root.style.setProperty("--module-head-h", `${el.offsetHeight}px`);
-    apply();
-    const ro = new ResizeObserver(apply);
-    ro.observe(el);
+    const ro = new ResizeObserver(() => {
+      const el = document.querySelector<HTMLElement>(".module-sticky-head");
+      root.style.setProperty("--module-head-h", el ? `${el.offsetHeight}px` : "0px");
+    });
+    let observed: HTMLElement | null = null;
+
+    const sync = () => {
+      const el = document.querySelector<HTMLElement>(".module-sticky-head");
+      if (el === observed) return;
+      if (observed) ro.unobserve(observed);
+      observed = el;
+      if (el) {
+        ro.observe(el);
+        root.style.setProperty("--module-head-h", `${el.offsetHeight}px`);
+      } else {
+        root.style.setProperty("--module-head-h", "0px");
+      }
+    };
+
+    sync();
+    // Les pages sont chargées à la demande : le bandeau apparaît souvent
+    // après ce premier passage, on surveille donc l'arrivée du contenu.
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+
     return () => {
+      mo.disconnect();
       ro.disconnect();
       root.style.setProperty("--module-head-h", "0px");
     };
