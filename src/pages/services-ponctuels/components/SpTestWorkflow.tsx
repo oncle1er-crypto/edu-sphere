@@ -18,6 +18,8 @@ import { useSpServices } from "../hooks/useSpServices";
 import { useSpPaiements } from "../hooks/useSpPaiements";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
 
 type Step = 1 | 2 | 3;
 type Props = { open: boolean; onOpenChange: (v: boolean) => void };
@@ -48,6 +50,7 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
   const [paiement, setPaiement] = useState<any>({
     montant_du: 0, montant_paye: 0, remise: 0, mode_paiement: "especes", observations: "",
   });
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
   const [createdPaiement, setCreatedPaiement] = useState<any>(null);
 
   const activeSessions = sessions.filter((s) => s.actif);
@@ -62,6 +65,7 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
       parent: "", telephone: "", classe_demandee_id: "", ecole_origine: "",
       session_id: activeSessions[0]?.id ?? "", observations: "",
     });
+    setSplit(null);
     if (ecoleId) {
       supabase.from("ecoles").select("nom, sigle, adresse, telephone, email, logo_url").eq("id", ecoleId).maybeSingle()
         .then(({ data }) => setEcole(data));
@@ -108,6 +112,8 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
   const goPaiement = async () => {
     if (!createdCandidat) return;
     if (!testService) return toast.error("Aucun service « Test d'entrée » configuré");
+    const erreurSplit = validerSplit(Number(paiement.montant_paye), paiement.mode_paiement, split);
+    if (erreurSplit) return toast.error(erreurSplit);
     setBusy(true);
     const p = await savePaiement({
       service_id: testService.id,
@@ -118,6 +124,8 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
       montant_paye: Number(paiement.montant_paye),
       remise: Number(paiement.remise) || 0,
       mode_paiement: paiement.mode_paiement,
+      mode_paiement_2: split?.mode ?? null,
+      montant_2: split ? Math.round(split.montant) : null,
       observations: paiement.observations || null,
     } as any);
     setBusy(false);
@@ -147,6 +155,8 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
       remise,
       reste: Math.max(0, du - paye - remise),
       modePaiement: createdPaiement.mode_paiement,
+      modePaiement2: createdPaiement.mode_paiement_2 ?? null,
+      montant2: createdPaiement.montant_2 ?? null,
       observations: createdPaiement.observations,
       titre: "REÇU — TEST D'ENTRÉE",
     });
@@ -229,21 +239,23 @@ export default function SpTestWorkflow({ open, onOpenChange }: Props) {
               <div><Label>Payé *</Label><Input type="number" value={paiement.montant_paye} onChange={(e) => setPaiement({ ...paiement, montant_paye: +e.target.value })} /></div>
               <div><Label>Remise</Label><Input type="number" value={paiement.remise} onChange={(e) => setPaiement({ ...paiement, remise: +e.target.value })} /></div>
             </div>
-            <div>
-              <Label>Mode</Label>
-              <Select value={paiement.mode_paiement} onValueChange={(v) => setPaiement({ ...paiement, mode_paiement: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="especes">Espèces</SelectItem>
-                  <SelectItem value="wave">Wave</SelectItem>
-                  <SelectItem value="orange_money">Orange Money</SelectItem>
-                  <SelectItem value="mtn_money">MTN Money</SelectItem>
-                  <SelectItem value="moov_money">Moov Money</SelectItem>
-                  <SelectItem value="virement">Virement</SelectItem>
-                  <SelectItem value="cheque">Chèque</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <PaymentModeSplitField
+              total={Number(paiement.montant_paye) || 0}
+              mode={paiement.mode_paiement}
+              onModeChange={(v) => setPaiement({ ...paiement, mode_paiement: v })}
+              split={split}
+              onSplitChange={setSplit}
+              moyens={[
+                { value: "especes", label: "Espèces" },
+                { value: "wave", label: "Wave" },
+                { value: "orange_money", label: "Orange Money" },
+                { value: "mtn_money", label: "MTN Money" },
+                { value: "moov_money", label: "Moov Money" },
+                { value: "virement", label: "Virement" },
+                { value: "cheque", label: "Chèque" },
+              ]}
+              disabled={busy}
+            />
             <div><Label>Observations</Label><Textarea rows={2} value={paiement.observations} onChange={(e) => setPaiement({ ...paiement, observations: e.target.value })} /></div>
           </div>
         )}

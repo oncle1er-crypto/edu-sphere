@@ -17,6 +17,9 @@ export interface VacancesRecuData {
   montant_paye: number;
   reste: number;
   mode: string;
+  /** Second moyen de paiement lorsque le règlement a été scindé en deux. */
+  mode2?: string | null;
+  montant2?: number | null;
   date_paiement: string;
   observation?: string | null;
   recu_par?: string;
@@ -182,7 +185,10 @@ export async function generateVacancesRecuA5(data: VacancesRecuData): Promise<js
     pdf.setFont("helvetica", "normal");
     pdf.setTextColor(60, 60, 60);
     pdf.setFontSize(9);
-    pdf.text(`Mode de paiement : ${modeLabel(data.mode)}`, labelX, y + 34);
+    const modeTexte = data.mode2 && data.montant2
+      ? `${modeLabel(data.mode)} ${fmt(Math.max(0, Math.round(data.montant_paye) - Math.round(data.montant2)))} + ${modeLabel(data.mode2)} ${fmt(data.montant2)}`
+      : modeLabel(data.mode);
+    pdf.text(`Mode de paiement : ${modeTexte}`, labelX, y + 34, { maxWidth: innerW - 8 });
     y += payH + 4;
 
     if (data.observation) {

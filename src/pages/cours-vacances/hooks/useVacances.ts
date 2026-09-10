@@ -24,6 +24,9 @@ export type VacPaiement = {
   id: string; ecole_id: string; eleve_id: string; classe_id: string;
   montant_attendu: number; montant_paye: number; date_paiement: string;
   mode: "especes" | "mobile_money" | "virement" | "autre";
+  /** Second moyen de paiement lorsque le règlement a été scindé. */
+  mode_2?: string | null;
+  montant_2?: number | null;
   statut: "paye" | "non_paye" | "partiel"; observation: string | null;
 };
 export type VacEnseignant = {

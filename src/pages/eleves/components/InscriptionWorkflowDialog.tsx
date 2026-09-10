@@ -80,6 +80,7 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
   const [payRef, setPayRef] = useState<string>("");
   const [payLoading, setPayLoading] = useState(false);
   const [receiptMode, setReceiptMode] = useState<"unique" | "tranche">("unique");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
 
 
   const fetchData = useCallback(async () => {
@@ -100,6 +101,13 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
   useEffect(() => {
     if (open && eleve) fetchData();
   }, [open, eleve, fetchData]);
+
+  // Réinitialise le paiement scindé à chaque ouverture / changement d'élève,
+  // pour éviter qu'un second moyen saisi pour un élève précédent ne persiste.
+  useEffect(() => {
+    setSplit(null);
+    setPayRef("");
+  }, [open, eleve?.id]);
 
   // Pré-remplir le montant quand la tranche cible change
   const nextTranche = tranches.find((t) => Number(t.paye) < Number(t.montant));
@@ -234,6 +242,11 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     const montantSaisi = Number(payMontant) || 0;
     if (montantSaisi <= 0) {
       toast.error("Montant invalide");
+      return;
+    }
+    const erreurSplit = validerSplit(montantSaisi, payMode, split);
+    if (erreurSplit) {
+      toast.error(erreurSplit);
       return;
     }
 
@@ -501,25 +514,22 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                           <div><p className="text-[9px] uppercase text-muted-foreground">Reste T{nextTranche.numero}</p><p className="text-xs font-semibold">{fmt(Number(nextTranche.montant) - Number(nextTranche.paye))}</p></div>
                           <div><p className="text-[9px] uppercase text-muted-foreground">Reste total</p><p className="text-xs font-semibold text-destructive">{fmt(totalReste)}</p></div>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label className="text-[10px]">Montant (FCFA)</Label>
-                            <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
-                          </div>
-                          <div>
-                            <Label className="text-[10px]">Moyen</Label>
-                            <Select value={payMode} onValueChange={setPayMode}>
-                              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                              <SelectContent>
-                                {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        </div>
                         <div>
-                          <Label className="text-[10px]">Référence (optionnel)</Label>
-                          <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+                          <Label className="text-[10px]">Montant (FCFA)</Label>
+                          <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} />
                         </div>
+                        <PaymentModeSplitField
+                          total={saisi}
+                          mode={payMode}
+                          onModeChange={setPayMode}
+                          split={split}
+                          onSplitChange={setSplit}
+                          reference={payRef}
+                          onReferenceChange={setPayRef}
+                          moyens={MOYENS}
+                          disabled={payLoading}
+                          referenceLabel="Référence (optionnel)"
+                        />
                         {saisi > 0 && preview.length > 0 && (
                           <div className="rounded border bg-primary/5 p-2 text-[10.5px] space-y-0.5">
                             <p className="font-semibold text-primary">Répartition automatique :</p>
@@ -562,25 +572,22 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
                   <p className="text-[11px] text-amber-900">
                     Aucune tranche n'est encore générée. Saisissez le montant du 1er paiement : l'échéancier sera créé automatiquement.
                   </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-[10px]">Montant (FCFA)</Label>
-                      <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} placeholder="Ex. 50000" />
-                    </div>
-                    <div>
-                      <Label className="text-[10px]">Moyen</Label>
-                      <Select value={payMode} onValueChange={setPayMode}>
-                        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
                   <div>
-                    <Label className="text-[10px]">Référence (optionnel)</Label>
-                    <Input className="h-8 text-xs" placeholder="N° reçu / transaction" value={payRef} onChange={(e) => setPayRef(e.target.value)} />
+                    <Label className="text-[10px]">Montant (FCFA)</Label>
+                    <Input className="h-8 text-xs" type="number" value={payMontant} onChange={(e) => setPayMontant(e.target.value)} placeholder="Ex. 50000" />
                   </div>
+                  <PaymentModeSplitField
+                    total={Number(payMontant) || 0}
+                    mode={payMode}
+                    onModeChange={setPayMode}
+                    split={split}
+                    onSplitChange={setSplit}
+                    reference={payRef}
+                    onReferenceChange={setPayRef}
+                    moyens={MOYENS}
+                    disabled={payLoading}
+                    referenceLabel="Référence (optionnel)"
+                  />
                   <Button size="sm" className="w-full h-8 text-xs" onClick={handlePayInline} disabled={payLoading || !cClasse}>
                     {payLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Wallet className="h-3 w-3 mr-1" />}
                     Effectuer le 1er paiement

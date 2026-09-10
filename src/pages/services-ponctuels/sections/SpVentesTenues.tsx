@@ -95,6 +95,8 @@ export default function SpVentesTenues() {
       montantDu: v.montant_total,
       montantPaye: v.statut === "annule" || v.statut === "attente" ? 0 : v.montant_total,
       modePaiement: v.mode_paiement,
+      modePaiement2: v.mode_paiement_2 ?? null,
+      montant2: v.montant_2 ?? null,
       titre,
       observations: obs || undefined,
     });

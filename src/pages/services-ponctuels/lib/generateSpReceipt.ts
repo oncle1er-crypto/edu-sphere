@@ -17,6 +17,9 @@ export interface SpReceiptData {
   remise?: number;
   reste?: number;
   modePaiement: string;
+  /** Second moyen de paiement lorsque le règlement a été scindé en deux. */
+  modePaiement2?: string | null;
+  montant2?: number | null;
   caissier?: string;
   observations?: string;
   titre?: string;
@@ -155,7 +158,19 @@ export async function generateSpReceipt(d: SpReceiptData) {
     kv("Service", d.service);
     kv("Bénéficiaire", d.beneficiaire, { bold: true });
     if (d.quantite) kv("Quantité", String(d.quantite));
-    kv("Mode de paiement", MODES[d.modePaiement] ?? d.modePaiement);
+    kv("Mode de paiement", d.modePaiement2 && d.montant2 ? "Réglé en 2 moyens" : (MODES[d.modePaiement] ?? d.modePaiement));
+    if (d.modePaiement2 && d.montant2) {
+      const montant1 = Math.max(0, Math.round(d.montantPaye) - Math.round(d.montant2));
+      doc.setFont("helvetica", "italic");
+      doc.setFontSize(8.5);
+      doc.setTextColor(...MUTED);
+      doc.text(
+        `${MODES[d.modePaiement] ?? d.modePaiement} ${fmt(montant1)} + ${MODES[d.modePaiement2] ?? d.modePaiement2} ${fmt(d.montant2)}`,
+        right, y, { align: "right", maxWidth: right - left },
+      );
+      doc.setTextColor(...INK);
+      y += 5;
+    }
     if (d.montantDu != null) kv("Montant dû", fmt(d.montantDu));
     if (d.remise && d.remise > 0) kv("Remise accordée", fmt(d.remise));
 

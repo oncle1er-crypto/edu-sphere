@@ -50,7 +50,8 @@ export default function VacancesPaiements() {
         eleve: { nom: eleve.nom, prenom: eleve.prenom, sexe: eleve.sexe, contact_parent: eleve.contact_parent },
         classe: classe.nom,
         montant_attendu: attendu, montant_paye: paye, reste: Math.max(0, attendu - paye),
-        mode: p.mode, date_paiement: p.date_paiement, observation: p.observation,
+        mode: p.mode, mode2: p.mode_2 ?? null, montant2: p.montant_2 ?? null,
+        date_paiement: p.date_paiement, observation: p.observation,
       });
       pdf.autoPrint();
       window.open(pdf.output("bloburl"), "_blank");

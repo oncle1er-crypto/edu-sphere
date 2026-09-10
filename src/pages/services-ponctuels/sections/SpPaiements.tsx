@@ -121,6 +121,8 @@ export default function SpPaiements() {
       remise: Number(p.remise),
       reste: reste(p),
       modePaiement: p.mode_paiement,
+      modePaiement2: p.mode_paiement_2 ?? null,
+      montant2: p.montant_2 ?? null,
       observations: p.observations ?? undefined,
       titre: correction ? "REÇU DE CORRECTION" : "REÇU DE PAIEMENT",
     });
