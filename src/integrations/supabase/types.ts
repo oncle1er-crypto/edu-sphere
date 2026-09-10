@@ -1944,8 +1944,6 @@ export type Database = {
           fiche_piece_jointe_nom: string | null
           fournisseur_id: string | null
           id: string
-          justificatif_chemin: string | null
-          justificatif_nom: string | null
           libelle: string
           montant: number
           motif_rejet: string | null
@@ -1974,8 +1972,6 @@ export type Database = {
           fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
-          justificatif_chemin?: string | null
-          justificatif_nom?: string | null
           libelle: string
           montant: number
           motif_rejet?: string | null
@@ -2004,8 +2000,6 @@ export type Database = {
           fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
-          justificatif_chemin?: string | null
-          justificatif_nom?: string | null
           libelle?: string
           montant?: number
           motif_rejet?: string | null
@@ -4415,7 +4409,6 @@ export type Database = {
           notes: string | null
           recu_par: string | null
           reference: string | null
-          rembourse: boolean
           tranche_id: string | null
         }
         Insert: {
@@ -4434,7 +4427,6 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
-          rembourse?: boolean
           tranche_id?: string | null
         }
         Update: {
@@ -4453,7 +4445,6 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
-          rembourse?: boolean
           tranche_id?: string | null
         }
         Relationships: [
@@ -8134,7 +8125,7 @@ export type Database = {
         Returns: Json
       }
       annuler_paiement_scolarite: {
-        Args: { _motif: string; _paiement_id: string; _rembourse?: boolean }
+        Args: { _motif: string; _paiement_id: string }
         Returns: Json
       }
       annuler_passage_classe: { Args: { _passage_id: string }; Returns: Json }
@@ -8444,10 +8435,6 @@ export type Database = {
         Returns: number
       }
       register_failed_mfa: { Args: never; Returns: Json }
-      rembourser_paiement_scolarite: {
-        Args: { _motif: string; _paiement_id: string }
-        Returns: Json
-      }
       renouveler_abonnements: {
         Args: {
           _annee_cible: string
