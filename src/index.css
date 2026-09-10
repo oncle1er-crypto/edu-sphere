@@ -213,10 +213,19 @@
     backdrop-filter: blur(8px);
     overflow-x: hidden;
   }
-  /* Mobile : le menu ne doit pas manger toute la hauteur d'écran */
+  /* Mobile : le menu reste dans le flux (une seule colonne) et défile seul */
   @media (max-width: 1023px) {
     .menu-aside {
-      max-height: min(55dvh, calc(100dvh - var(--app-header-h, 7.25rem) - var(--module-head-h, 0px) - 1.5rem));
+      max-height: 55dvh;
+    }
+  }
+  /* Bureau : le menu du module reste fixe pendant que le contenu défile */
+  @media (min-width: 1024px) {
+    .menu-aside {
+      position: sticky;
+      top: calc(var(--app-header-h, 7.25rem) + var(--module-head-h, 0px) + 0.75rem);
+      align-self: start;
+      max-height: calc(100dvh - var(--app-header-h, 7.25rem) - var(--module-head-h, 0px) - 1.5rem);
     }
   }
   
