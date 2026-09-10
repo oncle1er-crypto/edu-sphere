@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { AppHeader } from "@/components/AppHeader";
 import { TopNav } from "@/components/TopNav";
@@ -15,6 +15,63 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const { pathname } = useLocation();
   const [displayName, setDisplayName] = useState<string>("");
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // La hauteur du bloc d'en-tête varie (mobile / bureau) : on la publie dans
+  // --app-header-h pour que les titres de module et les menus latéraux
+  // se collent exactement en dessous.
+  useEffect(() => {
+    const el = headerRef.current;
+    if (!el) return;
+    const apply = () => {
+      document.documentElement.style.setProperty("--app-header-h", `${el.offsetHeight}px`);
+    };
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    window.addEventListener("resize", apply);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", apply);
+    };
+  }, []);
+
+  // Le bandeau de titre du module (quand il existe) est lui aussi collé :
+  // on publie sa hauteur pour que le menu latéral se cale juste en dessous
+  // au lieu de passer derrière.
+  useEffect(() => {
+    const root = document.documentElement;
+    const ro = new ResizeObserver(() => {
+      const el = document.querySelector<HTMLElement>(".module-sticky-head");
+      root.style.setProperty("--module-head-h", el ? `${el.offsetHeight}px` : "0px");
+    });
+    let observed: HTMLElement | null = null;
+
+    const sync = () => {
+      const el = document.querySelector<HTMLElement>(".module-sticky-head");
+      if (el === observed) return;
+      if (observed) ro.unobserve(observed);
+      observed = el;
+      if (el) {
+        ro.observe(el);
+        root.style.setProperty("--module-head-h", `${el.offsetHeight}px`);
+      } else {
+        root.style.setProperty("--module-head-h", "0px");
+      }
+    };
+
+    sync();
+    // Les pages sont chargées à la demande : le bandeau apparaît souvent
+    // après ce premier passage, on surveille donc l'arrivée du contenu.
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      mo.disconnect();
+      ro.disconnect();
+      root.style.setProperty("--module-head-h", "0px");
+    };
+  }, [pathname]);
 
   // Changement de page : on repart en haut du contenu, sinon la nouvelle
   // section peut sembler ne pas s'être chargée quand on était en bas de page.
@@ -38,9 +95,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background [overflow-x:clip]">
       
-      <div className="sticky top-0 z-40 shadow-md">
+      <div ref={headerRef} className="sticky top-0 z-40 shadow-md bg-background">
         <AppHeader userName={displayName || user?.email || "Utilisateur"} />
         <TopNav schoolName="COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" />
       </div>

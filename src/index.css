@@ -193,22 +193,39 @@
     animation: shimmer 6s linear infinite;
   }
 
+  /* Bandeau de titre des modules : collé sous l'en-tête global */
+  .module-sticky-head {
+    position: sticky;
+    top: var(--app-header-h, 7.25rem);
+    z-index: 20;
+  }
+
   /* Colored sidebar menu — theme-aware (light + dark) */
   .menu-aside {
     position: relative;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     isolation: isolate;
     background:
       radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.10) 0%, transparent 55%),
       radial-gradient(130% 90% at 100% 100%, hsl(var(--accent) / 0.14) 0%, transparent 55%),
       linear-gradient(165deg, hsl(var(--card) / 0.95) 0%, hsl(var(--card) / 0.88) 100%);
     backdrop-filter: blur(8px);
-    overflow: hidden;
+    overflow-x: hidden;
   }
-  /* Mobile: aside scrollable pour ne pas manger toute la hauteur */
+  /* Mobile : le menu reste dans le flux (une seule colonne) et défile seul */
   @media (max-width: 1023px) {
     .menu-aside {
-      max-height: 60vh;
-      overflow-y: auto;
+      max-height: 55dvh;
+    }
+  }
+  /* Bureau : le menu du module reste fixe pendant que le contenu défile */
+  @media (min-width: 1024px) {
+    .menu-aside {
+      position: sticky;
+      top: calc(var(--app-header-h, 7.25rem) + var(--module-head-h, 0px) + 0.75rem);
+      align-self: start;
+      max-height: calc(100dvh - var(--app-header-h, 7.25rem) - var(--module-head-h, 0px) - 1.5rem);
     }
   }
   

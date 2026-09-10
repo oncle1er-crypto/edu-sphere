@@ -62,7 +62,7 @@ export function AppHeader({ userName = "Administrateur" }: AppHeaderProps) {
   const isConsultation = activeAnnee.statut !== "active";
 
   return (
-    <header className="sticky top-0 z-40 bg-card border-b shadow-[var(--shadow-soft)]">
+    <header className="bg-card border-b shadow-[var(--shadow-soft)]">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 px-3 py-3 sm:px-4 xl:flex xl:justify-between xl:px-6 xl:h-20 xl:py-0">
         <div className="order-1 flex min-w-0 items-center gap-2 xl:gap-4">
           {canGoBack && (

@@ -45,7 +45,7 @@ export default function SettingsLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-[7.25rem] z-20 rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[var(--shadow-card)] px-4 py-3">
+      <div className="module-sticky-head rounded-2xl bg-card/90 backdrop-blur-md border border-border/60 shadow-[var(--shadow-card)] px-4 py-3">
         <h1 className="text-2xl md:text-3xl font-extrabold font-display text-primary">Paramètres</h1>
         <p className="text-sm text-muted-foreground mt-1">
           Configuration complète de votre plateforme de gestion scolaire.
@@ -54,7 +54,7 @@ export default function SettingsLayout() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
         {/* Sidebar verticale */}
-        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 self-start">
           {groups.map((group) => (
             <div key={group} className="mb-4 last:mb-0">
               <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
