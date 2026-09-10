@@ -193,9 +193,21 @@
     animation: shimmer 6s linear infinite;
   }
 
+  /* Bandeau de titre des modules : collé sous l'en-tête global */
+  .module-sticky-head {
+    position: sticky;
+    top: var(--app-header-h, 7.25rem);
+    z-index: 20;
+  }
+
   /* Colored sidebar menu — theme-aware (light + dark) */
   .menu-aside {
-    position: relative;
+    position: sticky;
+    top: calc(var(--app-header-h, 7.25rem) + 0.5rem);
+    align-self: start;
+    max-height: calc(100dvh - var(--app-header-h, 7.25rem) - 1rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
     isolation: isolate;
     background:
       radial-gradient(130% 90% at 0% 0%, hsl(var(--primary) / 0.10) 0%, transparent 55%),
