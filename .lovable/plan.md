@@ -1,21 +1,23 @@
-# Dépenses enregistrées mais invisibles
+# Menu latéral : la page ne s'affiche qu'au second clic
 
-## Cause confirmée
+## Ce que j'ai vérifié
 
-Les 9 dépenses existent bien en base (13 juillet → 4 août 2026). La page ne montre que les dépenses comprises dans l'année scolaire active (14 septembre 2026 → 30 juin 2027) : toutes sont donc filtrées, d'où « Dépenses (0) ».
+- Le menu de « Paiements & Comptabilité » utilise des liens standards et les pages sont bien déclarées une par une (aucun lien cassé).
+- Chaque page du module est protégée par un contrôle d'accès qui **recharge les droits de l'utilisateur à chaque changement de page** (deux appels au serveur), en affichant un écran de chargement pendant ce temps.
+- **Le même schéma est utilisé dans 20 autres modules** (Élèves, Personnel, Cantine, Transport, Examens, Bibliothèque, Vie scolaire, Cartes, Paramètres, Services ponctuels, etc.) : si la cause est bien là, le comportement est identique partout, simplement plus visible sur Paiements où les pages sont plus lourdes.
+- La page ne remonte pas en haut lors d'un changement de section : si l'on est en bas de page, le nouveau contenu peut sembler ne pas s'être chargé, ce qui pousse à cliquer une seconde fois.
 
-## Correction retenue
+Je n'affirme pas encore la cause exacte : les deux pistes ci-dessus expliquent le symptôme, mais elles doivent être confirmées par une reproduction réelle avant correction.
 
-Sélecteur de période sur la page Dépenses, avec « Toutes les dépenses » par défaut afin que rien ne disparaisse silencieusement :
+## Plan proposé
 
-1. Sélecteur : **Toutes les dépenses** (défaut), **Année scolaire active**, **Mois en cours**. Le compteur, la répartition par catégorie et le total suivent la période choisie.
-2. État vide plus clair : si la période sélectionnée est vide alors que des dépenses existent ailleurs, message dédié + bouton « Voir toutes les dépenses ».
-3. Avertissement discret sous le champ Date du formulaire lorsque la date est hors de l'année scolaire active. L'enregistrement reste autorisé.
-
-Aucune donnée n'est modifiée et l'année scolaire n'est pas touchée.
+1. **Reproduire et mesurer** : parcourir le menu Paiements dans le navigateur, enregistrer ce qui se passe au premier clic (adresse, écran de chargement, position de la page) pour identifier la cause exacte, puis faire le même test dans un second module pour confirmer si c'est général.
+2. **Supprimer le rechargement des droits à chaque page** : les droits sont chargés une seule fois et partagés par toute l'application (mise en cache), au lieu d'être redemandés au serveur à chaque clic. Effet attendu : la page s'affiche immédiatement, sans écran d'attente intermédiaire.
+3. **Remonter automatiquement en haut** du contenu à chaque changement de section, pour que le nouvel écran soit visible tout de suite.
+4. **Vérifier** : premier clic sur chaque entrée du menu Paiements, puis contrôle rapide sur deux autres modules, et vérification qu'aucune erreur n'apparaît.
 
 ## Détails techniques
 
-- `src/pages/finances/sections/Expenses.tsx` : état local `periode`, `range` passé à `useDepenses` (`undefined` = tout), état vide enrichi, avertissement de date.
-- `src/hooks/useDepenses.ts` : exposer un total non borné par la date pour alimenter le message d'état vide. Aucun changement de logique d'écriture.
-- Aucune migration SQL.
+- `usePermissions()` est instancié indépendamment par chaque `RequirePerm` (un par route) et par chaque layout ; il démarre avec `loading = true` et relance `user_roles` + `rpc get_effective_permissions` à chaque montage. Correctif : déplacer la résolution des permissions dans un contexte unique (ou un `useQuery` React Query avec `staleKey` `[user.id, ecoleId]` et `staleTime` long), en conservant l'API actuelle `{ can, isAdmin, loading, reload }` pour ne rien casser côté appelants.
+- Ajouter un `ScrollToTop` sur changement de `location.pathname` dans `AppLayout`, ou un `scrollTo({ top: 0 })` dans le conteneur animé des layouts.
+- Aucun changement de base de données, aucune règle métier touchée.
