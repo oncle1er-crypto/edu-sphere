@@ -23,7 +23,7 @@ export default function VieScolaireLayout() {
 
   return (
     <div className="space-y-6">
-      <div className="sticky top-[7.25rem] z-20 -mx-2 px-2">
+      <div className="module-sticky-head -mx-2 px-2">
         <div className="relative overflow-hidden rounded-2xl bg-gradient-hero px-4 py-3 border border-border/60 shadow-[var(--shadow-card)] backdrop-blur-md">
           <h1 className="text-2xl md:text-3xl font-extrabold font-display text-gradient">
             Vie scolaire — Éducateur
@@ -35,7 +35,7 @@ export default function VieScolaireLayout() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6">
-        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 lg:sticky lg:top-24 self-start lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+        <aside className="menu-aside border border-border/60 rounded-2xl shadow-[var(--shadow-card)] p-3 self-start">
           {groups.map((group) => (
             <div key={group} className="mb-4 last:mb-0">
               <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
