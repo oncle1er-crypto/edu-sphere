@@ -4415,6 +4415,7 @@ export type Database = {
           notes: string | null
           recu_par: string | null
           reference: string | null
+          rembourse: boolean
           tranche_id: string | null
         }
         Insert: {
@@ -4433,6 +4434,7 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
+          rembourse?: boolean
           tranche_id?: string | null
         }
         Update: {
@@ -4451,6 +4453,7 @@ export type Database = {
           notes?: string | null
           recu_par?: string | null
           reference?: string | null
+          rembourse?: boolean
           tranche_id?: string | null
         }
         Relationships: [
