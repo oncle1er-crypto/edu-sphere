@@ -1944,6 +1944,8 @@ export type Database = {
           fiche_piece_jointe_nom: string | null
           fournisseur_id: string | null
           id: string
+          justificatif_chemin: string | null
+          justificatif_nom: string | null
           libelle: string
           montant: number
           motif_rejet: string | null
@@ -1972,6 +1974,8 @@ export type Database = {
           fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
+          justificatif_chemin?: string | null
+          justificatif_nom?: string | null
           libelle: string
           montant: number
           motif_rejet?: string | null
@@ -2000,6 +2004,8 @@ export type Database = {
           fiche_piece_jointe_nom?: string | null
           fournisseur_id?: string | null
           id?: string
+          justificatif_chemin?: string | null
+          justificatif_nom?: string | null
           libelle?: string
           montant?: number
           motif_rejet?: string | null
@@ -8435,6 +8441,10 @@ export type Database = {
         Returns: number
       }
       register_failed_mfa: { Args: never; Returns: Json }
+      rembourser_paiement_scolarite: {
+        Args: { _motif: string; _paiement_id: string }
+        Returns: Json
+      }
       renouveler_abonnements: {
         Args: {
           _annee_cible: string
