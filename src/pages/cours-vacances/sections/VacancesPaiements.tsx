@@ -122,18 +122,17 @@ export default function VacancesPaiements() {
               <div><Label>Montant attendu</Label><Input type="number" value={form.montant_attendu ?? 0} onChange={(e) => setForm({ ...form, montant_attendu: Number(e.target.value) })} /></div>
               <div><Label>Montant payé *</Label><Input type="number" value={form.montant_paye ?? 0} onChange={(e) => setForm({ ...form, montant_paye: Number(e.target.value) })} /></div>
               <div><Label>Date</Label><Input type="date" value={form.date_paiement || ""} onChange={(e) => setForm({ ...form, date_paiement: e.target.value })} /></div>
-              <div>
-                <Label>Mode</Label>
-                <Select value={form.mode || "especes"} onValueChange={(v) => setForm({ ...form, mode: v as VacPaiement["mode"] })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="especes">Espèces</SelectItem>
-                    <SelectItem value="mobile_money">Mobile money</SelectItem>
-                    <SelectItem value="virement">Virement</SelectItem>
-                    <SelectItem value="autre">Autre</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="col-span-2">
+                <PaymentModeSplitField
+                  total={Number(form.montant_paye ?? 0)}
+                  mode={form.mode || "especes"}
+                  onModeChange={(v) => setForm((f) => ({ ...f, mode: v as VacPaiement["mode"] }))}
+                  split={split}
+                  onSplitChange={setSplit}
+                  moyens={MOYENS_VAC}
+                />
               </div>
+
               <div className="col-span-2"><Label>Observation</Label><Textarea value={form.observation || ""} onChange={(e) => setForm({ ...form, observation: e.target.value })} rows={2} /></div>
             </div>
             <DialogFooter><Button variant="outline" onClick={() => setOpen(false)}>Annuler</Button><Button onClick={submit}>Enregistrer</Button></DialogFooter>
