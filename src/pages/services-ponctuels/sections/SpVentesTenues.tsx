@@ -4,11 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle, PackageCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Printer, XCircle, PackageCheck, Pencil, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { useSpVentes } from "../hooks/useSpVentes";
+import { useSpVentes, type SpVenteTenue } from "../hooks/useSpVentes";
 import { useSpStockTenues } from "../hooks/useSpStockTenues";
 import { VenteTenueDialog } from "../components/VenteTenueDialog";
+import { EditPaymentModeDialog } from "@/components/finances/EditPaymentModeDialog";
+import type { PaymentSplit } from "@/lib/paymentSplit";
+
+const MOYENS_SP = [
+  { value: "especes", label: "Espèces" },
+  { value: "wave", label: "Wave" },
+  { value: "orange_money", label: "Orange Money" },
+  { value: "mtn_money", label: "MTN Money" },
+  { value: "moov_money", label: "Moov Money" },
+  { value: "virement", label: "Virement" },
+  { value: "cheque", label: "Chèque" },
+];
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoleInfo } from "../hooks/useEcoleInfo";
 import { useClasses } from "@/hooks/useClasses";
@@ -26,6 +38,7 @@ export default function SpVentesTenues() {
   const { classes } = useClasses(anneeId ?? undefined);
   const classesMap = useMemo(() => Object.fromEntries(classes.map((c) => [c.id, c.nom])), [classes]);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<SpVenteTenue | null>(null);
 
   const PAR_PAGE = 25;
   const [page, setPage] = useState(1);
@@ -148,6 +161,9 @@ export default function SpVentesTenues() {
                         )}
                         <Button size="icon" variant="ghost" onClick={() => reprint(v)} title="Reçu"><Printer className="h-4 w-4" /></Button>
                         {v.statut !== "annule" && (
+                          <Button size="icon" variant="ghost" onClick={() => setEditing(v)} title="Modifier le mode de paiement"><Pencil className="h-4 w-4" /></Button>
+                        )}
+                        {v.statut !== "annule" && (
                           <Button size="icon" variant="ghost" onClick={async () => {
                             const m = prompt("Motif d'annulation ?"); if (m && m.length >= 3) await annuler(v.id, m);
                           }} title="Annuler"><XCircle className="h-4 w-4 text-destructive" /></Button>
@@ -177,6 +193,30 @@ export default function SpVentesTenues() {
       </Card>
 
       <VenteTenueDialog open={open} onOpenChange={setOpen} onSuccess={reprint} />
+
+      {editing && (
+        <EditPaymentModeDialog
+          open={!!editing}
+          onOpenChange={(v) => !v && setEditing(null)}
+          summary={`${editing.numero} — ${editing.acheteur_libre ?? "—"} · ${Number(editing.montant_total).toLocaleString("fr-FR")} FCFA`}
+          total={Number(editing.montant_total)}
+          initialMode={editing.mode_paiement}
+          initialSplit={
+            editing.mode_paiement_2 && editing.montant_2
+              ? ({ mode: editing.mode_paiement_2, montant: Number(editing.montant_2) } as PaymentSplit)
+              : null
+          }
+          moyens={MOYENS_SP}
+          onSave={async (mode, split) => {
+            await save({
+              id: editing.id,
+              mode_paiement: mode as SpVenteTenue["mode_paiement"],
+              mode_paiement_2: (split?.mode as SpVenteTenue["mode_paiement"]) ?? null,
+              montant_2: split ? Math.round(split.montant) : null,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
