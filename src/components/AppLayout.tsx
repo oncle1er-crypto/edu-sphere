@@ -36,6 +36,26 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Le bandeau de titre du module (quand il existe) est lui aussi collé :
+  // on publie sa hauteur pour que le menu latéral se cale juste en dessous
+  // au lieu de passer derrière.
+  useEffect(() => {
+    const root = document.documentElement;
+    const el = document.querySelector<HTMLElement>(".module-sticky-head");
+    if (!el) {
+      root.style.setProperty("--module-head-h", "0px");
+      return;
+    }
+    const apply = () => root.style.setProperty("--module-head-h", `${el.offsetHeight}px`);
+    apply();
+    const ro = new ResizeObserver(apply);
+    ro.observe(el);
+    return () => {
+      ro.disconnect();
+      root.style.setProperty("--module-head-h", "0px");
+    };
+  }, [pathname]);
+
   // Changement de page : on repart en haut du contenu, sinon la nouvelle
   // section peut sembler ne pas s'être chargée quand on était en bas de page.
   useEffect(() => {
