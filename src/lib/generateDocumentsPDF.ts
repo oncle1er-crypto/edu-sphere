@@ -65,6 +65,25 @@ async function loadImageAsDataURL(url: string): Promise<{ data: string; w: numbe
   }
 }
 
+/** Format réel de l'image (jsPDF échoue si on annonce PNG pour un JPEG/WEBP). */
+const imageFormat = (dataUrl: string): "PNG" | "JPEG" | "WEBP" =>
+  /^data:image\/(jpe?g)/i.test(dataUrl) ? "JPEG"
+  : /^data:image\/webp/i.test(dataUrl) ? "WEBP"
+  : "PNG";
+
+/** Insertion d'image tolérante : ne doit jamais empêcher la génération du PDF. */
+const safeAddImage = (
+  doc: jsPDF,
+  img: { data: string },
+  x: number, y: number, w: number, h: number,
+) => {
+  try {
+    doc.addImage(img.data, imageFormat(img.data), x, y, w, h);
+  } catch {
+    try { doc.addImage(img.data, x, y, w, h); } catch { /* ignore */ }
+  }
+};
+
 const formatFCFA = (n: number) => `${Math.round(n).toLocaleString("fr-FR").replace(/\u202f/g, " ")} FCFA`;
 
 const monthsFR = ["janvier","février","mars","avril","mai","juin","juillet","août","septembre","octobre","novembre","décembre"];
