@@ -219,7 +219,7 @@
   /* Mobile : le menu ne doit pas manger toute la hauteur d'écran */
   @media (max-width: 1023px) {
     .menu-aside {
-      max-height: min(55dvh, calc(100dvh - var(--app-header-h, 7.25rem) - 1rem));
+      max-height: min(55dvh, calc(100dvh - var(--app-header-h, 7.25rem) - var(--module-head-h, 0px) - 1.5rem));
     }
   }
   
