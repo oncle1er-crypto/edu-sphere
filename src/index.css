@@ -214,13 +214,12 @@
       radial-gradient(130% 90% at 100% 100%, hsl(var(--accent) / 0.14) 0%, transparent 55%),
       linear-gradient(165deg, hsl(var(--card) / 0.95) 0%, hsl(var(--card) / 0.88) 100%);
     backdrop-filter: blur(8px);
-    overflow: hidden;
+    overflow-x: hidden;
   }
-  /* Mobile: aside scrollable pour ne pas manger toute la hauteur */
+  /* Mobile : le menu ne doit pas manger toute la hauteur d'écran */
   @media (max-width: 1023px) {
     .menu-aside {
-      max-height: 60vh;
-      overflow-y: auto;
+      max-height: min(55dvh, calc(100dvh - var(--app-header-h, 7.25rem) - 1rem));
     }
   }
   
