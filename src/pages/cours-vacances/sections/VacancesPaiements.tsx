@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { EditPaymentModeDialog } from "@/components/finances/EditPaymentModeDialog";
 import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
 
 const MOYENS_VAC = [
@@ -18,7 +19,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useVacancesData, type VacPaiement } from "../hooks/useVacances";
-import { Plus, Trash2, Printer } from "lucide-react";
+import { Plus, Trash2, Printer, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateVacancesRecuA5 } from "@/lib/generateVacancesRecuA5";
 import { toast } from "sonner";
@@ -64,6 +65,7 @@ export default function VacancesPaiements() {
   const [fStatut, setFStatut] = useState<string>("all");
   const [form, setForm] = useState<Partial<VacPaiement>>({});
   const [split, setSplit] = useState<PaymentSplit | null>(null);
+  const [editing, setEditing] = useState<VacPaiement | null>(null);
 
   const openNew = () => {
     const first = eleves[0];
@@ -200,6 +202,7 @@ export default function VacancesPaiements() {
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Button size="icon" variant="ghost" title="Imprimer reçu A5 avec souche" disabled={printing === p.id} onClick={() => printRecu(p)}><Printer className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Modifier le mode de paiement" onClick={() => setEditing(p)}><Pencil className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" onClick={() => { if (confirm("Supprimer ce paiement ?")) remove("vacances_paiements", p.id); }}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                       </div>
                     </TableCell>
@@ -218,6 +221,33 @@ export default function VacancesPaiements() {
           )}
         </CardContent>
       </Card>
+
+      {editing && (
+        <EditPaymentModeDialog
+          open={!!editing}
+          onOpenChange={(v) => !v && setEditing(null)}
+          summary={`${eleveNom(editing.eleve_id)} — ${classeNom(editing.classe_id)} · ${fmt(Number(editing.montant_paye))}`}
+          total={Number(editing.montant_paye)}
+          initialMode={editing.mode}
+          initialSplit={
+            editing.mode_2 && editing.montant_2
+              ? ({ mode: editing.mode_2, montant: Number(editing.montant_2) } as PaymentSplit)
+              : null
+          }
+          moyens={MOYENS_VAC}
+          onSave={async (mode, splitVal) => {
+            await save(
+              "vacances_paiements",
+              {
+                mode: mode as VacPaiement["mode"],
+                mode_2: splitVal?.mode ?? null,
+                montant_2: splitVal ? Math.round(splitVal.montant) : null,
+              },
+              editing.id,
+            );
+          }}
+        />
+      )}
     </div>
   );
 }

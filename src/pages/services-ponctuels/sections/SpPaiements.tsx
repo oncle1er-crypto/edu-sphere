@@ -6,26 +6,39 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Printer, XCircle, Trash2, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Printer, XCircle, Trash2, Pencil, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSpPaiements, type SpPaiement } from "../hooks/useSpPaiements";
 import { useSpServices } from "../hooks/useSpServices";
 import { ServicePaymentDialog } from "../components/ServicePaymentDialog";
+import { EditPaymentModeDialog } from "@/components/finances/EditPaymentModeDialog";
+import type { PaymentSplit } from "@/lib/paymentSplit";
 import { generateSpReceipt } from "../lib/generateSpReceipt";
 import { useEcoleInfo, type EcoleInfo } from "../hooks/useEcoleInfo";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n || 0)) + " FCFA";
 
+const MOYENS_SP = [
+  { value: "especes", label: "Espèces" },
+  { value: "wave", label: "Wave" },
+  { value: "orange_money", label: "Orange Money" },
+  { value: "mtn_money", label: "MTN Money" },
+  { value: "moov_money", label: "Moov Money" },
+  { value: "virement", label: "Virement" },
+  { value: "cheque", label: "Chèque" },
+];
+
 type SortKey = "numero" | "date_paiement" | "service" | "beneficiaire" | "montant_paye" | "reste" | "mode_paiement";
 type Statut = "tous" | "solde" | "partiel" | "annule";
 const PAR_PAGE = 25;
 
 export default function SpPaiements() {
-  const { paiements, loading, annuler, supprimer } = useSpPaiements();
+  const { paiements, loading, save, annuler, supprimer } = useSpPaiements();
   const { services } = useSpServices();
   const ecole = useEcoleInfo();
   const { isAdmin } = useIsAdmin();
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState<SpPaiement | null>(null);
   const [q, setQ] = useState("");
   const [params, setParams] = useSearchParams();
   const serviceFiltre = params.get("service") ?? "tous";
@@ -211,6 +224,9 @@ export default function SpPaiements() {
                           <div className="flex justify-end gap-1">
                             <Button size="icon" variant="ghost" onClick={() => printReceipt(p, !!p.annule_le)} title="Reçu"><Printer className="h-4 w-4" /></Button>
                             {isAdmin && !p.annule_le && (
+                              <Button size="icon" variant="ghost" onClick={() => setEditing(p)} title="Modifier le mode de paiement"><Pencil className="h-4 w-4" /></Button>
+                            )}
+                            {isAdmin && !p.annule_le && (
                               <Button size="icon" variant="ghost" onClick={async () => {
                                 const m = prompt("Motif d'annulation ?"); if (m && m.length >= 3) await annuler(p.id, m);
                               }} title="Annuler"><XCircle className="h-4 w-4 text-destructive" /></Button>
@@ -251,6 +267,30 @@ export default function SpPaiements() {
       </Card>
 
       <ServicePaymentDialog open={open} onOpenChange={setOpen} onSuccess={(p) => printReceipt(p)} />
+
+      {editing && (
+        <EditPaymentModeDialog
+          open={!!editing}
+          onOpenChange={(v) => !v && setEditing(null)}
+          summary={`${editing.numero} — ${editing.beneficiaire_libre ?? svcMap[editing.service_id]?.nom ?? "—"} · ${fmt(Number(editing.montant_paye))}`}
+          total={Number(editing.montant_paye)}
+          initialMode={editing.mode_paiement}
+          initialSplit={
+            editing.mode_paiement_2 && editing.montant_2
+              ? ({ mode: editing.mode_paiement_2, montant: Number(editing.montant_2) } as PaymentSplit)
+              : null
+          }
+          moyens={MOYENS_SP}
+          onSave={async (mode, split) => {
+            await save({
+              id: editing.id,
+              mode_paiement: mode as SpPaiement["mode_paiement"],
+              mode_paiement_2: (split?.mode as SpPaiement["mode_paiement"]) ?? null,
+              montant_2: split ? Math.round(split.montant) : null,
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
