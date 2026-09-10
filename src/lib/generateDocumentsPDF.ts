@@ -126,7 +126,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     if (logo) {
       const logoH = 16;
       const logoW = (logo.w / logo.h) * logoH;
-      doc.addImage(logo.data, "PNG", M, y, logoW, logoH);
+      safeAddImage(doc, logo, M, y, logoW, logoH);
     }
     const tx = logo ? M + 22 : M;
     doc.setFont("times", "bold");
@@ -190,7 +190,7 @@ export async function generateRecuPDF(data: RecuData): Promise<jsPDF> {
     // Photo de l'élève (coin droit)
     if (photoData) {
       try {
-        doc.addImage(photoData.data, "JPEG", W - M - 18, y - 2, 16, 18);
+        safeAddImage(doc, photoData, W - M - 18, y - 2, 16, 18);
       } catch { /* ignore */ }
     }
 
@@ -466,7 +466,7 @@ export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF
       if (GState) doc.setGState(new GState({ opacity: 0.06 }));
       const wmH = 130;
       const wmW = (logo.w / logo.h) * wmH;
-      doc.addImage(logo.data, "PNG", (W - wmW) / 2, (H - wmH) / 2, wmW, wmH);
+      safeAddImage(doc, logo, (W - wmW) / 2, (H - wmH) / 2, wmW, wmH);
       if (GState) doc.setGState(new GState({ opacity: 1 }));
     } catch {
       /* ignore */
@@ -478,7 +478,7 @@ export async function generateCertificatPDF(data: CertificatData): Promise<jsPDF
   if (logo) {
     const lh = 26;
     const lw = (logo.w / logo.h) * lh;
-    doc.addImage(logo.data, "PNG", (W - lw) / 2, y, lw, lh);
+    safeAddImage(doc, logo, (W - lw) / 2, y, lw, lh);
     y += lh + 4;
   } else {
     y += 4;
@@ -684,7 +684,7 @@ export async function generateTableauHonneurPDF(data: TableauHonneurData): Promi
   if (logo) {
     const lh = 18;
     const lw = (logo.w / logo.h) * lh;
-    doc.addImage(logo.data, "PNG", (W - lw) / 2, 20, lw, lh);
+    safeAddImage(doc, logo, (W - lw) / 2, 20, lw, lh);
   }
 
   let y = logo ? 44 : 28;
