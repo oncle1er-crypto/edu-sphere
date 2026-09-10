@@ -58,9 +58,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   }, [user?.id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background overflow-x-hidden">
+    <div className="min-h-screen flex flex-col bg-background [overflow-x:clip]">
       
-      <div className="sticky top-0 z-40 shadow-md">
+      <div ref={headerRef} className="sticky top-0 z-40 shadow-md bg-background">
         <AppHeader userName={displayName || user?.email || "Utilisateur"} />
         <TopNav schoolName="COMPLEXE SCOLAIRE LA PROVIDENCE DE DON ORIONE" />
       </div>
