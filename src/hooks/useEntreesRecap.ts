@@ -153,6 +153,28 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         addTo(cur.total, jour, montant);
         modesParJour.set(meta.label, cur);
       };
+      /**
+       * Ventile un encaissement potentiellement scindé en deux moyens de
+       * paiement (sp_paiements.mode_paiement_2, vacances_paiements.mode_2,
+       * sp_ventes_tenues.mode_paiement_2) : sans second moyen, tout le montant
+       * est attribué au premier ; avec un second moyen, chaque part est
+       * attribuée à son moyen respectif — le total (utilisé par `addTo` sur
+       * `entreesParJour`) reste inchangé, seule la ventilation par moyen change.
+       */
+      const addModeSplit = (
+        mode1: string | null | undefined,
+        montantTotal: number,
+        mode2: string | null | undefined,
+        montant2: number | null | undefined,
+        jour: string,
+      ) => {
+        if (mode2 && montant2) {
+          addMode(mode1, Math.max(0, montantTotal - montant2), jour);
+          addMode(mode2, montant2, jour);
+        } else {
+          addMode(mode1, montantTotal, jour);
+        }
+      };
 
       const remisesParJour = new Map<string, number>();
       const remisesElevesParJour = new Map<string, Set<string>>();
@@ -245,7 +267,7 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, mode_paiement, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
+          .select("montant_paye, mode_paiement, mode_paiement_2, montant_2, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -264,7 +286,7 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
           ? "Frais d'uniformes ou de fournitures"
           : "Autres services ponctuels";
         addTo(entreesParJour[key], j, Number(p.montant_paye || 0));
-        addMode(p.mode_paiement, Number(p.montant_paye || 0), j);
+        addModeSplit(p.mode_paiement, Number(p.montant_paye || 0), p.mode_paiement_2, p.montant_2 ? Number(p.montant_2) : null, j);
       }
 
       // ── Ventes de tenues scolaires (module dédié, hors sp_paiements) ──
@@ -275,7 +297,7 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
       // created_at fait foi comme date d'encaissement dans tous les autres cas.
       const { data: ventesTenues } = await supabase
         .from("sp_ventes_tenues")
-        .select("montant_total, mode_paiement, created_at, eleve_id, classe_id, statut")
+        .select("montant_total, mode_paiement, mode_paiement_2, montant_2, created_at, eleve_id, classe_id, statut")
         .eq("ecole_id", ecoleId!)
         .neq("statut", "annule")
         .neq("statut", "attente")
@@ -289,13 +311,13 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         const j = dayKey(v.created_at);
         if (!j) continue;
         addTo(entreesParJour["Frais d'uniformes ou de fournitures"], j, Number(v.montant_total || 0));
-        addMode(v.mode_paiement, Number(v.montant_total || 0), j);
+        addModeSplit(v.mode_paiement, Number(v.montant_total || 0), v.mode_paiement_2, v.montant_2 ? Number(v.montant_2) : null, j);
       }
 
       // ── Cours de vacances (filtrage par cycle_id, cf. useBilanComptable.ts) ──
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, mode, date_paiement, eleve_id, vacances_classes(cycle_id)")
+        .select("montant_paye, mode, mode_2, montant_2, date_paiement, eleve_id, vacances_classes(cycle_id)")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
@@ -304,7 +326,7 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         const j = dayKey(p.date_paiement);
         if (!j) continue;
         addTo(entreesParJour["Cours de vacances"], j, Number(p.montant_paye || 0));
-        addMode(p.mode, Number(p.montant_paye || 0), j);
+        addModeSplit(p.mode, Number(p.montant_paye || 0), p.mode_2, p.montant_2 ? Number(p.montant_2) : null, j);
       }
 
       // ── Construction des buckets d'affichage selon la granularité ──

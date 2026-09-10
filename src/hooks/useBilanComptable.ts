@@ -162,6 +162,26 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         cur.total[i] += montant;
         modesMap.set(meta.label, cur);
       };
+      /**
+       * Ventile un encaissement potentiellement scindé en deux moyens de
+       * paiement (sp_paiements.mode_paiement_2, vacances_paiements.mode_2,
+       * sp_ventes_tenues.mode_paiement_2) sur la répartition par mode — le
+       * total par catégorie (`entrees[...][i]`) reste inchangé.
+       */
+      const addModeSplit = (
+        mode1: string | null | undefined,
+        montantTotal: number,
+        mode2: string | null | undefined,
+        montant2: number | null | undefined,
+        i: number,
+      ) => {
+        if (mode2 && montant2) {
+          addMode(mode1, Math.max(0, montantTotal - montant2), i);
+          addMode(mode2, montant2, i);
+        } else {
+          addMode(mode1, montantTotal, i);
+        }
+      };
 
 
       // ── Encaissements scolarité + factures de services ──
@@ -262,7 +282,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         supabase.from("sp_services").select("id, slug, nom").eq("ecole_id", ecoleId!),
         supabase
           .from("sp_paiements")
-          .select("montant_paye, mode_paiement, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
+          .select("montant_paye, mode_paiement, mode_paiement_2, montant_2, date_paiement, service_id, annule_le, eleve_id, sp_candidats(classe_demandee_id)")
           .eq("ecole_id", ecoleId!)
           .is("annule_le", null)
           .gte("date_paiement", from)
@@ -283,7 +303,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
           ? "Frais d'uniformes ou de fournitures"
           : "Autres services ponctuels";
         entrees[key][i] += Number(p.montant_paye || 0);
-        addMode(p.mode_paiement, Number(p.montant_paye || 0), i);
+        addModeSplit(p.mode_paiement, Number(p.montant_paye || 0), p.mode_paiement_2, p.montant_2 ? Number(p.montant_2) : null, i);
       }
 
       // ── Ventes de tenues scolaires (module dédié, hors sp_paiements) ──
@@ -303,7 +323,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // la bonne date d'encaissement dans tous les cas.
       const { data: ventesTenues } = await supabase
         .from("sp_ventes_tenues")
-        .select("montant_total, mode_paiement, created_at, eleve_id, classe_id, statut")
+        .select("montant_total, mode_paiement, mode_paiement_2, montant_2, created_at, eleve_id, classe_id, statut")
         .eq("ecole_id", ecoleId!)
         .neq("statut", "annule")
         .neq("statut", "attente")
@@ -317,7 +337,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const i = colIndex(v.created_at);
         if (i === undefined) continue;
         entrees["Frais d'uniformes ou de fournitures"][i] += Number(v.montant_total || 0);
-        addMode(v.mode_paiement, Number(v.montant_total || 0), i);
+        addModeSplit(v.mode_paiement, Number(v.montant_total || 0), v.mode_paiement_2, v.montant_2 ? Number(v.montant_2) : null, i);
       }
 
       // ── Cours de vacances ──
@@ -333,7 +353,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       // dépenses sans cycle_id ailleurs dans ce fichier.
       const { data: vac } = await supabase
         .from("vacances_paiements")
-        .select("montant_paye, mode, date_paiement, eleve_id, vacances_classes(cycle_id)")
+        .select("montant_paye, mode, mode_2, montant_2, date_paiement, eleve_id, vacances_classes(cycle_id)")
         .eq("ecole_id", ecoleId!)
         .gte("date_paiement", from)
         .lte("date_paiement", to);
@@ -342,7 +362,7 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         const i = colIndex(p.date_paiement);
         if (i === undefined) continue;
         entrees["Cours de vacances"][i] += Number(p.montant_paye || 0);
-        addMode(p.mode, Number(p.montant_paye || 0), i);
+        addModeSplit(p.mode, Number(p.montant_paye || 0), p.mode_2, p.montant_2 ? Number(p.montant_2) : null, i);
       }
 
 

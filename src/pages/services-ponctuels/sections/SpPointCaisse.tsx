@@ -53,11 +53,14 @@ export default function SpPointCaisse() {
     return true;
   };
 
-  // Lignes normalisées
+  // Lignes normalisées (une ligne par opération, même si réglée en 2 moyens :
+  // le détail et le nombre d'opérations ne doivent pas être doublés — seule
+  // la répartition par mode de paiement doit distinguer les deux parts).
   type Ligne = {
     id: string; date: string; numero: string; type: "test" | "service" | "tenue";
     libelle: string; beneficiaire: string; classe: string; mode: string;
     montant: number; statut: string;
+    mode2?: string | null; montant2?: number | null;
   };
 
   const lignesPaiements: Ligne[] = useMemo(() => paiements
@@ -78,6 +81,8 @@ export default function SpPointCaisse() {
         mode: p.mode_paiement,
         montant: Number(p.montant_paye),
         statut: "Encaissé",
+        mode2: p.mode_paiement_2 ?? null,
+        montant2: p.montant_2 ?? null,
       } as Ligne;
     }), [paiements, servicesMap, candidatsMap, testServiceId, tenueServiceIds, from, to]);
 
@@ -94,6 +99,8 @@ export default function SpPointCaisse() {
       mode: v.mode_paiement,
       montant: Number(v.montant_total),
       statut: v.statut,
+      mode2: v.mode_paiement_2 ?? null,
+      montant2: v.montant_2 ?? null,
     })), [ventes, classesMap, from, to]);
 
   const filtered = useMemo(() => {
@@ -108,9 +115,19 @@ export default function SpPointCaisse() {
   const parMode = useMemo(() => {
     const m: Record<string, { total: number; count: number }> = {};
     for (const l of filtered) {
-      const k = l.mode || "autre";
-      m[k] ??= { total: 0, count: 0 };
-      m[k].total += l.montant; m[k].count += 1;
+      if (l.mode2 && l.montant2) {
+        const montant1 = Math.max(0, l.montant - l.montant2);
+        const k1 = l.mode || "autre";
+        m[k1] ??= { total: 0, count: 0 };
+        m[k1].total += montant1; m[k1].count += 1;
+        const k2 = l.mode2 || "autre";
+        m[k2] ??= { total: 0, count: 0 };
+        m[k2].total += l.montant2; m[k2].count += 1;
+      } else {
+        const k = l.mode || "autre";
+        m[k] ??= { total: 0, count: 0 };
+        m[k].total += l.montant; m[k].count += 1;
+      }
     }
     return m;
   }, [filtered]);

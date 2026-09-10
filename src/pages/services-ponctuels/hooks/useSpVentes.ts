@@ -23,6 +23,9 @@ export interface SpVenteTenue {
   prix_unitaire: number;
   montant_total: number;
   mode_paiement: SpModePaiement;
+  /** Second moyen de paiement lorsque le règlement a été scindé. */
+  mode_paiement_2?: SpModePaiement | null;
+  montant_2?: number | null;
   statut: SpVenteStatut;
   observations: string | null;
   created_at: string;
