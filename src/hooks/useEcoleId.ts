@@ -1,10 +1,15 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
 /**
  * Returns the ecole_id of the currently authenticated user.
  * All multi-tenant queries must use this to scope data.
+ *
+ * Le résultat est mis en cache et PARTAGÉ par tous les appelants : sans cela,
+ * chaque montage (garde de route, layout, page…) relançait la requête
+ * `profiles` et repassait par un état `loading`, ce qui remplaçait la page par
+ * un écran d'attente à chaque changement de section.
  *
  * `loading` reste vrai tant que :
  *   - l'auth n'a pas fini d'hydrater la session (évite la race condition
@@ -13,39 +18,26 @@ import { useAuth } from "@/context/AuthContext";
  */
 export function useEcoleId() {
   const { user, loading: authLoading } = useAuth();
-  const [ecoleId, setEcoleId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const enabled = !authLoading && !!user?.id;
 
-  useEffect(() => {
-    // Tant que l'auth n'est pas prête, on reste en chargement.
-    if (authLoading) {
-      setLoading(true);
-      return;
-    }
+  const { data, isPending } = useQuery({
+    queryKey: ["ecole-id", user?.id ?? null],
+    enabled,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("profiles")
+        .select("ecole_id")
+        .eq("id", user!.id)
+        .maybeSingle();
+      return ((data as any)?.ecole_id as string | null) ?? null;
+    },
+  });
 
-    // Auth prête mais aucun utilisateur : rien à charger.
-    if (!user) {
-      setEcoleId(null);
-      setLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setLoading(true);
-    supabase
-      .from("profiles")
-      .select("ecole_id")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (cancelled) return;
-        setEcoleId((data as any)?.ecole_id ?? null);
-        setLoading(false);
-      });
-
-    return () => { cancelled = true; };
-  }, [authLoading, user?.id]);
-
-  return { ecoleId, loading };
+  return {
+    ecoleId: enabled ? (data ?? null) : null,
+    loading: enabled ? isPending : authLoading,
+  };
 }
-

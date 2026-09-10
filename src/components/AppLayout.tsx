@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AppHeader } from "@/components/AppHeader";
 import { TopNav } from "@/components/TopNav";
 import { AppFooter } from "@/components/AppFooter";
@@ -12,7 +13,14 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { pathname } = useLocation();
   const [displayName, setDisplayName] = useState<string>("");
+
+  // Changement de page : on repart en haut du contenu, sinon la nouvelle
+  // section peut sembler ne pas s'être chargée quand on était en bas de page.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [pathname]);
 
   useEffect(() => {
     if (!user) { setDisplayName(""); return; }
