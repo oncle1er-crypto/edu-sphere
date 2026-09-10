@@ -6391,6 +6391,10 @@ export type Database = {
           eleve_id: string | null
           id: string
           mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2: number | null
           montant_du: number
           montant_paye: number
           motif_annulation: string | null
@@ -6413,6 +6417,10 @@ export type Database = {
           eleve_id?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2?:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2?: number | null
           montant_du?: number
           montant_paye?: number
           motif_annulation?: string | null
@@ -6435,6 +6443,10 @@ export type Database = {
           eleve_id?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2?:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2?: number | null
           montant_du?: number
           montant_paye?: number
           motif_annulation?: string | null
@@ -6716,6 +6728,10 @@ export type Database = {
           genre: string | null
           id: string
           mode_paiement: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2: number | null
           montant_total: number
           motif_annulation: string | null
           numero: string
@@ -6740,6 +6756,10 @@ export type Database = {
           genre?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2?:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2?: number | null
           montant_total?: number
           motif_annulation?: string | null
           numero: string
@@ -6764,6 +6784,10 @@ export type Database = {
           genre?: string | null
           id?: string
           mode_paiement?: Database["public"]["Enums"]["sp_mode_paiement"]
+          mode_paiement_2?:
+            | Database["public"]["Enums"]["sp_mode_paiement"]
+            | null
+          montant_2?: number | null
           montant_total?: number
           motif_annulation?: string | null
           numero?: string
@@ -7562,6 +7586,8 @@ export type Database = {
           eleve_id: string
           id: string
           mode: string
+          mode_2: string | null
+          montant_2: number | null
           montant_attendu: number
           montant_paye: number
           observation: string | null
@@ -7576,6 +7602,8 @@ export type Database = {
           eleve_id: string
           id?: string
           mode?: string
+          mode_2?: string | null
+          montant_2?: number | null
           montant_attendu?: number
           montant_paye?: number
           observation?: string | null
@@ -7590,6 +7618,8 @@ export type Database = {
           eleve_id?: string
           id?: string
           mode?: string
+          mode_2?: string | null
+          montant_2?: number | null
           montant_attendu?: number
           montant_paye?: number
           observation?: string | null

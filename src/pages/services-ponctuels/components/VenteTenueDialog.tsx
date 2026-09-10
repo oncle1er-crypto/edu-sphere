@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { validerSplit, type PaymentSplit } from "@/lib/paymentSplit";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +63,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
   const [qte, setQte] = useState(1);
   const [prix, setPrix] = useState(0);
   const [mode, setMode] = useState<SpModePaiement>("especes");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
   const [statut, setStatut] = useState<SpVenteStatut>("paye");
   const [obs, setObs] = useState("");
   const [saving, setSaving] = useState(false);
@@ -112,6 +115,8 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
 
   const submit = async () => {
     if (!canValidate) return;
+    const erreurSplit = validerSplit(qte * prix, mode, split);
+    if (erreurSplit) { toast.error(erreurSplit); return; }
     // Rupture ⇒ on force la réservation (pas de blocage)
     const finalStatut: SpVenteStatut = enRupture && statut !== "annule" ? "reservation" : statut;
     setSaving(true);
@@ -127,9 +132,12 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
       prix_unitaire: prix,
       montant_total: qte * prix,
       mode_paiement: mode,
+      mode_paiement_2: split?.mode ?? null,
+      montant_2: split ? Math.round(split.montant) : null,
       statut: finalStatut,
       observations: obs || null,
     } as any);
+
     setSaving(false);
     if (v) { onSuccess?.(v); onOpenChange(false); }
   };
@@ -222,14 +230,16 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
                 ⚠️ Rupture de stock — statut forcé sur <strong>réservation</strong>. Le stock ne sera pas décrémenté maintenant. Un bouton « Valider retrait » apparaîtra dans la liste des ventes une fois le stock réapprovisionné.
               </div>
             )}
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <Label>Mode</Label>
-                <Select value={mode} onValueChange={(v) => setMode(v as SpModePaiement)}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>{MODES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-2">
+              <PaymentModeSplitField
+                total={qte * prix}
+                mode={mode}
+                onModeChange={(v) => setMode(v as SpModePaiement)}
+                split={split}
+                onSplitChange={setSplit}
+                moyens={MODES.map((m) => ({ value: m, label: m }))}
+                disabled={saving}
+              />
               <div>
                 <Label>Statut</Label>
                 <Select value={statut} onValueChange={(v) => setStatut(v as SpVenteStatut)}>
@@ -238,6 +248,7 @@ export function VenteTenueDialog({ open, onOpenChange, onSuccess }: Props) {
                 </Select>
               </div>
             </div>
+
             <div><Label>Observations</Label><Textarea rows={2} value={obs} onChange={(e) => setObs(e.target.value)} /></div>
           </div>
         )}

@@ -11,16 +11,21 @@ export interface ReceiptOperationLine {
 export interface ReceiptOperationSummary {
   paiementIds: string[];
   montant: number;
+  /** "mixte" lorsque l'opération a été réglée avec plusieurs moyens. */
   mode: string;
   reference: string | null;
   datePaiement: string;
   motif: string | null;
+  /** Répartition par moyen de paiement (vide si un seul moyen). */
+  repartitionModes: { mode: string; montant: number }[];
 }
 
 /**
  * Résume les lignes techniques créées par un encaissement ventilé.
  * Toutes les lignes doivent appartenir au même jour : mélanger deux dates dans
  * un reçu unique rendrait le document comptable ambigu.
+ * Plusieurs moyens de paiement sont acceptés (paiement scindé) : le reçu porte
+ * alors le mode « mixte » et détaille la répartition.
  */
 export function summarizeReceiptOperation(lines: ReceiptOperationLine[]): ReceiptOperationSummary {
   if (lines.length === 0) throw new Error("operation_sans_paiement");
@@ -30,21 +35,55 @@ export function summarizeReceiptOperation(lines: ReceiptOperationLine[]): Receip
 
   const modes = Array.from(new Set(lines.map((line) => line.mode)));
   const references = Array.from(new Set(lines.map((line) => line.reference ?? null)));
-  if (modes.length !== 1) throw new Error("operation_modes_incoherents");
   if (references.length > 1) throw new Error("operation_references_incoherentes");
   const details = lines
     .filter((line) => line.tranche_numero != null)
     .map((line) => `T${line.tranche_numero} = ${Number(line.montant).toLocaleString("fr-FR")} FCFA`);
 
+  const repartitionModes = modes.length > 1
+    ? modes.map((mode) => ({
+        mode,
+        montant: lines
+          .filter((line) => line.mode === mode)
+          .reduce((sum, line) => sum + Number(line.montant || 0), 0),
+      }))
+    : [];
+
+  const parts: string[] = [];
+  if (details.length > 1) parts.push(`Répartition du versement : ${details.join(" • ")}`);
+  if (repartitionModes.length > 1) {
+    parts.push(
+      `Règlement en ${repartitionModes.length} moyens : ` +
+      repartitionModes
+        .map((r) => `${MODE_LABELS[r.mode] ?? r.mode} ${r.montant.toLocaleString("fr-FR")} FCFA`)
+        .join(" + "),
+    );
+  }
+
   return {
     paiementIds: lines.map((line) => line.id),
     montant: lines.reduce((sum, line) => sum + Number(line.montant || 0), 0),
-    mode: modes[0],
+    mode: modes.length > 1 ? "mixte" : modes[0],
     reference: references[0],
     datePaiement: Array.from(dates)[0],
-    motif: details.length > 1 ? `Répartition du versement : ${details.join(" • ")}` : null,
+    motif: parts.length > 0 ? parts.join(" — ") : null,
+    repartitionModes,
   };
 }
+
+const MODE_LABELS: Record<string, string> = {
+  especes: "Espèces",
+  wave: "Wave",
+  orange_money: "Orange Money",
+  mtn_money: "MTN MoMo",
+  moov_money: "Moov Money",
+  virement: "Virement",
+  cheque: "Chèque",
+  remise: "Remise",
+  bourse: "Bourse",
+  prise_en_charge: "Prise en charge",
+};
+
 
 export interface TrancheAmount {
   num: number;

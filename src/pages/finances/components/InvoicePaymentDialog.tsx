@@ -14,6 +14,8 @@ import { messageErreurBase } from "@/lib/dbErrorMessages";
 import { envoyerRecuFactureWhatsApp } from "@/lib/sendReceiptWhatsApp";
 import { useParentContactGuard } from "@/hooks/useParentContactGuard";
 import type { ContactParent } from "@/components/finances/ParentInfoRequiredDialog";
+import { PaymentModeSplitField } from "@/components/finances/PaymentModeSplitField";
+import { paymentParts, validerSplit, libelleRepartition, type PaymentSplit } from "@/lib/paymentSplit";
 
 const MOYENS = [
   { label: "Espèces", value: "especes" },
@@ -57,11 +59,13 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
   const [montant, setMontant] = useState("");
   const [moyen, setMoyen] = useState("especes");
   const [reference, setReference] = useState("");
+  const [split, setSplit] = useState<PaymentSplit | null>(null);
   const [datePaiement, setDatePaiement] = useState(new Date().toISOString().slice(0, 10));
 
   const restant = facture ? Math.max(0, facture.montant - facture.montant_paye) : 0;
   const montantNum = Number(montant) || 0;
-  const valid = !!facture && montantNum > 0 && montantNum <= restant;
+  const valid = !!facture && montantNum > 0 && montantNum <= restant
+    && validerSplit(montantNum, moyen, split) === null;
 
   useEffect(() => {
     if (!open || !facture) return;
@@ -69,6 +73,7 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
     setMontant(String(montantInitial && montantInitial > 0 ? Math.min(montantInitial, restant) : restant));
     setMoyen("especes");
     setReference("");
+    setSplit(null);
     setDatePaiement(new Date().toISOString().slice(0, 10));
   }, [open, facture, restant, montantInitial]);
 
@@ -89,15 +94,25 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
     submittingRef.current = true;
     setSaving(true);
     try {
-      const { data: paiementId, error } = await supabase.rpc("enregistrer_paiement_facture", {
-        _facture_id: facture.id,
-        _montant: montantNum,
-        _mode: moyen,
-        _reference: reference || null,
-        _recu_par: user?.id ?? null,
-        _date_paiement: datePaiement,
-      } as any);
-      if (error) throw error;
+      // Règlement scindé : un enregistrement par moyen de paiement, même référence.
+      const parts = paymentParts(montantNum, moyen, split);
+      const detailModes = parts.length > 1
+        ? `Règlement en ${parts.length} moyens : ${libelleRepartition(parts)}`
+        : null;
+      const ids: string[] = [];
+      for (const part of parts) {
+        const { data: paiementId, error } = await supabase.rpc("enregistrer_paiement_facture", {
+          _facture_id: facture.id,
+          _montant: part.montant,
+          _mode: part.mode,
+          _reference: reference || null,
+          _recu_par: user?.id ?? null,
+          _date_paiement: datePaiement,
+        } as any);
+        if (error) throw error;
+        if (typeof paiementId === "string") ids.push(paiementId);
+      }
+      const paiementId = ids[ids.length - 1];
 
       toast.success("Encaissement enregistré", {
         description: `${fcfa(montantNum)} · ${facture.numero} · ${facture.eleve_nom}`,
@@ -107,11 +122,12 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
       const receiptDownloaded = await downloadInvoiceReceipt({
         ecoleId: facture.ecole_id,
         factureId: facture.id,
-        paiementId: typeof paiementId === "string" ? paiementId : undefined,
+        paiementId,
         montant: montantNum,
         reference: reference || null,
-        mode: moyen,
+        mode: parts.length > 1 ? "mixte" : moyen,
         datePaiement,
+        detailModes,
       });
       if (!receiptDownloaded) {
         toast.warning("Paiement enregistré, mais le reçu n’a pas pu être téléchargé");
@@ -122,11 +138,12 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
         void envoyerRecuFactureWhatsApp({
           ecoleId: facture.ecole_id,
           factureId: facture.id,
-          paiementId: typeof paiementId === "string" ? paiementId : undefined,
+          paiementId,
           montant: montantNum,
-          mode: moyen,
+          mode: parts.length > 1 ? "mixte" : moyen,
           reference: reference || null,
           datePaiement,
+
           telephone: contact.telephone,
           parent: contact.nomComplet,
         }).then((r) => {
@@ -184,21 +201,18 @@ export function InvoicePaymentDialog({ facture, open, onOpenChange, onPaymentRec
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label className="text-xs">Moyen de paiement</Label>
-              <Select value={moyen} onValueChange={setMoyen}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {MOYENS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs">Référence</Label>
-              <Input placeholder="N° reçu / transaction" value={reference} onChange={(e) => setReference(e.target.value)} />
-            </div>
-          </div>
+          <PaymentModeSplitField
+            total={montantNum}
+            mode={moyen}
+            onModeChange={setMoyen}
+            split={split}
+            onSplitChange={setSplit}
+            reference={reference}
+            onReferenceChange={setReference}
+            moyens={MOYENS}
+            disabled={saving}
+          />
+
 
           <div className="space-y-1.5">
             <Label className="text-xs">Date du paiement</Label>
