@@ -712,20 +712,28 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
+                        <TableHead>Source</TableHead>
                         <TableHead>Montant</TableHead>
                         <TableHead>Mode</TableHead>
                         <TableHead>Réf.</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paiements.map((p) => (
+                      {paiements.map((p) => {
+                        const src = sourcePaiement(p);
+                        return (
                         <TableRow key={p.id}>
                           <TableCell className="text-sm">{fmt(p.date_paiement)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={src.className}>{src.label}</Badge>
+                            {src.detail && <p className="text-[11px] text-muted-foreground mt-0.5">{src.detail}</p>}
+                          </TableCell>
                           <TableCell className="font-semibold">{Number(p.montant).toLocaleString("fr-FR")} F</TableCell>
-                          <TableCell><Badge variant="secondary">{p.mode}</Badge></TableCell>
+                          <TableCell><Badge variant="secondary">{modeLabel(p.mode)}</Badge></TableCell>
                           <TableCell className="text-xs text-muted-foreground">{p.reference ?? "—"}</TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
