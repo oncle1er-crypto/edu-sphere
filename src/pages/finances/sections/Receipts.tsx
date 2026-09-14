@@ -1188,6 +1188,11 @@ function MultiFilter({
             </label>
           ))}
         </div>
+        {selected.size > 0 && (
+          <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => onChange(new Set())}>
+            Effacer
+          </Button>
+        )}
       </PopoverContent>
     </Popover>
   );
