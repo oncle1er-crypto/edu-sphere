@@ -18,10 +18,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { fcfa } from "../useFinanceData";
 import { CancelPaymentDialog, type CancelPaymentTarget } from "../components/CancelPaymentDialog";
 import { RefundPaymentDialog, type RefundPaymentTarget } from "../components/RefundPaymentDialog";
+import { EditPaymentModeDialog } from "@/components/finances/EditPaymentModeDialog";
+import type { PaymentSplit } from "@/lib/paymentSplit";
 import { PAIEMENT_MODE_META, modeMeta } from "../scolarite-data";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { generateRecuPDF } from "@/lib/generateDocumentsPDF";
 import { buildReceiptPdf } from "@/lib/downloadReceipt";
@@ -30,10 +33,7 @@ import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
 import type jsPDF from "jspdf";
-import type { Database } from "@/integrations/supabase/types";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
-
-type PaiementMode = Database["public"]["Enums"]["paiement_mode"];
 
 /** Forme réelle des lignes renvoyées par la requête `paiements` de fetchRecus (select avec jointures ci-dessous). */
 interface PaiementJointRow {
@@ -143,6 +143,7 @@ export default function Receipts() {
   const { ecoleId, loading: ecoleLoading } = useEcoleId();
   const { activeAnnee, loading: periodLoading } = useAcademicPeriod();
   const { isGlobal, keepClasse } = useNiveauFilters();
+  const { isAdmin, isSecretaire } = usePermissions();
   const [recus, setRecus] = useState<PaiementRecu[]>([]);
   const [loading, setLoading] = useState(true);
   const [ecole, setEcole] = useState<EcoleInfo>({
@@ -181,10 +182,8 @@ export default function Receipts() {
   const [recapDate, setRecapDate] = useState<string>(() => todayIso());
   const [recapBusy, setRecapBusy] = useState(false);
 
-  // Édition du mode
+  // Édition du mode (réservé admin + secrétaire — voir gating sur le DropdownMenuItem)
   const [editing, setEditing] = useState<PaiementRecu | null>(null);
-  const [editMode, setEditMode] = useState<string>("");
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (!ecoleId) return;
@@ -447,7 +446,7 @@ export default function Receipts() {
       const lbl = modeMeta(it.mode).label;
       cnt.set(lbl, (cnt.get(lbl) ?? 0) + it.montant);
     }
-    const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[\u202F\u00A0]/g, " ");
+    const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[  ]/g, " ");
     const modeCombine = "COMBINE - " + Array.from(cnt.entries()).map(([l, v]) => `${l} ${fmtPdf(v)} FCFA`).join(" + ");
     const refs = g.items.map((i) => i.reference ?? i.id.slice(0, 6).toUpperCase()).join(" / ");
     return generateRecuPDF({
@@ -545,15 +544,32 @@ export default function Receipts() {
     eleveLabel: `${r.eleve_nom} ${r.eleve_prenom}`,
   });
 
-  const openEdit = (r: PaiementRecu) => { setEditing(r); setEditMode(r.mode); };
-  const saveEdit = async () => {
-    if (!editing || !editMode || editMode === editing.mode) { setEditing(null); return; }
-    setSaving(true);
-    const { error } = await supabase.from("paiements").update({ mode: editMode as PaiementMode }).eq("id", editing.id);
-    setSaving(false);
-    if (error) { toast.error("Impossible de modifier : " + messageErreurBase(error)); return; }
+  const openEdit = (r: PaiementRecu) => setEditing(r);
+  // Scission en 2 moyens : contrairement aux services ponctuels/vacances (une
+  // seule ligne avec mode_2/montant_2), un règlement scindé de scolarité est
+  // représenté par DEUX lignes `paiements` distinctes (même référence) — d'où
+  // le passage par le RPC scinder_mode_paiement (SECURITY DEFINER, réservé
+  // admin+secrétaire) plutôt qu'un simple update.
+  const saveEditMode = async (mode: string, split: PaymentSplit | null) => {
+    if (!editing) return;
+    const { error } = await supabase.rpc("scinder_mode_paiement", {
+      _paiement_id: editing.id,
+      _mode: mode,
+      _mode_2: split?.mode ?? null,
+      _montant_2: split ? Math.round(split.montant) : null,
+    });
+    if (error) {
+      const msg = String(error.message ?? "");
+      let friendly = "Impossible de modifier le mode de paiement";
+      if (msg.includes("not_authorized")) friendly = "Réservé aux administrateurs et secrétaires";
+      else if (msg.includes("paiement_annule")) friendly = "Ce paiement est annulé";
+      else if (msg.includes("split_montant_invalide")) friendly = "Montant de la seconde part invalide";
+      else if (msg.includes("split_modes_identiques")) friendly = "Les deux moyens doivent être différents";
+      else if (msg.includes("paiement_introuvable")) friendly = "Paiement introuvable";
+      toast.error(friendly, { description: msg });
+      return;
+    }
     toast.success("Mode de paiement mis à jour");
-    setEditing(null);
     fetchRecus();
   };
 
@@ -1004,7 +1020,7 @@ export default function Receipts() {
                           <Button size="icon" variant="ghost" className="h-9 w-9 sm:h-8 sm:w-8" title="Plus d'actions"><MoreVertical className="h-4 w-4" /></Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          {!r.annule_le && (
+                          {(isAdmin || isSecretaire) && !r.annule_le && (
                             <DropdownMenuItem onClick={() => openEdit(r)}>
                               <Pencil className="h-4 w-4 mr-2" /> Modifier le mode de paiement
                             </DropdownMenuItem>
@@ -1124,34 +1140,18 @@ export default function Receipts() {
         onRefunded={fetchRecus}
       />
 
-      {/* Édition mode */}
-      <Dialog open={!!editing} onOpenChange={(open) => { if (!open) setEditing(null); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Modifier le mode de paiement</DialogTitle></DialogHeader>
-          {editing && (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                Reçu <span className="font-mono">{editing.reference ?? editing.id.slice(0, 8).toUpperCase()}</span> — {editing.eleve_nom} {editing.eleve_prenom} — {fcfa(editing.montant)} FCFA
-              </p>
-              <Select value={editMode} onValueChange={setEditMode}>
-                <SelectTrigger><SelectValue placeholder="Choisir le mode" /></SelectTrigger>
-                <SelectContent>
-                  {MODE_OPTIONS.map((o) => (
-                    <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setEditing(null)} disabled={saving}>Annuler</Button>
-            <Button onClick={saveEdit} disabled={saving || !editMode}>
-              {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Enregistrer & réimprimer
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Édition mode (avec scission possible en 2 moyens) */}
+      {editing && (
+        <EditPaymentModeDialog
+          open={!!editing}
+          onOpenChange={(v) => !v && setEditing(null)}
+          summary={`Reçu ${editing.reference ?? editing.id.slice(0, 8).toUpperCase()} — ${editing.eleve_nom} ${editing.eleve_prenom} · ${fcfa(editing.montant)} FCFA`}
+          total={editing.montant}
+          initialMode={editing.mode}
+          initialSplit={null}
+          onSave={saveEditMode}
+        />
+      )}
     </div>
   );
 }
@@ -1188,11 +1188,6 @@ function MultiFilter({
             </label>
           ))}
         </div>
-        {selected.size > 0 && (
-          <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => onChange(new Set())}>
-            Effacer
-          </Button>
-        )}
       </PopoverContent>
     </Popover>
   );
