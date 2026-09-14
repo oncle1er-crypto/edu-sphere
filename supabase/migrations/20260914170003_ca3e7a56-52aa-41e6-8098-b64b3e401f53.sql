@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.tg_bloquer_suppression_facture_avec_paiement() FROM anon, authenticated, public;
