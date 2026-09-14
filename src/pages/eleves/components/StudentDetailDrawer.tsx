@@ -34,6 +34,7 @@ import { StudentCardPreview } from "@/pages/cartes/components/StudentCardPreview
 import { buildStudentCardData } from "@/pages/cartes/lib/buildStudentCardData";
 import { useEcoles } from "@/context/EcoleContext";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { modeMeta } from "@/pages/finances/scolarite-data";
 
 interface Props {
   eleve: any | null;
@@ -44,6 +45,23 @@ interface Props {
 }
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
+
+const modeLabel = (m: string) => modeMeta(m ?? "").label;
+
+/** Détermine la provenance d'un encaissement : scolarité, cantine, car… */
+function sourcePaiement(p: any): { label: string; detail?: string; className: string } {
+  const cat = (p?.factures?.categorie ?? "").toString().toLowerCase();
+  const libelle = p?.factures?.libelle ?? undefined;
+  if (cat === "cantine")
+    return { label: "Cantine", detail: libelle, className: "bg-amber-500/10 text-amber-700 border-amber-500/30" };
+  if (cat === "transport")
+    return { label: "Car (transport)", detail: libelle, className: "bg-sky-500/10 text-sky-700 border-sky-500/30" };
+  if (p?.facture_id)
+    return { label: cat ? cat.replace(/_/g, " ") : "Facture", detail: libelle, className: "bg-muted text-foreground border-border" };
+  if (p?.tranche_id)
+    return { label: "Scolarité", detail: p?.tranches?.label ?? undefined, className: "bg-primary/10 text-primary border-primary/30" };
+  return { label: "Autre", detail: p?.motif ?? undefined, className: "bg-muted text-muted-foreground border-border" };
+}
 
 export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, initialTab }: Props) {
 
@@ -185,7 +203,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
 
     Promise.all([
       supabase.from("presences").select("*").eq("eleve_id", id).order("date_presence", { ascending: false }).limit(30),
-      supabase.from("paiements").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(20),
+      supabase.from("paiements").select("*, factures:facture_id(categorie, libelle), tranches:tranche_id(label)").eq("eleve_id", id).eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(20),
       supabase.from("incidents_discipline").select("*").eq("eleve_id", id).order("date_incident", { ascending: false }).limit(20),
       supabase.from("documents_eleves").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId),
       supabase.from("eleve_parents").select("*, parents:parent_id(nom, prenom, telephone, email)").eq("eleve_id", id),
@@ -706,26 +724,52 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                   </div>
                 </CardContent>
               </Card>
+              {paiements.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(
+                    paiements.reduce((acc: Record<string, number>, p) => {
+                      const l = sourcePaiement(p).label;
+                      acc[l] = (acc[l] ?? 0) + Number(p.montant ?? 0);
+                      return acc;
+                    }, {}),
+                  ).map(([label, montant]) => (
+                    <Card key={label} className="border">
+                      <CardContent className="p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                        <p className="text-sm font-bold">{Number(montant).toLocaleString("fr-FR")} F</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
               {paiements.length > 0 ? (
                 <div className="border rounded-lg overflow-x-auto max-h-60 overflow-y-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
+                        <TableHead>Source</TableHead>
                         <TableHead>Montant</TableHead>
                         <TableHead>Mode</TableHead>
                         <TableHead>Réf.</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paiements.map((p) => (
+                      {paiements.map((p) => {
+                        const src = sourcePaiement(p);
+                        return (
                         <TableRow key={p.id}>
                           <TableCell className="text-sm">{fmt(p.date_paiement)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={src.className}>{src.label}</Badge>
+                            {src.detail && <p className="text-[11px] text-muted-foreground mt-0.5">{src.detail}</p>}
+                          </TableCell>
                           <TableCell className="font-semibold">{Number(p.montant).toLocaleString("fr-FR")} F</TableCell>
-                          <TableCell><Badge variant="secondary">{p.mode}</Badge></TableCell>
+                          <TableCell><Badge variant="secondary">{modeLabel(p.mode)}</Badge></TableCell>
                           <TableCell className="text-xs text-muted-foreground">{p.reference ?? "—"}</TableCell>
                         </TableRow>
-                      ))}
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
