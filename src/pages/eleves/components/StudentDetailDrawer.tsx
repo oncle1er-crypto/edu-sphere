@@ -34,6 +34,7 @@ import { StudentCardPreview } from "@/pages/cartes/components/StudentCardPreview
 import { buildStudentCardData } from "@/pages/cartes/lib/buildStudentCardData";
 import { useEcoles } from "@/context/EcoleContext";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { modeMeta } from "@/pages/finances/scolarite-data";
 
 interface Props {
   eleve: any | null;
