@@ -724,6 +724,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                   </div>
                 </CardContent>
               </Card>
+              {paiements.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(
+                    paiements.reduce((acc: Record<string, number>, p) => {
+                      const l = sourcePaiement(p).label;
+                      acc[l] = (acc[l] ?? 0) + Number(p.montant ?? 0);
+                      return acc;
+                    }, {}),
+                  ).map(([label, montant]) => (
+                    <Card key={label} className="border">
+                      <CardContent className="p-3">
+                        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{label}</p>
+                        <p className="text-sm font-bold">{Number(montant).toLocaleString("fr-FR")} F</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
               {paiements.length > 0 ? (
                 <div className="border rounded-lg overflow-x-auto max-h-60 overflow-y-auto">
                   <Table>
