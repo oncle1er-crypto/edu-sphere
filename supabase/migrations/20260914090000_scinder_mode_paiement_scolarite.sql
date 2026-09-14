@@ -116,3 +116,12 @@ $$;
 
 REVOKE ALL ON FUNCTION public.scinder_mode_paiement(uuid, text, text, numeric) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.scinder_mode_paiement(uuid, text, text, numeric) TO authenticated;
+-- modifier_paiement()/solder_scolarite() (modèles de cette fonction) restent
+-- exécutables par le rôle anon malgré leur REVOKE ALL FROM PUBLIC — Supabase
+-- accorde EXECUTE à anon/authenticated directement à la création (privilèges
+-- par défaut du schéma public), donc un simple REVOKE ... FROM PUBLIC ne le
+-- retire pas. Repéré lors de l'application de cette migration (comparaison
+-- avec sp_annuler_paiement, plus récente, qui le révoque explicitement) :
+-- durcissement volontaire ici, sans impact fonctionnel puisque la fonction
+-- rejette de toute façon tout appel sans auth.uid() (`not_authenticated`).
+REVOKE EXECUTE ON FUNCTION public.scinder_mode_paiement(uuid, text, text, numeric) FROM anon;
