@@ -185,7 +185,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
 
     Promise.all([
       supabase.from("presences").select("*").eq("eleve_id", id).order("date_presence", { ascending: false }).limit(30),
-      supabase.from("paiements").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(20),
+      supabase.from("paiements").select("*, factures:facture_id(categorie, libelle), tranches:tranche_id(label)").eq("eleve_id", id).eq("ecole_id", ecoleId).order("date_paiement", { ascending: false }).limit(20),
       supabase.from("incidents_discipline").select("*").eq("eleve_id", id).order("date_incident", { ascending: false }).limit(20),
       supabase.from("documents_eleves").select("*").eq("eleve_id", id).eq("ecole_id", ecoleId),
       supabase.from("eleve_parents").select("*, parents:parent_id(nom, prenom, telephone, email)").eq("eleve_id", id),
