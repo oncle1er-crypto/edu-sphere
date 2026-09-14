@@ -8554,6 +8554,15 @@ export type Database = {
       }
       rh_supprimer_bulletin: { Args: { _bulletin_id: string }; Returns: Json }
       rh_valider_bulletin: { Args: { _bulletin_id: string }; Returns: Json }
+      scinder_mode_paiement: {
+        Args: {
+          _mode: string
+          _mode_2?: string
+          _montant_2?: number
+          _paiement_id: string
+        }
+        Returns: undefined
+      }
       seed_role_permissions_for_ecole: {
         Args: { _ecole_id: string }
         Returns: undefined

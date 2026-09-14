@@ -64,6 +64,7 @@ export function usePermissions() {
       ]);
       return {
         isAdmin: (roles ?? []).some((r) => r.role === "admin"),
+        isSecretaire: (roles ?? []).some((r) => r.role === "secretaire"),
         perms: (p ?? []) as UserPermission[],
       };
     },
@@ -71,6 +72,7 @@ export function usePermissions() {
 
   const perms = data?.perms ?? [];
   const isAdmin = data?.isAdmin ?? false;
+  const isSecretaire = data?.isSecretaire ?? false;
 
   // Utilisateur/école non résolus : on reste en chargement (comportement
   // historique) pour éviter une redirection prématurée vers "/".
@@ -87,5 +89,5 @@ export function usePermissions() {
     });
   }, [queryClient, user?.id, ecoleId]);
 
-  return { perms, isAdmin, can, loading, reload };
+  return { perms, isAdmin, isSecretaire, can, loading, reload };
 }
