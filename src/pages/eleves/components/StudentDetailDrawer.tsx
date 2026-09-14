@@ -45,6 +45,23 @@ interface Props {
 
 const fmt = (d: string | null) => (d ? new Date(d).toLocaleDateString("fr-FR") : "—");
 
+const modeLabel = (m: string) => modeMeta(m ?? "").label;
+
+/** Détermine la provenance d'un encaissement : scolarité, cantine, car… */
+function sourcePaiement(p: any): { label: string; detail?: string; className: string } {
+  const cat = (p?.factures?.categorie ?? "").toString().toLowerCase();
+  const libelle = p?.factures?.libelle ?? undefined;
+  if (cat === "cantine")
+    return { label: "Cantine", detail: libelle, className: "bg-amber-500/10 text-amber-700 border-amber-500/30" };
+  if (cat === "transport")
+    return { label: "Car (transport)", detail: libelle, className: "bg-sky-500/10 text-sky-700 border-sky-500/30" };
+  if (p?.facture_id)
+    return { label: cat ? cat.replace(/_/g, " ") : "Facture", detail: libelle, className: "bg-muted text-foreground border-border" };
+  if (p?.tranche_id)
+    return { label: "Scolarité", detail: p?.tranches?.label ?? undefined, className: "bg-primary/10 text-primary border-primary/30" };
+  return { label: "Autre", detail: p?.motif ?? undefined, className: "bg-muted text-muted-foreground border-border" };
+}
+
 export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, initialTab }: Props) {
 
   const [presences, setPresences] = useState<any[]>([]);
