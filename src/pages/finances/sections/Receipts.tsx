@@ -446,7 +446,7 @@ export default function Receipts() {
       const lbl = modeMeta(it.mode).label;
       cnt.set(lbl, (cnt.get(lbl) ?? 0) + it.montant);
     }
-    const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[  ]/g, " ");
+    const fmtPdf = (v: number) => v.toLocaleString("fr-FR").replace(/[\u202f\u00a0]/g, " ");
     const modeCombine = "COMBINE - " + Array.from(cnt.entries()).map(([l, v]) => `${l} ${fmtPdf(v)} FCFA`).join(" + ");
     const refs = g.items.map((i) => i.reference ?? i.id.slice(0, 6).toUpperCase()).join(" / ");
     return generateRecuPDF({
@@ -1188,6 +1188,11 @@ function MultiFilter({
             </label>
           ))}
         </div>
+        {selected.size > 0 && (
+          <Button variant="ghost" size="sm" className="w-full mt-2" onClick={() => onChange(new Set())}>
+            Effacer
+          </Button>
+        )}
       </PopoverContent>
     </Popover>
   );
