@@ -122,20 +122,40 @@ export function useFinanceData(scopedAnneeId?: string) {
 
 
 
-    // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni
-    let tranchesQuery = supabase
-      .from("tranches")
-      .select(scopedAnneeId
-        ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))"
-        : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))")
-      .eq("ecole_id", ecoleId)
-      .order("numero");
+    // Fetch tranches with student info — filtrées par année via frais_scolarite si scope fourni.
+    // NB : PostgREST plafonne chaque requête à 1000 lignes. Sans pagination, les
+    // dernières échéances (3e tranche) étaient tronquées et le « Dû » d'une partie
+    // des élèves était sous-évalué. On pagine donc par lots de 1000.
+    const tranchesAll: unknown[] = [];
+    let trErr: unknown = null;
+    {
+      const TR_PAGE = 1000;
+      let trOffset = 0;
+      for (let i = 0; i < 30; i++) {
+        let tranchesQuery = supabase
+          .from("tranches")
+          .select(scopedAnneeId
+            ? "*, frais_scolarite!inner(annee_id), eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))"
+            : "*, eleves(id, matricule, nom, prenom, sexe, photo_url, classe_id, statut, classes(nom, cycles(nom)))")
+          .eq("ecole_id", ecoleId)
+          .order("numero")
+          .order("id")
+          .range(trOffset, trOffset + TR_PAGE - 1);
 
-    if (scopedAnneeId) {
-      tranchesQuery = tranchesQuery.eq("frais_scolarite.annee_id", scopedAnneeId);
+        if (scopedAnneeId) {
+          tranchesQuery = tranchesQuery.eq("frais_scolarite.annee_id", scopedAnneeId);
+        }
+
+        const { data: page, error } = await tranchesQuery;
+        if (error) { trErr = error; break; }
+        if (!page || page.length === 0) break;
+        tranchesAll.push(...page);
+        if (page.length < TR_PAGE) break;
+        trOffset += TR_PAGE;
+      }
     }
+    const tranchesData = tranchesAll;
 
-    const { data: tranchesData, error: trErr } = await tranchesQuery;
 
     if (trErr || !tranchesData || tranchesData.length === 0) {
       setData([]);
