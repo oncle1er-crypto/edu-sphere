@@ -4,6 +4,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useFinanceSettings } from "@/hooks/useFinanceSettings";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
+import { isStatutActif } from "@/lib/eleveStatus";
 import { ventilerScolarite, type VentilationParams } from "@/lib/ventilationScolarite";
 import { modeMeta } from "@/pages/finances/scolarite-data";
 import { plageFinanciereAnnee } from "@/lib/academicRange";
@@ -127,15 +128,24 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
       // ── Tranches de scolarité de l'année (total dû par élève) ──
       const { data: tranches } = await supabase
         .from("tranches")
-        .select("id, eleve_id, montant, frais_scolarite!inner(annee_id)")
+        .select("id, eleve_id, montant, frais_scolarite!inner(annee_id), eleves(statut)")
         .eq("ecole_id", ecoleId!)
         .eq("frais_scolarite.annee_id", activeAnnee!.id);
 
       const totalDuParEleve = new Map<string, number>();
+      // Toutes les tranches de l'année (y compris élèves sortis/exclus/
+      // transférés) : nécessaire pour rattacher correctement les paiements
+      // déjà encaissés (voir `trancheIds.has(p.tranche_id)` plus bas) — un
+      // encaissement réel ne doit jamais disparaître des Entrées simplement
+      // parce que l'élève est parti depuis.
       const trancheIds = new Set<string>();
       for (const t of (tranches ?? []) as any[]) {
         if (!keepEleve(t.eleve_id)) continue;
         trancheIds.add(t.id);
+        // Le "total dû" (attendu, prospectif) exclut les élèves sortis/
+        // exclus/transférés — cohérent avec useFinanceData.ts (Finances >
+        // Frais attendus) et useBilanComptable.ts.
+        if (!isStatutActif(t.eleves?.statut)) continue;
         totalDuParEleve.set(t.eleve_id, (totalDuParEleve.get(t.eleve_id) ?? 0) + Number(t.montant || 0));
       }
 
