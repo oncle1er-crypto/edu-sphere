@@ -1,0 +1,44 @@
+name: Sauvegarde Cloud La Providence
+
+on:
+  schedule:
+    - cron: "0 20 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: cloud-backup-la-providence
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Copier Lovable vers Cloudflare R2
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    environment: production-backup
+    env:
+      BRIDGE_URL: "https://yvsnokvgxqtpqkuizsfo.supabase.co/functions/v1/ecf-backup-bridge"
+      CLOUDFLARE_ACCOUNT_ID: "277e2d0f45e64919abbe2d264523c2a4"
+      R2_BUCKET: "ecf-la-providence-backups"
+      BACKUP_ENABLED: ${{ vars.BACKUP_ENABLED || 'true' }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      BACKUP_ENCRYPTION_KEY_B64: ${{ secrets.BACKUP_ENCRYPTION_KEY_B64 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Installer les bibliothèques
+        run: python -m pip install -r scripts/cloud-backup/requirements.txt
+      - name: Sauvegarder la base et les fichiers
+        run: python scripts/cloud-backup/backup_via_bridge.py
+      - name: Rapport d'échec
+        if: failure()
+        run: |
+          echo "# Sauvegarde La Providence — échec" >> "$GITHUB_STEP_SUMMARY"
+          echo "La sauvegarde précédente dans R2 reste intacte." >> "$GITHUB_STEP_SUMMARY"
