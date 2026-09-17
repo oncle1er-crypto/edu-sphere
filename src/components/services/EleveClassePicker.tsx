@@ -15,7 +15,7 @@ interface Props {
 export function EleveClassePicker({ value, onValueChange }: Props) {
   const { cycles } = useCycles();
   const { classes } = useClasses();
-  const { eleves } = useEleves();
+  const { elevesActifs: eleves } = useEleves();
   const [cycleId, setCycleId] = useState("all");
   const [classeId, setClasseId] = useState("all");
 

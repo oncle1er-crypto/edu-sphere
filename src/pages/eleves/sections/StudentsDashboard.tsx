@@ -13,7 +13,7 @@ import { useEcoleId } from "@/hooks/useEcoleId";
 
 export default function StudentsDashboard() {
   const { activeAnnee } = useAcademicPeriod();
-  const { eleves, loading: loadingE } = useEleves(activeAnnee.id);
+  const { elevesActifs: eleves, loading: loadingE } = useEleves(activeAnnee.id);
   const { classes, loading: loadingC } = useClasses(activeAnnee.id);
   const { cycles, loading: loadingCy } = useCycles();
   const { ecoleId } = useEcoleId();
