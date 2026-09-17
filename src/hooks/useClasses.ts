@@ -5,6 +5,7 @@ import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 type ClasseRow = Database["public"]["Tables"]["classes"]["Row"];
 
