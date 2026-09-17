@@ -33,14 +33,10 @@ export function useClasses(anneeId?: string) {
     if (anneeId === "") { setClasses([]); setLoading(false); return; }
     setLoading(true);
 
-    // L'effectif ne compte que les élèves réellement présents (cf. STATUTS_ACTIFS) :
-    // les sortis / exclus / transférés sont archivés dans « Anciens élèves » et ne
-    // doivent plus peser dans les effectifs ni les taux de remplissage.
     let q = supabase
       .from("classes")
-      .select("*, cycles(nom), enseignants(nom, prenom), eleves(count)")
-      .eq("ecole_id", ecoleId)
-      .in("eleves.statut", STATUTS_ACTIFS as unknown as string[]);
+      .select("*, cycles(nom), enseignants(nom, prenom)")
+      .eq("ecole_id", ecoleId);
     if (anneeId) q = q.eq("annee_id", anneeId);
     const { data, error } = await q.order("nom");
 
@@ -51,14 +47,38 @@ export function useClasses(anneeId?: string) {
       return;
     }
 
+    // L'effectif ne compte que les élèves réellement présents (cf. STATUTS_ACTIFS) :
+    // les sortis / exclus / transférés sont archivés dans « Anciens élèves » et ne
+    // doivent plus peser dans les effectifs ni les taux de remplissage.
+    const effectifs = new Map<string, number>();
+    const pageSize = 1000;
+    for (let page = 0; page < 30; page++) {
+      let eq = supabase
+        .from("eleves")
+        .select("classe_id")
+        .eq("ecole_id", ecoleId)
+        .in("statut", STATUTS_ACTIFS as unknown as string[])
+        .not("classe_id", "is", null)
+        .order("id")
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (anneeId) eq = eq.eq("annee_id", anneeId);
+      const { data: rows, error: errE } = await eq;
+      if (errE) { console.error(errE); break; }
+      (rows ?? []).forEach((r: any) => {
+        effectifs.set(r.classe_id, (effectifs.get(r.classe_id) ?? 0) + 1);
+      });
+      if (!rows || rows.length < pageSize) break;
+    }
+
     setClasses(
       (data ?? []).map((c: any) => ({
         ...c,
         cycle_nom: c.cycles?.nom ?? "",
-        effectif: c.eleves?.[0]?.count ?? 0,
+        effectif: effectifs.get(c.id) ?? 0,
         prof_nom: c.enseignants ? `${c.enseignants.nom} ${c.enseignants.prenom}` : "",
       }))
     );
+
     setLoading(false);
   }, [ecoleId, anneeId]);
 
