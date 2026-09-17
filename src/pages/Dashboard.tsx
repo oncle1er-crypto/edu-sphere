@@ -43,7 +43,9 @@ export default function Dashboard() {
       const [elevesRes, ensRes, paiementsRes, bulletinsRes, recentsRes] = await Promise.all([
         supabase.from("eleves").select("id, classe_id, created_at, nom, prenom, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]),
         supabase.from("enseignants").select("id").eq("ecole_id", ecoleId),
-        supabase.from("paiements").select("montant, created_at").eq("ecole_id", ecoleId),
+        // Un paiement annulé n'est jamais une recette réelle : exclu du
+        // graphique "Revenus mensuels" (cf. audit paiements 17/09/2026).
+        supabase.from("paiements").select("montant, created_at").eq("ecole_id", ecoleId).is("annule_le", null),
         supabase.from("bulletins_audit").select("moyenne").eq("ecole_id", ecoleId).not("moyenne", "is", null),
         supabase.from("eleves").select("nom, prenom, created_at, classes(nom)").eq("ecole_id", ecoleId).order("created_at", { ascending: false }).limit(5),
       ]);

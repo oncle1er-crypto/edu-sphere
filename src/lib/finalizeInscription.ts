@@ -75,7 +75,10 @@ export async function finalizeInscription(opts: FinalizeOptions): Promise<Finali
         .from("eleve_parents")
         .select("lien, est_contact_principal, parents(id, prenom, nom, telephone, telephone2, email)")
         .eq("eleve_id", eleve.id),
-      supabase.from("paiements").select("id, montant, date_paiement").eq("eleve_id", eleve.id).order("date_paiement", { ascending: false }),
+      // Exclut les paiements annulés : ni le "total payé" journalisé, ni le
+      // "dernier reçu" imprimé plus bas ne doivent refléter un règlement
+      // annulé (cf. audit paiements 17/09/2026).
+      supabase.from("paiements").select("id, montant, date_paiement").eq("eleve_id", eleve.id).is("annule_le", null).order("date_paiement", { ascending: false }),
       supabase.from("tranches").select("montant").eq("eleve_id", eleve.id),
     ]);
 

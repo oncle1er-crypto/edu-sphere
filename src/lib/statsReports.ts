@@ -41,7 +41,8 @@ export async function generateRapportMensuelConsolide(ecoleId: string) {
     supabase.from("enseignants").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("statut", "actif"),
     supabase.from("classes").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId),
     supabase.from("presences").select("statut").eq("ecole_id", ecoleId).gte("date_presence", debutISO),
-    supabase.from("paiements").select("montant").eq("ecole_id", ecoleId).gte("date_paiement", debutISO),
+    // Un paiement annulé n'est jamais une recette réelle (cf. audit paiements 17/09/2026).
+    supabase.from("paiements").select("montant").eq("ecole_id", ecoleId).gte("date_paiement", debutISO).is("annule_le", null),
   ]);
 
   const eleves = eR.data ?? [];
@@ -77,7 +78,11 @@ export async function generateKpisReseauXlsx(ecoleId: string) {
     supabase.from("enseignants").select("id, statut, sexe, type_contrat").eq("ecole_id", ecoleId),
     supabase.from("classes").select("id, nom, capacite").eq("ecole_id", ecoleId),
     supabase.from("tranches").select("montant, paye, statut, eleves(statut)").eq("ecole_id", ecoleId),
-    supabase.from("paiements").select("montant, mode, date_paiement").eq("ecole_id", ecoleId),
+    // "Nb paiements" doit compter des règlements réels : un paiement annulé
+    // n'en est pas un (cf. audit paiements 17/09/2026). "Encaissé (FCFA)"
+    // plus bas reste calculé sur tranches.paye (déjà net des annulations via
+    // le trigger reconcilier_tranche_paiements), donc non affecté ici.
+    supabase.from("paiements").select("montant, mode, date_paiement").eq("ecole_id", ecoleId).is("annule_le", null),
     supabase.from("presences").select("statut").eq("ecole_id", ecoleId),
   ]);
 

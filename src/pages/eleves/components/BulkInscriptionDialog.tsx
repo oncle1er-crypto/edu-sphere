@@ -58,7 +58,9 @@ export default function BulkInscriptionDialog({ open, onClose, eleves, onDone }:
       if (ids.length === 0) { setReadiness([]); setLoading(false); return; }
       const [docs, pays] = await Promise.all([
         supabase.from("documents_eleves").select("eleve_id, type_document").in("eleve_id", ids),
-        supabase.from("paiements").select("eleve_id, montant").in("eleve_id", ids),
+        // Un paiement annulé ne doit jamais compter comme condition remplie
+        // pour la finalisation en lot (cf. audit paiements 17/09/2026).
+        supabase.from("paiements").select("eleve_id, montant").in("eleve_id", ids).is("annule_le", null),
       ]);
       const docsByEleve = new Map<string, Set<string>>();
       (docs.data ?? []).forEach((d: any) => {

@@ -51,12 +51,16 @@ export function useQuotePartCommune() {
     (async () => {
       const [{ data: cls }, { data: pays }] = await Promise.all([
         supabase.from("classes").select("id, cycle_id").eq("ecole_id", ecoleId).eq("annee_id", activeAnnee.id),
+        // Un paiement annulé ne représente aucune recette réelle : il ne doit
+        // jamais peser dans la clé de répartition des charges communes
+        // (cf. audit paiements 17/09/2026).
         supabase
           .from("paiements")
           .select("montant, eleve_id, eleves(classe_id)")
           .eq("ecole_id", ecoleId)
           .gte("date_paiement", activeAnnee.debut)
           .lte("date_paiement", activeAnnee.fin)
+          .is("annule_le", null)
           .range(0, 9999),
       ]);
       if (cancelled) return;

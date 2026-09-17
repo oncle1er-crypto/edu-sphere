@@ -44,10 +44,13 @@ export default function StudentsDashboard() {
 
     // Élèves en retard de paiement
     const fetchRetard = async () => {
+      // Un paiement annulé ne doit jamais compter comme versement réel
+      // (cf. audit paiements 17/09/2026).
       const { data } = await supabase
         .from("paiements")
         .select("eleve_id, montant")
-        .eq("ecole_id", ecoleId);
+        .eq("ecole_id", ecoleId)
+        .is("annule_le", null);
       const { data: frais } = await supabase
         .from("frais_scolarite")
         .select("montant_annuel, cycle_id")
@@ -75,11 +78,14 @@ export default function StudentsDashboard() {
 
     // Élèves ayant au moins un versement (définit Inscrit vs Pré-inscrit)
     const fetchVersements = async () => {
+      // Un paiement annulé ne doit jamais compter comme versement réel
+      // (cf. audit paiements 17/09/2026).
       const { data } = await supabase
         .from("paiements")
         .select("eleve_id, montant")
         .eq("ecole_id", ecoleId)
-        .gt("montant", 0);
+        .gt("montant", 0)
+        .is("annule_le", null);
       setElevesAvecVersement(new Set((data ?? []).map((p: any) => p.eleve_id)));
     };
 
