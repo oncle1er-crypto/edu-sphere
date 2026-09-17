@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 /**
  * Découpage de l'établissement en 2 niveaux :
