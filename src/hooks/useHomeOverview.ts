@@ -88,7 +88,9 @@ export function useHomeOverview() {
       const elevesQ = supabase
         .from("eleves")
         .select("id, nom, prenom, statut, classe_id, classes(nom)")
-        .eq("ecole_id", ecoleId);
+        .eq("ecole_id", ecoleId)
+        // Effectif identique partout : les sortis / exclus / transférés sont exclus.
+        .in("statut", STATUTS_ACTIFS as unknown as string[]);
       if (anneeId) elevesQ.eq("annee_id", anneeId);
 
       const presencesQ = supabase
