@@ -5,6 +5,7 @@ import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 import { messageErreurBase } from "@/lib/dbErrorMessages";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 type ClasseRow = Database["public"]["Tables"]["classes"]["Row"];
 
@@ -32,10 +33,14 @@ export function useClasses(anneeId?: string) {
     if (anneeId === "") { setClasses([]); setLoading(false); return; }
     setLoading(true);
 
+    // L'effectif ne compte que les élèves réellement présents (cf. STATUTS_ACTIFS) :
+    // les sortis / exclus / transférés sont archivés dans « Anciens élèves » et ne
+    // doivent plus peser dans les effectifs ni les taux de remplissage.
     let q = supabase
       .from("classes")
       .select("*, cycles(nom), enseignants(nom, prenom), eleves(count)")
-      .eq("ecole_id", ecoleId);
+      .eq("ecole_id", ecoleId)
+      .in("eleves.statut", STATUTS_ACTIFS as unknown as string[]);
     if (anneeId) q = q.eq("annee_id", anneeId);
     const { data, error } = await q.order("nom");
 

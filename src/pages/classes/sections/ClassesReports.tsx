@@ -7,14 +7,19 @@ import { useEleves } from "@/hooks/useEleves";
 import { useEnseignants } from "@/hooks/useEnseignants";
 import { ReportExportButtons } from "@/components/reports/ReportExportButtons";
 import { useEcoleInfo } from "@/pages/services-ponctuels/hooks/useEcoleInfo";
+import { isStatutActif } from "@/lib/eleveStatus";
 
 export default function ClassesReports() {
   const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: lc } = useClasses(activeAnnee.id);
-  const { eleves, loading: le } = useEleves(activeAnnee.id);
+  const { eleves: elevesTous, loading: le } = useEleves(activeAnnee.id);
   const { enseignants, loading: lt } = useEnseignants();
   const ecole = useEcoleInfo();
   const loading = lc || le || lt;
+
+  // Rapports d'effectifs : seuls les élèves présents (les sortis / exclus /
+  // transférés sont archivés dans « Anciens élèves »).
+  const eleves = elevesTous.filter((e) => isStatutActif(e.statut));
 
   const reports = [
     {
