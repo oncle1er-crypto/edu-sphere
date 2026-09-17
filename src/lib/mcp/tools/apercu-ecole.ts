@@ -1,5 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { resolveContext } from "../supabase";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 export default defineTool({
   name: "apercu_ecole",
@@ -20,14 +21,18 @@ export default defineTool({
       .eq("id", ecoleId)
       .maybeSingle();
 
+    // Même effectif que les écrans : sans les sortis / exclus / transférés.
+    const statutsActifs = STATUTS_ACTIFS as unknown as string[];
     const eleves = supabase
       .from("eleves")
       .select("id", { count: "exact", head: true })
-      .eq("ecole_id", ecoleId);
+      .eq("ecole_id", ecoleId)
+      .in("statut", statutsActifs);
     const nouveaux = supabase
       .from("eleves")
       .select("id", { count: "exact", head: true })
       .eq("ecole_id", ecoleId)
+      .in("statut", statutsActifs)
       .eq("est_nouveau", true);
     const classes = supabase
       .from("classes")

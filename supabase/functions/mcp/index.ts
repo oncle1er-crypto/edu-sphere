@@ -75,6 +75,7 @@ function fcfa(n) {
 }
 
 // src/lib/mcp/tools/apercu-ecole.ts
+import { STATUTS_ACTIFS } from "npm:@/lib/eleveStatus";
 var apercu_ecole_default = defineTool({
   name: "apercu_ecole",
   title: "Aper\xE7u de l'\xE9cole",
@@ -87,8 +88,9 @@ var apercu_ecole_default = defineTool({
     }
     const { supabase, ecoleId, anneeId, anneeLibelle } = await resolveContext(ctx);
     const { data: ecole } = await supabase.from("ecoles").select("nom").eq("id", ecoleId).maybeSingle();
-    const eleves = supabase.from("eleves").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId);
-    const nouveaux = supabase.from("eleves").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).eq("est_nouveau", true);
+    const statutsActifs = STATUTS_ACTIFS;
+    const eleves = supabase.from("eleves").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).in("statut", statutsActifs);
+    const nouveaux = supabase.from("eleves").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId).in("statut", statutsActifs).eq("est_nouveau", true);
     const classes = supabase.from("classes").select("id", { count: "exact", head: true }).eq("ecole_id", ecoleId);
     const [r1, r2, r3, r4] = await Promise.all([
       anneeId ? eleves.eq("annee_id", anneeId) : eleves,
@@ -117,6 +119,7 @@ var apercu_ecole_default = defineTool({
 // src/lib/mcp/tools/lister-classes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z } from "npm:zod@^3.25.76";
+import { STATUTS_ACTIFS as STATUTS_ACTIFS2 } from "npm:@/lib/eleveStatus";
 var lister_classes_default = defineTool2({
   name: "lister_classes",
   title: "Lister les classes",
@@ -135,7 +138,7 @@ var lister_classes_default = defineTool2({
     if (recherche?.trim()) q = q.ilike("nom", `%${recherche.trim().replace(/[%,]/g, " ")}%`);
     const { data: classes, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    let elevesQuery = supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId);
+    let elevesQuery = supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS2);
     if (anneeId) elevesQuery = elevesQuery.eq("annee_id", anneeId);
     const { data: eleves } = await elevesQuery;
     const counts = /* @__PURE__ */ new Map();
