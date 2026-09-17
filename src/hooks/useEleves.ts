@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import { sortEleves } from "@/lib/sortEleves";
+import { isStatutActif } from "@/lib/eleveStatus";
 
 
 import type { Database } from "@/integrations/supabase/types";
