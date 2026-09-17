@@ -75,6 +75,7 @@ function fcfa(n) {
 }
 
 // src/lib/mcp/tools/apercu-ecole.ts
+import { STATUTS_ACTIFS } from "npm:@/lib/eleveStatus";
 var apercu_ecole_default = defineTool({
   name: "apercu_ecole",
   title: "Aper\xE7u de l'\xE9cole",

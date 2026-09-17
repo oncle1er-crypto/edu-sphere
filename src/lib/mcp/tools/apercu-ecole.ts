@@ -1,5 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { resolveContext } from "../supabase";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 export default defineTool({
   name: "apercu_ecole",
