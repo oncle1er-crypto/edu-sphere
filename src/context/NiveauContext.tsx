@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAuth } from "@/context/AuthContext";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 /**
  * Découpage de l'établissement en 2 niveaux :
@@ -135,7 +136,13 @@ export function NiveauProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       let clQ = supabase.from("classes").select("id, cycle_id").eq("ecole_id", ecoleId);
       if (anneeId) clQ = clQ.eq("annee_id", anneeId);
-      let elQ = supabase.from("eleves").select("id, classe_id").eq("ecole_id", ecoleId).range(0, 4999);
+      // Effectifs par cycle / niveau : seuls les élèves réellement présents.
+      let elQ = supabase
+        .from("eleves")
+        .select("id, classe_id")
+        .eq("ecole_id", ecoleId)
+        .in("statut", STATUTS_ACTIFS as unknown as string[])
+        .range(0, 4999);
       if (anneeId) elQ = elQ.eq("annee_id", anneeId);
       const [clRes, elRes] = await Promise.all([clQ, elQ]);
       if (cancelled) return;
