@@ -4,6 +4,7 @@ import { useEcoleId } from "./useEcoleId";
 import { useNiveau } from "@/context/NiveauContext";
 import { toast } from "sonner";
 import { sortEleves } from "@/lib/sortEleves";
+import { isStatutActif } from "@/lib/eleveStatus";
 
 
 import type { Database } from "@/integrations/supabase/types";
@@ -28,6 +29,10 @@ export function useEleves(anneeId?: string) {
     const set = new Set(classeIds);
     return elevesRaw.filter((e) => e.classe_id && set.has(e.classe_id));
   }, [elevesRaw, isGlobal, classeIds]);
+
+  // Élèves réellement présents : les sortis / exclus / transférés sont archivés
+  // dans « Anciens élèves » et ne doivent jamais gonfler un effectif.
+  const elevesActifs = useMemo(() => eleves.filter((e) => isStatutActif(e.statut)), [eleves]);
 
   const fetchEleves = useCallback(async () => {
     if (!ecoleId) return;
@@ -98,5 +103,5 @@ export function useEleves(anneeId?: string) {
     return true;
   };
 
-  return { eleves, loading: loading || ecoleLoading, fetchEleves, addEleve, updateEleve, deleteEleve, ecoleId };
+  return { eleves, elevesActifs, loading: loading || ecoleLoading, fetchEleves, addEleve, updateEleve, deleteEleve, ecoleId };
 }

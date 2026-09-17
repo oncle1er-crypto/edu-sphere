@@ -17,7 +17,7 @@ import { toast } from "sonner";
 export default function StudentsAssignment() {
   const { activeAnnee } = useAcademicPeriod();
   const { classes, loading: loadingC } = useClasses(activeAnnee.id);
-  const { eleves, loading: loadingE, updateEleve } = useEleves(activeAnnee.id);
+  const { elevesActifs: eleves, loading: loadingE, updateEleve } = useEleves(activeAnnee.id);
 
   const [sourceClasseId, setSourceClasseId] = useState<string | null>(null);
   const [targetClasseId, setTargetClasseId] = useState("");
