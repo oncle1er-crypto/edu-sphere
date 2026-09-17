@@ -41,7 +41,7 @@ export default function Dashboard() {
       setLoading(true);
 
       const [elevesRes, ensRes, paiementsRes, bulletinsRes, recentsRes] = await Promise.all([
-        supabase.from("eleves").select("id, classe_id, created_at, nom, prenom, classes(nom)").eq("ecole_id", ecoleId),
+        supabase.from("eleves").select("id, classe_id, created_at, nom, prenom, classes(nom)").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS as unknown as string[]),
         supabase.from("enseignants").select("id").eq("ecole_id", ecoleId),
         supabase.from("paiements").select("montant, created_at").eq("ecole_id", ecoleId),
         supabase.from("bulletins_audit").select("moyenne").eq("ecole_id", ecoleId).not("moyenne", "is", null),
