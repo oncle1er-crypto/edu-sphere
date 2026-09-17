@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { GraduationCap, Loader2 } from "lucide-react";
 import { useClasses } from "@/hooks/useClasses";
 import { useEleves } from "@/hooks/useEleves";
+import { isStatutActif } from "@/lib/eleveStatus";
 import ApplyScolariteButton from "../components/ApplyScolariteButton";
 
 export default function ClassesEffectifs() {
