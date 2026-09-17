@@ -1,7 +1,9 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { resolveContext } from "../supabase";
-import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+
+// Statuts d'élèves actifs (dupliqué localement : les edge functions ne résolvent pas l'alias "@/").
+const STATUTS_ACTIFS = ["inscrit", "pre_inscrit", "actif"] as const;
 
 export default defineTool({
   name: "lister_classes",
