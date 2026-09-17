@@ -28,7 +28,12 @@ export default defineTool({
     const { data: classes, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
-    let elevesQuery = supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId);
+    let elevesQuery = supabase
+      .from("eleves")
+      .select("classe_id")
+      .eq("ecole_id", ecoleId)
+      // Même effectif que les écrans : sans les sortis / exclus / transférés.
+      .in("statut", STATUTS_ACTIFS as unknown as string[]);
     if (anneeId) elevesQuery = elevesQuery.eq("annee_id", anneeId);
     const { data: eleves } = await elevesQuery;
     const counts = new Map<string, number>();

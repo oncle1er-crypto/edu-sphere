@@ -135,7 +135,7 @@ var lister_classes_default = defineTool2({
     if (recherche?.trim()) q = q.ilike("nom", `%${recherche.trim().replace(/[%,]/g, " ")}%`);
     const { data: classes, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
-    let elevesQuery = supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId);
+    let elevesQuery = supabase.from("eleves").select("classe_id").eq("ecole_id", ecoleId).in("statut", STATUTS_ACTIFS);
     if (anneeId) elevesQuery = elevesQuery.eq("annee_id", anneeId);
     const { data: eleves } = await elevesQuery;
     const counts = /* @__PURE__ */ new Map();
