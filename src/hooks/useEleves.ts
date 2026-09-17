@@ -29,6 +29,10 @@ export function useEleves(anneeId?: string) {
     return elevesRaw.filter((e) => e.classe_id && set.has(e.classe_id));
   }, [elevesRaw, isGlobal, classeIds]);
 
+  // Élèves réellement présents : les sortis / exclus / transférés sont archivés
+  // dans « Anciens élèves » et ne doivent jamais gonfler un effectif.
+  const elevesActifs = useMemo(() => eleves.filter((e) => isStatutActif(e.statut)), [eleves]);
+
   const fetchEleves = useCallback(async () => {
     if (!ecoleId) return;
     // Si l'appelant a explicitement passé une année vide, on n'affiche rien.
