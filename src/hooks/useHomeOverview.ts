@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
 import { useNiveau } from "@/context/NiveauContext";
-import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { STATUTS_ACTIFS, isStatutActif } from "@/lib/eleveStatus";
 
 export interface HomeActivityItem {
   kind: "paiement" | "inscription" | "incident";
@@ -134,7 +134,7 @@ export function useHomeOverview() {
         presencesQ,
         supabase
           .from("tranches")
-          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classe_id, classes(nom))")
+          .select("eleve_id, montant, paye, statut, label, echeance, eleves(nom, prenom, classe_id, statut, classes(nom))")
           .eq("ecole_id", ecoleId)
           .in("statut", ["due", "retard"])
           .limit(1000),
@@ -156,7 +156,12 @@ export function useHomeOverview() {
 
       if (cancelled) return;
 
-      const eleves = ((elevesRes.data ?? []) as any[]).filter((e) => okClasse(e.classe_id));
+      // Un élève sorti/exclu/transféré ne doit plus compter dans l'effectif ni
+      // dans les alertes financières de l'accueil — cohérent avec
+      // useFinanceData.ts (Finances) et StudentsList.tsx (effectif Élèves).
+      const eleves = ((elevesRes.data ?? []) as any[]).filter(
+        (e) => okClasse(e.classe_id) && isStatutActif(e.statut)
+      );
       const withDoc = new Set(((docsRes.data ?? []) as any[]).map((d) => d.eleve_id));
       const dossiersIncomplets: AlertRow[] = eleves
         .filter((e) => !withDoc.has(e.id))
@@ -175,6 +180,9 @@ export function useHomeOverview() {
       const byEleve = new Map<string, AlertRow>();
       for (const t of (tranchesRes.data ?? []) as any[]) {
         if (!okClasse(t.eleves?.classe_id)) continue;
+        // Élève sorti/exclu/transféré : ne doit plus apparaître dans les
+        // impayés de l'accueil (cf. useFinanceData.ts, cohérence des KPI).
+        if (!isStatutActif(t.eleves?.statut)) continue;
         const reste = Math.max(0, num(t.montant) - num(t.paye));
         if (reste <= 0) continue;
         const prev = byEleve.get(t.eleve_id);

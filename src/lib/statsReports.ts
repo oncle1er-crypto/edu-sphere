@@ -2,7 +2,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
-import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { STATUTS_ACTIFS, isStatutActif } from "@/lib/eleveStatus";
 import { sortByEleve } from "@/lib/sortEleves";
 
 const fcfa = (n: number) => Math.round(n).toLocaleString("fr-FR");
@@ -76,14 +76,20 @@ export async function generateKpisReseauXlsx(ecoleId: string) {
     supabase.from("eleves").select("id, sexe, statut").eq("ecole_id", ecoleId),
     supabase.from("enseignants").select("id, statut, sexe, type_contrat").eq("ecole_id", ecoleId),
     supabase.from("classes").select("id, nom, capacite").eq("ecole_id", ecoleId),
-    supabase.from("tranches").select("montant, paye, statut").eq("ecole_id", ecoleId),
+    supabase.from("tranches").select("montant, paye, statut, eleves(statut)").eq("ecole_id", ecoleId),
     supabase.from("paiements").select("montant, mode, date_paiement").eq("ecole_id", ecoleId),
     supabase.from("presences").select("statut").eq("ecole_id", ecoleId),
   ]);
 
   const eleves = eR.data ?? [];
   const ens = ensR.data ?? [];
-  const tranches = trR.data ?? [];
+  const tranches = (trR.data ?? []) as any[];
+  // "Frais attendus" est un montant prospectif (créance) : exclut les élèves
+  // sortis/exclus/transférés, cohérent avec useFinanceData.ts (Finances >
+  // Frais attendus). "Encaissé" (tranche.paye, ci-dessous) reste calculé sur
+  // `tranches` en entier : un encaissement déjà perçu ne doit jamais
+  // disparaître d'un export financier au seul motif que l'élève est parti.
+  const tranchesActives = tranches.filter((t) => isStatutActif(t.eleves?.statut));
   const paiements = paR.data ?? [];
   const pres = prR.data ?? [];
 
@@ -97,7 +103,7 @@ export async function generateKpisReseauXlsx(ecoleId: string) {
     { Indicateur: "Enseignants", Valeur: ens.length },
     { Indicateur: "Enseignants actifs", Valeur: ens.filter((e: any) => e.statut === "actif").length },
     { Indicateur: "Classes", Valeur: (clR.data ?? []).length },
-    { Indicateur: "Frais attendus (FCFA)", Valeur: tranches.reduce((s: number, t: any) => s + Number(t.montant), 0) },
+    { Indicateur: "Frais attendus (FCFA)", Valeur: tranchesActives.reduce((s: number, t: any) => s + Number(t.montant), 0) },
     { Indicateur: "Encaissé (FCFA)", Valeur: tranches.reduce((s: number, t: any) => s + Number(t.paye), 0) },
     { Indicateur: "Nb paiements", Valeur: paiements.length },
     { Indicateur: "Enregistrements présence", Valeur: pres.length },
@@ -169,7 +175,7 @@ export async function generateRapportAcademique(ecoleId: string) {
 export async function generateRapportFinancierXlsx(ecoleId: string) {
   const { data: tranches } = await supabase
     .from("tranches")
-    .select("montant, paye, statut, eleves(nom, prenoms, matricule, classes(nom))")
+    .select("montant, paye, statut, eleves(nom, prenoms, matricule, statut, classes(nom))")
     .eq("ecole_id", ecoleId);
 
   const rows = sortByEleve((tranches ?? []) as any[], (t: any) => ({ nom: t.eleves?.nom, prenom: t.eleves?.prenoms })).map((t: any) => ({
@@ -180,14 +186,23 @@ export async function generateRapportFinancierXlsx(ecoleId: string) {
     Payé: Number(t.paye),
     Restant: Number(t.montant) - Number(t.paye),
     Statut: t.statut,
+    // Ligne conservée dans le détail (traçabilité), mais exclue des totaux
+    // "Synthèse" ci-dessous si l'élève est sorti/exclu/transféré — cohérent
+    // avec useFinanceData.ts (Finances > Frais attendus).
+    _actif: isStatutActif(t.eleves?.statut),
   }));
 
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Tranches");
+  XLSX.utils.book_append_sheet(
+    wb,
+    XLSX.utils.json_to_sheet(rows.map(({ _actif, ...r }) => r)),
+    "Tranches"
+  );
+  const rowsActifs = rows.filter((r) => r._actif);
   const totals = [
-    { Poste: "Total attendu", Montant: rows.reduce((s, r) => s + r.Attendu, 0) },
-    { Poste: "Total payé", Montant: rows.reduce((s, r) => s + r.Payé, 0) },
-    { Poste: "Total restant dû", Montant: rows.reduce((s, r) => s + r.Restant, 0) },
+    { Poste: "Total attendu", Montant: rowsActifs.reduce((s, r) => s + r.Attendu, 0) },
+    { Poste: "Total payé", Montant: rowsActifs.reduce((s, r) => s + r.Payé, 0) },
+    { Poste: "Total restant dû", Montant: rowsActifs.reduce((s, r) => s + r.Restant, 0) },
   ];
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(totals), "Synthèse");
   XLSX.writeFile(wb, `rapport-financier-${new Date().toISOString().slice(0, 10)}.xlsx`);

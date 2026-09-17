@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEcoleId } from "@/hooks/useEcoleId";
 import { useAcademicPeriod } from "@/context/AcademicPeriodContext";
-import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
+import { STATUTS_ACTIFS, isStatutActif } from "@/lib/eleveStatus";
 import { useNiveauFilters } from "@/hooks/useNiveauFilters";
 
 export default function GlobalDashboard() {
@@ -34,12 +34,16 @@ export default function GlobalDashboard() {
       let tranchesData: any[] = [];
       let trancheIds: string[] = [];
       if (fraisIds.length > 0) {
-        const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId).in("frais_id", fraisIds);
+        const { data } = await supabase.from("tranches").select("id, montant, paye, eleves(statut)").eq("ecole_id", ecoleId).in("frais_id", fraisIds);
         tranchesData = data ?? [];
       } else if (!anneeId) {
-        const { data } = await supabase.from("tranches").select("id, montant, paye").eq("ecole_id", ecoleId);
+        const { data } = await supabase.from("tranches").select("id, montant, paye, eleves(statut)").eq("ecole_id", ecoleId);
         tranchesData = data ?? [];
       }
+      // "Total attendu"/"Total payé"/"Taux de recouvrement" : exclut les
+      // élèves sortis/exclus/transférés, cohérent avec useFinanceData.ts
+      // (Finances > Frais attendus).
+      tranchesData = tranchesData.filter((t: any) => isStatutActif(t.eleves?.statut));
       trancheIds = tranchesData.map((t: any) => t.id);
 
       // Remises réelles = paiements avec mode ∈ {remise, bourse, prise_en_charge} imputés sur ces tranches
