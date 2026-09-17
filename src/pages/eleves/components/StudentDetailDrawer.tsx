@@ -301,8 +301,12 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
   const nbRetard = presences.filter((p) => p.statut === "retard").length;
   const tauxPresence = totalPres > 0 ? Math.round((nbPresent / totalPres) * 100) : 0;
 
-  // Finance stats
-  const totalPaye = paiements.reduce((s, p) => s + Number(p.montant ?? 0), 0);
+  // Finance stats — les paiements annulés (annule_le renseigné) ne doivent
+  // jamais être comptés dans les totaux : ils restent visibles dans
+  // l'historique (avec badge ANNULÉ/REMBOURSÉ, cf. Reçus & quittances) mais
+  // ne représentent plus une somme réellement encaissée.
+  const paiementsActifs = paiements.filter((p) => !p.annule_le);
+  const totalPaye = paiementsActifs.reduce((s, p) => s + Number(p.montant ?? 0), 0);
 
   const typeLabels: Record<string, string> = {
     avertissement: "Avertissement", sanction: "Sanction", exclusion: "Exclusion",
@@ -420,7 +424,7 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
               const docTypes = new Set(documents.map((d) => d.type_document));
               const missingDocs = REQUIRED_DOCS.filter((d) => !docTypes.has(d.key));
               const cDocs = missingDocs.length === 0;
-              const totalPaye = paiements.reduce((s, p) => s + Number(p.montant ?? 0), 0);
+              const totalPaye = paiements.filter((p) => !p.annule_le).reduce((s, p) => s + Number(p.montant ?? 0), 0);
               const cPaie = totalPaye > 0;
               const cClasse = !!eleve.classe_id;
               // Documents désormais facultatifs → seuls classe + paiement comptent.
@@ -720,14 +724,14 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                     <p className="text-2xl font-extrabold font-display">
                       {totalPaye.toLocaleString("fr-FR")} FCFA
                     </p>
-                    <p className="text-xs text-muted-foreground">Total payé ({paiements.length} paiements)</p>
+                    <p className="text-xs text-muted-foreground">Total payé ({paiementsActifs.length} paiements)</p>
                   </div>
                 </CardContent>
               </Card>
-              {paiements.length > 0 && (
+              {paiementsActifs.length > 0 && (
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {Object.entries(
-                    paiements.reduce((acc: Record<string, number>, p) => {
+                    paiementsActifs.reduce((acc: Record<string, number>, p) => {
                       const l = sourcePaiement(p).label;
                       acc[l] = (acc[l] ?? 0) + Number(p.montant ?? 0);
                       return acc;
@@ -757,14 +761,24 @@ export default function StudentDetailDrawer({ eleve, open, onClose, onUpdated, i
                     <TableBody>
                       {paiements.map((p) => {
                         const src = sourcePaiement(p);
+                        const annule = !!p.annule_le;
                         return (
-                        <TableRow key={p.id}>
-                          <TableCell className="text-sm">{fmt(p.date_paiement)}</TableCell>
+                        <TableRow
+                          key={p.id}
+                          className={annule ? "bg-muted/40 text-muted-foreground" : undefined}
+                          title={annule ? `Annulé le ${fmt(p.annule_le)}${p.motif_annulation ? ` — ${p.motif_annulation}` : ""}` : undefined}
+                        >
+                          <TableCell className={`text-sm ${annule ? "line-through" : ""}`}>{fmt(p.date_paiement)}</TableCell>
                           <TableCell>
-                            <Badge variant="outline" className={src.className}>{src.label}</Badge>
+                            <Badge variant="outline" className={annule ? "bg-muted text-muted-foreground border-border" : src.className}>{src.label}</Badge>
                             {src.detail && <p className="text-[11px] text-muted-foreground mt-0.5">{src.detail}</p>}
+                            {annule && (
+                              <Badge variant="destructive" className="mt-1 text-[10px]">
+                                {p.rembourse ? "REMBOURSÉ" : "ANNULÉ"}
+                              </Badge>
+                            )}
                           </TableCell>
-                          <TableCell className="font-semibold">{Number(p.montant).toLocaleString("fr-FR")} F</TableCell>
+                          <TableCell className={`font-semibold ${annule ? "line-through" : ""}`}>{Number(p.montant).toLocaleString("fr-FR")} F</TableCell>
                           <TableCell><Badge variant="secondary">{modeLabel(p.mode)}</Badge></TableCell>
                           <TableCell className="text-xs text-muted-foreground">{p.reference ?? "—"}</TableCell>
                         </TableRow>
