@@ -75,7 +75,7 @@ function fcfa(n) {
 }
 
 // src/lib/mcp/tools/apercu-ecole.ts
-import { STATUTS_ACTIFS } from "npm:@/lib/eleveStatus";
+var STATUTS_ACTIFS = ["inscrit", "pre_inscrit", "actif"];
 var apercu_ecole_default = defineTool({
   name: "apercu_ecole",
   title: "Aper\xE7u de l'\xE9cole",
@@ -119,7 +119,7 @@ var apercu_ecole_default = defineTool({
 // src/lib/mcp/tools/lister-classes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z } from "npm:zod@^3.25.76";
-import { STATUTS_ACTIFS as STATUTS_ACTIFS2 } from "npm:@/lib/eleveStatus";
+var STATUTS_ACTIFS2 = ["inscrit", "pre_inscrit", "actif"];
 var lister_classes_default = defineTool2({
   name: "lister_classes",
   title: "Lister les classes",
