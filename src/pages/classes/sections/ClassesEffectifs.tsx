@@ -18,7 +18,8 @@ export default function ClassesEffectifs() {
   const sexByClasse = useMemo(() => {
     const map = new Map<string, { f: number; g: number }>();
     eleves.forEach((e) => {
-      if (!e.classe_id) return;
+      // Même règle que l'effectif : seuls les élèves présents sont comptés.
+      if (!e.classe_id || !isStatutActif(e.statut)) return;
       const entry = map.get(e.classe_id) ?? { f: 0, g: 0 };
       const sx = String(e.sexe ?? "").toUpperCase();
       if (sx === "F") entry.f++; else if (sx === "M" || sx === "G") entry.g++;
