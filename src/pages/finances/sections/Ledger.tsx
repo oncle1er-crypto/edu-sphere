@@ -95,12 +95,16 @@ export default function Ledger() {
     const to = `${plage?.to ?? activeAnnee.fin}T23:59:59`;
 
     Promise.all([
-      // Encaissements de scolarité (filtrés par année via inner join)
+      // Encaissements de scolarité (filtrés par année via inner join).
+      // Un paiement annulé n'a jamais représenté un encaissement réel : il ne
+      // doit pas apparaître comme écriture dans le grand livre (cf. audit
+      // paiements 17/09/2026).
       supabase
         .from("paiements")
         .select("montant, date_paiement, mode, reference, eleves(nom, prenom), tranches!inner(frais_scolarite!inner(annee_id))")
         .eq("ecole_id", ecoleId)
         .eq("tranches.frais_scolarite.annee_id", activeAnnee.id)
+        .is("annule_le", null)
         .order("date_paiement", { ascending: false })
         .limit(FETCH_CAP),
       // Règlements de dépenses validées sur la période

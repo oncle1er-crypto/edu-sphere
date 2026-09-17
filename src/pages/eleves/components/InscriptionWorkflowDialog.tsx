@@ -88,7 +88,9 @@ export default function InscriptionWorkflowDialog({ eleve, open, onClose, onOpen
     setLoading(true);
     const [docs, pays, trs] = await Promise.all([
       supabase.from("documents_eleves").select("type_document").eq("eleve_id", eleve.id),
-      supabase.from("paiements").select("montant").eq("eleve_id", eleve.id),
+      // Un paiement annulé ne doit jamais compter comme condition remplie
+      // pour finaliser l'inscription (cf. audit paiements 17/09/2026).
+      supabase.from("paiements").select("montant").eq("eleve_id", eleve.id).is("annule_le", null),
       supabase.from("tranches").select("id,numero,label,montant,paye,echeance,statut").eq("eleve_id", eleve.id).order("numero"),
     ]);
     setDocuments((docs.data as any[]) ?? []);
