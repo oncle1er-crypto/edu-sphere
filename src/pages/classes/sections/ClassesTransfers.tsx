@@ -27,7 +27,9 @@ interface Transfert {
 export default function ClassesTransfers() {
   const { activeAnnee } = useAcademicPeriod();
   const { classes } = useClasses(activeAnnee.id);
-  const { eleves } = useEleves(activeAnnee.id);
+  const { eleves: elevesTous } = useEleves(activeAnnee.id);
+  // On ne transfère que des élèves présents (pas les sortis / exclus / transférés).
+  const eleves = useMemo(() => elevesTous.filter((e) => isStatutActif(e.statut)), [elevesTous]);
   const [transferts, setTransferts] = useState<Transfert[]>([]);
   const [loading, setLoading] = useState(true);
   const [openSingle, setOpenSingle] = useState(false);
