@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { resolveContext } from "../supabase";
+import { STATUTS_ACTIFS } from "@/lib/eleveStatus";
 
 export default defineTool({
   name: "lister_classes",

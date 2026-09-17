@@ -117,6 +117,7 @@ var apercu_ecole_default = defineTool({
 // src/lib/mcp/tools/lister-classes.ts
 import { defineTool as defineTool2 } from "npm:@lovable.dev/mcp-js@0.26.1";
 import { z } from "npm:zod@^3.25.76";
+import { STATUTS_ACTIFS } from "npm:@/lib/eleveStatus";
 var lister_classes_default = defineTool2({
   name: "lister_classes",
   title: "Lister les classes",
