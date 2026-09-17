@@ -98,5 +98,5 @@ export function useEleves(anneeId?: string) {
     return true;
   };
 
-  return { eleves, loading: loading || ecoleLoading, fetchEleves, addEleve, updateEleve, deleteEleve, ecoleId };
+  return { eleves, elevesActifs, loading: loading || ecoleLoading, fetchEleves, addEleve, updateEleve, deleteEleve, ecoleId };
 }
