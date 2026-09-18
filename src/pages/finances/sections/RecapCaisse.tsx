@@ -32,7 +32,7 @@ export default function RecapCaisse() {
   const [previewTitle, setPreviewTitle] = useState("");
 
   const periode: RecapCaissePeriode = vue === "jour" ? { mode: "jour", date } : { mode: "semaine", date };
-  const { data, isLoading } = useRecapCaisse(periode);
+  const { data, isLoading, refetch } = useRecapCaisse(periode);
 
   const closePreview = () => {
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
@@ -44,6 +44,23 @@ export default function RecapCaisse() {
     if (!data) return;
     setBusy(true);
     try {
+      // Un document de clôture de caisse ne doit jamais s'appuyer sur une
+      // valeur potentiellement périmée du cache React Query : useDepenses.ts
+      // (validerDepense/validerPlusieurs/rejeterDepense/reouvrirDepense)
+      // n'invalide jamais la requête "recap_caisse", qui peut donc rester en
+      // cache alors qu'une dépense a changé de statut entre-temps (constaté
+      // le 18/09/2026 : dépenses "en_attente" comptées comme validées dans
+      // le PDF imprimé). On force donc une requête fraîche juste avant de
+      // construire le document, plutôt que de réutiliser `data` tel quel.
+      const fresh = await refetch();
+      if (fresh.error || !fresh.data) {
+        toast.error(
+          "Impossible de vérifier les données à jour avant génération : " +
+            (fresh.error ? messageErreurBase(fresh.error) : "aucune donnée disponible"),
+        );
+        return;
+      }
+      const freshData = fresh.data;
       const meta = {
         nom: ecole?.nom ?? "École",
         adresse: ecole?.adresse,
@@ -52,18 +69,18 @@ export default function RecapCaisse() {
         logoUrl: ecole?.logo_url,
       };
       const opts: RecapCaisseOptions = {
-        periodeLabel: data.periodeLabel,
+        periodeLabel: freshData.periodeLabel,
         titre: vue === "jour" ? "Récapitulatif de caisse — Journée" : "Récapitulatif de caisse — Semaine",
-        filenameSuffix: vue === "jour" ? date : `semaine_${data.from}_au_${data.to}`,
+        filenameSuffix: vue === "jour" ? date : `semaine_${freshData.from}_au_${freshData.to}`,
         avecDetail,
         niveauLabel: isGlobal ? null : niveauLabel,
       };
-      const payload = { sources: data.sources, depenses: data.depenses };
+      const payload = { sources: freshData.sources, depenses: freshData.depenses };
       if (previewOnly) {
         const pdf = await generateRecapCaisseJournalier(meta, opts, payload, true);
         if (pdf) {
           const url = URL.createObjectURL(pdf.output("blob"));
-          setPreviewTitle(`Récapitulatif de caisse — ${data.periodeLabel}`);
+          setPreviewTitle(`Récapitulatif de caisse — ${freshData.periodeLabel}`);
           setPdfUrl(url);
         }
       } else {
