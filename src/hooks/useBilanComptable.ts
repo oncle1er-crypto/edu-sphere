@@ -302,9 +302,17 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
       const slugById = new Map(((services ?? []) as any[]).map((s) => [s.id, `${s.slug} ${s.nom}`.toLowerCase()]));
       for (const p of (spPaiements ?? []) as any[]) {
         if (!isGlobal) {
-          const ok = p.eleve_id
-            ? keepEleve(p.eleve_id)
-            : keepClasse(p.sp_candidats?.classe_demandee_id);
+          // Un paiement "libre" (bouton Nouveau paiement, sans élève ni
+          // candidat rattaché — ex. test d'entrée réglé sans fiche candidat)
+          // n'a ni eleve_id ni classe_demandee_id : le compter comme "Commun"
+          // (visible dans tous les niveaux), au même titre que les dépenses
+          // sans cycle_id plus bas dans ce fichier. Avant cette correction,
+          // keepClasse(undefined) renvoyait false et ces paiements réels
+          // disparaissaient purement et simplement dès qu'un niveau précis
+          // était sélectionné (bug signalé le 18/09/2026 : paiements de test
+          // d'entrée invisibles en filtrant "Secondaire").
+          const classeId = p.sp_candidats?.classe_demandee_id ?? null;
+          const ok = p.eleve_id ? keepEleve(p.eleve_id) : classeId ? keepClasse(classeId) : true;
           if (!ok) continue;
         }
         const i = colIndex(p.date_paiement);
@@ -342,7 +350,10 @@ export function useBilanComptable(periode: BilanPeriode = { mode: "annee" }) {
         .lte("created_at", `${to}T23:59:59`);
       for (const v of (ventesTenues ?? []) as any[]) {
         if (!isGlobal) {
-          const ok = v.eleve_id ? keepEleve(v.eleve_id) : keepClasse(v.classe_id);
+          // Même correction que pour les paiements "libres" ci-dessus : une
+          // vente à un acheteur libre (non élève) sans classe_id renseignée
+          // est "Commune" plutôt que masquée (cf. commentaire détaillé plus haut).
+          const ok = v.eleve_id ? keepEleve(v.eleve_id) : v.classe_id ? keepClasse(v.classe_id) : true;
           if (!ok) continue;
         }
         const i = colIndex(v.created_at);
