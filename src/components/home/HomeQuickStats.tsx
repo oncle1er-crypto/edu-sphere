@@ -152,11 +152,19 @@ export function HomeQuickStats({ data }: { data: HomeOverview }) {
     setPrinting(true);
     try {
       const isoDate = detail.date;
+      // Une dépense "en_attente" ou "rejetee" ne doit jamais être déduite de
+      // la recette du jour tant qu'elle n'est pas validée — même convention
+      // que Finances > Récapitulatif de caisse (useRecapCaisse.ts) et que le
+      // Bilan comptable / Grand livre (constaté le 18/09/2026 : ce chemin
+      // d'impression distinct, propre à la tuile "Encaissé aujourd'hui" du
+      // Tableau de bord, sommait toutes les dépenses du jour sans filtrer
+      // leur statut).
       const { data: depRows, error: depError } = await supabase
         .from("depenses")
         .select("libelle, categorie, montant, fournisseurs(nom)")
         .eq("ecole_id", ecoleId)
         .eq("date_depense", isoDate)
+        .eq("statut", "validee")
         .order("montant", { ascending: false });
       if (depError) throw depError;
 
