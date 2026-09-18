@@ -286,7 +286,12 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
       const slugById = new Map(((services ?? []) as any[]).map((s) => [s.id, `${s.slug} ${s.nom}`.toLowerCase()]));
       for (const p of (spPaiements ?? []) as any[]) {
         if (!isGlobal) {
-          const ok = p.eleve_id ? keepEleve(p.eleve_id) : keepClasse(p.sp_candidats?.classe_demandee_id);
+          // Cf. useBilanComptable.ts : un paiement "libre" sans élève ni
+          // candidat rattaché (ni eleve_id ni classe_demandee_id) est
+          // "Commun" (visible dans tous les niveaux) plutôt que masqué dès
+          // qu'un niveau précis est sélectionné (bug du 18/09/2026).
+          const classeId = p.sp_candidats?.classe_demandee_id ?? null;
+          const ok = p.eleve_id ? keepEleve(p.eleve_id) : classeId ? keepClasse(classeId) : true;
           if (!ok) continue;
         }
         const j = dayKey(p.date_paiement);
@@ -315,7 +320,9 @@ export function useEntreesRecap(granularite: Granularite, periode: RecapPeriode 
         .lte("created_at", `${to}T23:59:59`);
       for (const v of (ventesTenues ?? []) as any[]) {
         if (!isGlobal) {
-          const ok = v.eleve_id ? keepEleve(v.eleve_id) : keepClasse(v.classe_id);
+          // Cf. useBilanComptable.ts : vente à un acheteur libre sans
+          // classe_id renseignée => "Commune" plutôt que masquée.
+          const ok = v.eleve_id ? keepEleve(v.eleve_id) : v.classe_id ? keepClasse(v.classe_id) : true;
           if (!ok) continue;
         }
         const j = dayKey(v.created_at);

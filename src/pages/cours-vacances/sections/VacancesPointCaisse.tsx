@@ -44,13 +44,27 @@ export default function VacancesPointCaisse() {
   );
 
   const total = lignes.reduce((s, p) => s + Number(p.montant_paye), 0);
+  // Un paiement peut être scindé en deux moyens (mode + mode_2/montant_2,
+  // ex. espèces + mobile money). Avant cette correction, cette ventilation
+  // attribuait 100 % du montant au premier moyen et ignorait totalement le
+  // second : le total général restait juste, mais la répartition par moyen
+  // (utile pour le comptage physique de caisse) était fausse (bug signalé
+  // le 18/09/2026, cf. audit du même jour sur useBilanComptable.ts /
+  // useEntreesRecap.ts qui géraient déjà correctement ce cas via addModeSplit).
   const parMode = useMemo(() => {
     const m: Record<string, { total: number; count: number }> = {};
     for (const p of lignes) {
-      const k = p.mode || "autre";
-      m[k] ??= { total: 0, count: 0 };
-      m[k].total += Number(p.montant_paye);
-      m[k].count += 1;
+      const montant2 = p.montant_2 ? Number(p.montant_2) : 0;
+      const k1 = p.mode || "autre";
+      m[k1] ??= { total: 0, count: 0 };
+      m[k1].total += Number(p.montant_paye) - montant2;
+      m[k1].count += 1;
+      if (p.mode_2 && montant2 > 0) {
+        const k2 = p.mode_2 || "autre";
+        m[k2] ??= { total: 0, count: 0 };
+        m[k2].total += montant2;
+        m[k2].count += 1;
+      }
     }
     return m;
   }, [lignes]);
